@@ -1,7 +1,7 @@
 export const metadata = {
-  title: "AyuSetu — AYUSH Academia-Industry Portal",
+  title: "AyushBridge — National AYUSH Academia-Industry Portal",
   description:
-    "Skill assessment, mapping and placement platform connecting AYUSH students, academicians, industry and institutions. Built for SIH26044.",
+    "Skill assessment, industry collaboration, and placement platform connecting AYUSH students, academicians, and wellness enterprises across Ayurveda, Yoga, Unani, Siddha, and Homoeopathy.",
 };
 
 export default function RootLayout({ children }) {
