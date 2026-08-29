@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState, useMemo } from "react";
+import React, { useState, useMemo, useRef } from "react";
 import {
   Radar, RadarChart, PolarGrid, PolarAngleAxis, PolarRadiusAxis,
   ResponsiveContainer, BarChart, Bar, XAxis, YAxis, CartesianGrid,
@@ -213,7 +213,7 @@ const ROLES = [
   },
 ];
 
-/* ---------------- Real-World AYUSH Opportunities ---------------- */
+/* ---------------- Real-World AYUSH Opportunities (Standardized to LPA & Enriched) ---------------- */
 
 const OPPORTUNITIES = [
   {
@@ -223,82 +223,166 @@ const OPPORTUNITIES = [
     loc: "New Delhi",
     domain: "clinical_research",
     type: "Internship",
-    pay: "₹18,000 / month",
+    pay: "₹2.16 LPA",
+    workMode: "On-site",
+    physicalInterview: "Yes (Clinical Simulation Round)",
+    interviewRounds: "2 Rounds: Written Technical Test + Faculty PI Panel",
     closes: "15 Oct 2026",
     requires: { clinical_research: 70, clinical_doc: 65, health_data: 55 },
-    about: "Assist in multi-center clinical trials for chronic lifestyle disorders — protocol documentation, electronic case sheets, and patient monitoring.",
+    about: "Assist principal investigators in multi-center clinical trials for chronic lifestyle disorders — electronic case report forms (eCRF), patient consent protocols, and trial safety monitoring.",
+    responsibilities: [
+      "Screen and enroll patients according to AYUSH clinical trial inclusion criteria",
+      "Document case sheets, adverse event logs, and vitals in electronic health databases",
+      "Coordinate trial medication dispensing and patient follow-up appointments",
+      "Assist in preparing monthly Good Clinical Practice (GCP) trial audit dossiers",
+    ],
+    qualifications: "Final-year BAMS / MD (Ayurveda) / B.Pharm (Ayurveda) / M.Sc Clinical Research",
+    preferredSkills: "GCP Compliance, Patient Case Sheet Documentation, Spreadsheet Data Management",
+    dayInLife: "Morning rounds in research OPD, trial data entry and verification in afternoon, weekly review meeting with senior investigators.",
   },
   {
     id: "o2",
     title: "Quality Control Lab Analyst Trainee",
     org: "Dabur Research Foundation",
-    loc: "Ghaziabad",
+    loc: "Ghaziabad, Uttar Pradesh",
     domain: "quality_testing",
     type: "Apprenticeship",
-    pay: "₹22,000 / month",
+    pay: "₹2.64 LPA",
+    workMode: "On-site",
+    physicalInterview: "Yes (Lab Practical Round)",
+    interviewRounds: "3 Rounds: Online Screening + Wet Lab Practical + Technical Panel",
     closes: "22 Oct 2026",
     requires: { quality_testing: 75, herbal_formulation: 60, regulatory_gmp: 60 },
-    about: "Conduct chemical purity testing, heavy metal screening, and shelf-life stability tests on botanical raw materials under industry standards.",
+    about: "Conduct chemical purity testing, heavy metal screening, microbial limit assays, and shelf-life stability tests on botanical raw materials under Ayurvedic Pharmacopoeia of India (API) standards.",
+    responsibilities: [
+      "Perform botanical authentication and chromatographic identification on incoming raw herbs",
+      "Conduct heavy metal, moisture content, and total ash tests using standard lab apparatus",
+      "Prepare volumetric reagents and maintain calibrated laboratory equipment logbooks",
+      "Document batch analysis certificates (COA) for manufactured herbal batches",
+    ],
+    qualifications: "B.Pharm (Ayurveda) / BAMS / B.Sc Chemistry / M.Sc Botany",
+    preferredSkills: "HPLC/HPTLC Operation, Pharmacopoeial Assays, AYUSH GMP Record Keeping",
+    dayInLife: "Sample intake and grinding in morning, running physicochemical assays in wet lab, documenting test certificates.",
   },
   {
     id: "o3",
     title: "Corporate Wellness & Yoga Therapy Associate",
     org: "Kaivalyadhama Health & Yoga Institute",
-    loc: "Pune",
+    loc: "Pune, Maharashtra",
     domain: "wellness_yoga",
     type: "Full-time",
-    pay: "₹4.8 LPA",
+    pay: "₹4.80 LPA",
+    workMode: "Hybrid",
+    physicalInterview: "No (Virtual Only)",
+    interviewRounds: "2 Rounds: Yoga Protocol Practical Demo + HR Interview",
     closes: "18 Oct 2026",
     requires: { yoga_therapy: 75, lifestyle_counsel: 70 },
     about: "Create and lead guided physical wellness, breathwork, and stress-reduction routines for corporate executives and wellness clients.",
+    responsibilities: [
+      "Design personalized yoga therapy sequences for posture, back care, and chronic stress",
+      "Deliver interactive corporate wellness webinars and guided meditation sessions",
+      "Assess client flexibility and breath parameters to track health improvements",
+      "Collaborate with corporate HR teams to deliver quarterly wellness workshops",
+    ],
+    qualifications: "BNYS / B.Sc Yoga / PG Diploma in Yoga Therapy / BAMS",
+    preferredSkills: "Condition-Specific Asana Sequencing, Pranayama Protocols, Client Counseling",
+    dayInLife: "Leading morning executive wellness sessions, customized protocol design for individual clients, afternoon wellness progress reporting.",
   },
   {
     id: "o4",
     title: "Tele-AYUSH & Digital Health Implementation Intern",
     org: "National Health Authority / Ministry of Ayush Partner",
-    loc: "Remote / New Delhi",
+    loc: "Remote / New Delhi HQ",
     domain: "digital_ayush",
     type: "Internship",
-    pay: "₹24,000 / month",
+    pay: "₹2.88 LPA",
+    workMode: "Remote",
+    physicalInterview: "No (Virtual Only)",
+    interviewRounds: "2 Rounds: Digital Health Assignment + Technical Interview",
     closes: "10 Oct 2026",
     requires: { digital_telehealth: 75, health_data: 60, clinical_doc: 50 },
-    about: "Help AYUSH hospitals and colleges integrate electronic health records, tele-consultation workflows, and digital patient registries.",
+    about: "Help AYUSH hospitals and colleges integrate electronic health records, tele-consultation workflows on e-Sanjeevani, and digital patient registries.",
+    responsibilities: [
+      "Onboard AYUSH physicians onto electronic prescription and video consultation tools",
+      "Standardize traditional disease codes using NAMASTE portal terminology",
+      "Analyze weekly tele-consultation volume and patient satisfaction metrics",
+      "Conduct virtual training sessions for hospital administrative staff",
+    ],
+    qualifications: "BAMS / BHMS / BNYS / B.Tech Health Informatics / B.Sc IT",
+    preferredSkills: "e-Sanjeevani Platform, Traditional Medicine Terminology, Digital Case Systems",
+    dayInLife: "Resolving hospital telemedicine queries, auditing clinical record completeness, analyzing weekly telehealth usage trends.",
   },
   {
     id: "o5",
     title: "Herbal Medicine Formulation & Extraction Trainee",
     org: "Patanjali Research Institute",
-    loc: "Haridwar",
+    loc: "Haridwar, Uttarakhand",
     domain: "herbal_mfg",
     type: "Internship",
-    pay: "₹20,000 / month",
+    pay: "₹2.40 LPA",
+    workMode: "On-site",
+    physicalInterview: "Yes",
+    interviewRounds: "2 Rounds: Technical Interview + Plant Tour Walkthrough",
     closes: "30 Oct 2026",
     requires: { herbal_formulation: 75, quality_testing: 60, regulatory_gmp: 50 },
     about: "Work with modern botanical extraction units, spray-drying equipment, and standardized herbal syrup and tablet production lines.",
+    responsibilities: [
+      "Monitor temperature, pressure, and solvent ratios during botanical extraction cycles",
+      "Assist in optimizing decoction concentrations and spray-drying powder yields",
+      "Maintain batch manufacturing records (BMR) in compliance with AYUSH GMP",
+      "Inspect tablet compression parameters and syrup viscosity checks",
+    ],
+    qualifications: "BAMS / B.Pharm (Ayurveda) / M.Sc Industrial Pharmacy",
+    preferredSkills: "Pilot Plant Extraction, Tablet Compression, Classical Herbal Preparations",
+    dayInLife: "Monitoring pilot extraction tanks, checking yield metrics, assisting production supervisors on the formulation line.",
   },
   {
     id: "o6",
     title: "AYUSH Regulatory Compliance & Export Trainee",
     org: "Himalaya Wellness Company",
-    loc: "Bengaluru",
+    loc: "Bengaluru, Karnataka",
     domain: "hospital_admin",
     type: "Internship",
-    pay: "₹20,000 / month",
+    pay: "₹2.40 LPA",
+    workMode: "Hybrid",
+    physicalInterview: "No (Virtual Only)",
+    interviewRounds: "2 Rounds: Regulatory Case Study + Department Head Interview",
     closes: "25 Oct 2026",
     requires: { regulatory_gmp: 75, herbal_formulation: 55, clinical_doc: 50 },
     about: "Prepare regulatory licensing dossiers, label verification, and safety documentation for herbal wellness products across domestic and international markets.",
+    responsibilities: [
+      "Review packaging artwork and label claims against AYUSH advertising regulations",
+      "Compile stability test data and certificate of analysis (COA) for export dossiers",
+      "Track state licensing authority notifications and product renewal schedules",
+      "Assist in safety summary drafting for botanical dietary supplements",
+    ],
+    qualifications: "BAMS / B.Pharm (Ayurveda) / PG Diploma in Regulatory Affairs",
+    preferredSkills: "AYUSH GMP Guidelines, Export Documentation, Product Labeling Review",
+    dayInLife: "Reviewing ingredient safety dossiers, filing state licensing forms, checking overseas packaging compliance.",
   },
   {
     id: "o7",
     title: "Therapeutic Wellness & Patient Care Associate",
     org: "Somatheeram Holistic Health Resort",
-    loc: "Kerala",
+    loc: "Kovalam, Kerala",
     domain: "wellness_yoga",
     type: "Full-time",
-    pay: "₹4.2 LPA",
+    pay: "₹4.20 LPA",
+    workMode: "On-site",
+    physicalInterview: "Final Round Only",
+    interviewRounds: "2 Rounds: Video Screening + On-site Practical Assessment",
     closes: "28 Sep 2026",
     requires: { wellness_therapy: 80, lifestyle_counsel: 65, clinical_doc: 50 },
     about: "Deliver tailored therapeutic body therapies, herbal steam regimens, and wellness care for domestic and international wellness guests.",
+    responsibilities: [
+      "Conduct preliminary wellness intake consultations and constitution assessments",
+      "Administer classical therapeutic body therapies and herbal steam procedures",
+      "Counsel international guests on seasonal diet regimens and lifestyle balance",
+      "Maintain detailed patient therapy logs and daily health observation records",
+    ],
+    qualifications: "BAMS / BNYS / Professional Wellness Certification",
+    preferredSkills: "Therapeutic Body Care, Patient Consultation, Herbal Steam Protocols",
+    dayInLife: "Morning guest wellness consultations, administering therapy protocols, evening patient wellness review.",
   },
   {
     id: "o8",
@@ -307,58 +391,118 @@ const OPPORTUNITIES = [
     loc: "New Delhi",
     domain: "clinical_research",
     type: "Fellowship",
-    pay: "₹28,000 / month",
+    pay: "₹3.36 LPA",
+    workMode: "On-site",
+    physicalInterview: "Yes",
+    interviewRounds: "2 Rounds: Written Research Aptitude Test + Council Panel Interview",
     closes: "05 Nov 2026",
     requires: { clinical_research: 75, quality_testing: 65, health_data: 60 },
     about: "Support government-funded clinical trials — research methodology, patient follow-up data collection, and safety reporting.",
+    responsibilities: [
+      "Coordinate patient recruitment and trial consent across participating hospital sites",
+      "Standardize botanical raw drug monographs using physicochemical parameters",
+      "Analyze clinical trial datasets using statistical software packages",
+      "Draft research manuscript sections for submission to peer-reviewed journals",
+    ],
+    qualifications: "BAMS / MD (Ayurveda) / M.Sc Bio-analytical Sciences",
+    preferredSkills: "Clinical Trial Protocols, Botanical Drug Monographs, Statistical Analysis",
+    dayInLife: "Collecting clinical trial case forms, statistical data aggregation, drafting research progress reports.",
   },
   {
     id: "o9",
     title: "Herbal Medicine Production Trainee",
     org: "Kottakkal Arya Vaidya Sala",
-    loc: "Kerala",
+    loc: "Kottakkal, Kerala",
     domain: "herbal_mfg",
     type: "Apprenticeship",
-    pay: "₹18,000 / month",
+    pay: "₹2.16 LPA",
+    workMode: "On-site",
+    physicalInterview: "Yes",
+    interviewRounds: "2 Rounds: Technical Interview + Factory Floor Practical",
     closes: "12 Oct 2026",
     requires: { herbal_formulation: 75, quality_testing: 60 },
     about: "Hands-on apprenticeship in classical batch production, herb grading, decoction boiling, and quality inspection.",
+    responsibilities: [
+      "Grade incoming raw herbs based on botanical aroma, color, and texture",
+      "Supervise classical decoction boiling cycles and reduction ratios",
+      "Operate automated bottle filling, capping, and labeling machinery",
+      "Document temperature charts and in-process quality control checkpoints",
+    ],
+    qualifications: "BAMS / B.Pharm (Ayurveda)",
+    preferredSkills: "Classical Decoction Boiling, Herb Grading, GMP Documentation",
+    dayInLife: "Supervising decoction boiling cycles, inspecting medicinal herb lots, recording batch manufacturing logs.",
   },
   {
     id: "o10",
     title: "Homoeopathic Clinical Case & Data Intern",
     org: "National Institute of Homoeopathy (NIH)",
-    loc: "Kolkata",
+    loc: "Kolkata, West Bengal",
     domain: "hospital_admin",
     type: "Internship",
-    pay: "₹18,000 / month",
+    pay: "₹2.16 LPA",
+    workMode: "On-site",
+    physicalInterview: "Yes",
+    interviewRounds: "2 Rounds: Case Analysis + Senior Faculty Interview",
     closes: "20 Oct 2026",
     requires: { clinical_doc: 75, lifestyle_counsel: 65, health_data: 50 },
     about: "Manage outpatient case histories, repertorization records, and digital documentation in high-volume teaching hospitals.",
+    responsibilities: [
+      "Record complete patient case histories including constitutional traits and modalities",
+      "Utilize computer repertorization software to generate differential remedy rubrics",
+      "Maintain outpatient electronic case records and follow-up outcome logs",
+      "Assist senior doctors in clinical case conferences and case presentations",
+    ],
+    qualifications: "BHMS (Final Year / Intern) / MD (Homoeopathy)",
+    preferredSkills: "Repertorization Software, Clinical Case History Taking, Discharge Documentation",
+    dayInLife: "Recording OPD patient intake, updating repertory analysis charts, attending clinical faculty case discussions.",
   },
   {
     id: "o11",
     title: "Botanical Sourcing & Organic Certification Intern",
     org: "Organic India Labs",
-    loc: "Lucknow",
+    loc: "Lucknow, Uttar Pradesh",
     domain: "quality_testing",
     type: "Internship",
-    pay: "₹19,000 / month",
+    pay: "₹2.28 LPA",
+    workMode: "Hybrid",
+    physicalInterview: "No (Virtual Only)",
+    interviewRounds: "2 Rounds: Agricultural Supply Case + HR Interview",
     closes: "16 Oct 2026",
     requires: { quality_testing: 70, regulatory_gmp: 60, health_data: 50 },
     about: "Inspect sustainable herb supply chains, verify organic farmer certifications, and track moisture and pesticide levels.",
+    responsibilities: [
+      "Audit organic farmer cooperative harvest logs and geo-tagged cultivation records",
+      "Test raw herb lots for pesticide residues and moisture content in lab",
+      "Verify compliance with National Programme for Organic Production (NPOP) rules",
+      "Maintain digital traceability logs for all purchased raw botanical lots",
+    ],
+    qualifications: "B.Sc Agriculture / BAMS / B.Pharm / M.Sc Botany",
+    preferredSkills: "Organic Certification Standards, Supply Chain Traceability, Herb Moisture Testing",
+    dayInLife: "Auditing farmer cooperative harvest logs, testing lab pesticide levels, verifying NPOP organic standards.",
   },
   {
     id: "o12",
     title: "Holistic Diet & Lifestyle Wellness Counsellor",
     org: "National Institute of Naturopathy (NIN)",
-    loc: "Pune",
+    loc: "Pune, Maharashtra",
     domain: "wellness_yoga",
     type: "Internship",
-    pay: "₹17,000 / month",
+    pay: "₹2.04 LPA",
+    workMode: "On-site",
+    physicalInterview: "Yes",
+    interviewRounds: "2 Rounds: Diet Case Consultation + Faculty Panel",
     closes: "24 Oct 2026",
     requires: { lifestyle_counsel: 80, wellness_therapy: 60, clinical_doc: 50 },
     about: "Conduct structured dietary counselling, nutritional therapy plans, and therapeutic fasting supervision for patients.",
+    responsibilities: [
+      "Formulate individualized raw diet, juice therapy, and fasting regimens",
+      "Monitor patient vitals, hydration, and detoxification markers during fasting therapy",
+      "Deliver daily patient health education talks on natural lifestyle principles",
+      "Document dietary response charts and patient discharge lifestyle guides",
+    ],
+    qualifications: "BNYS / M.Sc Clinical Nutrition / BAMS",
+    preferredSkills: "Nutritional Therapy Planning, Patient Diet Counseling, Therapeutic Fasting Supervision",
+    dayInLife: "OPD patient dietary consultations, designing fasting therapy schedules, conducting group lifestyle workshops.",
   },
 ];
 
@@ -403,13 +547,33 @@ const FUNNEL = [
   { stage: "Placed", n: 184 },
 ];
 
-const DEMAND_TREND = [
-  { m: "Apr", "Regulatory Compliance": 32, "Digital Health": 22, "Health Data": 28 },
-  { m: "May", "Regulatory Compliance": 38, "Digital Health": 30, "Health Data": 32 },
-  { m: "Jun", "Regulatory Compliance": 43, "Digital Health": 39, "Health Data": 36 },
-  { m: "Jul", "Regulatory Compliance": 49, "Digital Health": 51, "Health Data": 42 },
-  { m: "Aug", "Regulatory Compliance": 56, "Digital Health": 63, "Health Data": 48 },
-  { m: "Sep", "Regulatory Compliance": 64, "Digital Health": 76, "Health Data": 54 },
+/* Institutional Department Readiness & Placement Rate */
+const INSTITUTION_DEPT_METRICS = [
+  { dept: "Dravyaguna (Pharmacology)", assessed: 92, placedPct: 88, avgScore: 78 },
+  { dept: "Kayachikitsa (Clinical Medicine)", assessed: 140, placedPct: 94, avgScore: 84 },
+  { dept: "Rasashastra (Formulations)", assessed: 85, placedPct: 82, avgScore: 75 },
+  { dept: "Swasthavritta (Public Health)", assessed: 110, placedPct: 89, avgScore: 81 },
+  { dept: "Panchakarma (Therapies)", assessed: 125, placedPct: 96, avgScore: 89 },
+  { dept: "Samhita & Siddhanta", assessed: 70, placedPct: 76, avgScore: 72 },
+];
+
+/* Academic Semester Cohort Skill Acquisition Trend */
+const SEMESTER_PROGRESSION = [
+  { term: "1st Prof Year", "Foundational Science": 58, "Lab & Assays": 32, "Clinical Rotations": 24 },
+  { term: "2nd Prof Year", "Foundational Science": 72, "Lab & Assays": 54, "Clinical Rotations": 42 },
+  { term: "3rd Prof Year", "Foundational Science": 84, "Lab & Assays": 76, "Clinical Rotations": 68 },
+  { term: "4th Prof Year", "Foundational Science": 91, "Lab & Assays": 88, "Clinical Rotations": 86 },
+  { term: "Internship Year", "Foundational Science": 95, "Lab & Assays": 93, "Clinical Rotations": 94 },
+];
+
+/* Industry Hiring Market Demand Trajectory across AYUSH Sectors */
+const INDUSTRY_DEMAND_TREND = [
+  { m: "Apr", "Herbal Mfg & QC": 42, "Clinical Trials": 28, "Wellness & Resorts": 35, "Tele-AYUSH": 22 },
+  { m: "May", "Herbal Mfg & QC": 48, "Clinical Trials": 34, "Wellness & Resorts": 40, "Tele-AYUSH": 29 },
+  { m: "Jun", "Herbal Mfg & QC": 55, "Clinical Trials": 41, "Wellness & Resorts": 47, "Tele-AYUSH": 38 },
+  { m: "Jul", "Herbal Mfg & QC": 63, "Clinical Trials": 52, "Wellness & Resorts": 54, "Tele-AYUSH": 49 },
+  { m: "Aug", "Herbal Mfg & QC": 72, "Clinical Trials": 64, "Wellness & Resorts": 62, "Tele-AYUSH": 61 },
+  { m: "Sep", "Herbal Mfg & QC": 84, "Clinical Trials": 78, "Wellness & Resorts": 71, "Tele-AYUSH": 75 },
 ];
 
 const APPLICANTS = [
@@ -480,11 +644,15 @@ export default function AyushBridge() {
   const [searchQuery, setSearchQuery] = useState("");
   const [toastMessage, setToastMessage] = useState(null);
 
-  // Authentication State (Google OAuth Simulation)
+  // Hidden File Input References
+  const photoInputRef = useRef(null);
+  const vaultInputRef = useRef(null);
+
+  // Authentication State with Blank/Placeholder Avatar Default
   const [user, setUser] = useState({
     name: "Ishit Aggarwal",
     email: "ishit.aggarwal@aiia.gov.in",
-    avatar: "https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=120&auto=format&fit=crop&q=80",
+    avatar: null, // null = blank avatar with initials
     institution: "All India Institute of Ayurveda (AIIA), New Delhi",
     year: "4th Professional Year (BAMS)",
     bio: "AYUSH student researcher passionate about evidence-based botanical drug development, clinical trial protocol design, and modernizing traditional health data workflows.",
@@ -501,6 +669,13 @@ export default function AyushBridge() {
   const [editingCert, setEditingCert] = useState(null);
   const [isAddExpOpen, setIsAddExpOpen] = useState(false);
   const [editingExp, setEditingExp] = useState(null);
+
+  // Digital Credential Vault Documents State
+  const [vaultDocs, setVaultDocs] = useState([
+    { id: "d1", name: "BAMS_University_Marksheet.pdf", type: "Academic Transcript", size: "1.8 MB", date: "Aug 2026" },
+    { id: "d2", name: "Hospital_Clinical_Logbook_AIIA.pdf", type: "Clinical Logbook", size: "3.4 MB", date: "Jul 2026" },
+    { id: "d3", name: "CCRAS_Research_Protocol_Draft.pdf", type: "Research Preprint", size: "840 KB", date: "May 2026" },
+  ]);
 
   // Student Certifications & Credentials State
   const [certifications, setCertifications] = useState([
@@ -557,6 +732,19 @@ export default function AyushBridge() {
     },
   ]);
 
+  // Student Sent Mentorship Requests State
+  const [studentMentorships, setStudentMentorships] = useState([
+    { id: "sm1", faculty: "Dr. A. Nair", dept: "Dept. of Clinical Studies, AIIA", topic: "Guidance on clinical research trial protocol design", status: "Accepted", on: "2 days ago" },
+    { id: "sm2", faculty: "Dr. V. K. Joshi", dept: "Herbal Drug Standardization, CCRAS", topic: "Quality Control lab testing internship preparation", status: "Pending", on: "Yesterday" },
+  ]);
+
+  // Faculty Incoming Mentorship Requests State
+  const [facultyRequests, setFacultyRequests] = useState([
+    { id: "fm1", student: "Naitik Sharma", college: "AIIA, New Delhi", topic: "Guidance on Quality Control lab testing internship application", status: "Pending", on: "Today" },
+    { id: "fm2", student: "Shreya Paul", college: "National Institute of Homoeopathy, Kolkata", topic: "Research methodology and trial protocol design", status: "Pending", on: "Yesterday" },
+    { id: "fm3", student: "Viyona Menon", college: "Amrita School of Ayurveda", topic: "Therapeutic wellness clinical documentation review", status: "Accepted", on: "3 days ago" },
+  ]);
+
   // Assessment state
   const [answers, setAnswers] = useState({});
   const [profile, setProfile] = useState(null);
@@ -567,13 +755,48 @@ export default function AyushBridge() {
   const [enrolled, setEnrolled] = useState([]);
   const [openOpp, setOpenOpp] = useState(null);
   const [posted, setPosted] = useState([]);
+
+  // Bookmarks / Saved Opportunities State
+  const [savedJobs, setSavedJobs] = useState(["o1", "o3"]);
+  const [showSavedOnly, setShowSavedOnly] = useState(false);
+
+  // Notifications State & Dropdown
+  const [isNotifOpen, setIsNotifOpen] = useState(false);
+  const [notifications, setNotifications] = useState([
+    { id: "n1", icon: "🎓", title: "Mentorship Accepted", desc: "Dr. A. Nair accepted your Clinical Research protocol guidance request.", time: "2h ago", unread: true },
+    { id: "n2", icon: "⭐", title: "Application Shortlisted!", desc: "Himalaya Wellness shortlisted your profile for Regulatory Compliance Trainee.", time: "1d ago", unread: true },
+    { id: "n3", icon: "🌿", title: "New Matching Internship", desc: "CCRAS Trial Associate posted with 89% match to your verified skills.", time: "2d ago", unread: false },
+    { id: "n4", icon: "📜", title: "Credential Verified", desc: "CCRAS GCP Certificate verified: +15% boost added to Clinical Research.", time: "3d ago", unread: false },
+  ]);
+
+  // Sector Filter Dragging Refs
+  const sectorScrollRef = useRef(null);
+  const isDraggingSector = useRef(false);
+  const startXRef = useRef(0);
+  const scrollLeftRef = useRef(0);
+
+  // Deadline Urgency Helper
+  function getDeadlineUrgency(closesStr) {
+    if (!closesStr) return { text: "Open", isUrgent: false };
+    if (closesStr.includes("28 Sep")) return { text: "⏳ Closes in 2 days", isUrgent: true };
+    if (closesStr.includes("05 Oct") || closesStr.includes("10 Oct")) return { text: "⏳ Closes in 6 days", isUrgent: true };
+    if (closesStr.includes("12 Oct") || closesStr.includes("15 Oct")) return { text: "⏳ Closes in 9 days", isUrgent: false };
+    if (closesStr.includes("16 Oct") || closesStr.includes("18 Oct") || closesStr.includes("20 Oct")) return { text: "⏳ Closes in 12 days", isUrgent: false };
+    if (closesStr.includes("22 Oct") || closesStr.includes("24 Oct") || closesStr.includes("25 Oct")) return { text: "⏳ Closes in 16 days", isUrgent: false };
+    if (closesStr.includes("30 Oct") || closesStr.includes("05 Nov")) return { text: "⏳ Closes in 22 days", isUrgent: false };
+    return { text: `⏳ Closes ${closesStr}`, isUrgent: false };
+  }
+
   const [form, setForm] = useState({
     title: "",
     org: "Himalaya Wellness Company",
     domain: "herbal_mfg",
     type: "Internship",
-    loc: "Bengaluru",
-    pay: "₹20,000 / month",
+    loc: "Bengaluru, Karnataka",
+    pay: "₹2.40 LPA",
+    workMode: "On-site",
+    physicalInterview: "Yes",
+    interviewRounds: "2 Rounds",
     skills: [],
   });
 
@@ -582,6 +805,42 @@ export default function AyushBridge() {
   function showToast(msg) {
     setToastMessage(msg);
     setTimeout(() => setToastMessage(null), 3200);
+  }
+
+  // Handle Photo Upload via file input
+  function handlePhotoUpload(e) {
+    const file = e.target.files?.[0];
+    if (file) {
+      if (file.size > 5 * 1024 * 1024) {
+        showToast("Image file size should be less than 5MB");
+        return;
+      }
+      const reader = new FileReader();
+      reader.onload = (uploadEvent) => {
+        setUser((prev) => ({ ...prev, avatar: uploadEvent.target?.result }));
+        showToast("Profile photo updated successfully! 📷");
+      };
+      reader.readAsDataURL(file);
+    }
+  }
+
+  // Handle Document Upload into Credential Vault
+  function handleVaultUpload(e) {
+    const file = e.target.files?.[0];
+    if (file) {
+      const sizeStr = file.size > 1024 * 1024
+        ? `${(file.size / (1024 * 1024)).toFixed(1)} MB`
+        : `${Math.round(file.size / 1024)} KB`;
+      const newDoc = {
+        id: "d" + Date.now(),
+        name: file.name,
+        type: file.type.includes("pdf") ? "PDF Document" : "Certificate File",
+        size: sizeStr,
+        date: new Date().toLocaleDateString("en-IN", { month: "short", year: "numeric" }),
+      };
+      setVaultDocs((prev) => [newDoc, ...prev]);
+      showToast(`Uploaded "${file.name}" to Digital Vault! 📄`);
+    }
   }
 
   const rankedRoles = useMemo(() => {
@@ -594,20 +853,26 @@ export default function AyushBridge() {
     if (activeSector !== "all") {
       list = list.filter((o) => o.domain === activeSector);
     }
+    if (showSavedOnly) {
+      list = list.filter((o) => savedJobs.includes(o.id));
+    }
     if (searchQuery.trim()) {
-      const q = searchQuery.toLowerCase();
+      const q = searchQuery.toLowerCase().trim();
       list = list.filter((o) =>
         o.title.toLowerCase().includes(q) ||
         o.org.toLowerCase().includes(q) ||
         o.loc.toLowerCase().includes(q) ||
-        o.about.toLowerCase().includes(q)
+        o.about.toLowerCase().includes(q) ||
+        (o.qualifications && o.qualifications.toLowerCase().includes(q)) ||
+        (o.preferredSkills && o.preferredSkills.toLowerCase().includes(q)) ||
+        Object.keys(o.requires || {}).some((k) => skillLabel(k).toLowerCase().includes(q))
       );
     }
     if (!profile) {
       return list.map((o) => ({ ...o, pct: null, gaps: [] }));
     }
     return list.map((o) => ({ ...o, ...scoreAgainst(profile, o.requires, certifications) })).sort((a, b) => (b.pct || 0) - (a.pct || 0));
-  }, [profile, posted, activeSector, searchQuery, certifications]);
+  }, [profile, posted, activeSector, searchQuery, certifications, showSavedOnly, savedJobs]);
 
   const topGaps = useMemo(() => {
     if (!profile) return [];
@@ -647,8 +912,32 @@ export default function AyushBridge() {
 
   const applied = (id) => apps.some((a) => a.oppId === id);
   const apply = (id) => {
+    if (!user) {
+      setIsAuthModalOpen(true);
+      showToast("Please sign in with Google to apply for opportunities.");
+      return;
+    }
     setApps((a) => [...a, { oppId: id, status: "Applied", on: "Today" }]);
     showToast("Application submitted successfully!");
+  };
+
+  const enroll = (p) => {
+    if (!user) {
+      setIsAuthModalOpen(true);
+      showToast("Please sign in with Google to enroll in learning programs.");
+      return;
+    }
+    setEnrolled((e) => [...e, p.id]);
+    showToast(`Enrolled in ${p.title}`);
+  };
+
+  const expressFacultyInterest = (f) => {
+    if (!user) {
+      setIsAuthModalOpen(true);
+      showToast("Please sign in to express interest in faculty opportunities.");
+      return;
+    }
+    showToast(`Interest registered for "${f.title}"!`);
   };
 
   /* ---------------- UI Atoms ---------------- */
@@ -914,6 +1203,51 @@ export default function AyushBridge() {
     </div>
   );
 
+  /* --- User Profile Avatar Component (Initials or Uploaded Photo) --- */
+  const UserAvatar = ({ size = 32, userObj }) => {
+    const u = userObj || user;
+    const initials = u?.name
+      ? u.name.split(" ").map((n) => n[0]).join("").substring(0, 2).toUpperCase()
+      : "AY";
+
+    if (u?.avatar) {
+      return (
+        <img
+          src={u.avatar}
+          alt={u.name}
+          style={{
+            width: size,
+            height: size,
+            borderRadius: 999,
+            objectFit: "cover",
+            border: `1.5px solid ${T.teal}`,
+          }}
+        />
+      );
+    }
+
+    return (
+      <div style={{
+        width: size,
+        height: size,
+        borderRadius: 999,
+        background: `linear-gradient(135deg, ${T.teal}, ${T.sage})`,
+        color: "#FFFFFF",
+        display: "flex",
+        alignItems: "center",
+        justifyContent: "center",
+        fontFamily: "var(--ui)",
+        fontSize: size * 0.4,
+        fontWeight: 700,
+        letterSpacing: "0.02em",
+        border: `1.5px solid ${T.teal}`,
+        flexShrink: 0,
+      }}>
+        {initials}
+      </div>
+    );
+  };
+
   /* --- User Profile / Google Sign-In Header Widget --- */
   const UserAuthWidget = () => (
     user ? (
@@ -935,11 +1269,7 @@ export default function AyushBridge() {
             fontWeight: 600,
           }}
         >
-          <img
-            src={user.avatar}
-            alt={user.name}
-            style={{ width: 26, height: 26, borderRadius: 999, objectFit: "cover" }}
-          />
+          <UserAvatar size={26} />
           <span>{user.name.split(" ")[0]}</span>
         </button>
         <button
@@ -1175,6 +1505,22 @@ export default function AyushBridge() {
 
   return (
     <Shell T={T}>
+      {/* Hidden Global File Inputs for Photo and Vault Uploads */}
+      <input
+        type="file"
+        ref={photoInputRef}
+        onChange={handlePhotoUpload}
+        accept="image/*"
+        style={{ display: "none" }}
+      />
+      <input
+        type="file"
+        ref={vaultInputRef}
+        onChange={handleVaultUpload}
+        accept=".pdf,.doc,.docx,.png,.jpg"
+        style={{ display: "none" }}
+      />
+
       {/* Toast Notification Banner */}
       {toastMessage && (
         <div style={{
@@ -1261,6 +1607,116 @@ export default function AyushBridge() {
             </div>
 
             <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
+              {/* Notification Bell Widget with Dropdown */}
+              <div style={{ position: "relative" }}>
+                <button
+                  onClick={() => setIsNotifOpen(!isNotifOpen)}
+                  title="Notifications & Alerts"
+                  style={{
+                    background: T.bgSurface,
+                    border: `1px solid ${T.border}`,
+                    color: T.ink,
+                    borderRadius: 10,
+                    width: 38,
+                    height: 38,
+                    display: "flex",
+                    alignItems: "center",
+                    justifyContent: "center",
+                    cursor: "pointer",
+                    position: "relative",
+                    fontSize: 16,
+                  }}
+                >
+                  <span>🔔</span>
+                  {notifications.filter((n) => n.unread).length > 0 && (
+                    <span style={{
+                      position: "absolute",
+                      top: -3,
+                      right: -3,
+                      background: T.terra,
+                      color: "#FFFFFF",
+                      fontSize: 10,
+                      fontWeight: 750,
+                      width: 17,
+                      height: 17,
+                      borderRadius: 999,
+                      display: "flex",
+                      alignItems: "center",
+                      justifyContent: "center",
+                      border: `2px solid ${T.bgCard}`,
+                    }}>
+                      {notifications.filter((n) => n.unread).length}
+                    </span>
+                  )}
+                </button>
+
+                {isNotifOpen && (
+                  <div style={{
+                    position: "absolute",
+                    top: 46,
+                    right: 0,
+                    width: 320,
+                    background: T.bgCard,
+                    border: `1px solid ${T.border}`,
+                    borderRadius: 14,
+                    boxShadow: "0 14px 40px rgba(0,0,0,0.22)",
+                    zIndex: 50,
+                    padding: "14px 16px",
+                    animation: "fadeIn .15s ease",
+                  }}>
+                    <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 10, borderBottom: `1px solid ${T.border}`, paddingBottom: 8 }}>
+                      <span style={{ fontFamily: "var(--display)", fontSize: 15, fontWeight: 650, color: T.ink }}>
+                        Notifications ({notifications.filter((n) => n.unread).length} new)
+                      </span>
+                      <button
+                        onClick={() => {
+                          setNotifications((prev) => prev.map((n) => ({ ...n, unread: false })));
+                          showToast("All notifications marked as read ✓");
+                        }}
+                        style={{ background: "none", border: "none", color: T.teal, fontSize: 11.5, cursor: "pointer", fontWeight: 600, padding: 0 }}
+                      >
+                        Mark all read
+                      </button>
+                    </div>
+
+                    <div style={{ display: "flex", flexDirection: "column", gap: 10, maxHeight: 300, overflowY: "auto" }}>
+                      {notifications.map((n) => (
+                        <div
+                          key={n.id}
+                          onClick={() => {
+                            setNotifications((prev) => prev.map((x) => x.id === n.id ? { ...x, unread: false } : x));
+                            setIsNotifOpen(false);
+                          }}
+                          style={{
+                            padding: "8px 10px",
+                            borderRadius: 10,
+                            background: n.unread ? T.tealSoft : T.bgSurface,
+                            border: `1px solid ${n.unread ? T.teal : T.border}`,
+                            cursor: "pointer",
+                            display: "flex",
+                            gap: 10,
+                            alignItems: "flex-start",
+                          }}
+                        >
+                          <span style={{ fontSize: 18 }}>{n.icon}</span>
+                          <div style={{ flex: 1 }}>
+                            <div style={{ fontFamily: "var(--ui)", fontSize: 13, fontWeight: n.unread ? 650 : 550, color: T.ink }}>
+                              {n.title}
+                            </div>
+                            <div style={{ fontFamily: "var(--ui)", fontSize: 12, color: T.muted, marginTop: 2, lineHeight: 1.4 }}>
+                              {n.desc}
+                            </div>
+                            <div style={{ fontFamily: "var(--ui)", fontSize: 11, color: T.teal, marginTop: 4, fontWeight: 500 }}>
+                              {n.time}
+                            </div>
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                )}
+              </div>
+
               <ThemeToggle />
               <UserAuthWidget />
               <Btn small variant="ghost" onClick={() => setRole(null)}>Exit to Home</Btn>
@@ -1497,7 +1953,7 @@ export default function AyushBridge() {
         {/* --- OPPORTUNITIES TAB --- */}
         {role === "student" && tab === "opportunities" && (
           <>
-            <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", flexWrap: "wrap", gap: 14 }}>
+            <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", flexWrap: "wrap", gap: 14 }}>
               <div>
                 <H size={28}>AYUSH Internships, Apprenticeships & Jobs</H>
                 <Muted style={{ marginTop: 4, marginBottom: 18 }}>
@@ -1507,27 +1963,79 @@ export default function AyushBridge() {
                 </Muted>
               </div>
 
-              <input
-                type="text"
-                value={searchQuery}
-                onChange={(e) => setSearchQuery(e.target.value)}
-                placeholder="Search herbal labs, hospitals, roles..."
-                style={{
-                  padding: "9px 14px",
-                  borderRadius: 10,
-                  border: `1px solid ${T.border}`,
-                  background: T.bgCard,
-                  color: T.ink,
-                  fontFamily: "var(--ui)",
-                  fontSize: 13.5,
-                  minWidth: 260,
-                  outline: "none",
-                }}
-              />
+              <div style={{ display: "flex", gap: 10, alignItems: "center", flexWrap: "wrap" }}>
+                <input
+                  type="text"
+                  value={searchQuery}
+                  onChange={(e) => setSearchQuery(e.target.value)}
+                  placeholder="Search herbal labs, hospitals, roles..."
+                  style={{
+                    padding: "9px 14px",
+                    borderRadius: 10,
+                    border: `1px solid ${T.border}`,
+                    background: T.bgCard,
+                    color: T.ink,
+                    fontFamily: "var(--ui)",
+                    fontSize: 13.5,
+                    minWidth: 260,
+                    outline: "none",
+                  }}
+                />
+
+                <button
+                  onClick={() => setShowSavedOnly(!showSavedOnly)}
+                  style={{
+                    padding: "9px 14px",
+                    borderRadius: 10,
+                    border: `1px solid ${showSavedOnly ? T.teal : T.border}`,
+                    background: showSavedOnly ? T.tealSoft : T.bgCard,
+                    color: showSavedOnly ? T.teal : T.muted,
+                    fontSize: 13,
+                    fontWeight: 650,
+                    cursor: "pointer",
+                    display: "flex",
+                    alignItems: "center",
+                    gap: 6,
+                    transition: "all .15s ease",
+                  }}
+                >
+                  <span>{showSavedOnly ? "🔖" : "📑"}</span>
+                  <span>Saved ({savedJobs.length})</span>
+                </button>
+              </div>
             </div>
 
-            {/* Sector Filter Bar */}
-            <div style={{ display: "flex", gap: 8, overflowX: "auto", paddingBottom: 14, marginBottom: 12 }}>
+            {/* Swipeable / Draggable Sector Filter Bar with Hidden Scrollbar */}
+            <div
+              ref={sectorScrollRef}
+              className="ay-no-scroll"
+              onMouseDown={(e) => {
+                isDraggingSector.current = true;
+                startXRef.current = e.pageX - sectorScrollRef.current.offsetLeft;
+                scrollLeftRef.current = sectorScrollRef.current.scrollLeft;
+              }}
+              onMouseLeave={() => { isDraggingSector.current = false; }}
+              onMouseUp={() => { isDraggingSector.current = false; }}
+              onMouseMove={(e) => {
+                if (!isDraggingSector.current) return;
+                e.preventDefault();
+                const x = e.pageX - sectorScrollRef.current.offsetLeft;
+                const walk = (x - startXRef.current) * 1.5;
+                sectorScrollRef.current.scrollLeft = scrollLeftRef.current - walk;
+              }}
+              style={{
+                display: "flex",
+                gap: 8,
+                overflowX: "auto",
+                paddingBottom: 14,
+                marginBottom: 12,
+                cursor: "grab",
+                userSelect: "none",
+                WebkitOverflowScrolling: "touch",
+                scrollbarWidth: "none",
+                msOverflowStyle: "none",
+              }}
+            >
               {AYUSH_SECTORS.map((s) => (
                 <button
                   key={s.id}
@@ -1551,87 +2059,244 @@ export default function AyushBridge() {
               ))}
             </div>
 
-            {/* Opportunities List */}
-            <div style={{ display: "flex", flexDirection: "column", gap: 14 }}>
-              {filteredOpps.map((o) => (
-                <Card key={o.id} style={{ display: "flex", gap: 20, alignItems: "flex-start", flexWrap: "wrap" }}>
-                  <div style={{ flex: "1 1 400px", minWidth: 270 }}>
-                    <div style={{ display: "flex", gap: 8, alignItems: "center", flexWrap: "wrap" }}>
-                      <Chip tone="accent">{o.type}</Chip>
-                      <Chip>{o.loc}</Chip>
-                      <span style={{ fontSize: 12, color: T.muted, fontWeight: 550 }}>Closes {o.closes}</span>
-                    </div>
+            {/* Opportunities List or Consistent Clean Empty State */}
+            {filteredOpps.length === 0 ? (
+              <Card style={{ padding: 36, textAlign: "center", maxWidth: 580, margin: "20px auto" }}>
+                <div style={{ fontSize: 36, marginBottom: 10 }}>🔍</div>
+                <H size={22}>No Opportunities Found</H>
+                <Muted style={{ marginTop: 6, marginBottom: 20 }}>
+                  {showSavedOnly
+                    ? "You haven't bookmarked any opportunities yet. Click the bookmark icon on any job card to save it for quick review."
+                    : `No postings match your current filter (${searchQuery || "selected sector"}). Try searching different terms.`}
+                </Muted>
+                <div style={{ display: "flex", justifyContent: "center" }}>
+                  <Btn
+                    small
+                    variant="primary"
+                    onClick={() => {
+                      setSearchQuery("");
+                      setActiveSector("all");
+                      setShowSavedOnly(false);
+                    }}
+                  >
+                    Reset Filters & Show All Opportunities
+                  </Btn>
+                </div>
+              </Card>
+            ) : (
+              <div style={{ display: "flex", flexDirection: "column", gap: 16 }}>
+                {filteredOpps.map((o) => (
+                  <Card key={o.id} style={{ display: "flex", flexDirection: "column", gap: 16 }}>
+                    <div style={{ display: "flex", gap: 20, alignItems: "flex-start", flexWrap: "wrap", justifyContent: "space-between" }}>
+                      <div style={{ flex: "1 1 500px", minWidth: 280 }}>
+                        <div style={{ display: "flex", gap: 8, alignItems: "center", flexWrap: "wrap" }}>
+                          <Chip tone="accent">{o.type}</Chip>
+                          <Chip>{o.workMode || "On-site"}</Chip>
+                          <Chip>{o.loc}</Chip>
+                          <span style={{
+                            fontSize: 12,
+                            color: getDeadlineUrgency(o.closes).isUrgent ? T.terra : T.muted,
+                            fontWeight: getDeadlineUrgency(o.closes).isUrgent ? 700 : 550,
+                            background: getDeadlineUrgency(o.closes).isUrgent ? T.terraSoft : "transparent",
+                            padding: getDeadlineUrgency(o.closes).isUrgent ? "2px 8px" : 0,
+                            borderRadius: 6,
+                          }}>
+                            {getDeadlineUrgency(o.closes).text}
+                          </span>
+                        </div>
 
-                    <div style={{ fontFamily: "var(--display)", fontSize: 19.5, fontWeight: 600, color: T.ink, marginTop: 10 }}>
-                      {o.title}
-                    </div>
-                    <Muted style={{ fontSize: 13.5, marginTop: 3, fontWeight: 550, color: T.teal }}>
-                      {o.org} · {o.pay}
-                    </Muted>
-
-                    <Muted style={{ fontSize: 13.5, marginTop: 8 }}>{o.about}</Muted>
-
-                    <div style={{ display: "flex", gap: 6, flexWrap: "wrap", marginTop: 14 }}>
-                      {Object.entries(o.requires).map(([k, need]) => {
-                        const have = profile ? profile[k] ?? 20 : null;
-                        return (
-                          <Chip key={k} tone={have === null ? "neutral" : have >= need ? "good" : "gap"}>
-                            {skillShort(k)}: {need}+
-                          </Chip>
-                        );
-                      })}
-                    </div>
-                  </div>
-
-                  <div style={{ flex: "0 0 220px", minWidth: 200 }}>
-                    {o.pct !== null ? (
-                      <ReadinessMeter pct={o.pct} gaps={o.gaps} compact />
-                    ) : (
-                      <div style={{ padding: 10, background: T.bgSurface, borderRadius: 10, fontSize: 12, color: T.muted }}>
-                        Take assessment to see match %
-                      </div>
-                    )}
-
-                    <div style={{ marginTop: 14, display: "flex", gap: 8 }}>
-                      <Btn
-                        small
-                        disabled={applied(o.id)}
-                        onClick={() => apply(o.id)}
-                        variant={applied(o.id) ? "ghost" : "primary"}
-                      >
-                        {applied(o.id) ? "Applied ✓" : "Apply Now"}
-                      </Btn>
-                      <Btn small variant="ghost" onClick={() => setOpenOpp(openOpp === o.id ? null : o.id)}>
-                        {openOpp === o.id ? "Hide" : "Breakdown"}
-                      </Btn>
-                    </div>
-
-                    {openOpp === o.id && (
-                      <div style={{
-                        marginTop: 12,
-                        padding: 12,
-                        background: T.bgSurface,
-                        borderRadius: 10,
-                        fontFamily: "var(--ui)",
-                        fontSize: 12.5,
-                        color: T.muted,
-                        lineHeight: 1.6,
-                      }}>
-                        <div style={{ fontWeight: 600, color: T.ink, marginBottom: 4 }}>Skill Breakdown:</div>
-                        {profile && Object.entries(o.requires).map(([k, need]) => (
-                          <div key={k} style={{ display: "flex", justifyContent: "space-between" }}>
-                            <span>{skillShort(k)}</span>
-                            <span style={{ color: (profile[k] ?? 20) >= need ? T.sage : T.terra, fontWeight: 600 }}>
-                              {profile[k] ?? 20} / {need}
-                            </span>
+                        <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", gap: 12, marginTop: 10 }}>
+                          <div style={{ fontFamily: "var(--display)", fontSize: 20, fontWeight: 600, color: T.ink }}>
+                            {o.title}
                           </div>
-                        ))}
+                          <button
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              if (savedJobs.includes(o.id)) {
+                                setSavedJobs((prev) => prev.filter((id) => id !== o.id));
+                                showToast(`Removed from saved bookmarks`);
+                              } else {
+                                setSavedJobs((prev) => [...prev, o.id]);
+                                showToast(`Saved "${o.title}" to bookmarks 🔖`);
+                              }
+                            }}
+                            style={{
+                              background: savedJobs.includes(o.id) ? T.tealSoft : "transparent",
+                              border: `1px solid ${savedJobs.includes(o.id) ? T.teal : T.border}`,
+                              color: savedJobs.includes(o.id) ? T.teal : T.muted,
+                              borderRadius: 8,
+                              padding: "4px 9px",
+                              fontSize: 12,
+                              cursor: "pointer",
+                              display: "flex",
+                              alignItems: "center",
+                              gap: 4,
+                              fontWeight: 600,
+                              flexShrink: 0,
+                            }}
+                            title={savedJobs.includes(o.id) ? "Remove from bookmarks" : "Save for later"}
+                          >
+                            <span>{savedJobs.includes(o.id) ? "🔖" : "📑"}</span>
+                            <span>{savedJobs.includes(o.id) ? "Saved" : "Save"}</span>
+                          </button>
+                        </div>
+                        <div style={{ fontFamily: "var(--ui)", fontSize: 14, marginTop: 3, fontWeight: 600, color: T.teal }}>
+                          {o.org} · <span style={{ color: T.terra, fontWeight: 700 }}>{o.pay} (LPA)</span>
+                        </div>
+
+                        <Muted style={{ fontSize: 13.5, marginTop: 8, lineHeight: 1.6 }}>{o.about}</Muted>
+
+                        {/* Required Skills Chips */}
+                        <div style={{ display: "flex", gap: 6, flexWrap: "wrap", marginTop: 14 }}>
+                          {Object.entries(o.requires).map(([k, need]) => {
+                            const certBonus = certifications.filter((c) => c.boostSkill === k && c.verified).reduce((sum, c) => sum + (c.boostAmount || 8), 0);
+                            const rawHave = profile ? (profile[k] ?? 20) : null;
+                            const finalHave = rawHave !== null ? Math.min(100, rawHave + certBonus) : null;
+                            return (
+                              <Chip key={k} tone={finalHave === null ? "neutral" : finalHave >= need ? "good" : "gap"}>
+                                {skillShort(k)}: {need}%
+                              </Chip>
+                            );
+                          })}
+                        </div>
                       </div>
-                    )}
-                  </div>
+
+                      <div style={{ flex: "0 0 240px", minWidth: 220 }}>
+                        {o.pct !== null ? (
+                          <ReadinessMeter pct={o.pct} gaps={o.gaps} compact />
+                        ) : (
+                          <div style={{ padding: 12, background: T.bgSurface, borderRadius: 10, fontSize: 12.5, color: T.muted, textAlign: "center" }}>
+                            Take 10-Q Assessment to see candidate match %
+                          </div>
+                        )}
+
+                        <div style={{ marginTop: 14, display: "flex", gap: 8 }}>
+                          <Btn
+                            small
+                            disabled={applied(o.id)}
+                            onClick={() => apply(o.id)}
+                            variant={applied(o.id) ? "ghost" : "primary"}
+                            style={{ flex: 1, justifyContent: "center" }}
+                          >
+                            {applied(o.id) ? "Applied ✓" : !user ? "Sign in to Apply" : "Apply Now"}
+                          </Btn>
+                          <Btn
+                            small
+                            variant="ghost"
+                            onClick={() => setOpenOpp(openOpp === o.id ? null : o.id)}
+                          >
+                            {openOpp === o.id ? "Hide Details" : "View Breakdown"}
+                          </Btn>
+                        </div>
+                      </div>
+                    </div>
+
+                  {/* Expanded Detailed Breakdown Section */}
+                  {openOpp === o.id && (
+                    <div style={{
+                      marginTop: 8,
+                      padding: 18,
+                      background: T.bgSurface,
+                      borderRadius: 14,
+                      border: `1px solid ${T.border}`,
+                      fontFamily: "var(--ui)",
+                      fontSize: 13.5,
+                      color: T.ink,
+                      lineHeight: 1.6,
+                      animation: "fadeIn .2s ease",
+                    }}>
+                      <div className="ay-2col" style={{ display: "grid", gap: 20 }}>
+                        {/* Left: Skill Breakdown & Assessment Mapping */}
+                        <div>
+                          <div style={{ fontWeight: 650, color: T.teal, fontSize: 14, marginBottom: 8, display: "flex", alignItems: "center", gap: 6 }}>
+                            <span>📊</span> Candidate Skill Breakdown vs Hiring Thresholds
+                          </div>
+                          
+                          <div style={{ display: "flex", flexDirection: "column", gap: 10, marginTop: 10 }}>
+                            {Object.entries(o.requires).map(([k, need]) => {
+                              const certBonus = certifications.filter((c) => c.boostSkill === k && c.verified).reduce((sum, c) => sum + (c.boostAmount || 8), 0);
+                              const rawScore = profile ? (profile[k] ?? 20) : 20;
+                              const userScore = Math.min(100, rawScore + certBonus);
+                              const isMet = userScore >= need;
+                              return (
+                                <div key={k} style={{ background: T.bgCard, padding: "10px 14px", borderRadius: 10, border: `1px solid ${T.border}` }}>
+                                  <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 6 }}>
+                                    <span style={{ fontWeight: 600, fontSize: 13 }}>{skillLabel(k)}</span>
+                                    <span style={{
+                                      fontSize: 12,
+                                      fontWeight: 650,
+                                      color: isMet ? T.sage : T.terra,
+                                    }}>
+                                      {userScore}% / {need}% required {isMet ? "✓ Met" : `(${need - userScore}% gap)`}
+                                    </span>
+                                  </div>
+                                  <div style={{ height: 6, background: T.bgSurface, borderRadius: 999, overflow: "hidden" }}>
+                                    <div style={{
+                                      width: `${userScore}%`,
+                                      height: "100%",
+                                      background: isMet ? T.sage : T.terra,
+                                      borderRadius: 999,
+                                    }} />
+                                  </div>
+                                </div>
+                              );
+                            })}
+                          </div>
+
+                          {!profile && (
+                            <div style={{ marginTop: 12, padding: "8px 12px", background: T.tealSoft, borderRadius: 8, fontSize: 12, color: T.ink }}>
+                              💡 <strong>Note:</strong> Complete the 10-Question Skill Assessment to calibrate your live assessment percentages against this role.
+                            </div>
+                          )}
+                        </div>
+
+                        {/* Right: Role Details, Logistics & Interview Flow */}
+                        <div>
+                          <div style={{ fontWeight: 650, color: T.teal, fontSize: 14, marginBottom: 8, display: "flex", alignItems: "center", gap: 6 }}>
+                            <span>📋</span> Role Scope & Interview Logistics
+                          </div>
+
+                          <div style={{ display: "flex", flexDirection: "column", gap: 8, fontSize: 13 }}>
+                            <div>
+                              <strong style={{ color: T.ink }}>Required Qualifications:</strong>
+                              <div style={{ color: T.muted }}>{o.qualifications || "BAMS / BHMS / BNYS / B.Pharm Ayurveda"}</div>
+                            </div>
+
+                            <div>
+                              <strong style={{ color: T.ink }}>Key Preferred Skills:</strong>
+                              <div style={{ color: T.muted }}>{o.preferredSkills || "GCP, Case Documentation, Pharmacopoeial Assays"}</div>
+                            </div>
+
+                            <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 10, marginTop: 4, background: T.bgCard, padding: 10, borderRadius: 8, border: `1px solid ${T.border}` }}>
+                              <div>
+                                <div style={{ fontSize: 11, color: T.muted, textTransform: "uppercase", fontWeight: 600 }}>Physical Interview</div>
+                                <div style={{ fontWeight: 600, color: T.ink, marginTop: 2 }}>{o.physicalInterview || "No (Virtual)"}</div>
+                              </div>
+                              <div>
+                                <div style={{ fontSize: 11, color: T.muted, textTransform: "uppercase", fontWeight: 600 }}>Interview Rounds</div>
+                                <div style={{ fontWeight: 600, color: T.ink, marginTop: 2 }}>{o.interviewRounds || "2 Rounds"}</div>
+                              </div>
+                            </div>
+
+                            {o.responsibilities && (
+                              <div style={{ marginTop: 6 }}>
+                                <strong style={{ color: T.ink }}>Primary Responsibilities:</strong>
+                                <ul style={{ margin: "4px 0 0", paddingLeft: 18, color: T.muted, fontSize: 12.5 }}>
+                                  {o.responsibilities.map((r, idx) => (
+                                    <li key={idx} style={{ marginBottom: 2 }}>{r}</li>
+                                  ))}
+                                </ul>
+                              </div>
+                            )}
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+                  )}
                 </Card>
               ))}
             </div>
+            )}
           </>
         )}
 
@@ -1656,12 +2321,9 @@ export default function AyushBridge() {
                       small
                       variant={enrolled.includes(p.id) ? "ghost" : "accent"}
                       disabled={enrolled.includes(p.id)}
-                      onClick={() => {
-                        setEnrolled((e) => [...e, p.id]);
-                        showToast(`Enrolled in ${p.title}`);
-                      }}
+                      onClick={() => enroll(p)}
                     >
-                      {enrolled.includes(p.id) ? "Enrolled ✓" : "Enroll Free"}
+                      {enrolled.includes(p.id) ? "Enrolled ✓" : !user ? "Sign in to Enroll" : "Enroll Free"}
                     </Btn>
                   </div>
                 </Card>
@@ -1672,59 +2334,202 @@ export default function AyushBridge() {
 
         {/* --- APPLICATIONS TAB --- */}
         {role === "student" && tab === "applications" && (
-          apps.length === 0 ? (
-            <Card style={{ maxWidth: 560, padding: 30 }}>
-              <H size={22}>No Applications Sent Yet</H>
-              <Muted style={{ marginTop: 8, marginBottom: 20 }}>
-                Explore openings across herbal manufacturing, clinical research, wellness resorts, and tele-AYUSH.
+          !user ? (
+            <Card style={{ maxWidth: 640, padding: 36, textAlign: "center", margin: "20px auto" }}>
+              <div style={{ fontSize: 40, marginBottom: 12 }}>🔒</div>
+              <H size={24}>Sign in to View Applications & Mentorship</H>
+              <Muted style={{ marginTop: 8, marginBottom: 24, lineHeight: 1.6 }}>
+                Sign in with your Google account to submit applications, track review stages, and manage your mentorship sessions with AYUSH faculty.
               </Muted>
-              <Btn onClick={() => setTab("opportunities")}>Browse AYUSH Opportunities →</Btn>
+              <div style={{ display: "flex", justifyContent: "center" }}>
+                <Btn onClick={() => setIsAuthModalOpen(true)}>
+                  Sign in with Google →
+                </Btn>
+              </div>
             </Card>
           ) : (
-            <>
-              <H size={28}>My Applications</H>
-              <div style={{ marginTop: 18, display: "flex", flexDirection: "column", gap: 12 }}>
-                {apps.map((a) => {
-                  const o = [...OPPORTUNITIES, ...posted].find((x) => x.id === a.oppId) || OPPORTUNITIES[0];
-                  const stages = ["Applied", "Shortlisted", "Selected"];
-                  const at = stages.indexOf(a.status);
-                  return (
-                    <Card key={a.oppId} style={{ display: "flex", justifyContent: "space-between", gap: 18, flexWrap: "wrap", alignItems: "center" }}>
-                      <div>
-                        <div style={{ fontFamily: "var(--display)", fontSize: 18, fontWeight: 600, color: T.ink }}>
-                          {o.title}
-                        </div>
-                        <Muted style={{ fontSize: 13, marginTop: 2 }}>{o.org} · Applied on {a.on}</Muted>
-                      </div>
+            <div>
+              <H size={28}>My Applications & Mentorship</H>
+              <Muted style={{ marginTop: 4, marginBottom: 20 }}>
+                Track the progress of your AYUSH industry internship applications and faculty mentorship requests.
+              </Muted>
 
-                      <div style={{ display: "flex", gap: 8, alignItems: "center" }}>
-                        {stages.map((s, i) => (
-                          <React.Fragment key={s}>
-                            {i > 0 && <div style={{ width: 24, height: 1, background: i <= at ? T.sage : T.border }} />}
-                            <Chip tone={i <= at ? "good" : "neutral"}>{s}</Chip>
-                          </React.Fragment>
-                        ))}
+              {apps.length === 0 ? (
+                <Card style={{ maxWidth: 580, padding: 30, marginBottom: 24 }}>
+                  <H size={22}>No Applications Yet</H>
+                  <Muted style={{ marginTop: 8, marginBottom: 20 }}>
+                    Explore verified opportunities across herbal manufacturing, clinical research, wellness, and tele-AYUSH.
+                  </Muted>
+                  <Btn onClick={() => setTab("opportunities")}>Browse Opportunities</Btn>
+                </Card>
+              ) : (
+                <div style={{ marginBottom: 28 }}>
+                  <div style={{ fontFamily: "var(--display)", fontSize: 20, fontWeight: 600, color: T.ink, marginBottom: 12 }}>
+                    Submitted Applications ({apps.length})
+                  </div>
+                  <div style={{ display: "flex", flexDirection: "column", gap: 12 }}>
+                    {apps.map((a) => {
+                      const o = [...OPPORTUNITIES, ...posted].find((x) => x.id === a.oppId) || OPPORTUNITIES[0];
+                      const stages = ["Applied", "Shortlisted", "Selected"];
+                      const at = stages.indexOf(a.status);
+                      return (
+                        <Card key={a.oppId} style={{ display: "flex", justifyContent: "space-between", gap: 18, flexWrap: "wrap", alignItems: "center" }}>
+                          <div>
+                            <div style={{ fontFamily: "var(--display)", fontSize: 18, fontWeight: 600, color: T.ink }}>
+                              {o.title}
+                            </div>
+                            <Muted style={{ fontSize: 13, marginTop: 2 }}>{o.org} · {o.pay} · Applied on {a.on}</Muted>
+                          </div>
+
+                          <div style={{ display: "flex", gap: 8, alignItems: "center" }}>
+                            {stages.map((s, i) => (
+                              <React.Fragment key={s}>
+                                {i > 0 && <div style={{ width: 24, height: 1, background: i <= at ? T.sage : T.border }} />}
+                                <Chip tone={i <= at ? "good" : "neutral"}>{s}</Chip>
+                              </React.Fragment>
+                            ))}
+                          </div>
+                        </Card>
+                      );
+                    })}
+                  </div>
+                </div>
+              )}
+
+              {/* Student's Sent Mentorship Requests Section */}
+              <Card style={{ marginTop: 20 }}>
+                <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", flexWrap: "wrap", gap: 10 }}>
+                  <div>
+                    <Eyebrow>Faculty Mentorship Tracking</Eyebrow>
+                    <div style={{ fontFamily: "var(--display)", fontSize: 19, fontWeight: 600, color: T.ink, marginTop: 4 }}>
+                      My Mentorship Requests
+                    </div>
+                  </div>
+                  <Btn small variant="ghost" onClick={() => showToast("Mentorship request form opened")}>
+                    + Request Faculty Mentorship
+                  </Btn>
+                </div>
+                <Muted style={{ fontSize: 13, marginTop: 4, marginBottom: 14 }}>
+                  Track the status of your research and clinical mentorship requests sent to senior AYUSH faculty.
+                </Muted>
+
+                <div style={{ display: "flex", flexDirection: "column", gap: 12 }}>
+                  {studentMentorships.length === 0 ? (
+                    <Muted style={{ fontStyle: "italic" }}>No active mentorship requests. Explore faculty profiles to request guidance.</Muted>
+                  ) : (
+                    studentMentorships.map((sm) => (
+                      <div
+                        key={sm.id}
+                        style={{
+                          background: T.bgSurface,
+                          border: `1px solid ${T.border}`,
+                          borderRadius: 12,
+                          padding: "12px 16px",
+                          display: "flex",
+                          justifyContent: "space-between",
+                          alignItems: "center",
+                          flexWrap: "wrap",
+                          gap: 12,
+                        }}
+                      >
+                        <div>
+                          <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
+                            <span style={{ fontFamily: "var(--ui)", fontSize: 14.5, fontWeight: 650, color: T.ink }}>
+                              {sm.faculty}
+                            </span>
+                            <span style={{ fontSize: 12, color: T.muted }}>· {sm.dept}</span>
+                          </div>
+                          <div style={{ fontFamily: "var(--ui)", fontSize: 13, color: T.inkSoft, marginTop: 3 }}>
+                            Topic: {sm.topic}
+                          </div>
+                          <div style={{ fontFamily: "var(--ui)", fontSize: 11.5, color: T.muted, marginTop: 2 }}>
+                            Sent {sm.on}
+                          </div>
+                        </div>
+
+                        <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
+                          <Chip tone={sm.status === "Accepted" ? "good" : sm.status === "Pending" ? "accent" : "gap"}>
+                            {sm.status === "Accepted" ? "Accepted ✓" : sm.status}
+                          </Chip>
+                          {sm.status === "Pending" && (
+                            <Btn
+                              small
+                              variant="ghost"
+                              onClick={() => {
+                                setStudentMentorships((prev) => prev.filter((x) => x.id !== sm.id));
+                                showToast("Mentorship request cancelled");
+                              }}
+                              style={{ color: T.terra }}
+                            >
+                              Cancel Request
+                            </Btn>
+                          )}
+                          {sm.status === "Accepted" && (
+                            <Btn
+                              small
+                              variant="primary"
+                              onClick={() => showToast(`Opening meeting scheduler with ${sm.faculty}`)}
+                            >
+                              Schedule Session 📅
+                            </Btn>
+                          )}
+                        </div>
                       </div>
-                    </Card>
-                  );
-                })}
-              </div>
-            </>
+                    ))
+                  )}
+                </div>
+              </Card>
+            </div>
           )
         )}
 
         {/* --- PROFILE & PORTFOLIO TAB --- */}
         {role === "student" && tab === "portfolio" && (
-          <>
-            {/* Student Header Card */}
+          !user ? (
+            <Card style={{ maxWidth: 640, padding: 36, textAlign: "center", margin: "20px auto" }}>
+              <div style={{ fontSize: 40, marginBottom: 12 }}>🔒</div>
+              <H size={24}>Sign in to View Your Digital Portfolio</H>
+              <Muted style={{ marginTop: 8, marginBottom: 24, lineHeight: 1.6 }}>
+                Your verified AYUSH skill matrix, institutional credentials, uploaded certificates, and digital resume are securely synchronized with your Google account.
+              </Muted>
+              <div style={{ display: "flex", justifyContent: "center" }}>
+                <Btn onClick={() => setIsAuthModalOpen(true)}>
+                  Sign in with Google to Access Profile →
+                </Btn>
+              </div>
+            </Card>
+          ) : (
+            <>
+              {/* Student Header Card with Upload Photo Feature */}
             <Card style={{ marginBottom: 20, padding: 26 }}>
               <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", flexWrap: "wrap", gap: 20 }}>
                 <div style={{ display: "flex", gap: 18, alignItems: "center", flexWrap: "wrap" }}>
-                  <img
-                    src={user ? user.avatar : "https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=160&auto=format&fit=crop&q=80"}
-                    alt="Student Avatar"
-                    style={{ width: 72, height: 72, borderRadius: 999, objectFit: "cover", border: `2px solid ${T.teal}` }}
-                  />
+                  <div style={{ position: "relative" }}>
+                    <UserAvatar size={74} />
+                    <button
+                      onClick={() => photoInputRef.current?.click()}
+                      title="Upload custom photo"
+                      style={{
+                        position: "absolute",
+                        bottom: -4,
+                        right: -4,
+                        background: T.teal,
+                        color: themeMode === "dark" ? "#07120E" : "#FFFFFF",
+                        border: `2px solid ${T.bgCard}`,
+                        borderRadius: 999,
+                        width: 26,
+                        height: 26,
+                        display: "flex",
+                        alignItems: "center",
+                        justifyContent: "center",
+                        cursor: "pointer",
+                        fontSize: 12,
+                      }}
+                    >
+                      📷
+                    </button>
+                  </div>
+
                   <div>
                     <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
                       <H size={24}>{user ? user.name : "Guest Student"}</H>
@@ -1733,9 +2538,43 @@ export default function AyushBridge() {
                     <Muted style={{ fontSize: 13.5, marginTop: 2 }}>
                       {user?.institution || "All India Institute of Ayurveda"} · {user?.year || "4th Professional Year"}
                     </Muted>
-                    <Muted style={{ fontSize: 13, marginTop: 1, color: T.teal }}>
-                      {user?.email || "student@aiia.gov.in"}
-                    </Muted>
+                    <div style={{ display: "flex", alignItems: "center", gap: 12, marginTop: 4 }}>
+                      <span style={{ fontSize: 13, color: T.teal, fontWeight: 550 }}>
+                        {user?.email || "student@aiia.gov.in"}
+                      </span>
+                      <button
+                        onClick={() => photoInputRef.current?.click()}
+                        style={{
+                          background: "none",
+                          border: "none",
+                          color: T.muted,
+                          fontSize: 12,
+                          cursor: "pointer",
+                          textDecoration: "underline",
+                          padding: 0,
+                        }}
+                      >
+                        Upload photo
+                      </button>
+                      {user?.avatar && (
+                        <button
+                          onClick={() => {
+                            setUser((prev) => ({ ...prev, avatar: null }));
+                            showToast("Reset to placeholder avatar");
+                          }}
+                          style={{
+                            background: "none",
+                            border: "none",
+                            color: T.terra,
+                            fontSize: 12,
+                            cursor: "pointer",
+                            padding: 0,
+                          }}
+                        >
+                          Remove photo
+                        </button>
+                      )}
+                    </div>
                   </div>
                 </div>
 
@@ -1797,7 +2636,7 @@ export default function AyushBridge() {
 
             <div className="ay-2col" style={{ display: "grid", gap: 16 }}>
               
-              {/* Left Column: Verified Skills Matrix */}
+              {/* Left Column: Verified Skills Matrix & Experience */}
               <div style={{ display: "flex", flexDirection: "column", gap: 16 }}>
                 <Card>
                   <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
@@ -1879,7 +2718,7 @@ export default function AyushBridge() {
                 </Card>
               </div>
 
-              {/* Right Column: Certifications & Verified Credentials */}
+              {/* Right Column: Certifications & Real Document Vault */}
               <div style={{ display: "flex", flexDirection: "column", gap: 16 }}>
                 <Card>
                   <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
@@ -1954,19 +2793,94 @@ export default function AyushBridge() {
                   </div>
                 </Card>
 
-                {/* Document Storage */}
+                {/* Digital Credential Vault with Functional File Upload */}
                 <Card>
-                  <Eyebrow>Digital Credential Vault</Eyebrow>
-                  <Muted style={{ fontSize: 13.5, marginTop: 8 }}>
-                    Signed university transcripts, thesis preprints, and hospital rotation logbooks stored securely.
+                  <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
+                    <Eyebrow>Digital Credential Vault</Eyebrow>
+                    <Btn small variant="ghost" onClick={() => vaultInputRef.current?.click()}>
+                      + Upload Document
+                    </Btn>
+                  </div>
+                  <Muted style={{ fontSize: 13, marginTop: 4, marginBottom: 14 }}>
+                    Store signed university transcripts, thesis preprints, and hospital rotation logbooks securely.
                   </Muted>
+
+                  <div style={{ display: "flex", flexDirection: "column", gap: 10 }}>
+                    {vaultDocs.map((doc) => (
+                      <div
+                        key={doc.id}
+                        style={{
+                          background: T.bgSurface,
+                          border: `1px solid ${T.border}`,
+                          borderRadius: 10,
+                          padding: "10px 14px",
+                          display: "flex",
+                          justifyContent: "space-between",
+                          alignItems: "center",
+                          gap: 10,
+                        }}
+                      >
+                        <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
+                          <span style={{ fontSize: 20 }}>📄</span>
+                          <div>
+                            <div style={{ fontFamily: "var(--ui)", fontSize: 13.5, fontWeight: 600, color: T.ink }}>
+                              {doc.name}
+                            </div>
+                            <div style={{ fontFamily: "var(--ui)", fontSize: 11.5, color: T.muted, marginTop: 1 }}>
+                              {doc.type} · {doc.size} · Uploaded {doc.date}
+                            </div>
+                          </div>
+                        </div>
+
+                        <div style={{ display: "flex", gap: 8, alignItems: "center" }}>
+                          <button
+                            onClick={() => showToast(`Opening preview for ${doc.name}`)}
+                            style={{
+                              background: "none",
+                              border: "none",
+                              color: T.teal,
+                              cursor: "pointer",
+                              fontSize: 12,
+                              fontWeight: 550,
+                            }}
+                          >
+                            View
+                          </button>
+                          <button
+                            onClick={() => {
+                              setVaultDocs((prev) => prev.filter((x) => x.id !== doc.id));
+                              showToast(`Removed "${doc.name}" from vault`);
+                            }}
+                            style={{
+                              background: "none",
+                              border: "none",
+                              color: T.terra,
+                              cursor: "pointer",
+                              fontSize: 12,
+                            }}
+                          >
+                            Delete
+                          </button>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+
                   <div style={{ marginTop: 14 }}>
-                    <Btn small variant="ghost">Upload New PDF Document 📄</Btn>
+                    <Btn
+                      small
+                      variant="ghost"
+                      onClick={() => vaultInputRef.current?.click()}
+                      style={{ width: "100%", justifyContent: "center" }}
+                    >
+                      Upload New PDF Document 📄
+                    </Btn>
                   </div>
                 </Card>
               </div>
             </div>
           </>
+          )
         )}
 
         {/* ================= ACADEMICIAN ================= */}
@@ -2043,7 +2957,9 @@ export default function AyushBridge() {
                   </div>
                   <div style={{ textAlign: "right" }}>
                     <Muted style={{ fontSize: 12.5, marginBottom: 8 }}>Closes {f.closes}</Muted>
-                    <Btn small>Express Interest</Btn>
+                    <Btn small onClick={() => expressFacultyInterest(f)}>
+                      {!user ? "Sign in to Express Interest" : "Express Interest"}
+                    </Btn>
                   </div>
                 </Card>
               ))}
@@ -2055,24 +2971,80 @@ export default function AyushBridge() {
           <>
             <H size={28}>Mentorship & Live Problem Statements</H>
             <Muted style={{ marginTop: 4, marginBottom: 20 }}>
-              Requests from students and problem statements published by AYUSH industry partners.
+              Review incoming student mentorship requests and collaborative problem statements published by AYUSH industry partners.
             </Muted>
 
             <div className="ay-2col" style={{ display: "grid", gap: 16 }}>
               <Card>
-                <Eyebrow>Mentorship Requests</Eyebrow>
+                <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
+                  <Eyebrow>Student Mentorship Requests</Eyebrow>
+                  <Chip tone="accent">{facultyRequests.filter((r) => r.status === "Pending").length} Pending</Chip>
+                </div>
                 <div style={{ marginTop: 14, display: "flex", flexDirection: "column", gap: 12 }}>
-                  {[
-                    ["Naitik Sharma", "Guidance on Quality Control lab testing internship application"],
-                    ["Shreya Paul", "Research methodology and trial protocol design"],
-                    ["Viyona Menon", "Therapeutic wellness documentation review"],
-                  ].map(([n, d]) => (
-                    <div key={n} style={{ display: "flex", justifyContent: "space-between", gap: 12, alignItems: "center", paddingBottom: 12, borderBottom: `1px solid ${T.border}` }}>
-                      <div>
-                        <div style={{ fontFamily: "var(--ui)", fontSize: 14.5, color: T.ink, fontWeight: 600 }}>{n}</div>
-                        <Muted style={{ fontSize: 12.5, marginTop: 1 }}>{d}</Muted>
+                  {facultyRequests.map((req) => (
+                    <div
+                      key={req.id}
+                      style={{
+                        padding: "12px 14px",
+                        borderRadius: 12,
+                        background: T.bgSurface,
+                        border: `1px solid ${T.border}`,
+                        display: "flex",
+                        justifyContent: "space-between",
+                        gap: 12,
+                        alignItems: "center",
+                        flexWrap: "wrap",
+                      }}
+                    >
+                      <div style={{ flex: "1 1 240px" }}>
+                        <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
+                          <span style={{ fontFamily: "var(--ui)", fontSize: 14.5, color: T.ink, fontWeight: 650 }}>{req.student}</span>
+                          <span style={{ fontSize: 11.5, color: T.muted }}>· {req.college}</span>
+                        </div>
+                        <Muted style={{ fontSize: 12.5, marginTop: 2 }}>{req.topic}</Muted>
+                        <div style={{ fontSize: 11, color: T.muted, marginTop: 2 }}>Received {req.on}</div>
                       </div>
-                      <Btn small variant="ghost">Accept</Btn>
+
+                      <div style={{ display: "flex", gap: 6, alignItems: "center" }}>
+                        {req.status === "Pending" ? (
+                          <>
+                            <Btn
+                              small
+                              variant="primary"
+                              onClick={() => {
+                                setFacultyRequests((prev) => prev.map((x) => x.id === req.id ? { ...x, status: "Accepted" } : x));
+                                showToast(`Accepted mentorship request from ${req.student}! ✓`);
+                              }}
+                            >
+                              Accept
+                            </Btn>
+                            <Btn
+                              small
+                              variant="ghost"
+                              onClick={() => {
+                                setFacultyRequests((prev) => prev.map((x) => x.id === req.id ? { ...x, status: "Declined" } : x));
+                                showToast(`Declined request from ${req.student}`);
+                              }}
+                              style={{ color: T.terra }}
+                            >
+                              Decline
+                            </Btn>
+                          </>
+                        ) : req.status === "Accepted" ? (
+                          <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
+                            <Chip tone="good">Accepted ✓</Chip>
+                            <Btn
+                              small
+                              variant="ghost"
+                              onClick={() => showToast(`Opening direct consultation chat with ${req.student}`)}
+                            >
+                              Chat 💬
+                            </Btn>
+                          </div>
+                        ) : (
+                          <Chip tone="gap">Declined</Chip>
+                        )}
+                      </div>
                     </div>
                   ))}
                 </div>
@@ -2112,21 +3084,22 @@ export default function AyushBridge() {
             </div>
 
             <Card style={{ marginTop: 22 }}>
-              <Eyebrow>AYUSH Skill Demand Trajectory (Last 6 Months)</Eyebrow>
+              <Eyebrow>AYUSH Sector Talent Demand Trajectory (Last 6 Months)</Eyebrow>
               <Muted style={{ fontSize: 13, marginTop: 4, marginBottom: 12 }}>
-                Platform postings requiring each skill area.
+                Active enterprise job postings and trainee requisitions across key AYUSH domains.
               </Muted>
               <div style={{ height: 280 }}>
                 <ResponsiveContainer>
-                  <LineChart data={DEMAND_TREND}>
+                  <LineChart data={INDUSTRY_DEMAND_TREND}>
                     <CartesianGrid stroke={T.border} vertical={false} />
                     <XAxis dataKey="m" tick={{ fontSize: 12, fill: T.muted, fontFamily: "var(--ui)" }} />
                     <YAxis tick={{ fontSize: 12, fill: T.muted, fontFamily: "var(--ui)" }} />
                     <Tooltip contentStyle={{ backgroundColor: T.chartTooltipBg, borderRadius: 10, border: `1px solid ${T.chartTooltipBorder}`, fontFamily: "var(--ui)", fontSize: 12, color: T.ink }} />
                     <Legend wrapperStyle={{ fontSize: 12, fontFamily: "var(--ui)" }} />
-                    <Line type="monotone" dataKey="Regulatory Compliance" stroke={T.sage} strokeWidth={2.5} dot={false} />
-                    <Line type="monotone" dataKey="Digital Health" stroke={T.terra} strokeWidth={2.5} dot={false} />
-                    <Line type="monotone" dataKey="Health Data" stroke={T.teal} strokeWidth={2.5} dot={false} strokeDasharray="5 4" />
+                    <Line type="monotone" dataKey="Herbal Mfg & QC" stroke={T.sage} strokeWidth={2.5} dot={false} />
+                    <Line type="monotone" dataKey="Clinical Trials" stroke={T.terra} strokeWidth={2.5} dot={false} />
+                    <Line type="monotone" dataKey="Wellness & Resorts" stroke={T.teal} strokeWidth={2.5} dot={false} />
+                    <Line type="monotone" dataKey="Tele-AYUSH" stroke="#2563EB" strokeWidth={2} strokeDasharray="4 4" dot={false} />
                   </LineChart>
                 </ResponsiveContainer>
               </div>
@@ -2138,7 +3111,7 @@ export default function AyushBridge() {
           <div style={{ maxWidth: 660 }}>
             <H size={28}>Publish AYUSH Opportunity</H>
             <Muted style={{ marginTop: 4, marginBottom: 20 }}>
-              Specify the required skills and target proficiency thresholds. Candidates are ranked objectively on measured capability.
+              Specify required skills, LPA compensation, and target proficiency thresholds. Candidates are ranked objectively on measured capability.
             </Muted>
 
             <Card>
@@ -2192,29 +3165,76 @@ export default function AyushBridge() {
 
                 <div>
                   <div style={{ fontFamily: "var(--ui)", fontSize: 13, color: T.ink, fontWeight: 600, marginBottom: 6 }}>
-                    Opportunity Type
+                    Salary (in LPA)
                   </div>
-                  <div style={{ display: "flex", gap: 6 }}>
-                    {["Internship", "Apprenticeship", "Full-time"].map((t) => (
-                      <button
-                        key={t}
-                        onClick={() => setForm({ ...form, type: t })}
-                        style={{
-                          flex: 1,
-                          padding: "8px 10px",
-                          borderRadius: 8,
-                          border: `1px solid ${form.type === t ? T.teal : T.border}`,
-                          background: form.type === t ? T.teal : T.bgSurface,
-                          color: form.type === t ? (themeMode === "dark" ? "#07120E" : "#FFFFFF") : T.muted,
-                          fontSize: 12.5,
-                          fontWeight: 550,
-                          cursor: "pointer",
-                        }}
-                      >
-                        {t}
-                      </button>
-                    ))}
+                  <input
+                    value={form.pay}
+                    onChange={(e) => setForm({ ...form, pay: e.target.value })}
+                    placeholder="e.g. ₹2.40 LPA"
+                    style={{
+                      width: "100%",
+                      padding: "10px 12px",
+                      borderRadius: 10,
+                      border: `1px solid ${T.border}`,
+                      background: T.bgSurface,
+                      color: T.ink,
+                      fontFamily: "var(--ui)",
+                      fontSize: 13.5,
+                      outline: "none",
+                    }}
+                  />
+                </div>
+              </div>
+
+              <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 14, marginBottom: 16 }}>
+                <div>
+                  <div style={{ fontFamily: "var(--ui)", fontSize: 13, color: T.ink, fontWeight: 600, marginBottom: 6 }}>
+                    Work Mode
                   </div>
+                  <select
+                    value={form.workMode}
+                    onChange={(e) => setForm({ ...form, workMode: e.target.value })}
+                    style={{
+                      width: "100%",
+                      padding: "10px 12px",
+                      borderRadius: 10,
+                      border: `1px solid ${T.border}`,
+                      background: T.bgSurface,
+                      color: T.ink,
+                      fontFamily: "var(--ui)",
+                      fontSize: 13.5,
+                      outline: "none",
+                    }}
+                  >
+                    <option value="On-site">On-site</option>
+                    <option value="Hybrid">Hybrid</option>
+                    <option value="Remote">Remote</option>
+                  </select>
+                </div>
+
+                <div>
+                  <div style={{ fontFamily: "var(--ui)", fontSize: 13, color: T.ink, fontWeight: 600, marginBottom: 6 }}>
+                    Physical Interview Required
+                  </div>
+                  <select
+                    value={form.physicalInterview}
+                    onChange={(e) => setForm({ ...form, physicalInterview: e.target.value })}
+                    style={{
+                      width: "100%",
+                      padding: "10px 12px",
+                      borderRadius: 10,
+                      border: `1px solid ${T.border}`,
+                      background: T.bgSurface,
+                      color: T.ink,
+                      fontFamily: "var(--ui)",
+                      fontSize: 13.5,
+                      outline: "none",
+                    }}
+                  >
+                    <option value="Yes">Yes</option>
+                    <option value="No (Virtual Only)">No (Virtual Only)</option>
+                    <option value="Final Round Only">Final Round Only</option>
+                  </select>
                 </div>
               </div>
 
@@ -2267,17 +3287,23 @@ export default function AyushBridge() {
                       id: "n" + (p.length + 1),
                       title: form.title,
                       org: "Himalaya Wellness Company",
-                      loc: "Bengaluru",
+                      loc: form.loc || "Bengaluru, Karnataka",
                       domain: form.domain,
                       type: form.type,
-                      pay: "₹18,000 / month",
+                      pay: form.pay.includes("LPA") ? form.pay : `${form.pay} LPA`,
+                      workMode: form.workMode,
+                      physicalInterview: form.physicalInterview,
+                      interviewRounds: "2 Rounds: Technical + HR",
                       closes: "31 Oct 2026",
                       requires: req,
                       about: "Published directly via AyushBridge Recruiter Workspace.",
+                      qualifications: "BAMS / B.Pharm Ayurveda / Relevant Degree",
+                      preferredSkills: "AYUSH GMP, Product Formulation, Standard Lab Testing",
+                      dayInLife: "Supervising laboratory and production activities, analyzing product quality logs.",
                     },
                   ]);
                   setForm({ ...form, title: "", skills: [] });
-                  showToast("Opportunity published to Student board!");
+                  showToast("Opportunity published to Student board in LPA format!");
                 }}
               >
                 Publish Opening →
@@ -2288,7 +3314,7 @@ export default function AyushBridge() {
                   <Eyebrow>Published this session</Eyebrow>
                   {posted.map((p) => (
                     <div key={p.id} style={{ marginTop: 8, fontFamily: "var(--ui)", fontSize: 13.5, color: T.ink }}>
-                      ✨ {p.title} · {p.type} — Visible to students on Opportunity Board
+                      ✨ {p.title} · {p.pay} — Visible to students on Opportunity Board
                     </div>
                   ))}
                 </div>
@@ -2379,20 +3405,21 @@ export default function AyushBridge() {
               </Card>
 
               <Card>
-                <Eyebrow>Emerging AYUSH Skill Demand</Eyebrow>
+                <Eyebrow>Department Readiness & Placement Rate</Eyebrow>
                 <Muted style={{ fontSize: 13, marginTop: 4 }}>
-                  Skill areas seeing rapid posting volume increase from employers.
+                  Placement rate (%) vs average competency score across AIIA teaching departments.
                 </Muted>
-                <div style={{ height: 250, marginTop: 12 }}>
+                <div style={{ height: 260, marginTop: 12 }}>
                   <ResponsiveContainer>
-                    <AreaChart data={DEMAND_TREND}>
-                      <CartesianGrid stroke={T.border} vertical={false} />
-                      <XAxis dataKey="m" tick={{ fontSize: 12, fill: T.muted, fontFamily: "var(--ui)" }} />
-                      <YAxis tick={{ fontSize: 12, fill: T.muted, fontFamily: "var(--ui)" }} />
+                    <BarChart data={INSTITUTION_DEPT_METRICS} layout="vertical" margin={{ left: 10, right: 16 }}>
+                      <CartesianGrid horizontal={false} stroke={T.border} />
+                      <XAxis type="number" domain={[0, 100]} tick={{ fontSize: 11, fill: T.muted, fontFamily: "var(--ui)" }} />
+                      <YAxis type="category" dataKey="dept" width={120} tick={{ fontSize: 10, fill: T.muted, fontFamily: "var(--ui)" }} />
                       <Tooltip contentStyle={{ backgroundColor: T.chartTooltipBg, borderRadius: 10, border: `1px solid ${T.chartTooltipBorder}`, fontFamily: "var(--ui)", fontSize: 12, color: T.ink }} />
-                      <Area type="monotone" dataKey="Regulatory Compliance" stroke={T.sage} fill={T.sageSoft} />
-                      <Area type="monotone" dataKey="Digital Health" stroke={T.teal} fill={T.tealSoft} />
-                    </AreaChart>
+                      <Legend wrapperStyle={{ fontSize: 11.5, fontFamily: "var(--ui)" }} />
+                      <Bar dataKey="placedPct" name="Placement %" fill={T.sage} radius={[0, 4, 4, 0]} />
+                      <Bar dataKey="avgScore" name="Avg Competency" fill={T.teal} radius={[0, 4, 4, 0]} />
+                    </BarChart>
                   </ResponsiveContainer>
                 </div>
               </Card>
@@ -2455,7 +3482,7 @@ export default function AyushBridge() {
 
             <div style={{ display: "flex", gap: 14, flexWrap: "wrap", marginBottom: 20 }}>
               <KPI value="184" label="Placed" sub="30% of assessed students" icon="🎉" />
-              <KPI value="₹4.2 LPA" label="Median Package" icon="💵" />
+              <KPI value="₹4.20 LPA" label="Median Package" icon="💵" />
               <KPI value="24" label="Recruiting Partners" sub="6 joined this session" icon="🤝" />
               <KPI value="21 Days" label="Median Time to Offer" icon="⚡" />
             </div>
@@ -2522,7 +3549,7 @@ export default function AyushBridge() {
                 setUser({
                   name: "Ishit Aggarwal",
                   email: "ishit.aggarwal@aiia.gov.in",
-                  avatar: "https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=120&auto=format&fit=crop&q=80",
+                  avatar: null,
                   institution: "All India Institute of Ayurveda (AIIA), New Delhi",
                   year: "4th Professional Year (BAMS)",
                   bio: "AYUSH student researcher passionate about evidence-based botanical drug development, clinical trial protocol design, and modernizing traditional health data workflows.",
@@ -2553,11 +3580,7 @@ export default function AyushBridge() {
                 gap: 10,
               }}
             >
-              <img
-                src="https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=60&auto=format&fit=crop&q=80"
-                alt="Avatar"
-                style={{ width: 24, height: 24, borderRadius: 999 }}
-              />
+              <UserAvatar size={24} userObj={{ name: "Ishit Aggarwal", avatar: null }} />
               <span>Continue as Ishit Aggarwal (ishit.aggarwal@aiia.gov.in)</span>
             </button>
 
@@ -2567,7 +3590,7 @@ export default function AyushBridge() {
                   setUser({
                     name: "Dr. Ananya Sharma",
                     email: "ananya.sharma@gmail.com",
-                    avatar: "https://images.unsplash.com/photo-1494790108377-be9c29b29330?w=120&auto=format&fit=crop&q=80",
+                    avatar: null,
                     institution: "National Institute of Ayurveda, Jaipur",
                     year: "Post-Graduate Scholar (MD)",
                     bio: "Focusing on herbal standardized extraction techniques and clinical GCP trial outcomes.",
@@ -2951,6 +3974,8 @@ function Shell({ children, T }) {
         .ay-theme-btn { transition: all .15s ease; }
         .ay-theme-btn:hover { border-color: ${T.teal} !important; }
         .ay-google-btn:hover { border-color: ${T.teal} !important; background: ${T.bgSurfaceHover} !important; }
+        .ay-no-scroll::-webkit-scrollbar { display: none; }
+        .ay-no-scroll { scrollbar-width: none; -ms-overflow-style: none; }
         .ay-fill { transition: width .6s cubic-bezier(.22,1,.36,1); }
         .ay-grid4 { grid-template-columns: repeat(4, 1fr); }
         .ay-grid3 { grid-template-columns: repeat(3, 1fr); }
