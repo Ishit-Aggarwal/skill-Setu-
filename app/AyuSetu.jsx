@@ -533,16 +533,126 @@ const OPPORTUNITIES = [
 /* ---------------- AYUSH Industry Learning Programs ---------------- */
 
 const PROGRAMS = [
-  { id: "p1", title: "AYUSH Industry Standards & GMP Quality Norms", by: "Himalaya Wellness Academy", weeks: 4, boosts: "regulatory_gmp", mode: "Online + Plant Tour" },
-  { id: "p2", title: "Health Data Analysis with Spreadsheets & Python", by: "AIIA Data Cell", weeks: 6, boosts: "health_data", mode: "Online Labs" },
-  { id: "p3", title: "Tele-AYUSH & Digital Health Operations", by: "National Health Authority", weeks: 3, boosts: "digital_telehealth", mode: "Online Sandbox" },
-  { id: "p4", title: "Modern Botanical Lab Testing & Quality Control", by: "Dabur Research Foundation", weeks: 5, boosts: "quality_testing", mode: "On-site Lab, Ghaziabad" },
-  { id: "p5", title: "Condition-Specific Yoga Therapy Protocol Design", by: "Kaivalyadhama Institute", weeks: 4, boosts: "yoga_therapy", mode: "Hybrid" },
-  { id: "p6", title: "Clinical Trial Protocol Design & GCP Standards", by: "CCRAS / ICMR", weeks: 4, boosts: "clinical_research", mode: "Online Certified" },
-  { id: "p7", title: "Clinical Case Documentation & Discharge Standards", by: "AIIA Clinical Faculty", weeks: 2, boosts: "clinical_doc", mode: "Online" },
-  { id: "p8", title: "Standardized Herbal Extraction & Formulation Practicum", by: "Kottakkal Arya Vaidya Sala", weeks: 6, boosts: "herbal_formulation", mode: "On-site, Kerala" },
-  { id: "p9", title: "Holistic Dietary Counselling & Patient Communication", by: "AIIA Faculty", weeks: 2, boosts: "lifestyle_counsel", mode: "Online" },
-  { id: "p10", title: "Advanced Therapeutic Body Care & Wellness Practice", by: "Somatheeram Academy", weeks: 8, boosts: "wellness_therapy", mode: "On-site, Kerala" },
+  {
+    id: "p1",
+    title: "AYUSH Industry Standards & GMP Quality Norms",
+    by: "Himalaya Wellness Academy",
+    weeks: 4,
+    price: 0,
+    boosts: "regulatory_gmp",
+    mode: "Online + Plant Tour",
+    prerequisites: "Basic Ayurvedic Pharmacy or final-year BAMS/B.Pharm enrollment",
+    skillsGained: ["Regulatory & GMP", "Quality Testing", "Plant Audit"],
+    desc: "Master Ayurvedic Pharmacopoeia compliance, batch manufacturing records (BMR), and state licensing norms.",
+  },
+  {
+    id: "p2",
+    title: "Health Data Analysis with Spreadsheets & Python",
+    by: "AIIA Data Cell",
+    weeks: 6,
+    price: 999,
+    boosts: "health_data",
+    mode: "Online Labs",
+    prerequisites: "Basic computer literacy and interest in health trial data",
+    skillsGained: ["Health Data", "Clinical Documentation", "Biostatistics"],
+    desc: "Hands-on analysis of AYUSH patient records, clinical trial statistics, and public health metrics.",
+  },
+  {
+    id: "p3",
+    title: "Tele-AYUSH & Digital Health Operations",
+    by: "National Health Authority",
+    weeks: 3,
+    price: 0,
+    boosts: "digital_telehealth",
+    mode: "Online Sandbox",
+    prerequisites: "Introductory clinical OPD experience",
+    skillsGained: ["Digital Tele-AYUSH", "EHR Case Systems", "NAMASTE Coding"],
+    desc: "Integrate e-Sanjeevani workflows, standardized EHR case sheets, and virtual OPD protocols.",
+  },
+  {
+    id: "p4",
+    title: "Modern Botanical Lab Testing & Quality Control",
+    by: "Dabur Research Foundation",
+    weeks: 5,
+    price: 1499,
+    boosts: "quality_testing",
+    mode: "On-site Lab, Ghaziabad",
+    prerequisites: "B.Pharm (Ayurveda) / B.Sc Chemistry / BAMS",
+    skillsGained: ["Quality Testing", "Herbal Formulation", "HPLC Assays"],
+    desc: "Practical training in chromatographic authentication, pesticide screening, and microbial limit assays.",
+  },
+  {
+    id: "p5",
+    title: "Condition-Specific Yoga Therapy Protocol Design",
+    by: "Kaivalyadhama Institute",
+    weeks: 4,
+    price: 499,
+    boosts: "yoga_therapy",
+    mode: "Hybrid",
+    prerequisites: "Basic Yoga Asana foundations / BNYS / B.Sc Yoga",
+    skillsGained: ["Yoga Therapy", "Lifestyle Counseling", "Stress Management"],
+    desc: "Design structured therapeutic yoga sequences for metabolic, respiratory, and postural health conditions.",
+  },
+  {
+    id: "p6",
+    title: "Clinical Trial Protocol Design & GCP Standards",
+    by: "CCRAS / ICMR",
+    weeks: 4,
+    price: 0,
+    boosts: "clinical_research",
+    mode: "Online Certified",
+    prerequisites: "Enrolled UG/PG AYUSH Student or Researcher",
+    skillsGained: ["Clinical Research", "GCP Compliance", "eCRF Documentation"],
+    desc: "Comprehensive grounding in ICH-GCP guidelines, clinical protocol drafting, and patient safety tracking.",
+  },
+  {
+    id: "p7",
+    title: "Clinical Case Documentation & Discharge Standards",
+    by: "AIIA Clinical Faculty",
+    weeks: 2,
+    price: 0,
+    boosts: "clinical_doc",
+    mode: "Online",
+    prerequisites: "Final-year AYUSH student or Intern",
+    skillsGained: ["Clinical Documentation", "Discharge Summaries", "Case History Taking"],
+    desc: "Standardize OPD case taking, differential diagnosis charting, and clinical progress summaries.",
+  },
+  {
+    id: "p8",
+    title: "Standardized Herbal Extraction & Formulation Practicum",
+    by: "Kottakkal Arya Vaidya Sala",
+    weeks: 6,
+    price: 2499,
+    boosts: "herbal_formulation",
+    mode: "On-site, Kerala",
+    prerequisites: "BAMS / B.Pharm (Ayurveda) / M.Sc Botany",
+    skillsGained: ["Herbal Formulation", "Quality Testing", "Decoction Boiling"],
+    desc: "Pilot plant experience in decoction extraction, spray-drying, and standardized botanical dosage forms.",
+  },
+  {
+    id: "p9",
+    title: "Holistic Dietary Counselling & Patient Communication",
+    by: "National Institute of Naturopathy",
+    weeks: 2,
+    price: 499,
+    boosts: "lifestyle_counsel",
+    mode: "Online",
+    prerequisites: "AYUSH student or wellness practitioner",
+    skillsGained: ["Lifestyle Counseling", "Nutritional Therapy", "Patient Counseling"],
+    desc: "Clinical guidelines for constitutional diet planning, therapeutic fasting supervision, and lifestyle counselling.",
+  },
+  {
+    id: "p10",
+    title: "Advanced Therapeutic Body Care & Wellness Practice",
+    by: "Somatheeram Academy",
+    weeks: 8,
+    price: 1999,
+    boosts: "wellness_therapy",
+    mode: "On-site, Kerala",
+    prerequisites: "BAMS / BNYS student or graduate",
+    skillsGained: ["Therapeutic Body Care", "Herbal Steam Protocols", "Constitution Assessment"],
+    desc: "Clinical mastery of classical therapeutic body therapies, herbal steam applications, and wellness monitoring.",
+  },
 ];
 
 /* ---------------- Faculty Opportunities in AYUSH ---------------- */
@@ -590,15 +700,37 @@ const SEMESTER_PROGRESSION = [
   { term: "Internship Year", "Foundational Science": 95, "Lab & Assays": 93, "Clinical Rotations": 94 },
 ];
 
-/* Industry Hiring Market Demand Trajectory across AYUSH Sectors */
-const INDUSTRY_DEMAND_TREND = [
-  { m: "Apr", "Herbal Mfg & QC": 42, "Clinical Trials": 28, "Wellness & Resorts": 35, "Tele-AYUSH": 22 },
-  { m: "May", "Herbal Mfg & QC": 48, "Clinical Trials": 34, "Wellness & Resorts": 40, "Tele-AYUSH": 29 },
-  { m: "Jun", "Herbal Mfg & QC": 55, "Clinical Trials": 41, "Wellness & Resorts": 47, "Tele-AYUSH": 38 },
-  { m: "Jul", "Herbal Mfg & QC": 63, "Clinical Trials": 52, "Wellness & Resorts": 54, "Tele-AYUSH": 49 },
-  { m: "Aug", "Herbal Mfg & QC": 72, "Clinical Trials": 64, "Wellness & Resorts": 62, "Tele-AYUSH": 61 },
-  { m: "Sep", "Herbal Mfg & QC": 84, "Clinical Trials": 78, "Wellness & Resorts": 71, "Tele-AYUSH": 75 },
-];
+/* Industry Hiring Market Demand Trajectory across AYUSH Sectors by Time Window */
+const INDUSTRY_DEMAND_TREND_BY_RANGE = {
+  "1M": [
+    { m: "Week 1", "Herbal Mfg & QC": 76, "Clinical Trials": 70, "Wellness & Resorts": 66, "Tele-AYUSH": 68 },
+    { m: "Week 2", "Herbal Mfg & QC": 79, "Clinical Trials": 72, "Wellness & Resorts": 68, "Tele-AYUSH": 70 },
+    { m: "Week 3", "Herbal Mfg & QC": 81, "Clinical Trials": 75, "Wellness & Resorts": 70, "Tele-AYUSH": 73 },
+    { m: "Week 4", "Herbal Mfg & QC": 84, "Clinical Trials": 78, "Wellness & Resorts": 71, "Tele-AYUSH": 75 },
+  ],
+  "3M": [
+    { m: "Jul", "Herbal Mfg & QC": 63, "Clinical Trials": 52, "Wellness & Resorts": 54, "Tele-AYUSH": 49 },
+    { m: "Aug", "Herbal Mfg & QC": 72, "Clinical Trials": 64, "Wellness & Resorts": 62, "Tele-AYUSH": 61 },
+    { m: "Sep", "Herbal Mfg & QC": 84, "Clinical Trials": 78, "Wellness & Resorts": 71, "Tele-AYUSH": 75 },
+  ],
+  "6M": [
+    { m: "Apr", "Herbal Mfg & QC": 42, "Clinical Trials": 28, "Wellness & Resorts": 35, "Tele-AYUSH": 22 },
+    { m: "May", "Herbal Mfg & QC": 48, "Clinical Trials": 34, "Wellness & Resorts": 40, "Tele-AYUSH": 29 },
+    { m: "Jun", "Herbal Mfg & QC": 55, "Clinical Trials": 41, "Wellness & Resorts": 47, "Tele-AYUSH": 38 },
+    { m: "Jul", "Herbal Mfg & QC": 63, "Clinical Trials": 52, "Wellness & Resorts": 54, "Tele-AYUSH": 49 },
+    { m: "Aug", "Herbal Mfg & QC": 72, "Clinical Trials": 64, "Wellness & Resorts": 62, "Tele-AYUSH": 61 },
+    { m: "Sep", "Herbal Mfg & QC": 84, "Clinical Trials": 78, "Wellness & Resorts": 71, "Tele-AYUSH": 75 },
+  ],
+  "1Y": [
+    { m: "Oct '25", "Herbal Mfg & QC": 28, "Clinical Trials": 18, "Wellness & Resorts": 24, "Tele-AYUSH": 12 },
+    { m: "Dec '25", "Herbal Mfg & QC": 35, "Clinical Trials": 22, "Wellness & Resorts": 30, "Tele-AYUSH": 16 },
+    { m: "Feb '26", "Herbal Mfg & QC": 40, "Clinical Trials": 26, "Wellness & Resorts": 32, "Tele-AYUSH": 20 },
+    { m: "Apr '26", "Herbal Mfg & QC": 46, "Clinical Trials": 32, "Wellness & Resorts": 38, "Tele-AYUSH": 27 },
+    { m: "Jun '26", "Herbal Mfg & QC": 58, "Clinical Trials": 46, "Wellness & Resorts": 50, "Tele-AYUSH": 42 },
+    { m: "Aug '26", "Herbal Mfg & QC": 74, "Clinical Trials": 66, "Wellness & Resorts": 64, "Tele-AYUSH": 63 },
+    { m: "Sep '26", "Herbal Mfg & QC": 84, "Clinical Trials": 78, "Wellness & Resorts": 71, "Tele-AYUSH": 75 },
+  ],
+};
 
 const APPLICANTS = [
   { name: "Ishit Aggarwal", college: "All India Institute of Ayurveda, New Delhi", role: "Clinical Research Intern", stream: "Ayurveda", match: 89, status: "Selected" },
@@ -701,6 +833,10 @@ export default function AyushBridge() {
   const [editingCert, setEditingCert] = useState(null);
   const [isAddExpOpen, setIsAddExpOpen] = useState(false);
   const [editingExp, setEditingExp] = useState(null);
+  const [expressedFacultyInterest, setExpressedFacultyInterest] = useState([]);
+  const [isScheduleModalOpen, setIsScheduleModalOpen] = useState(false);
+  const [schedulingMentorship, setSchedulingMentorship] = useState(null);
+  const [demandRange, setDemandRange] = useState("6M");
 
   // Digital Credential Vault Documents State
   const [vaultDocs, setVaultDocs] = useState([
@@ -954,6 +1090,7 @@ export default function AyushBridge() {
       showToast("Please sign in with Google to submit internship applications.");
       return;
     }
+    if (applied(id)) return;
     setApps((a) => [...a, { oppId: id, status: "Applied", on: "Today" }]);
     showToast("Application submitted successfully!");
   };
@@ -964,8 +1101,9 @@ export default function AyushBridge() {
       showToast("Please sign in with Google to enroll in certified learning programs.");
       return;
     }
+    if (enrolled.includes(p.id)) return;
     setEnrolled((e) => [...e, p.id]);
-    showToast(`Enrolled in ${p.title}`);
+    showToast(`Enrolled in ${p.title}!`);
   };
 
   const expressFacultyInterest = (f) => {
@@ -974,6 +1112,8 @@ export default function AyushBridge() {
       showToast("Please sign in to register faculty interest in research opportunities.");
       return;
     }
+    if (expressedFacultyInterest.includes(f.id)) return;
+    setExpressedFacultyInterest((prev) => [...prev, f.id]);
     showToast(`Interest registered for "${f.title}"!`);
   };
 
@@ -1400,6 +1540,68 @@ export default function AyushBridge() {
     )
   );
 
+  /* --- Global Toast Notification Banner Atom --- */
+  const ToastBanner = ({ msg, onClose }) => {
+    if (!msg) return null;
+    return (
+      <div
+        style={{
+          position: "fixed",
+          bottom: 28,
+          right: 28,
+          background: T.bgCard,
+          border: `1.5px solid ${T.teal}`,
+          color: T.ink,
+          padding: "12px 18px",
+          borderRadius: 12,
+          boxShadow: "0 14px 36px -6px rgba(0,0,0,0.45)",
+          fontFamily: "var(--ui)",
+          fontSize: 13.5,
+          fontWeight: 600,
+          zIndex: 999,
+          display: "flex",
+          alignItems: "center",
+          gap: 10,
+          animation: "fadeIn .18s ease",
+          backdropFilter: "blur(10px)",
+          maxWidth: 440,
+        }}
+      >
+        <div
+          style={{
+            width: 22,
+            height: 22,
+            borderRadius: 999,
+            background: T.tealSoft,
+            color: T.teal,
+            display: "flex",
+            alignItems: "center",
+            justifyContent: "center",
+            fontSize: 12,
+            fontWeight: 800,
+            flexShrink: 0,
+          }}
+        >
+          ✓
+        </div>
+        <span style={{ lineHeight: 1.4, flex: 1 }}>{msg}</span>
+        <button
+          onClick={onClose}
+          style={{
+            background: "none",
+            border: "none",
+            color: T.muted,
+            cursor: "pointer",
+            padding: "0 0 0 6px",
+            fontSize: 14,
+          }}
+        >
+          ✕
+        </button>
+      </div>
+    );
+  };
+
   /* ============================================================
      1. LANDING PAGE VIEW
      ============================================================ */
@@ -1410,6 +1612,7 @@ export default function AyushBridge() {
 
     return (
       <Shell T={T}>
+        <ToastBanner msg={toastMessage} onClose={() => setToastMessage(null)} />
         <div style={{ maxWidth: 1180, margin: "0 auto", padding: "0 22px" }}>
           
           <header style={{
@@ -1600,28 +1803,7 @@ export default function AyushBridge() {
       />
 
       {/* Toast Notification Banner */}
-      {toastMessage && (
-        <div style={{
-          position: "fixed",
-          bottom: 24,
-          right: 24,
-          background: T.teal,
-          color: themeMode === "dark" ? "#07120E" : "#FFFFFF",
-          padding: "12px 20px",
-          borderRadius: 12,
-          boxShadow: "0 10px 30px rgba(0,0,0,0.35)",
-          fontFamily: "var(--ui)",
-          fontSize: 14,
-          fontWeight: 600,
-          zIndex: 100,
-          display: "flex",
-          alignItems: "center",
-          gap: 8,
-          animation: "fadeIn .2s ease",
-        }}>
-          <span>✓</span> {toastMessage}
-        </div>
-      )}
+      <ToastBanner msg={toastMessage} onClose={() => setToastMessage(null)} />
 
       {/* Sticky Navigation Header */}
       <div style={{
@@ -2226,7 +2408,7 @@ export default function AyushBridge() {
                           </button>
                         </div>
                         <div style={{ fontFamily: "var(--ui)", fontSize: 14, marginTop: 3, fontWeight: 600, color: T.teal }}>
-                          {o.org} · <span style={{ color: T.terra, fontWeight: 700 }}>{o.pay} (LPA)</span>
+                          {o.org} · <span style={{ color: T.terra, fontWeight: 700 }}>{o.pay}</span>
                         </div>
 
                         <Muted style={{ fontSize: 13.5, marginTop: 8, lineHeight: 1.6 }}>{o.about}</Muted>
@@ -2395,20 +2577,80 @@ export default function AyushBridge() {
 
             <div className="ay-grid3" style={{ display: "grid", gap: 14 }}>
               {PROGRAMS.map((p) => (
-                <Card key={p.id} style={{ display: "flex", flexDirection: "column", gap: 10 }}>
-                  <Chip tone="accent">Boosts {skillShort(p.boosts)}</Chip>
-                  <div style={{ fontFamily: "var(--display)", fontSize: 17, fontWeight: 600, color: T.ink, lineHeight: 1.3 }}>
-                    {p.title}
+                <Card key={p.id} style={{ display: "flex", flexDirection: "column", gap: 12, justifyContent: "space-between" }}>
+                  <div>
+                    <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", gap: 8, marginBottom: 4 }}>
+                      <Chip tone="accent">Boosts {skillShort(p.boosts)}</Chip>
+                      <span style={{
+                        fontFamily: "var(--ui)",
+                        fontSize: 12.5,
+                        fontWeight: 700,
+                        color: p.price === 0 ? T.sage : T.terra,
+                        background: p.price === 0 ? T.sageSoft : T.terraSoft,
+                        padding: "3px 8px",
+                        borderRadius: 6,
+                      }}>
+                        {p.price === 0 ? "Free" : `₹${p.price.toLocaleString("en-IN")}`}
+                      </span>
+                    </div>
+
+                    <div style={{ fontFamily: "var(--display)", fontSize: 17, fontWeight: 600, color: T.ink, lineHeight: 1.3, marginTop: 4 }}>
+                      {p.title}
+                    </div>
+                    <Muted style={{ fontSize: 12.5, marginTop: 4, fontWeight: 550, color: T.teal }}>
+                      {p.by} · {p.weeks} weeks · {p.mode}
+                    </Muted>
+
+                    <Muted style={{ fontSize: 13, marginTop: 8, lineHeight: 1.5 }}>
+                      {p.desc}
+                    </Muted>
+
+                    {/* Prerequisites */}
+                    <div style={{ marginTop: 12, fontSize: 12.5, color: T.muted }}>
+                      <strong style={{ color: T.ink }}>Prerequisite:</strong> {p.prerequisites}
+                    </div>
+
+                    {/* Skills Gained */}
+                    <div style={{ marginTop: 8 }}>
+                      <div style={{ fontSize: 11.5, fontWeight: 600, color: T.ink, textTransform: "uppercase", letterSpacing: "0.05em", marginBottom: 4 }}>
+                        Skills Gained:
+                      </div>
+                      <div style={{ display: "flex", gap: 5, flexWrap: "wrap" }}>
+                        {p.skillsGained.map((sg) => (
+                          <span
+                            key={sg}
+                            style={{
+                              background: T.bgSurface,
+                              border: `1px solid ${T.border}`,
+                              padding: "2px 8px",
+                              borderRadius: 6,
+                              fontSize: 11.5,
+                              color: T.ink,
+                              fontWeight: 500,
+                            }}
+                          >
+                            ✓ {sg}
+                          </span>
+                        ))}
+                      </div>
+                    </div>
                   </div>
-                  <Muted style={{ fontSize: 13 }}>{p.by} · {p.weeks} weeks · {p.mode}</Muted>
-                  <div style={{ marginTop: "auto", paddingTop: 10 }}>
+
+                  <div style={{ paddingTop: 10, borderTop: `1px solid ${T.border}` }}>
                     <Btn
                       small
                       variant={enrolled.includes(p.id) ? "ghost" : "accent"}
                       disabled={enrolled.includes(p.id)}
                       onClick={() => enroll(p)}
+                      style={{ width: "100%", justifyContent: "center" }}
                     >
-                      {enrolled.includes(p.id) ? "Enrolled ✓" : !user ? "Sign in to Enroll" : "Enroll Free"}
+                      {enrolled.includes(p.id)
+                        ? "Enrolled ✓"
+                        : !user
+                        ? "Sign in to Enroll"
+                        : p.price === 0
+                        ? "Enroll Free"
+                        : `Enroll — ₹${p.price.toLocaleString("en-IN")}`}
                     </Btn>
                   </div>
                 </Card>
@@ -2553,10 +2795,47 @@ export default function AyushBridge() {
                             <Btn
                               small
                               variant="primary"
-                              onClick={() => showToast(`Opening meeting scheduler with ${sm.faculty}`)}
+                              onClick={() => {
+                                setSchedulingMentorship(sm);
+                                setIsScheduleModalOpen(true);
+                              }}
                             >
                               Schedule Session 📅
                             </Btn>
+                          )}
+                          {sm.status.startsWith("Scheduled") && (
+                            <div style={{ display: "flex", gap: 6, alignItems: "center" }}>
+                              <a
+                                href="https://meet.google.com/ayush-mentorship-demo"
+                                target="_blank"
+                                rel="noreferrer"
+                                style={{
+                                  textDecoration: "none",
+                                  fontFamily: "var(--ui)",
+                                  fontSize: 12.5,
+                                  fontWeight: 600,
+                                  color: themeMode === "dark" ? "#07120E" : "#FFFFFF",
+                                  background: T.teal,
+                                  padding: "6px 12px",
+                                  borderRadius: 8,
+                                  display: "inline-flex",
+                                  alignItems: "center",
+                                  gap: 5,
+                                }}
+                              >
+                                🎥 Join Meet
+                              </a>
+                              <Btn
+                                small
+                                variant="ghost"
+                                onClick={() => {
+                                  setSchedulingMentorship(sm);
+                                  setIsScheduleModalOpen(true);
+                                }}
+                              >
+                                Reschedule
+                              </Btn>
+                            </div>
                           )}
                         </div>
                       </div>
@@ -3042,8 +3321,17 @@ export default function AyushBridge() {
                   </div>
                   <div style={{ textAlign: "right" }}>
                     <Muted style={{ fontSize: 12.5, marginBottom: 8 }}>Closes {f.closes}</Muted>
-                    <Btn small onClick={() => expressFacultyInterest(f)}>
-                      {!user ? "Sign in to Express Interest" : "Express Interest"}
+                    <Btn
+                      small
+                      variant={expressedFacultyInterest.includes(f.id) ? "ghost" : "primary"}
+                      disabled={expressedFacultyInterest.includes(f.id)}
+                      onClick={() => expressFacultyInterest(f)}
+                    >
+                      {expressedFacultyInterest.includes(f.id)
+                        ? "Interest Registered ✓"
+                        : !user
+                        ? "Sign in to Express Interest"
+                        : "Express Interest"}
                     </Btn>
                   </div>
                 </Card>
@@ -3116,15 +3404,27 @@ export default function AyushBridge() {
                             </Btn>
                           </>
                         ) : req.status === "Accepted" ? (
-                          <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
-                            <Chip tone="good">Accepted ✓</Chip>
-                            <Btn
-                              small
-                              variant="ghost"
-                              onClick={() => showToast(`Opening direct consultation chat with ${req.student}`)}
+                          <div style={{ display: "flex", alignItems: "center", gap: 8, flexWrap: "wrap" }}>
+                            <Chip tone="good">Connected ✓</Chip>
+                            <a
+                              href={`mailto:${req.student.toLowerCase().replace(/\s+/g, ".")}@aiia.gov.in?subject=AYUSH Mentorship Guidance: ${encodeURIComponent(req.topic)}`}
+                              style={{
+                                textDecoration: "none",
+                                fontFamily: "var(--ui)",
+                                fontSize: 12,
+                                fontWeight: 600,
+                                color: T.teal,
+                                background: T.tealSoft,
+                                padding: "4px 9px",
+                                borderRadius: 7,
+                                display: "inline-flex",
+                                alignItems: "center",
+                                gap: 5,
+                              }}
+                              title="Reach out via institutional email"
                             >
-                              Chat 💬
-                            </Btn>
+                              ✉️ {req.student.toLowerCase().replace(/\s+/g, ".")}@aiia.gov.in
+                            </a>
                           </div>
                         ) : (
                           <Chip tone="gap">Declined</Chip>
@@ -3169,13 +3469,42 @@ export default function AyushBridge() {
             </div>
 
             <Card style={{ marginTop: 22 }}>
-              <Eyebrow>AYUSH Sector Talent Demand Trajectory (Last 6 Months)</Eyebrow>
-              <Muted style={{ fontSize: 13, marginTop: 4, marginBottom: 12 }}>
-                Active enterprise job postings and trainee requisitions across key AYUSH domains.
-              </Muted>
+              <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", flexWrap: "wrap", gap: 12, marginBottom: 12 }}>
+                <div>
+                  <Eyebrow>AYUSH Sector Talent Demand Trajectory ({demandRange === "1M" ? "Last 4 Weeks" : demandRange === "3M" ? "Last 3 Months" : demandRange === "6M" ? "Last 6 Months" : "Last 12 Months"})</Eyebrow>
+                  <Muted style={{ fontSize: 13, marginTop: 4 }}>
+                    Active enterprise job postings and trainee requisitions across key AYUSH domains.
+                  </Muted>
+                </div>
+
+                {/* Time Range Filter Buttons */}
+                <div style={{ display: "inline-flex", background: T.bgSurface, padding: 3, borderRadius: 10, border: `1px solid ${T.border}` }}>
+                  {["1M", "3M", "6M", "1Y"].map((r) => (
+                    <button
+                      key={r}
+                      onClick={() => setDemandRange(r)}
+                      style={{
+                        background: demandRange === r ? (themeMode === "dark" ? T.tealSoft : "#FFFFFF") : "transparent",
+                        color: demandRange === r ? T.teal : T.muted,
+                        border: demandRange === r ? `1px solid ${T.teal}` : "1px solid transparent",
+                        borderRadius: 7,
+                        padding: "4px 10px",
+                        fontFamily: "var(--ui)",
+                        fontSize: 12,
+                        fontWeight: demandRange === r ? 700 : 500,
+                        cursor: "pointer",
+                        transition: "all .15s ease",
+                      }}
+                    >
+                      {r}
+                    </button>
+                  ))}
+                </div>
+              </div>
+
               <div style={{ height: 280 }}>
                 <ResponsiveContainer>
-                  <LineChart data={INDUSTRY_DEMAND_TREND}>
+                  <LineChart data={INDUSTRY_DEMAND_TREND_BY_RANGE[demandRange] || INDUSTRY_DEMAND_TREND_BY_RANGE["6M"]}>
                     <CartesianGrid stroke={T.border} vertical={false} />
                     <XAxis dataKey="m" tick={{ fontSize: 12, fill: T.muted, fontFamily: "var(--ui)" }} />
                     <YAxis tick={{ fontSize: 12, fill: T.muted, fontFamily: "var(--ui)" }} />
@@ -3819,6 +4148,30 @@ export default function AyushBridge() {
           }}
         />
       )}
+
+      {/* 5. Schedule Mentorship Session Modal */}
+      {isScheduleModalOpen && schedulingMentorship && (
+        <ScheduleSessionModal
+          T={T}
+          mentorship={schedulingMentorship}
+          onClose={() => {
+            setIsScheduleModalOpen(false);
+            setSchedulingMentorship(null);
+          }}
+          onSchedule={({ date, mode, notes }) => {
+            setStudentMentorships((prev) =>
+              prev.map((sm) =>
+                sm.id === schedulingMentorship.id
+                  ? { ...sm, status: `Scheduled: ${date}`, topic: notes || sm.topic }
+                  : sm
+              )
+            );
+            setIsScheduleModalOpen(false);
+            setSchedulingMentorship(null);
+            showToast(`Mentorship session confirmed with ${schedulingMentorship.faculty}! 📅 Calendar invite sent to ${user?.email || "your email"}.`);
+          }}
+        />
+      )}
     </Shell>
   );
 }
@@ -4026,6 +4379,118 @@ function ExperienceModal({ T, exp, onClose, onSave }) {
           >
             Save Experience
           </Btn>
+        </div>
+      </div>
+    </ModalOverlay>
+  );
+}
+
+function ScheduleSessionModal({ T, mentorship, onClose, onSchedule }) {
+  const [date, setDate] = useState("Tomorrow, 3:30 PM");
+  const [mode, setMode] = useState("Virtual (Google Meet)");
+  const [notes, setNotes] = useState(mentorship?.topic || "");
+
+  const slots = [
+    "Tomorrow, 3:30 PM",
+    "Thursday, 11:00 AM",
+    "Friday, 4:00 PM",
+    "Monday, 2:00 PM",
+  ];
+
+  return (
+    <ModalOverlay onClose={onClose} T={T}>
+      <div>
+        <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 6 }}>
+          <H size={20}>Schedule Mentorship Session</H>
+          <button onClick={onClose} style={{ background: "none", border: "none", color: T.muted, cursor: "pointer", fontSize: 18 }}>✕</button>
+        </div>
+        <Muted style={{ fontSize: 13, marginBottom: 18 }}>
+          Confirm a dedicated 1-on-1 mentorship session with <strong style={{ color: T.ink }}>{mentorship?.faculty}</strong> ({mentorship?.dept}).
+        </Muted>
+
+        <div style={{ display: "flex", flexDirection: "column", gap: 14 }}>
+          <div>
+            <div style={{ fontFamily: "var(--ui)", fontSize: 12.5, fontWeight: 600, color: T.ink, marginBottom: 6 }}>Select Available Time Slot</div>
+            <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 8 }}>
+              {slots.map((s) => (
+                <button
+                  key={s}
+                  type="button"
+                  onClick={() => setDate(s)}
+                  style={{
+                    padding: "8px 12px",
+                    borderRadius: 8,
+                    border: `1px solid ${date === s ? T.teal : T.border}`,
+                    background: date === s ? T.tealSoft : T.bgSurface,
+                    color: date === s ? T.teal : T.ink,
+                    fontFamily: "var(--ui)",
+                    fontSize: 12.5,
+                    fontWeight: date === s ? 650 : 500,
+                    cursor: "pointer",
+                    textAlign: "left",
+                    display: "flex",
+                    alignItems: "center",
+                    gap: 6,
+                  }}
+                >
+                  <span>📅</span>
+                  <span>{s}</span>
+                </button>
+              ))}
+            </div>
+          </div>
+
+          <div>
+            <div style={{ fontFamily: "var(--ui)", fontSize: 12.5, fontWeight: 600, color: T.ink, marginBottom: 6 }}>Session Meeting Mode</div>
+            <div style={{ display: "flex", gap: 10 }}>
+              {["Virtual (Google Meet)", "In-Person (Faculty Cabin, AIIA)"].map((m) => (
+                <button
+                  key={m}
+                  type="button"
+                  onClick={() => setMode(m)}
+                  style={{
+                    padding: "8px 12px",
+                    borderRadius: 8,
+                    border: `1px solid ${mode === m ? T.teal : T.border}`,
+                    background: mode === m ? T.tealSoft : T.bgSurface,
+                    color: mode === m ? T.teal : T.ink,
+                    fontFamily: "var(--ui)",
+                    fontSize: 12,
+                    fontWeight: mode === m ? 650 : 500,
+                    cursor: "pointer",
+                  }}
+                >
+                  {m.startsWith("Virtual") ? "🎥" : "🏛️"} {m}
+                </button>
+              ))}
+            </div>
+          </div>
+
+          <div>
+            <div style={{ fontFamily: "var(--ui)", fontSize: 12.5, fontWeight: 600, color: T.ink, marginBottom: 6 }}>Discussion Topic & Key Questions</div>
+            <textarea
+              rows={3}
+              value={notes}
+              onChange={(e) => setNotes(e.target.value)}
+              placeholder="e.g. Seeking review of clinical study methodology and case sheet variables..."
+              style={{
+                width: "100%",
+                padding: "9px 12px",
+                borderRadius: 9,
+                border: `1px solid ${T.border}`,
+                background: T.bgSurface,
+                color: T.ink,
+                fontFamily: "var(--ui)",
+                fontSize: 13,
+                resize: "vertical",
+              }}
+            />
+          </div>
+
+          <div style={{ display: "flex", justifyContent: "flex-end", gap: 10, marginTop: 10 }}>
+            <Btn small variant="ghost" onClick={onClose}>Cancel</Btn>
+            <Btn small onClick={() => onSchedule({ date, mode, notes })}>Confirm & Send Calendar Invite 📅</Btn>
+          </div>
         </div>
       </div>
     </ModalOverlay>
