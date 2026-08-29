@@ -218,7 +218,7 @@ const ROLES = [
 const OPPORTUNITIES = [
   {
     id: "o1",
-    title: "Clinical Research Intern — Traditional Medicine Trials",
+    title: "Clinical Research Intern — Traditional Medicine Trials Cell",
     org: "All India Institute of Ayurveda (AIIA)",
     loc: "New Delhi",
     domain: "clinical_research",
@@ -242,12 +242,12 @@ const OPPORTUNITIES = [
   },
   {
     id: "o2",
-    title: "Quality Control Lab Analyst Trainee",
+    title: "Quality Control Trainee — Herbal Manufacturing Sector",
     org: "Dabur Research Foundation",
     loc: "Ghaziabad, Uttar Pradesh",
     domain: "quality_testing",
     type: "Apprenticeship",
-    pay: "₹2.64 LPA",
+    pay: "₹2.40 LPA",
     workMode: "On-site",
     physicalInterview: "Yes (Lab Practical Round)",
     interviewRounds: "3 Rounds: Online Screening + Wet Lab Practical + Technical Panel",
@@ -266,11 +266,11 @@ const OPPORTUNITIES = [
   },
   {
     id: "o3",
-    title: "Corporate Wellness & Yoga Therapy Associate",
+    title: "Corporate Wellness & Yoga Therapy Associate — Preventive Health Sector",
     org: "Kaivalyadhama Health & Yoga Institute",
     loc: "Pune, Maharashtra",
     domain: "wellness_yoga",
-    type: "Full-time",
+    type: "Full-time (PG Level)",
     pay: "₹4.80 LPA",
     workMode: "Hybrid",
     physicalInterview: "No (Virtual Only)",
@@ -290,12 +290,12 @@ const OPPORTUNITIES = [
   },
   {
     id: "o4",
-    title: "Tele-AYUSH & Digital Health Implementation Intern",
+    title: "Tele-AYUSH & Digital Health Implementation Intern — Health Informatics Cell",
     org: "National Health Authority / Ministry of Ayush Partner",
     loc: "Remote / New Delhi HQ",
     domain: "digital_ayush",
     type: "Internship",
-    pay: "₹2.88 LPA",
+    pay: "₹2.40 LPA",
     workMode: "Remote",
     physicalInterview: "No (Virtual Only)",
     interviewRounds: "2 Rounds: Digital Health Assignment + Technical Interview",
@@ -314,12 +314,12 @@ const OPPORTUNITIES = [
   },
   {
     id: "o5",
-    title: "Herbal Medicine Formulation & Extraction Trainee",
+    title: "Herbal Formulation & Extraction Trainee — Classical Medicine Plant",
     org: "Patanjali Research Institute",
     loc: "Haridwar, Uttarakhand",
     domain: "herbal_mfg",
     type: "Internship",
-    pay: "₹2.40 LPA",
+    pay: "₹1.92 LPA",
     workMode: "On-site",
     physicalInterview: "Yes",
     interviewRounds: "2 Rounds: Technical Interview + Plant Tour Walkthrough",
@@ -338,12 +338,12 @@ const OPPORTUNITIES = [
   },
   {
     id: "o6",
-    title: "AYUSH Regulatory Compliance & Export Trainee",
+    title: "Regulatory Affairs & Compliance Trainee — Licensing Division",
     org: "Himalaya Wellness Company",
     loc: "Bengaluru, Karnataka",
     domain: "hospital_admin",
     type: "Internship",
-    pay: "₹2.40 LPA",
+    pay: "₹2.16 LPA",
     workMode: "Hybrid",
     physicalInterview: "No (Virtual Only)",
     interviewRounds: "2 Rounds: Regulatory Case Study + Department Head Interview",
@@ -362,12 +362,12 @@ const OPPORTUNITIES = [
   },
   {
     id: "o7",
-    title: "Therapeutic Wellness & Patient Care Associate",
+    title: "Senior Therapeutic Wellness Consultant — Integrative Clinical Care",
     org: "Somatheeram Holistic Health Resort",
     loc: "Kovalam, Kerala",
     domain: "wellness_yoga",
-    type: "Full-time",
-    pay: "₹4.20 LPA",
+    type: "Full-time (PG Level)",
+    pay: "₹5.40 LPA",
     workMode: "On-site",
     physicalInterview: "Final Round Only",
     interviewRounds: "2 Rounds: Video Screening + On-site Practical Assessment",
@@ -380,18 +380,18 @@ const OPPORTUNITIES = [
       "Counsel international guests on seasonal diet regimens and lifestyle balance",
       "Maintain detailed patient therapy logs and daily health observation records",
     ],
-    qualifications: "BAMS / BNYS / Professional Wellness Certification",
+    qualifications: "MD (Ayurveda) / BNYS / Senior BAMS with Clinical Experience",
     preferredSkills: "Therapeutic Body Care, Patient Consultation, Herbal Steam Protocols",
     dayInLife: "Morning guest wellness consultations, administering therapy protocols, evening patient wellness review.",
   },
   {
     id: "o8",
-    title: "Natural Drug Standardization & Trial Associate",
+    title: "PG Clinical Trial & Standardization Fellow — Drug Research Division",
     org: "Central Council for Research in Ayurvedic Sciences (CCRAS)",
     loc: "New Delhi",
     domain: "clinical_research",
-    type: "Fellowship",
-    pay: "₹3.36 LPA",
+    type: "Fellowship (PG Level)",
+    pay: "₹5.04 LPA",
     workMode: "On-site",
     physicalInterview: "Yes",
     interviewRounds: "2 Rounds: Written Research Aptitude Test + Council Panel Interview",
@@ -404,18 +404,18 @@ const OPPORTUNITIES = [
       "Analyze clinical trial datasets using statistical software packages",
       "Draft research manuscript sections for submission to peer-reviewed journals",
     ],
-    qualifications: "BAMS / MD (Ayurveda) / M.Sc Bio-analytical Sciences",
+    qualifications: "MD (Ayurveda) / M.Pharm (Ayurveda) / M.Sc Bio-analytical Sciences",
     preferredSkills: "Clinical Trial Protocols, Botanical Drug Monographs, Statistical Analysis",
     dayInLife: "Collecting clinical trial case forms, statistical data aggregation, drafting research progress reports.",
   },
   {
     id: "o9",
-    title: "Herbal Medicine Production Trainee",
+    title: "Classical Formulation & Production Trainee — Batch Manufacturing Unit",
     org: "Kottakkal Arya Vaidya Sala",
     loc: "Kottakkal, Kerala",
     domain: "herbal_mfg",
     type: "Apprenticeship",
-    pay: "₹2.16 LPA",
+    pay: "₹1.80 LPA",
     workMode: "On-site",
     physicalInterview: "Yes",
     interviewRounds: "2 Rounds: Technical Interview + Factory Floor Practical",
@@ -434,12 +434,12 @@ const OPPORTUNITIES = [
   },
   {
     id: "o10",
-    title: "Homoeopathic Clinical Case & Data Intern",
+    title: "Homoeopathic Case Documentation Intern — High-Volume Clinical OPD",
     org: "National Institute of Homoeopathy (NIH)",
     loc: "Kolkata, West Bengal",
     domain: "hospital_admin",
     type: "Internship",
-    pay: "₹2.16 LPA",
+    pay: "₹1.80 LPA",
     workMode: "On-site",
     physicalInterview: "Yes",
     interviewRounds: "2 Rounds: Case Analysis + Senior Faculty Interview",
@@ -458,12 +458,12 @@ const OPPORTUNITIES = [
   },
   {
     id: "o11",
-    title: "Botanical Sourcing & Organic Certification Intern",
+    title: "Botanical Sourcing & Organic Supply Intern — Agricultural Supply Division",
     org: "Organic India Labs",
     loc: "Lucknow, Uttar Pradesh",
     domain: "quality_testing",
     type: "Internship",
-    pay: "₹2.28 LPA",
+    pay: "₹1.92 LPA",
     workMode: "Hybrid",
     physicalInterview: "No (Virtual Only)",
     interviewRounds: "2 Rounds: Agricultural Supply Case + HR Interview",
@@ -482,12 +482,12 @@ const OPPORTUNITIES = [
   },
   {
     id: "o12",
-    title: "Holistic Diet & Lifestyle Wellness Counsellor",
+    title: "Lifestyle & Nutrition Wellness Counsellor — Natural Therapeutics OPD",
     org: "National Institute of Naturopathy (NIN)",
     loc: "Pune, Maharashtra",
     domain: "wellness_yoga",
     type: "Internship",
-    pay: "₹2.04 LPA",
+    pay: "₹1.80 LPA",
     workMode: "On-site",
     physicalInterview: "Yes",
     interviewRounds: "2 Rounds: Diet Case Consultation + Faculty Panel",
@@ -503,6 +503,30 @@ const OPPORTUNITIES = [
     qualifications: "BNYS / M.Sc Clinical Nutrition / BAMS",
     preferredSkills: "Nutritional Therapy Planning, Patient Diet Counseling, Therapeutic Fasting Supervision",
     dayInLife: "OPD patient dietary consultations, designing fasting therapy schedules, conducting group lifestyle workshops.",
+  },
+  {
+    id: "o13",
+    title: "Public Health & Policy Immersion Intern — National AYUSH Mission Cell",
+    org: "Ministry of Ayush / Central Mission Directorate",
+    loc: "New Delhi (Hybrid)",
+    domain: "digital_ayush",
+    type: "Govt. Internship (Certificate-Based)",
+    pay: "Certificate & Academic Credit (₹0 LPA)",
+    workMode: "Hybrid",
+    physicalInterview: "No (Virtual Only)",
+    interviewRounds: "1 Round: Application Statement & Screening",
+    closes: "14 Oct 2026",
+    requires: { digital_telehealth: 60, health_data: 55, clinical_doc: 50 },
+    about: "Official 8-week public health policy immersion under the National AYUSH Mission. Assist in documenting regional community wellness programs, traditional medicine outreach data, and inter-ministerial health reports.",
+    responsibilities: [
+      "Collate quarterly health metrics from regional AYUSH Health & Wellness Centers",
+      "Draft policy summary briefs on public awareness programs and traditional health campaigns",
+      "Coordinate administrative dossiers for state mission directorate meetings",
+      "Verify electronic field survey submissions from participating community health workers",
+    ],
+    qualifications: "Enrolled UG/PG AYUSH Student (BAMS / BHMS / BNYS / BUMS / BSMS) with College NOC",
+    preferredSkills: "Public Health Reporting, Survey Data Collation, Official Correspondence Drafting",
+    dayInLife: "Aggregating regional AYUSH center logs, compiling health outreach summary charts, attending weekly mission review meetings.",
   },
 ];
 
@@ -640,9 +664,17 @@ export default function AyushBridge() {
   const [themeMode, setThemeMode] = useState("dark"); // 'dark' | 'light'
   const [role, setRole] = useState(null); // null = landing, 'student' | 'academician' | 'industry' | 'institution'
   const [tab, setTab] = useState("overview");
+  const [isTabLoading, setIsTabLoading] = useState(false);
   const [activeSector, setActiveSector] = useState("all");
   const [searchQuery, setSearchQuery] = useState("");
   const [toastMessage, setToastMessage] = useState(null);
+
+  function changeTab(t) {
+    if (t === tab) return;
+    setIsTabLoading(true);
+    setTab(t);
+    setTimeout(() => setIsTabLoading(false), 160);
+  }
 
   // Hidden File Input References
   const photoInputRef = useRef(null);
@@ -905,8 +937,13 @@ export default function AyushBridge() {
         p[q.skill] = next[i] ?? 20;
       });
       setProfile(p);
-      setTab("overview");
-      showToast("Assessment complete! Profile scores & readiness updated.");
+      if (!user) {
+        setIsAuthModalOpen(true);
+        showToast("Assessment complete! Sign in with Google to permanently link & verify your scores.");
+      } else {
+        showToast("Assessment complete! Verified skill scores & readiness updated.");
+      }
+      changeTab("overview");
     }
   }
 
@@ -914,7 +951,7 @@ export default function AyushBridge() {
   const apply = (id) => {
     if (!user) {
       setIsAuthModalOpen(true);
-      showToast("Please sign in with Google to apply for opportunities.");
+      showToast("Please sign in with Google to submit internship applications.");
       return;
     }
     setApps((a) => [...a, { oppId: id, status: "Applied", on: "Today" }]);
@@ -924,7 +961,7 @@ export default function AyushBridge() {
   const enroll = (p) => {
     if (!user) {
       setIsAuthModalOpen(true);
-      showToast("Please sign in with Google to enroll in learning programs.");
+      showToast("Please sign in with Google to enroll in certified learning programs.");
       return;
     }
     setEnrolled((e) => [...e, p.id]);
@@ -934,10 +971,28 @@ export default function AyushBridge() {
   const expressFacultyInterest = (f) => {
     if (!user) {
       setIsAuthModalOpen(true);
-      showToast("Please sign in to express interest in faculty opportunities.");
+      showToast("Please sign in to register faculty interest in research opportunities.");
       return;
     }
     showToast(`Interest registered for "${f.title}"!`);
+  };
+
+  const requestMentorship = (facultyName, topic) => {
+    if (!user) {
+      setIsAuthModalOpen(true);
+      showToast("Please sign in with Google to request mentorship from AYUSH faculty.");
+      return;
+    }
+    const newReq = {
+      id: "sm" + Date.now(),
+      faculty: facultyName || "Dr. S. K. Sharma",
+      dept: "Dept. of Dravyaguna & Research, AIIA",
+      topic: topic || "AYUSH clinical trial protocol drafting and review",
+      status: "Pending",
+      on: "Just now",
+    };
+    setStudentMentorships((prev) => [newReq, ...prev]);
+    showToast(`Mentorship request sent to ${facultyName || "Dr. S. K. Sharma"}!`);
   };
 
   /* ---------------- UI Atoms ---------------- */
@@ -1028,6 +1083,29 @@ export default function AyushBridge() {
       }}
     >
       {children}
+    </div>
+  );
+
+  const SkeletonCard = () => (
+    <div
+      style={{
+        background: T.bgCard,
+        border: `1px solid ${T.border}`,
+        borderRadius: 16,
+        padding: 24,
+        display: "flex",
+        flexDirection: "column",
+        gap: 14,
+      }}
+    >
+      <div style={{ display: "flex", gap: 10 }}>
+        <div style={{ width: 110, height: 22, borderRadius: 999, background: T.bgSurfaceHover, opacity: 0.8 }} />
+        <div style={{ width: 80, height: 22, borderRadius: 999, background: T.bgSurfaceHover, opacity: 0.8 }} />
+      </div>
+      <div style={{ width: "55%", height: 26, borderRadius: 8, background: T.bgSurfaceHover, opacity: 0.8 }} />
+      <div style={{ width: "35%", height: 16, borderRadius: 6, background: T.bgSurfaceHover, opacity: 0.6 }} />
+      <div style={{ width: "90%", height: 14, borderRadius: 6, background: T.bgSurfaceHover, opacity: 0.5 }} />
+      <div style={{ width: "75%", height: 14, borderRadius: 6, background: T.bgSurfaceHover, opacity: 0.5 }} />
     </div>
   );
 
@@ -1727,7 +1805,7 @@ export default function AyushBridge() {
             {TABS.map(([id, label]) => (
               <button
                 key={id}
-                onClick={() => setTab(id)}
+                onClick={() => changeTab(id)}
                 style={{
                   background: "none",
                   border: "none",
@@ -1751,6 +1829,13 @@ export default function AyushBridge() {
       </div>
 
       <main style={{ maxWidth: 1180, margin: "0 auto", padding: "32px 22px 80px" }}>
+        {isTabLoading ? (
+          <div style={{ display: "flex", flexDirection: "column", gap: 16 }}>
+            <SkeletonCard />
+            <SkeletonCard />
+          </div>
+        ) : (
+          <>
 
         {/* ================= STUDENT ================= */}
 
@@ -1763,7 +1848,7 @@ export default function AyushBridge() {
                 The 10-question assessment measures your hands-on competencies in herbal formulation, quality testing, patient care, and clinical research. Match scores and gap-closing programs will be calculated instantly.
               </Muted>
               <div style={{ display: "flex", gap: 10, flexWrap: "wrap" }}>
-                <Btn onClick={() => setTab("assessment")}>Start 10-Question Assessment →</Btn>
+                <Btn onClick={() => changeTab("assessment")}>Start 10-Question Assessment →</Btn>
                 <Btn variant="ghost" onClick={() => { setProfile(SAMPLE_PROFILE); showToast("Sample profile loaded!"); }}>Load Sample AYUSH Profile</Btn>
               </div>
             </Card>
@@ -1777,8 +1862,8 @@ export default function AyushBridge() {
                   </Muted>
                 </div>
                 <div style={{ display: "flex", gap: 8 }}>
-                  <Btn small variant="ghost" onClick={() => setTab("portfolio")}>Edit Profile & Credentials</Btn>
-                  <Btn small variant="ghost" onClick={() => setTab("assessment")}>Retake Assessment</Btn>
+                  <Btn small variant="ghost" onClick={() => changeTab("portfolio")}>Edit Profile & Credentials</Btn>
+                  <Btn small variant="ghost" onClick={() => changeTab("assessment")}>Retake Assessment</Btn>
                 </div>
               </div>
 
@@ -1880,7 +1965,7 @@ export default function AyushBridge() {
                 Matches, skill gap analyses, and program recommendations across the portal are now calibrated against your latest scores.
               </Muted>
               <div style={{ display: "flex", gap: 10, marginTop: 22, flexWrap: "wrap" }}>
-                <Btn onClick={() => setTab("overview")}>View My Profile & Matches →</Btn>
+                <Btn onClick={() => changeTab("overview")}>View My Profile & Matches →</Btn>
                 <Btn variant="ghost" onClick={() => { setAnswers({}); setQIdx(0); setProfile(null); }}>
                   Retake Assessment
                 </Btn>
@@ -2360,7 +2445,7 @@ export default function AyushBridge() {
                   <Muted style={{ marginTop: 8, marginBottom: 20 }}>
                     Explore verified opportunities across herbal manufacturing, clinical research, wellness, and tele-AYUSH.
                   </Muted>
-                  <Btn onClick={() => setTab("opportunities")}>Browse Opportunities</Btn>
+                  <Btn onClick={() => changeTab("opportunities")}>Browse Opportunities</Btn>
                 </Card>
               ) : (
                 <div style={{ marginBottom: 28 }}>
@@ -2405,7 +2490,7 @@ export default function AyushBridge() {
                       My Mentorship Requests
                     </div>
                   </div>
-                  <Btn small variant="ghost" onClick={() => showToast("Mentorship request form opened")}>
+                  <Btn small variant="ghost" onClick={() => requestMentorship("Dr. S. K. Sharma (AIIA)", "Clinical trial protocol drafting")}>
                     + Request Faculty Mentorship
                   </Btn>
                 </div>
@@ -2647,7 +2732,7 @@ export default function AyushBridge() {
                     <div style={{ marginTop: 12 }}>
                       <Muted>Complete the 10-question assessment to calibrate verified competency scores.</Muted>
                       <div style={{ marginTop: 12 }}>
-                        <Btn small onClick={() => setTab("assessment")}>Take Skill Assessment</Btn>
+                        <Btn small onClick={() => changeTab("assessment")}>Take Skill Assessment</Btn>
                       </div>
                     </div>
                   ) : (
@@ -3519,6 +3604,8 @@ export default function AyushBridge() {
             </Card>
           </>
         )}
+          </>
+        )}
 
         <Footer T={T} />
       </main>
@@ -3965,11 +4052,16 @@ function Shell({ children, T }) {
         }
         * { box-sizing: border-box; }
         body { margin: 0; }
+        @keyframes pulse {
+          0%, 100% { opacity: 0.85; }
+          50% { opacity: 0.35; }
+        }
         .ay-btn { transition: transform .12s ease, filter .12s ease, box-shadow .12s ease; }
         .ay-btn:hover:not(:disabled) { transform: translateY(-1px); filter: brightness(1.08); }
         .ay-btn:active:not(:disabled) { transform: translateY(0); }
         .ay-persona:hover { transform: translateY(-3px); box-shadow: 0 16px 36px -18px rgba(0,0,0,.45); border-color: ${T.teal}80 !important; }
-        .ay-card:hover { border-color: ${T.border} !important; }
+        .ay-card { transition: border-color .16s ease, transform .16s ease, box-shadow .16s ease; }
+        .ay-card:hover { border-color: ${T.teal}40 !important; }
         .ay-opt:hover { border-color: ${T.teal} !important; background: ${T.bgSurfaceHover} !important; }
         .ay-theme-btn { transition: all .15s ease; }
         .ay-theme-btn:hover { border-color: ${T.teal} !important; }
