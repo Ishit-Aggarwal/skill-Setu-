@@ -20,8 +20,13 @@ Smart India Hackathon (SIH) · Team CODE BREAKERS
 1. **Seamless Dark & Light Mode**: Switch between high-contrast dark mode and editorial warm paper light mode with an instant toggle.
 2. **Clear, Jargon-Free Terminology**: All competencies, questions, and roles are phrased in accessible, professional English (e.g. *Herbal Formulation & Manufacturing*, *Herb Quality Control & Lab Testing*, *Therapeutic Body & Wellness Care*, *Clinical Patient Documentation*).
 3. **18+ AYUSH Industry Opportunities**: Live internships and apprenticeships from leading organizations (Dabur Research Foundation, Himalaya Wellness, Patanjali Labs, AIIA New Delhi, Kaivalyadhama, Kottakkal, Organic India, CCRAS, etc.).
-4. **4 Dedicated Workspaces**:
-   - **Student Workspace**: Assessment, role readiness radar, gap-closing micro-credentials, and verified digital portfolio.
+4. **Google Sign-In / OAuth**: One-click Google sign-in with user profile synchronization (Name, Institution, Email, Avatar).
+5. **Student Profile & Digital Portfolio**:
+   - **Certifications & Credentials CRUD**: Add, edit, and remove verified credentials from CCRAS, Himalaya, Kaivalyadhama, etc., which directly boost your matched skill proficiency and role readiness.
+   - **Clinical & Internship History**: Add/edit hospital OPD rotations, research apprenticeships, and laboratory experience.
+   - **Digital Resume Export**: One-click shareable profile link and PDF resume download.
+6. **4 Dedicated Workspaces**:
+   - **Student Workspace**: Assessment, role readiness radar, certifications boost, gap-closing micro-credentials, and verified digital portfolio.
    - **Faculty / Academician Workspace**: Industry training sabbaticals, joint R&D grants, consultancy retainers, and capstone challenge statements.
    - **Herbal Industry Workspace**: Role publishing builder, ranked candidate pool, and skill demand telemetry.
    - **Campus / Institutional Dashboard**: Placement funnel analytics, cohort skill gap breakdowns, and curriculum alignment recommendations.

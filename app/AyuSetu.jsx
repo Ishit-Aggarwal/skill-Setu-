@@ -108,7 +108,7 @@ const SKILLS = [
 const skillLabel = (id) => (SKILLS.find((s) => s.id === id) || {}).label || id;
 const skillShort = (id) => (SKILLS.find((s) => s.id === id) || {}).short || id;
 
-/* ---------------- Assessment Questions (Plain, Jargon-Free English) ---------------- */
+/* ---------------- Assessment Questions ---------------- */
 
 const QUESTIONS = [
   {
@@ -213,7 +213,7 @@ const ROLES = [
   },
 ];
 
-/* ---------------- 18+ Real-World AYUSH Opportunities ---------------- */
+/* ---------------- Real-World AYUSH Opportunities ---------------- */
 
 const OPPORTUNITIES = [
   {
@@ -435,15 +435,27 @@ const SAMPLE_PROFILE = {
   yoga_therapy: 25,
 };
 
-/* ---------------- Matching Engine ---------------- */
+/* ---------------- Matching Engine (with Certification Boosts) ---------------- */
 
-function scoreAgainst(profile, requires) {
+function scoreAgainst(profile, requires, certs = []) {
   const keys = Object.keys(requires);
   if (!keys.length) return { pct: 0, gaps: [], met: [] };
   let sum = 0;
   const gaps = [], met = [];
+  
+  // Calculate certification bonus per skill
+  const certBonus = {};
+  if (Array.isArray(certs)) {
+    certs.forEach((c) => {
+      if (c.boostSkill && c.verified) {
+        certBonus[c.boostSkill] = (certBonus[c.boostSkill] || 0) + (c.boostAmount || 8);
+      }
+    });
+  }
+
   keys.forEach((k) => {
-    const have = profile[k] ?? 20;
+    const rawHave = profile ? (profile[k] ?? 20) : 20;
+    const have = Math.min(100, rawHave + (certBonus[k] || 0));
     const need = requires[k];
     sum += Math.min(have / need, 1);
     if (have >= need) {
@@ -466,6 +478,84 @@ export default function AyushBridge() {
   const [tab, setTab] = useState("overview");
   const [activeSector, setActiveSector] = useState("all");
   const [searchQuery, setSearchQuery] = useState("");
+  const [toastMessage, setToastMessage] = useState(null);
+
+  // Authentication State (Google OAuth Simulation)
+  const [user, setUser] = useState({
+    name: "Ishit Aggarwal",
+    email: "ishit.aggarwal@aiia.gov.in",
+    avatar: "https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=120&auto=format&fit=crop&q=80",
+    institution: "All India Institute of Ayurveda (AIIA), New Delhi",
+    year: "4th Professional Year (BAMS)",
+    bio: "AYUSH student researcher passionate about evidence-based botanical drug development, clinical trial protocol design, and modernizing traditional health data workflows.",
+    specializations: ["Clinical Research", "Herbal Formulation", "Herb Quality Testing", "Digital Tele-AYUSH"],
+    links: {
+      linkedin: "https://linkedin.com/in/ishit-aggarwal-ayush",
+      researchGate: "https://researchgate.net/profile/Ishit-Aggarwal",
+      website: "https://ishit-ayush.dev",
+    },
+  });
+  const [isAuthModalOpen, setIsAuthModalOpen] = useState(false);
+  const [isEditProfileOpen, setIsEditProfileOpen] = useState(false);
+  const [isAddCertOpen, setIsAddCertOpen] = useState(false);
+  const [editingCert, setEditingCert] = useState(null);
+  const [isAddExpOpen, setIsAddExpOpen] = useState(false);
+  const [editingExp, setEditingExp] = useState(null);
+
+  // Student Certifications & Credentials State
+  const [certifications, setCertifications] = useState([
+    {
+      id: "c1",
+      title: "Good Clinical Practice (GCP) in Traditional Medicine Trials",
+      issuer: "Central Council for Research in Ayurvedic Sciences (CCRAS)",
+      issueDate: "July 2026",
+      credentialUrl: "https://ccras.nic.in/verify/AY-GCP-8842",
+      verified: true,
+      boostSkill: "clinical_research",
+      boostAmount: 15,
+      docName: "CCRAS_GCP_Certificate.pdf",
+    },
+    {
+      id: "c2",
+      title: "AYUSH Industry Standards & GMP Quality Norms",
+      issuer: "Himalaya Wellness Academy",
+      issueDate: "May 2026",
+      credentialUrl: "https://himalayawellness.in/verify/HW-GMP-1092",
+      verified: true,
+      boostSkill: "regulatory_gmp",
+      boostAmount: 12,
+      docName: "Himalaya_GMP_Norms.pdf",
+    },
+    {
+      id: "c3",
+      title: "Condition-Specific Yoga Therapy Protocol Design",
+      issuer: "Kaivalyadhama Health & Yoga Institute",
+      issueDate: "March 2026",
+      credentialUrl: "https://kdham.com/cert/YOGA-TH-541",
+      verified: true,
+      boostSkill: "yoga_therapy",
+      boostAmount: 10,
+      docName: "Yoga_Therapy_Cert.pdf",
+    },
+  ]);
+
+  // Student Experience History State
+  const [experiences, setExperiences] = useState([
+    {
+      id: "e1",
+      role: "Clinical Trainee — Panchakarma & OPD",
+      org: "All India Institute of Ayurveda Hospital, New Delhi",
+      period: "Jan 2026 – Present (6 mos)",
+      description: "Documented 140+ outpatient clinical case sheets, supervised therapeutic oil treatments, and tracked outcome markers.",
+    },
+    {
+      id: "e2",
+      role: "Botanical Quality Control Lab Intern",
+      org: "Dabur Research Foundation, Ghaziabad",
+      period: "Oct 2025 – Dec 2025 (3 mos)",
+      description: "Assisted in purity testing of raw medicinal herbs, chromatographic identification, and microbial limit testing.",
+    },
+  ]);
 
   // Assessment state
   const [answers, setAnswers] = useState({});
@@ -489,10 +579,15 @@ export default function AyushBridge() {
 
   const T = THEMES[themeMode];
 
+  function showToast(msg) {
+    setToastMessage(msg);
+    setTimeout(() => setToastMessage(null), 3200);
+  }
+
   const rankedRoles = useMemo(() => {
     if (!profile) return ROLES.map((r) => ({ ...r, pct: 75, gaps: [], met: [] }));
-    return ROLES.map((r) => ({ ...r, ...scoreAgainst(profile, r.requires) })).sort((a, b) => b.pct - a.pct);
-  }, [profile]);
+    return ROLES.map((r) => ({ ...r, ...scoreAgainst(profile, r.requires, certifications) })).sort((a, b) => b.pct - a.pct);
+  }, [profile, certifications]);
 
   const filteredOpps = useMemo(() => {
     let list = [...OPPORTUNITIES, ...posted];
@@ -511,8 +606,8 @@ export default function AyushBridge() {
     if (!profile) {
       return list.map((o) => ({ ...o, pct: null, gaps: [] }));
     }
-    return list.map((o) => ({ ...o, ...scoreAgainst(profile, o.requires) })).sort((a, b) => (b.pct || 0) - (a.pct || 0));
-  }, [profile, posted, activeSector, searchQuery]);
+    return list.map((o) => ({ ...o, ...scoreAgainst(profile, o.requires, certifications) })).sort((a, b) => (b.pct || 0) - (a.pct || 0));
+  }, [profile, posted, activeSector, searchQuery, certifications]);
 
   const topGaps = useMemo(() => {
     if (!profile) return [];
@@ -546,11 +641,15 @@ export default function AyushBridge() {
       });
       setProfile(p);
       setTab("overview");
+      showToast("Assessment complete! Profile scores & readiness updated.");
     }
   }
 
   const applied = (id) => apps.some((a) => a.oppId === id);
-  const apply = (id) => setApps((a) => [...a, { oppId: id, status: "Applied", on: "Today" }]);
+  const apply = (id) => {
+    setApps((a) => [...a, { oppId: id, status: "Applied", on: "Today" }]);
+    showToast("Application submitted successfully!");
+  };
 
   /* ---------------- UI Atoms ---------------- */
 
@@ -756,7 +855,7 @@ export default function AyushBridge() {
           <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke={T.terra} strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round">
             <path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z" />
           </svg>
-          <span>Dark Mode</span>
+          <span>Dark</span>
         </>
       ) : (
         <>
@@ -771,7 +870,7 @@ export default function AyushBridge() {
             <line x1="4.22" y1="19.78" x2="5.64" y2="18.36" />
             <line x1="18.36" y1="5.64" x2="19.78" y2="4.22" />
           </svg>
-          <span>Light Mode</span>
+          <span>Light</span>
         </>
       )}
     </button>
@@ -815,13 +914,91 @@ export default function AyushBridge() {
     </div>
   );
 
+  /* --- User Profile / Google Sign-In Header Widget --- */
+  const UserAuthWidget = () => (
+    user ? (
+      <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
+        <button
+          onClick={() => { setRole("student"); setTab("portfolio"); }}
+          style={{
+            background: T.bgSurface,
+            border: `1px solid ${T.border}`,
+            borderRadius: 999,
+            padding: "4px 12px 4px 6px",
+            display: "flex",
+            alignItems: "center",
+            gap: 8,
+            cursor: "pointer",
+            color: T.ink,
+            fontFamily: "var(--ui)",
+            fontSize: 13,
+            fontWeight: 600,
+          }}
+        >
+          <img
+            src={user.avatar}
+            alt={user.name}
+            style={{ width: 26, height: 26, borderRadius: 999, objectFit: "cover" }}
+          />
+          <span>{user.name.split(" ")[0]}</span>
+        </button>
+        <button
+          onClick={() => {
+            setUser(null);
+            showToast("Signed out of Google account");
+          }}
+          title="Sign Out"
+          style={{
+            background: "none",
+            border: "none",
+            color: T.muted,
+            cursor: "pointer",
+            fontSize: 12,
+            fontFamily: "var(--ui)",
+            padding: "4px 6px",
+          }}
+        >
+          Sign Out
+        </button>
+      </div>
+    ) : (
+      <button
+        onClick={() => setIsAuthModalOpen(true)}
+        className="ay-google-btn"
+        style={{
+          background: T.bgSurface,
+          border: `1px solid ${T.border}`,
+          borderRadius: 999,
+          padding: "6px 14px",
+          display: "flex",
+          alignItems: "center",
+          gap: 8,
+          cursor: "pointer",
+          color: T.ink,
+          fontFamily: "var(--ui)",
+          fontSize: 13,
+          fontWeight: 600,
+          transition: "all .15s ease",
+        }}
+      >
+        <svg width="16" height="16" viewBox="0 0 24 24">
+          <path fill="#4285F4" d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z" />
+          <path fill="#34A853" d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z" />
+          <path fill="#FBBC05" d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.06H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.94l2.85-2.22.81-.63z" />
+          <path fill="#EA4335" d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.06l3.66 2.84c.87-2.6 3.3-4.52 6.16-4.52z" />
+        </svg>
+        <span>Sign In with Google</span>
+      </button>
+    )
+  );
+
   /* ============================================================
      1. LANDING PAGE VIEW
      ============================================================ */
 
   if (!role) {
     const sampleRole = ROLES[0];
-    const sample = scoreAgainst(SAMPLE_PROFILE, sampleRole.requires);
+    const sample = scoreAgainst(SAMPLE_PROFILE, sampleRole.requires, certifications);
 
     return (
       <Shell T={T}>
@@ -837,15 +1014,7 @@ export default function AyushBridge() {
             <Logo />
             <div style={{ display: "flex", alignItems: "center", gap: 14 }}>
               <ThemeToggle />
-              <div style={{
-                fontFamily: "var(--ui)",
-                fontSize: 12,
-                color: T.muted,
-                textAlign: "right",
-                lineHeight: 1.4,
-              }}>
-                Ministry of Ayush · AIIA<br />Smart India Hackathon
-              </div>
+              <UserAuthWidget />
             </div>
           </header>
 
@@ -860,21 +1029,15 @@ export default function AyushBridge() {
 
               <h1 style={{
                 fontFamily: "var(--display)",
-                fontSize: "clamp(34px, 5vw, 58px)",
-                lineHeight: 1.06,
+                fontSize: "clamp(34px, 5vw, 56px)",
+                lineHeight: 1.08,
                 letterSpacing: "-.03em",
                 color: T.ink,
                 margin: "14px 0 0",
                 fontWeight: 700,
               }}>
                 Connecting AYUSH students & faculty with<br />
-                <span style={{
-                  background: `linear-gradient(135deg, ${T.teal}, ${T.sage})`,
-                  WebkitBackgroundClip: "text",
-                  WebkitTextFillColor: "transparent",
-                }}>
-                  leading herbal & healthcare industries.
-                </span>
+                <span style={{ color: T.sage }}>leading herbal & healthcare industries.</span>
               </h1>
 
               <Muted style={{ fontSize: 16.5, marginTop: 18, maxWidth: 540 }}>
@@ -991,7 +1154,7 @@ export default function AyushBridge() {
       ["opportunities", "AYUSH Internships & Jobs"],
       ["programs", "Industry Learning Programs"],
       ["applications", "My Applications"],
-      ["portfolio", "Digital Portfolio"],
+      ["portfolio", "Profile & Portfolio"],
     ],
     academician: [
       ["overview", "Faculty Dashboard"],
@@ -1012,6 +1175,30 @@ export default function AyushBridge() {
 
   return (
     <Shell T={T}>
+      {/* Toast Notification Banner */}
+      {toastMessage && (
+        <div style={{
+          position: "fixed",
+          bottom: 24,
+          right: 24,
+          background: T.teal,
+          color: themeMode === "dark" ? "#07120E" : "#FFFFFF",
+          padding: "12px 20px",
+          borderRadius: 12,
+          boxShadow: "0 10px 30px rgba(0,0,0,0.35)",
+          fontFamily: "var(--ui)",
+          fontSize: 14,
+          fontWeight: 600,
+          zIndex: 100,
+          display: "flex",
+          alignItems: "center",
+          gap: 8,
+          animation: "fadeIn .2s ease",
+        }}>
+          <span>✓</span> {toastMessage}
+        </div>
+      )}
+
       {/* Sticky Navigation Header */}
       <div style={{
         borderBottom: `1px solid ${T.border}`,
@@ -1075,6 +1262,7 @@ export default function AyushBridge() {
 
             <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
               <ThemeToggle />
+              <UserAuthWidget />
               <Btn small variant="ghost" onClick={() => setRole(null)}>Exit to Home</Btn>
             </div>
           </div>
@@ -1120,26 +1308,29 @@ export default function AyushBridge() {
               </Muted>
               <div style={{ display: "flex", gap: 10, flexWrap: "wrap" }}>
                 <Btn onClick={() => setTab("assessment")}>Start 10-Question Assessment →</Btn>
-                <Btn variant="ghost" onClick={() => setProfile(SAMPLE_PROFILE)}>Load Sample AYUSH Profile</Btn>
+                <Btn variant="ghost" onClick={() => { setProfile(SAMPLE_PROFILE); showToast("Sample profile loaded!"); }}>Load Sample AYUSH Profile</Btn>
               </div>
             </Card>
           ) : (
             <>
               <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", flexWrap: "wrap", gap: 16 }}>
                 <div>
-                  <H size={30}>Your AYUSH Skill Profile</H>
+                  <H size={30}>Your AYUSH Skill Profile & Readiness</H>
                   <Muted style={{ marginTop: 4, marginBottom: 22 }}>
-                    Measured across industry standards · Evaluated {new Date().toLocaleDateString("en-IN", { day: "numeric", month: "short", year: "numeric" })}
+                    Measured across industry standards · Boosted by {certifications.filter((c) => c.verified).length} verified credentials
                   </Muted>
                 </div>
-                <Btn small variant="ghost" onClick={() => setTab("assessment")}>Retake Assessment</Btn>
+                <div style={{ display: "flex", gap: 8 }}>
+                  <Btn small variant="ghost" onClick={() => setTab("portfolio")}>Edit Profile & Credentials</Btn>
+                  <Btn small variant="ghost" onClick={() => setTab("assessment")}>Retake Assessment</Btn>
+                </div>
               </div>
 
               <div style={{ display: "flex", gap: 14, flexWrap: "wrap", marginBottom: 20 }}>
-                <KPI value={`${rankedRoles[0]?.pct || 88}%`} label="Top Matched Role" sub={rankedRoles[0]?.title} icon="🎯" />
+                <KPI value={`${rankedRoles[0]?.pct || 88}%`} label="Top Role Readiness" sub={rankedRoles[0]?.title} icon="🎯" />
                 <KPI value={filteredOpps.filter((o) => (o.pct || 0) >= 75).length} label="Qualifying Postings" sub="Match score >= 75%" icon="🌿" />
-                <KPI value={apps.length} label="Applications Sent" sub="Under review" icon="📨" />
-                <KPI value={enrolled.length} label="Industry Programs" sub="Enrolled" icon="📜" />
+                <KPI value={certifications.length} label="Uploaded Credentials" sub={`${certifications.filter((c) => c.verified).length} verified`} icon="📜" />
+                <KPI value={apps.length} label="Active Applications" sub="Under review" icon="📨" />
               </div>
 
               <div className="ay-2col" style={{ display: "grid", gap: 16 }}>
@@ -1206,7 +1397,10 @@ export default function AyushBridge() {
                             small
                             variant={enrolled.includes(prog.id) ? "ghost" : "accent"}
                             disabled={enrolled.includes(prog.id)}
-                            onClick={() => setEnrolled((e) => [...e, prog.id])}
+                            onClick={() => {
+                              setEnrolled((e) => [...e, prog.id]);
+                              showToast(`Enrolled in ${prog.title}`);
+                            }}
                           >
                             {enrolled.includes(prog.id) ? "Enrolled ✓" : "Enroll Now"}
                           </Btn>
@@ -1462,7 +1656,10 @@ export default function AyushBridge() {
                       small
                       variant={enrolled.includes(p.id) ? "ghost" : "accent"}
                       disabled={enrolled.includes(p.id)}
-                      onClick={() => setEnrolled((e) => [...e, p.id])}
+                      onClick={() => {
+                        setEnrolled((e) => [...e, p.id]);
+                        showToast(`Enrolled in ${p.title}`);
+                      }}
                     >
                       {enrolled.includes(p.id) ? "Enrolled ✓" : "Enroll Free"}
                     </Btn>
@@ -1516,72 +1713,255 @@ export default function AyushBridge() {
           )
         )}
 
-        {/* --- PORTFOLIO TAB --- */}
+        {/* --- PROFILE & PORTFOLIO TAB --- */}
         {role === "student" && tab === "portfolio" && (
           <>
-            <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", flexWrap: "wrap", gap: 14 }}>
-              <div>
-                <H size={28}>Digital AYUSH Portfolio</H>
-                <Muted style={{ marginTop: 4, marginBottom: 20 }}>
-                  Built from verified assessments, completed programs, and institutional rotations. Shareable with recruiters.
-                </Muted>
+            {/* Student Header Card */}
+            <Card style={{ marginBottom: 20, padding: 26 }}>
+              <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", flexWrap: "wrap", gap: 20 }}>
+                <div style={{ display: "flex", gap: 18, alignItems: "center", flexWrap: "wrap" }}>
+                  <img
+                    src={user ? user.avatar : "https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=160&auto=format&fit=crop&q=80"}
+                    alt="Student Avatar"
+                    style={{ width: 72, height: 72, borderRadius: 999, objectFit: "cover", border: `2px solid ${T.teal}` }}
+                  />
+                  <div>
+                    <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
+                      <H size={24}>{user ? user.name : "Guest Student"}</H>
+                      <Chip tone="good">Verified AYUSH Profile ✓</Chip>
+                    </div>
+                    <Muted style={{ fontSize: 13.5, marginTop: 2 }}>
+                      {user?.institution || "All India Institute of Ayurveda"} · {user?.year || "4th Professional Year"}
+                    </Muted>
+                    <Muted style={{ fontSize: 13, marginTop: 1, color: T.teal }}>
+                      {user?.email || "student@aiia.gov.in"}
+                    </Muted>
+                  </div>
+                </div>
+
+                <div style={{ display: "flex", gap: 10, flexWrap: "wrap" }}>
+                  <Btn
+                    small
+                    variant="ghost"
+                    onClick={() => {
+                      navigator.clipboard?.writeText(window.location.href);
+                      showToast("Digital Portfolio share link copied to clipboard! 📋");
+                    }}
+                  >
+                    Share Profile Link 🔗
+                  </Btn>
+                  <Btn
+                    small
+                    variant="ghost"
+                    onClick={() => window.print()}
+                  >
+                    Download Resume PDF 📥
+                  </Btn>
+                  <Btn small onClick={() => setIsEditProfileOpen(true)}>Edit Profile</Btn>
+                </div>
               </div>
-              <Btn small variant="ghost">Share Portfolio Link 🔗</Btn>
-            </div>
+
+              {/* Bio */}
+              <div style={{ marginTop: 16, paddingTop: 16, borderTop: `1px solid ${T.border}` }}>
+                <div style={{ fontFamily: "var(--ui)", fontSize: 12.5, fontWeight: 600, color: T.muted, textTransform: "uppercase", letterSpacing: ".1em", marginBottom: 6 }}>
+                  About & Research Focus
+                </div>
+                <p style={{ fontFamily: "var(--ui)", fontSize: 14, color: T.ink, lineHeight: 1.6, margin: 0 }}>
+                  {user?.bio || "AYUSH student researcher passionate about botanical drug discovery and clinical health systems."}
+                </p>
+              </div>
+
+              {/* Specialization Tags & Links */}
+              <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginTop: 16, flexWrap: "wrap", gap: 12 }}>
+                <div style={{ display: "flex", gap: 6, flexWrap: "wrap", alignItems: "center" }}>
+                  <span style={{ fontFamily: "var(--ui)", fontSize: 12, color: T.muted, fontWeight: 550 }}>Specializations:</span>
+                  {(user?.specializations || ["Clinical Research", "Herbal Formulation"]).map((sp) => (
+                    <Chip key={sp} tone="accent">{sp}</Chip>
+                  ))}
+                </div>
+
+                <div style={{ display: "flex", gap: 12, alignItems: "center" }}>
+                  {user?.links?.linkedin && (
+                    <a href={user.links.linkedin} target="_blank" rel="noreferrer" style={{ color: T.teal, fontSize: 13, textDecoration: "none", fontWeight: 550 }}>
+                      LinkedIn ↗
+                    </a>
+                  )}
+                  {user?.links?.researchGate && (
+                    <a href={user.links.researchGate} target="_blank" rel="noreferrer" style={{ color: T.teal, fontSize: 13, textDecoration: "none", fontWeight: 550 }}>
+                      ResearchGate ↗
+                    </a>
+                  )}
+                </div>
+              </div>
+            </Card>
 
             <div className="ay-2col" style={{ display: "grid", gap: 16 }}>
-              <Card>
-                <Eyebrow>Verified AYUSH Skills</Eyebrow>
-                {!profile ? (
-                  <Muted style={{ marginTop: 12 }}>Complete the assessment to populate verified scores.</Muted>
-                ) : (
-                  <div style={{ marginTop: 14, display: "flex", flexDirection: "column", gap: 12 }}>
-                    {SKILLS.map((s) => (
-                      <div key={s.id}>
-                        <div style={{ display: "flex", justifyContent: "space-between", fontFamily: "var(--ui)", fontSize: 13, color: T.ink, marginBottom: 4 }}>
-                          <span style={{ fontWeight: 550 }}>{s.label}</span>
-                          <span style={{ color: T.muted }}>{profile[s.id] ?? 20} / 100</span>
+              
+              {/* Left Column: Verified Skills Matrix */}
+              <div style={{ display: "flex", flexDirection: "column", gap: 16 }}>
+                <Card>
+                  <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
+                    <Eyebrow>Verified AYUSH Skills Matrix</Eyebrow>
+                    <Chip tone="good">Automated Scoring</Chip>
+                  </div>
+                  {!profile ? (
+                    <div style={{ marginTop: 12 }}>
+                      <Muted>Complete the 10-question assessment to calibrate verified competency scores.</Muted>
+                      <div style={{ marginTop: 12 }}>
+                        <Btn small onClick={() => setTab("assessment")}>Take Skill Assessment</Btn>
+                      </div>
+                    </div>
+                  ) : (
+                    <div style={{ marginTop: 14, display: "flex", flexDirection: "column", gap: 12 }}>
+                      {SKILLS.map((s) => {
+                        const bonus = certifications.filter((c) => c.boostSkill === s.id && c.verified).reduce((sum, c) => sum + (c.boostAmount || 8), 0);
+                        const rawScore = profile[s.id] ?? 20;
+                        const finalScore = Math.min(100, rawScore + bonus);
+                        return (
+                          <div key={s.id}>
+                            <div style={{ display: "flex", justifyContent: "space-between", fontFamily: "var(--ui)", fontSize: 13, color: T.ink, marginBottom: 4 }}>
+                              <span style={{ fontWeight: 550 }}>{s.label}</span>
+                              <span style={{ color: bonus > 0 ? T.sage : T.muted, fontWeight: bonus > 0 ? 650 : 500 }}>
+                                {finalScore} / 100 {bonus > 0 && `(+${bonus} cert boost)`}
+                              </span>
+                            </div>
+                            <div style={{ height: 6, background: T.bgSurface, borderRadius: 999, overflow: "hidden" }}>
+                              <div style={{ width: `${finalScore}%`, height: "100%", background: T.sage, borderRadius: 999 }} />
+                            </div>
+                          </div>
+                        );
+                      })}
+                    </div>
+                  )}
+                </Card>
+
+                {/* Clinical & Internship History */}
+                <Card>
+                  <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
+                    <Eyebrow>Clinical Rotations & Internship Experience</Eyebrow>
+                    <Btn small variant="ghost" onClick={() => { setEditingExp(null); setIsAddExpOpen(true); }}>+ Add Experience</Btn>
+                  </div>
+                  <div style={{ marginTop: 14, display: "flex", flexDirection: "column", gap: 14 }}>
+                    {experiences.map((exp) => (
+                      <div key={exp.id} style={{ paddingBottom: 12, borderBottom: `1px solid ${T.border}` }}>
+                        <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start" }}>
+                          <div>
+                            <div style={{ fontFamily: "var(--ui)", fontSize: 15, fontWeight: 600, color: T.ink }}>
+                              {exp.role}
+                            </div>
+                            <Muted style={{ fontSize: 13, color: T.teal, marginTop: 1 }}>{exp.org}</Muted>
+                            <Muted style={{ fontSize: 12, color: T.muted, marginTop: 1 }}>{exp.period}</Muted>
+                          </div>
+                          <div style={{ display: "flex", gap: 6 }}>
+                            <button
+                              onClick={() => { setEditingExp(exp); setIsAddExpOpen(true); }}
+                              style={{ background: "none", border: "none", color: T.muted, cursor: "pointer", fontSize: 12 }}
+                            >
+                              Edit
+                            </button>
+                            <button
+                              onClick={() => {
+                                setExperiences(experiences.filter((x) => x.id !== exp.id));
+                                showToast("Experience removed");
+                              }}
+                              style={{ background: "none", border: "none", color: T.terra, cursor: "pointer", fontSize: 12 }}
+                            >
+                              Delete
+                            </button>
+                          </div>
                         </div>
-                        <div style={{ height: 6, background: T.bgSurface, borderRadius: 999, overflow: "hidden" }}>
-                          <div style={{ width: `${profile[s.id] ?? 20}%`, height: "100%", background: T.sage, borderRadius: 999 }} />
-                        </div>
+                        <p style={{ fontFamily: "var(--ui)", fontSize: 13, color: T.inkSoft, marginTop: 6, lineHeight: 1.5, margin: "6px 0 0" }}>
+                          {exp.description}
+                        </p>
                       </div>
                     ))}
                   </div>
-                )}
-              </Card>
+                </Card>
+              </div>
 
+              {/* Right Column: Certifications & Verified Credentials */}
               <div style={{ display: "flex", flexDirection: "column", gap: 16 }}>
                 <Card>
-                  <Eyebrow>Academic & Industry Credentials</Eyebrow>
-                  <div style={{ marginTop: 14, display: "flex", flexDirection: "column", gap: 12 }}>
-                    {[
-                      { t: "BAMS / Professional Health Sciences", by: "All India Institute of Ayurveda", v: true },
-                      { t: "Hospital Clinical Rotation (120 Hours)", by: "AIIA Hospital Care Center", v: true },
-                      { t: "AyushBridge Skill Assessment", by: "Platform Verified", v: !!profile },
-                      ...enrolled.map((id) => {
-                        const p = PROGRAMS.find((x) => x.id === id);
-                        return { t: p?.title || "Program", by: `${p?.by} · In Progress`, v: false };
-                      }),
-                    ].map((c, i) => (
-                      <div key={i} style={{ display: "flex", justifyContent: "space-between", gap: 12, alignItems: "flex-start" }}>
-                        <div>
-                          <div style={{ fontFamily: "var(--ui)", fontSize: 14, color: T.ink, fontWeight: 550 }}>{c.t}</div>
-                          <Muted style={{ fontSize: 12.5, marginTop: 1 }}>{c.by}</Muted>
+                  <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
+                    <Eyebrow>Certifications & Credentials</Eyebrow>
+                    <Btn small onClick={() => { setEditingCert(null); setIsAddCertOpen(true); }}>+ Add Certification</Btn>
+                  </div>
+                  <Muted style={{ fontSize: 13, marginTop: 4, marginBottom: 14 }}>
+                    Verified certificates directly boost your matched skill proficiency and role readiness.
+                  </Muted>
+
+                  <div style={{ display: "flex", flexDirection: "column", gap: 12 }}>
+                    {certifications.map((c) => (
+                      <div
+                        key={c.id}
+                        style={{
+                          background: T.bgSurface,
+                          border: `1px solid ${T.border}`,
+                          borderRadius: 12,
+                          padding: 14,
+                        }}
+                      >
+                        <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", gap: 10 }}>
+                          <div>
+                            <div style={{ fontFamily: "var(--ui)", fontSize: 14.5, fontWeight: 650, color: T.ink }}>
+                              {c.title}
+                            </div>
+                            <div style={{ fontFamily: "var(--ui)", fontSize: 12.5, color: T.teal, marginTop: 2, fontWeight: 550 }}>
+                              {c.issuer}
+                            </div>
+                            <div style={{ fontFamily: "var(--ui)", fontSize: 11.5, color: T.muted, marginTop: 2 }}>
+                              Issued {c.issueDate} {c.docName && `· ${c.docName}`}
+                            </div>
+                          </div>
+                          <Chip tone={c.verified ? "good" : "neutral"}>
+                            {c.verified ? "Verified ✓" : "Pending"}
+                          </Chip>
                         </div>
-                        <Chip tone={c.v ? "good" : "neutral"}>{c.v ? "Verified ✓" : "Pending"}</Chip>
+
+                        <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginTop: 10, paddingTop: 8, borderTop: `1px solid ${T.border}30` }}>
+                          <div style={{ display: "flex", gap: 6, alignItems: "center" }}>
+                            {c.boostSkill && (
+                              <span style={{ fontSize: 11.5, fontFamily: "var(--ui)", color: T.sage, fontWeight: 600 }}>
+                                +{c.boostAmount || 10} pts in {skillShort(c.boostSkill)}
+                              </span>
+                            )}
+                          </div>
+                          <div style={{ display: "flex", gap: 8, alignItems: "center" }}>
+                            {c.credentialUrl && (
+                              <a href={c.credentialUrl} target="_blank" rel="noreferrer" style={{ fontSize: 12, color: T.teal, textDecoration: "none", fontWeight: 550 }}>
+                                Verify ↗
+                              </a>
+                            )}
+                            <button
+                              onClick={() => { setEditingCert(c); setIsAddCertOpen(true); }}
+                              style={{ background: "none", border: "none", color: T.muted, cursor: "pointer", fontSize: 12 }}
+                            >
+                              Edit
+                            </button>
+                            <button
+                              onClick={() => {
+                                setCertifications(certifications.filter((x) => x.id !== c.id));
+                                showToast("Certification deleted");
+                              }}
+                              style={{ background: "none", border: "none", color: T.terra, cursor: "pointer", fontSize: 12 }}
+                            >
+                              Delete
+                            </button>
+                          </div>
+                        </div>
                       </div>
                     ))}
                   </div>
                 </Card>
 
+                {/* Document Storage */}
                 <Card>
-                  <Eyebrow>Document Vault</Eyebrow>
+                  <Eyebrow>Digital Credential Vault</Eyebrow>
                   <Muted style={{ fontSize: 13.5, marginTop: 8 }}>
-                    Case study records, certifications, and research project summaries released to recruiters upon application.
+                    Signed university transcripts, thesis preprints, and hospital rotation logbooks stored securely.
                   </Muted>
                   <div style={{ marginTop: 14 }}>
-                    <Btn small variant="ghost">Upload Document</Btn>
+                    <Btn small variant="ghost">Upload New PDF Document 📄</Btn>
                   </div>
                 </Card>
               </div>
@@ -1897,6 +2277,7 @@ export default function AyushBridge() {
                     },
                   ]);
                   setForm({ ...form, title: "", skills: [] });
+                  showToast("Opportunity published to Student board!");
                 }}
               >
                 Publish Opening →
@@ -2114,7 +2495,430 @@ export default function AyushBridge() {
 
         <Footer T={T} />
       </main>
+
+      {/* ============================================================
+          MODALS: AUTH, PROFILE EDIT, CERTIFICATIONS, EXPERIENCES
+          ============================================================ */}
+
+      {/* 1. Google Auth Modal */}
+      {isAuthModalOpen && (
+        <ModalOverlay onClose={() => setIsAuthModalOpen(false)} T={T}>
+          <div style={{ textAlign: "center", padding: "10px 0" }}>
+            <div style={{ display: "inline-flex", padding: 12, background: T.bgSurface, borderRadius: 999, marginBottom: 14 }}>
+              <svg width="28" height="28" viewBox="0 0 24 24">
+                <path fill="#4285F4" d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z" />
+                <path fill="#34A853" d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z" />
+                <path fill="#FBBC05" d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.06H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.94l2.85-2.22.81-.63z" />
+                <path fill="#EA4335" d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.06l3.66 2.84c.87-2.6 3.3-4.52 6.16-4.52z" />
+              </svg>
+            </div>
+            <H size={22}>Sign in to AyushBridge</H>
+            <Muted style={{ fontSize: 13.5, marginTop: 6, marginBottom: 24 }}>
+              Sign in with your Google account to sync your verified AYUSH credentials, assessment results, and job applications.
+            </Muted>
+
+            <button
+              onClick={() => {
+                setUser({
+                  name: "Ishit Aggarwal",
+                  email: "ishit.aggarwal@aiia.gov.in",
+                  avatar: "https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=120&auto=format&fit=crop&q=80",
+                  institution: "All India Institute of Ayurveda (AIIA), New Delhi",
+                  year: "4th Professional Year (BAMS)",
+                  bio: "AYUSH student researcher passionate about evidence-based botanical drug development, clinical trial protocol design, and modernizing traditional health data workflows.",
+                  specializations: ["Clinical Research", "Herbal Formulation", "Herb Quality Testing", "Digital Tele-AYUSH"],
+                  links: {
+                    linkedin: "https://linkedin.com/in/ishit-aggarwal-ayush",
+                    researchGate: "https://researchgate.net/profile/Ishit-Aggarwal",
+                    website: "https://ishit-ayush.dev",
+                  },
+                });
+                setIsAuthModalOpen(false);
+                showToast("Signed in as Ishit Aggarwal via Google OAuth ✓");
+              }}
+              style={{
+                width: "100%",
+                padding: "12px 18px",
+                borderRadius: 12,
+                border: `1px solid ${T.border}`,
+                background: T.bgSurface,
+                color: T.ink,
+                fontFamily: "var(--ui)",
+                fontSize: 14.5,
+                fontWeight: 600,
+                cursor: "pointer",
+                display: "flex",
+                alignItems: "center",
+                justifyContent: "center",
+                gap: 10,
+              }}
+            >
+              <img
+                src="https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=60&auto=format&fit=crop&q=80"
+                alt="Avatar"
+                style={{ width: 24, height: 24, borderRadius: 999 }}
+              />
+              <span>Continue as Ishit Aggarwal (ishit.aggarwal@aiia.gov.in)</span>
+            </button>
+
+            <div style={{ marginTop: 16 }}>
+              <button
+                onClick={() => {
+                  setUser({
+                    name: "Dr. Ananya Sharma",
+                    email: "ananya.sharma@gmail.com",
+                    avatar: "https://images.unsplash.com/photo-1494790108377-be9c29b29330?w=120&auto=format&fit=crop&q=80",
+                    institution: "National Institute of Ayurveda, Jaipur",
+                    year: "Post-Graduate Scholar (MD)",
+                    bio: "Focusing on herbal standardized extraction techniques and clinical GCP trial outcomes.",
+                    specializations: ["Herbal Formulation", "Regulatory & GMP", "Clinical Research"],
+                    links: { linkedin: "https://linkedin.com", researchGate: "", website: "" },
+                  });
+                  setIsAuthModalOpen(false);
+                  showToast("Signed in as Dr. Ananya Sharma via Google OAuth ✓");
+                }}
+                style={{
+                  background: "none",
+                  border: "none",
+                  color: T.muted,
+                  fontSize: 13,
+                  cursor: "pointer",
+                  fontFamily: "var(--ui)",
+                }}
+              >
+                Sign in with another Google account
+              </button>
+            </div>
+          </div>
+        </ModalOverlay>
+      )}
+
+      {/* 2. Edit Profile Modal */}
+      {isEditProfileOpen && (
+        <ModalOverlay onClose={() => setIsEditProfileOpen(false)} T={T}>
+          <H size={22}>Edit Student Profile</H>
+          <Muted style={{ fontSize: 13, marginTop: 4, marginBottom: 18 }}>
+            Update your academic details, bio, and professional links.
+          </Muted>
+
+          <div style={{ display: "flex", flexDirection: "column", gap: 14 }}>
+            <div>
+              <div style={{ fontFamily: "var(--ui)", fontSize: 12.5, fontWeight: 600, color: T.ink, marginBottom: 5 }}>Full Name</div>
+              <input
+                type="text"
+                value={user?.name || ""}
+                onChange={(e) => setUser({ ...user, name: e.target.value })}
+                style={{ width: "100%", padding: "9px 12px", borderRadius: 9, border: `1px solid ${T.border}`, background: T.bgSurface, color: T.ink, fontFamily: "var(--ui)", fontSize: 13.5 }}
+              />
+            </div>
+
+            <div>
+              <div style={{ fontFamily: "var(--ui)", fontSize: 12.5, fontWeight: 600, color: T.ink, marginBottom: 5 }}>Institution / College Name</div>
+              <input
+                type="text"
+                value={user?.institution || ""}
+                onChange={(e) => setUser({ ...user, institution: e.target.value })}
+                style={{ width: "100%", padding: "9px 12px", borderRadius: 9, border: `1px solid ${T.border}`, background: T.bgSurface, color: T.ink, fontFamily: "var(--ui)", fontSize: 13.5 }}
+              />
+            </div>
+
+            <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 10 }}>
+              <div>
+                <div style={{ fontFamily: "var(--ui)", fontSize: 12.5, fontWeight: 600, color: T.ink, marginBottom: 5 }}>Year of Study</div>
+                <input
+                  type="text"
+                  value={user?.year || ""}
+                  onChange={(e) => setUser({ ...user, year: e.target.value })}
+                  style={{ width: "100%", padding: "9px 12px", borderRadius: 9, border: `1px solid ${T.border}`, background: T.bgSurface, color: T.ink, fontFamily: "var(--ui)", fontSize: 13.5 }}
+                />
+              </div>
+              <div>
+                <div style={{ fontFamily: "var(--ui)", fontSize: 12.5, fontWeight: 600, color: T.ink, marginBottom: 5 }}>Email</div>
+                <input
+                  type="email"
+                  value={user?.email || ""}
+                  onChange={(e) => setUser({ ...user, email: e.target.value })}
+                  style={{ width: "100%", padding: "9px 12px", borderRadius: 9, border: `1px solid ${T.border}`, background: T.bgSurface, color: T.ink, fontFamily: "var(--ui)", fontSize: 13.5 }}
+                />
+              </div>
+            </div>
+
+            <div>
+              <div style={{ fontFamily: "var(--ui)", fontSize: 12.5, fontWeight: 600, color: T.ink, marginBottom: 5 }}>Short Bio & Research Interests</div>
+              <textarea
+                rows={3}
+                value={user?.bio || ""}
+                onChange={(e) => setUser({ ...user, bio: e.target.value })}
+                style={{ width: "100%", padding: "9px 12px", borderRadius: 9, border: `1px solid ${T.border}`, background: T.bgSurface, color: T.ink, fontFamily: "var(--ui)", fontSize: 13.5, resize: "vertical" }}
+              />
+            </div>
+
+            <div>
+              <div style={{ fontFamily: "var(--ui)", fontSize: 12.5, fontWeight: 600, color: T.ink, marginBottom: 5 }}>LinkedIn Profile URL</div>
+              <input
+                type="text"
+                value={user?.links?.linkedin || ""}
+                onChange={(e) => setUser({ ...user, links: { ...user.links, linkedin: e.target.value } })}
+                placeholder="https://linkedin.com/in/..."
+                style={{ width: "100%", padding: "9px 12px", borderRadius: 9, border: `1px solid ${T.border}`, background: T.bgSurface, color: T.ink, fontFamily: "var(--ui)", fontSize: 13.5 }}
+              />
+            </div>
+
+            <div style={{ display: "flex", justifyContent: "flex-end", gap: 10, marginTop: 10 }}>
+              <Btn small variant="ghost" onClick={() => setIsEditProfileOpen(false)}>Cancel</Btn>
+              <Btn small onClick={() => { setIsEditProfileOpen(false); showToast("Profile updated successfully!"); }}>Save Changes</Btn>
+            </div>
+          </div>
+        </ModalOverlay>
+      )}
+
+      {/* 3. Add / Edit Certification Modal */}
+      {isAddCertOpen && (
+        <CertificationModal
+          T={T}
+          cert={editingCert}
+          onClose={() => setIsAddCertOpen(false)}
+          onSave={(newCert) => {
+            if (editingCert) {
+              setCertifications(certifications.map((c) => c.id === editingCert.id ? newCert : c));
+              showToast("Certification updated!");
+            } else {
+              setCertifications([...certifications, { ...newCert, id: "c" + Date.now(), verified: true }]);
+              showToast("New certification added & verified! Skill scores boosted.");
+            }
+            setIsAddCertOpen(false);
+          }}
+        />
+      )}
+
+      {/* 4. Add / Edit Experience Modal */}
+      {isAddExpOpen && (
+        <ExperienceModal
+          T={T}
+          exp={editingExp}
+          onClose={() => setIsAddExpOpen(false)}
+          onSave={(newExp) => {
+            if (editingExp) {
+              setExperiences(experiences.map((e) => e.id === editingExp.id ? newExp : e));
+              showToast("Experience updated!");
+            } else {
+              setExperiences([...experiences, { ...newExp, id: "e" + Date.now() }]);
+              showToast("Clinical experience added to profile!");
+            }
+            setIsAddExpOpen(false);
+          }}
+        />
+      )}
     </Shell>
+  );
+}
+
+/* ---------------- Modal Subcomponents ---------------- */
+
+function ModalOverlay({ children, onClose, T }) {
+  return (
+    <div style={{
+      position: "fixed",
+      top: 0,
+      left: 0,
+      right: 0,
+      bottom: 0,
+      background: "rgba(0,0,0,0.65)",
+      backdropFilter: "blur(6px)",
+      display: "flex",
+      alignItems: "center",
+      justifyContent: "center",
+      zIndex: 1000,
+      padding: 20,
+    }}>
+      <div style={{
+        background: T.bgCard,
+        border: `1px solid ${T.border}`,
+        borderRadius: 18,
+        width: "100%",
+        maxWidth: 540,
+        maxHeight: "90vh",
+        overflowY: "auto",
+        padding: 26,
+        boxShadow: "0 20px 50px rgba(0,0,0,0.5)",
+      }}>
+        {children}
+      </div>
+    </div>
+  );
+}
+
+function CertificationModal({ T, cert, onClose, onSave }) {
+  const [title, setTitle] = useState(cert?.title || "");
+  const [issuer, setIssuer] = useState(cert?.issuer || "");
+  const [issueDate, setIssueDate] = useState(cert?.issueDate || "August 2026");
+  const [credentialUrl, setCredentialUrl] = useState(cert?.credentialUrl || "");
+  const [boostSkill, setBoostSkill] = useState(cert?.boostSkill || "clinical_research");
+  const [docName, setDocName] = useState(cert?.docName || "Certificate_Verified.pdf");
+
+  return (
+    <ModalOverlay onClose={onClose} T={T}>
+      <H size={22}>{cert ? "Edit Certification" : "Add AYUSH Certification"}</H>
+      <Muted style={{ fontSize: 13, marginTop: 4, marginBottom: 18 }}>
+        Verified certifications tie directly into your role-readiness matching score.
+      </Muted>
+
+      <div style={{ display: "flex", flexDirection: "column", gap: 12 }}>
+        <div>
+          <div style={{ fontFamily: "var(--ui)", fontSize: 12.5, fontWeight: 600, color: T.ink, marginBottom: 5 }}>Certification Name</div>
+          <input
+            type="text"
+            value={title}
+            onChange={(e) => setTitle(e.target.value)}
+            placeholder="e.g. Good Clinical Practice (GCP) in Traditional Medicine"
+            style={{ width: "100%", padding: "9px 12px", borderRadius: 9, border: `1px solid ${T.border}`, background: T.bgSurface, color: T.ink, fontFamily: "var(--ui)", fontSize: 13.5 }}
+          />
+        </div>
+
+        <div>
+          <div style={{ fontFamily: "var(--ui)", fontSize: 12.5, fontWeight: 600, color: T.ink, marginBottom: 5 }}>Issuing Organization / Institute</div>
+          <input
+            type="text"
+            value={issuer}
+            onChange={(e) => setIssuer(e.target.value)}
+            placeholder="e.g. CCRAS / All India Institute of Ayurveda / Dabur"
+            style={{ width: "100%", padding: "9px 12px", borderRadius: 9, border: `1px solid ${T.border}`, background: T.bgSurface, color: T.ink, fontFamily: "var(--ui)", fontSize: 13.5 }}
+          />
+        </div>
+
+        <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 10 }}>
+          <div>
+            <div style={{ fontFamily: "var(--ui)", fontSize: 12.5, fontWeight: 600, color: T.ink, marginBottom: 5 }}>Date of Issue</div>
+            <input
+              type="text"
+              value={issueDate}
+              onChange={(e) => setIssueDate(e.target.value)}
+              placeholder="e.g. July 2026"
+              style={{ width: "100%", padding: "9px 12px", borderRadius: 9, border: `1px solid ${T.border}`, background: T.bgSurface, color: T.ink, fontFamily: "var(--ui)", fontSize: 13.5 }}
+            />
+          </div>
+
+          <div>
+            <div style={{ fontFamily: "var(--ui)", fontSize: 12.5, fontWeight: 600, color: T.ink, marginBottom: 5 }}>Boosted AYUSH Skill</div>
+            <select
+              value={boostSkill}
+              onChange={(e) => setBoostSkill(e.target.value)}
+              style={{ width: "100%", padding: "9px 12px", borderRadius: 9, border: `1px solid ${T.border}`, background: T.bgSurface, color: T.ink, fontFamily: "var(--ui)", fontSize: 13.5 }}
+            >
+              {SKILLS.map((s) => (
+                <option key={s.id} value={s.id}>{s.short}</option>
+              ))}
+            </select>
+          </div>
+        </div>
+
+        <div>
+          <div style={{ fontFamily: "var(--ui)", fontSize: 12.5, fontWeight: 600, color: T.ink, marginBottom: 5 }}>Credential URL or Verification Link</div>
+          <input
+            type="text"
+            value={credentialUrl}
+            onChange={(e) => setCredentialUrl(e.target.value)}
+            placeholder="https://..."
+            style={{ width: "100%", padding: "9px 12px", borderRadius: 9, border: `1px solid ${T.border}`, background: T.bgSurface, color: T.ink, fontFamily: "var(--ui)", fontSize: 13.5 }}
+          />
+        </div>
+
+        <div>
+          <div style={{ fontFamily: "var(--ui)", fontSize: 12.5, fontWeight: 600, color: T.ink, marginBottom: 5 }}>Upload Certificate Document (PDF/PNG)</div>
+          <input
+            type="text"
+            value={docName}
+            onChange={(e) => setDocName(e.target.value)}
+            placeholder="e.g. My_AYUSH_Certificate.pdf"
+            style={{ width: "100%", padding: "9px 12px", borderRadius: 9, border: `1px solid ${T.border}`, background: T.bgSurface, color: T.ink, fontFamily: "var(--ui)", fontSize: 13.5 }}
+          />
+        </div>
+
+        <div style={{ display: "flex", justifyContent: "flex-end", gap: 10, marginTop: 12 }}>
+          <Btn small variant="ghost" onClick={onClose}>Cancel</Btn>
+          <Btn
+            small
+            disabled={!title.trim() || !issuer.trim()}
+            onClick={() => onSave({ title, issuer, issueDate, credentialUrl, boostSkill, boostAmount: 12, docName })}
+          >
+            Save Certification
+          </Btn>
+        </div>
+      </div>
+    </ModalOverlay>
+  );
+}
+
+function ExperienceModal({ T, exp, onClose, onSave }) {
+  const [role, setRoleTitle] = useState(exp?.role || "");
+  const [org, setOrg] = useState(exp?.org || "");
+  const [period, setPeriod] = useState(exp?.period || "");
+  const [description, setDescription] = useState(exp?.description || "");
+
+  return (
+    <ModalOverlay onClose={onClose} T={T}>
+      <H size={22}>{exp ? "Edit Experience" : "Add Clinical / Lab Experience"}</H>
+      <Muted style={{ fontSize: 13, marginTop: 4, marginBottom: 18 }}>
+        Add your hospital clinical rotations, pharmacy apprenticeships, or research internships.
+      </Muted>
+
+      <div style={{ display: "flex", flexDirection: "column", gap: 12 }}>
+        <div>
+          <div style={{ fontFamily: "var(--ui)", fontSize: 12.5, fontWeight: 600, color: T.ink, marginBottom: 5 }}>Role / Position Title</div>
+          <input
+            type="text"
+            value={role}
+            onChange={(e) => setRoleTitle(e.target.value)}
+            placeholder="e.g. Clinical Trainee — Hospital OPD"
+            style={{ width: "100%", padding: "9px 12px", borderRadius: 9, border: `1px solid ${T.border}`, background: T.bgSurface, color: T.ink, fontFamily: "var(--ui)", fontSize: 13.5 }}
+          />
+        </div>
+
+        <div>
+          <div style={{ fontFamily: "var(--ui)", fontSize: 12.5, fontWeight: 600, color: T.ink, marginBottom: 5 }}>Hospital / Organization</div>
+          <input
+            type="text"
+            value={org}
+            onChange={(e) => setOrg(e.target.value)}
+            placeholder="e.g. AIIA Hospital, New Delhi"
+            style={{ width: "100%", padding: "9px 12px", borderRadius: 9, border: `1px solid ${T.border}`, background: T.bgSurface, color: T.ink, fontFamily: "var(--ui)", fontSize: 13.5 }}
+          />
+        </div>
+
+        <div>
+          <div style={{ fontFamily: "var(--ui)", fontSize: 12.5, fontWeight: 600, color: T.ink, marginBottom: 5 }}>Duration / Period</div>
+          <input
+            type="text"
+            value={period}
+            onChange={(e) => setPeriod(e.target.value)}
+            placeholder="e.g. Jan 2026 – Present (6 mos)"
+            style={{ width: "100%", padding: "9px 12px", borderRadius: 9, border: `1px solid ${T.border}`, background: T.bgSurface, color: T.ink, fontFamily: "var(--ui)", fontSize: 13.5 }}
+          />
+        </div>
+
+        <div>
+          <div style={{ fontFamily: "var(--ui)", fontSize: 12.5, fontWeight: 600, color: T.ink, marginBottom: 5 }}>Key Responsibilities & Case Work</div>
+          <textarea
+            rows={3}
+            value={description}
+            onChange={(e) => setDescription(e.target.value)}
+            placeholder="Describe clinical case documentation, patient care procedures, or laboratory tests performed..."
+            style={{ width: "100%", padding: "9px 12px", borderRadius: 9, border: `1px solid ${T.border}`, background: T.bgSurface, color: T.ink, fontFamily: "var(--ui)", fontSize: 13.5, resize: "vertical" }}
+          />
+        </div>
+
+        <div style={{ display: "flex", justifyContent: "flex-end", gap: 10, marginTop: 12 }}>
+          <Btn small variant="ghost" onClick={onClose}>Cancel</Btn>
+          <Btn
+            small
+            disabled={!role.trim() || !org.trim()}
+            onClick={() => onSave({ role, org, period, description })}
+          >
+            Save Experience
+          </Btn>
+        </div>
+      </div>
+    </ModalOverlay>
   );
 }
 
@@ -2146,6 +2950,7 @@ function Shell({ children, T }) {
         .ay-opt:hover { border-color: ${T.teal} !important; background: ${T.bgSurfaceHover} !important; }
         .ay-theme-btn { transition: all .15s ease; }
         .ay-theme-btn:hover { border-color: ${T.teal} !important; }
+        .ay-google-btn:hover { border-color: ${T.teal} !important; background: ${T.bgSurfaceHover} !important; }
         .ay-fill { transition: width .6s cubic-bezier(.22,1,.36,1); }
         .ay-grid4 { grid-template-columns: repeat(4, 1fr); }
         .ay-grid3 { grid-template-columns: repeat(3, 1fr); }
@@ -2158,6 +2963,10 @@ function Shell({ children, T }) {
         }
         @media (max-width: 640px) {
           .ay-grid4, .ay-grid3 { grid-template-columns: 1fr; }
+        }
+        @media print {
+          nav, header, button, .ay-theme-btn, .ay-google-btn { display: none !important; }
+          body, main { background: #fff !important; color: #000 !important; }
         }
         @media (prefers-reduced-motion: reduce) {
           * { transition: none !important; animation: none !important; }
