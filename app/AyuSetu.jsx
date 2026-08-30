@@ -1642,6 +1642,148 @@ function UserAuthWidget({ user, role, setRole, setTab, setAuthModalRole, setIsAu
   );
 }
 
+function NotificationBellWidget({ role, roleNotifications, setRoleNotifications, isNotifOpen, setIsNotifOpen, T, showToast }) {
+  const activeRoleKey = role || "visitor";
+  const currentNotifs = roleNotifications?.[activeRoleKey] || roleNotifications?.visitor || [];
+  const unreadCount = currentNotifs.filter((n) => n.unread).length;
+
+  return (
+    <div style={{ position: "relative" }}>
+      <button
+        type="button"
+        onClick={() => setIsNotifOpen(!isNotifOpen)}
+        title="Notifications & Role Alerts"
+        style={{
+          background: T.bgSurface,
+          border: `1px solid ${T.border}`,
+          color: T.ink,
+          borderRadius: 10,
+          width: 38,
+          height: 38,
+          display: "flex",
+          alignItems: "center",
+          justifyContent: "center",
+          cursor: "pointer",
+          position: "relative",
+          fontSize: 16,
+          transition: "all .15s ease",
+        }}
+      >
+        <span>🔔</span>
+        {unreadCount > 0 && (
+          <span style={{
+            position: "absolute",
+            top: -3,
+            right: -3,
+            background: T.terra,
+            color: "#FFFFFF",
+            fontSize: 10,
+            fontWeight: 750,
+            width: 17,
+            height: 17,
+            borderRadius: 999,
+            display: "flex",
+            alignItems: "center",
+            justifyContent: "center",
+            border: `2px solid ${T.bgCard}`,
+          }}>
+            {unreadCount}
+          </span>
+        )}
+      </button>
+
+      {isNotifOpen && (
+        <div
+          className="ay-dropdown"
+          style={{
+            position: "absolute",
+            top: "calc(100% + 8px)",
+            right: 0,
+            width: 360,
+            maxWidth: "92vw",
+            background: T.bgCard,
+            border: `1px solid ${T.border}`,
+            borderRadius: 14,
+            boxShadow: "0 18px 45px rgba(0,0,0,0.32)",
+            zIndex: 9999,
+            padding: "14px 16px",
+          }}
+        >
+          <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 10, borderBottom: `1px solid ${T.border}`, paddingBottom: 8 }}>
+            <div style={{ display: "flex", alignItems: "center", gap: 6 }}>
+              <span style={{ fontFamily: "var(--display)", fontSize: 15, fontWeight: 650, color: T.ink }}>
+                {role === "academician" ? "Faculty Alerts" : role === "industry" ? "Recruiter Alerts" : role === "institution" ? "Dean Alerts" : role === "student" ? "Student Alerts" : "Announcements"}
+              </span>
+              {unreadCount > 0 && (
+                <span style={{ fontSize: 10.5, padding: "1px 6px", background: T.terraSoft, color: T.terra, borderRadius: 999, fontWeight: 700 }}>
+                  {unreadCount} new
+                </span>
+              )}
+            </div>
+            <button
+              type="button"
+              onClick={() => {
+                setRoleNotifications((prev) => ({
+                  ...prev,
+                  [activeRoleKey]: (prev[activeRoleKey] || []).map((n) => ({ ...n, unread: false })),
+                }));
+                showToast("All notifications marked as read ✓");
+              }}
+              style={{ background: "none", border: "none", color: T.teal, fontSize: 11.5, cursor: "pointer", fontWeight: 600, padding: 0 }}
+            >
+              Mark all read
+            </button>
+          </div>
+
+          <div style={{ display: "flex", flexDirection: "column", gap: 8, maxHeight: 320, overflowY: "auto", paddingRight: 2 }}>
+            {currentNotifs.length === 0 ? (
+              <div style={{ padding: 18, textAlign: "center", color: T.muted, fontSize: 12.5, fontStyle: "italic" }}>
+                No notifications for this workspace role.
+              </div>
+            ) : (
+              currentNotifs.map((n) => (
+                <div
+                  key={n.id}
+                  onClick={() => {
+                    setRoleNotifications((prev) => ({
+                      ...prev,
+                      [activeRoleKey]: (prev[activeRoleKey] || []).map((x) => (x.id === n.id ? { ...x, unread: false } : x)),
+                    }));
+                    setIsNotifOpen(false);
+                  }}
+                  style={{
+                    padding: "9px 11px",
+                    borderRadius: 10,
+                    background: n.unread ? T.tealSoft : T.bgSurface,
+                    border: `1px solid ${n.unread ? T.teal : T.border}`,
+                    cursor: "pointer",
+                    display: "flex",
+                    gap: 10,
+                    alignItems: "flex-start",
+                  }}
+                >
+                  <div style={{ fontSize: 16, marginTop: 1 }}>{n.icon}</div>
+                  <div style={{ flex: 1 }}>
+                    <div style={{ display: "flex", justifyContent: "space-between", alignItems: "baseline" }}>
+                      <span style={{ fontFamily: "var(--ui)", fontSize: 12.5, fontWeight: n.unread ? 700 : 600, color: T.ink }}>
+                        {n.title}
+                      </span>
+                      <span style={{ fontSize: 10.5, color: T.muted, fontFamily: "var(--ui)" }}>{n.time}</span>
+                    </div>
+                    <div style={{ fontFamily: "var(--ui)", fontSize: 11.5, color: T.muted, marginTop: 2, lineHeight: 1.35 }}>
+                      {n.desc}
+                    </div>
+                  </div>
+                </div>
+              ))
+            )}
+          </div>
+        </div>
+      )}
+    </div>
+  );
+}
+
 function RoleSwitcherModal({ isOpen, onClose, currentRole, onSelectRole, user, showToast }) {
   const { T } = useContext(ThemeContext);
   if (!isOpen) return null;
@@ -2446,20 +2588,47 @@ export default function AyushBridge() {
   const [enrolled, setEnrolled] = useState([]);
   const [openOpp, setOpenOpp] = useState(null);
   const [posted, setPosted] = useState([]);
+  const [postedMentors, setPostedMentors] = useState([]);
+  const [postedPrograms, setPostedPrograms] = useState([]);
 
   // Bookmarks / Saved Opportunities State (Gated)
   const [savedJobs, setSavedJobs] = useState([]);
   const [showSavedOnly, setShowSavedOnly] = useState(false);
   const [workModeFilter, setWorkModeFilter] = useState("all"); // 'all' | 'Offline' | 'Online' | 'Hybrid'
 
-  // Notifications State & Dropdown
+  // Role-Specific Notifications State & Dropdown
   const [isNotifOpen, setIsNotifOpen] = useState(false);
-  const [notifications, setNotifications] = useState([
-    { id: "n1", icon: "🎓", title: "Mentorship Accepted", desc: "Dr. A. Nair accepted your Clinical Research protocol guidance request.", time: "2h ago", unread: true },
-    { id: "n2", icon: "⭐", title: "Application Shortlisted!", desc: "Himalaya Wellness shortlisted your profile for Regulatory Compliance Trainee.", time: "1d ago", unread: true },
-    { id: "n3", icon: "🌿", title: "New Matching Internship", desc: "CCRAS Trial Associate posted with 89% match to your verified skills.", time: "2d ago", unread: false },
-    { id: "n4", icon: "📜", title: "Credential Verified", desc: "CCRAS GCP Certificate verified: +15% boost added to Clinical Research.", time: "3d ago", unread: false },
-  ]);
+  const [roleNotifications, setRoleNotifications] = useState({
+    student: [
+      { id: "ns1", icon: "🎓", title: "Mentorship Accepted", desc: "Dr. A. Nair accepted your Clinical Research protocol guidance request.", time: "2h ago", unread: true },
+      { id: "ns2", icon: "⭐", title: "Application Shortlisted!", desc: "Himalaya Wellness shortlisted your profile for Regulatory Compliance Trainee.", time: "1d ago", unread: true },
+      { id: "ns3", icon: "🌿", title: "New Matching Internship", desc: "CCRAS Trial Associate posted with 89% match to your verified skills.", time: "2d ago", unread: false },
+      { id: "ns4", icon: "📜", title: "Credential Verified", desc: "CCRAS GCP Certificate verified: +15% boost added to Clinical Research.", time: "3d ago", unread: false },
+    ],
+    industry: [
+      { id: "ni1", icon: "👥", title: "New Candidate Applied", desc: "Ishit Aggarwal (Match: 88%) applied for Quality Control Trainee.", time: "30m ago", unread: true },
+      { id: "ni2", icon: "🎯", title: "Assessment Score Verified", desc: "Candidate AYB-2026-0218 completed Pharmacognosy Bench Test (92%).", time: "3h ago", unread: true },
+      { id: "ni3", icon: "📌", title: "Opening Published Live", desc: "Your posting 'Herbal Quality Control Trainee' is receiving student matches.", time: "1d ago", unread: false },
+      { id: "ni4", icon: "🏛️", title: "Campus Cohort Available", desc: "AIIA 2026 Final Year BAMS cohort results are now indexed in Talent Pool.", time: "2d ago", unread: false },
+    ],
+    academician: [
+      { id: "na1", icon: "🔬", title: "New Mentorship Request", desc: "Naitik Sharma requested guidance on Quality Control lab testing internship.", time: "1h ago", unread: true },
+      { id: "na2", icon: "📅", title: "Upcoming Session Tomorrow", desc: "Scheduled 1-on-1 trial protocol review with Viyona Menon at 3:30 PM.", time: "4h ago", unread: true },
+      { id: "na3", icon: "📑", title: "CCRAS Grant Cycle Open", desc: "Call for collaborative AYUSH industry research proposals closes Oct 15.", time: "1d ago", unread: false },
+      { id: "na4", icon: "🏛️", title: "Institutional Sabbatical Approved", desc: "Dabur R&D 6-month industry sabbatical proposal confirmed by Dean.", time: "3d ago", unread: false },
+    ],
+    institution: [
+      { id: "nin1", icon: "📊", title: "Placement Milestone Achieved", desc: "82% of AIIA 2026 cohort successfully matched to verified AYUSH roles.", time: "2h ago", unread: true },
+      { id: "nin2", icon: "⚠️", title: "Curriculum Skill Gap Alert", desc: "Pharmacognosy testing lab proficiency lags industry target by 14%.", time: "5h ago", unread: true },
+      { id: "nin3", icon: "🎓", title: "New Student Registrations", desc: "18 new students registered and verified via Institutional Apex Code.", time: "1d ago", unread: false },
+      { id: "nin4", icon: "🤝", title: "MoU Partner Request", desc: "Himalaya Wellness proposed sponsored certification module for campus.", time: "2d ago", unread: false },
+    ],
+    visitor: [
+      { id: "nv1", icon: "🌿", title: "National AYUSH Portal Active", desc: "Welcome to AyushBridge — connect with India's top herbal & healthcare industries.", time: "Just now", unread: true },
+      { id: "nv2", icon: "📜", title: "Ministry of Ayush Integration", desc: "NCISM & NCH accredited student assessment engine live for AY 2026-27.", time: "1d ago", unread: false },
+      { id: "nv3", icon: "🔬", title: "CCRAS Research Grants", desc: "Explore multi-stakeholder clinical and pharmacognosy research opportunities.", time: "2d ago", unread: false },
+    ],
+  });
 
   // Sector Filter Dragging Refs
   const sectorScrollRef = useRef(null);
@@ -2479,6 +2648,8 @@ export default function AyushBridge() {
     return { text: `⏳ Closes ${closesStr}`, isUrgent: false };
   }
 
+  // Dual Opportunity Form State (Job/Internship vs Mentorship)
+  const [oppType, setOppType] = useState("job"); // 'job' | 'mentorship'
   const [form, setForm] = useState({
     title: "",
     org: "Himalaya Wellness Company",
@@ -2490,6 +2661,44 @@ export default function AyushBridge() {
     physicalInterview: "Yes",
     interviewRounds: "2 Rounds",
     skills: [],
+  });
+
+  const [mentorForm, setMentorForm] = useState({
+    title: "",
+    mentorName: "Dr. R. K. Singhal",
+    dept: "Natural Product Chemistry & Standardization",
+    institution: "Himalaya Wellness R&D",
+    specialization: "Phytochemical Profiling, HPTLC & Herbal Standardization",
+    format: "Online",
+    duration: "45 mins",
+    isPaid: false,
+    price: 0,
+    prerequisites: "Completed 2nd Year BAMS / B.Pharm Ayurveda with coursework in Dravyaguna & Pharmacognosy",
+    learningOutcomes: "Interpretation of chromatographic fingerprinting data for herbal extracts\nWriting standard testing procedures compliant with Ayurvedic Pharmacopoeia of India (API)",
+    venue: "Himalaya Wellness Lab 4B, Bengaluru",
+    meetLink: "https://meet.google.com/ayu-himalaya-mentorship",
+  });
+
+  // Institution "Post a Programme" Form State
+  const [progForm, setProgForm] = useState({
+    title: "",
+    institution: "All India Institute of Ayurveda (AIIA)",
+    desc: "",
+    sector: "ayurveda",
+    format: "Hybrid",
+    startDate: "2026-10-15",
+    startDateFormatted: "15 Oct 2026",
+    weeks: 6,
+    reportingTime: "09:30 AM IST",
+    venue: "Academic Auditorium & Clinical Research Wing, AIIA, New Delhi",
+    meetLink: "https://meet.google.com/aiia-prog-2026",
+    seats: 35,
+    prerequisites: "BAMS Final Year, Interns or PG Scholars with valid institutional registration",
+    skillsGained: "Clinical Protocol Drafting, Pharmacopoeial Standardization, Case Sheet Telemetry",
+    boosts: "clinical_research",
+    isPaid: false,
+    price: 0,
+    closes: "10 Oct 2026",
   });
 
   const T = THEMES[themeMode];
@@ -2780,7 +2989,16 @@ export default function AyushBridge() {
               borderBottom: `1px solid ${T.borderSubtle}`,
             }}>
               <Logo />
-              <div style={{ display: "flex", alignItems: "center", gap: 14 }}>
+              <div style={{ display: "flex", alignItems: "center", gap: 12 }}>
+                <NotificationBellWidget
+                  role={role}
+                  roleNotifications={roleNotifications}
+                  setRoleNotifications={setRoleNotifications}
+                  isNotifOpen={isNotifOpen}
+                  setIsNotifOpen={setIsNotifOpen}
+                  T={T}
+                  showToast={showToast}
+                />
                 <ThemeToggle />
                 <UserAuthWidget
                   user={user}
@@ -3193,6 +3411,7 @@ export default function AyushBridge() {
       ["overview", "Institution & Placement"],
       ["cohort", "Cohort Skill Gaps"],
       ["placement", "Placement Pipeline"],
+      ["post_program", "Post a Programme"],
     ],
   }[role];
 
@@ -3280,117 +3499,15 @@ export default function AyushBridge() {
             </div>
 
             <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
-              {/* Notification Bell Widget with Dropdown */}
-              <div style={{ position: "relative" }}>
-                <button
-                  onClick={() => setIsNotifOpen(!isNotifOpen)}
-                  title="Notifications & Alerts"
-                  style={{
-                    background: T.bgSurface,
-                    border: `1px solid ${T.border}`,
-                    color: T.ink,
-                    borderRadius: 10,
-                    width: 38,
-                    height: 38,
-                    display: "flex",
-                    alignItems: "center",
-                    justifyContent: "center",
-                    cursor: "pointer",
-                    position: "relative",
-                    fontSize: 16,
-                  }}
-                >
-                  <span>🔔</span>
-                  {notifications.filter((n) => n.unread).length > 0 && (
-                    <span style={{
-                      position: "absolute",
-                      top: -3,
-                      right: -3,
-                      background: T.terra,
-                      color: "#FFFFFF",
-                      fontSize: 10,
-                      fontWeight: 750,
-                      width: 17,
-                      height: 17,
-                      borderRadius: 999,
-                      display: "flex",
-                      alignItems: "center",
-                      justifyContent: "center",
-                      border: `2px solid ${T.bgCard}`,
-                    }}>
-                      {notifications.filter((n) => n.unread).length}
-                    </span>
-                  )}
-                </button>
-
-                {isNotifOpen && (
-                  <div
-                    className="ay-dropdown"
-                    style={{
-                      position: "absolute",
-                      top: 46,
-                      right: 0,
-                      width: 320,
-                      background: T.bgCard,
-                      border: `1px solid ${T.border}`,
-                      borderRadius: 14,
-                      boxShadow: "0 14px 40px rgba(0,0,0,0.22)",
-                      zIndex: 50,
-                      padding: "14px 16px",
-                    }}
-                  >
-                    <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 10, borderBottom: `1px solid ${T.border}`, paddingBottom: 8 }}>
-                      <span style={{ fontFamily: "var(--display)", fontSize: 15, fontWeight: 650, color: T.ink }}>
-                        Notifications ({notifications.filter((n) => n.unread).length} new)
-                      </span>
-                      <button
-                        onClick={() => {
-                          setNotifications((prev) => prev.map((n) => ({ ...n, unread: false })));
-                          showToast("All notifications marked as read ✓");
-                        }}
-                        style={{ background: "none", border: "none", color: T.teal, fontSize: 11.5, cursor: "pointer", fontWeight: 600, padding: 0 }}
-                      >
-                        Mark all read
-                      </button>
-                    </div>
-
-                    <div style={{ display: "flex", flexDirection: "column", gap: 10, maxHeight: 300, overflowY: "auto" }}>
-                      {notifications.map((n) => (
-                        <div
-                          key={n.id}
-                          onClick={() => {
-                            setNotifications((prev) => prev.map((x) => x.id === n.id ? { ...x, unread: false } : x));
-                            setIsNotifOpen(false);
-                          }}
-                          style={{
-                            padding: "8px 10px",
-                            borderRadius: 10,
-                            background: n.unread ? T.tealSoft : T.bgSurface,
-                            border: `1px solid ${n.unread ? T.teal : T.border}`,
-                            cursor: "pointer",
-                            display: "flex",
-                            gap: 10,
-                            alignItems: "flex-start",
-                          }}
-                        >
-                          <span style={{ fontSize: 18 }}>{n.icon}</span>
-                          <div style={{ flex: 1 }}>
-                            <div style={{ fontFamily: "var(--ui)", fontSize: 13, fontWeight: n.unread ? 650 : 550, color: T.ink }}>
-                              {n.title}
-                            </div>
-                            <div style={{ fontFamily: "var(--ui)", fontSize: 12, color: T.muted, marginTop: 2, lineHeight: 1.4 }}>
-                              {n.desc}
-                            </div>
-                            <div style={{ fontFamily: "var(--ui)", fontSize: 11, color: T.teal, marginTop: 4, fontWeight: 500 }}>
-                              {n.time}
-                            </div>
-                          </div>
-                        </div>
-                      ))}
-                    </div>
-                  </div>
-                )}
-              </div>
+              <NotificationBellWidget
+                role={role}
+                roleNotifications={roleNotifications}
+                setRoleNotifications={setRoleNotifications}
+                isNotifOpen={isNotifOpen}
+                setIsNotifOpen={setIsNotifOpen}
+                T={T}
+                showToast={showToast}
+              />
 
               <ThemeToggle />
               <UserAuthWidget
@@ -4076,11 +4193,13 @@ export default function AyushBridge() {
         )}
 
         {/* --- PROGRAMS TAB --- */}
-        {role === "student" && tab === "programs" && (
+        {role === "student" && tab === "programs" && (() => {
+          const allPrograms = [...postedPrograms, ...PROGRAMS];
+          return (
           <>
             <H size={28}>Industry Certified Learning Programs</H>
             <Muted style={{ marginTop: 4, marginBottom: 18 }}>
-              Published directly by AYUSH manufacturers and research councils. Completing one raises the verified skill on your profile.
+              Published directly by AYUSH manufacturers, research councils, and accredited institutions. Completing one raises the verified skill on your profile.
             </Muted>
 
             {/* Programs Sub-Tabs */}
@@ -4112,7 +4231,7 @@ export default function AyushBridge() {
                 }}
               >
                 <span>🎓</span>
-                <span>Browse All Programmes ({PROGRAMS.length})</span>
+                <span>Browse All Programmes ({allPrograms.length})</span>
               </button>
 
               <button
@@ -4143,7 +4262,7 @@ export default function AyushBridge() {
             {/* Subtab 1: Browse All Programmes */}
             {programsSubTab === "browse" && (
               <div className="ay-grid3" style={{ display: "grid", gap: 14 }}>
-                {PROGRAMS.map((p) => (
+                {allPrograms.map((p) => (
                   <Card key={p.id} style={{ display: "flex", flexDirection: "column", gap: 12, justifyContent: "space-between" }}>
                     <div>
                       <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", gap: 8, marginBottom: 4, flexWrap: "wrap" }}>
@@ -4197,7 +4316,7 @@ export default function AyushBridge() {
                           Skills Gained:
                         </div>
                         <div style={{ display: "flex", gap: 5, flexWrap: "wrap" }}>
-                          {p.skillsGained.map((sg) => (
+                          {(p.skillsGained || []).map((sg) => (
                             <span
                               key={sg}
                               style={{
@@ -4241,7 +4360,7 @@ export default function AyushBridge() {
 
             {/* Subtab 2: My Enrolled Programmes */}
             {programsSubTab === "enrolled" && (() => {
-              const enrolledPrograms = PROGRAMS.filter((p) => enrolled.includes(p.id));
+              const enrolledPrograms = allPrograms.filter((p) => enrolled.includes(p.id));
               if (enrolledPrograms.length === 0) {
                 return (
                   <Card style={{ maxWidth: 580, padding: 32, margin: "10px 0" }}>
@@ -4390,7 +4509,8 @@ export default function AyushBridge() {
               );
             })()}
           </>
-        )}
+          );
+        })()}
 
         {/* --- APPLICATIONS TAB --- */}
         {role === "student" && tab === "applications" && (
@@ -5717,219 +5837,565 @@ export default function AyushBridge() {
         )}
 
         {role === "industry" && tab === "post" && (
-          <div style={{ maxWidth: 660 }}>
+          <div style={{ maxWidth: 680 }}>
             <H size={28}>Publish AYUSH Opportunity</H>
             <Muted style={{ marginTop: 4, marginBottom: 20 }}>
-              Specify required skills, LPA compensation, and target proficiency thresholds. Candidates are ranked objectively on measured capability.
+              Publish verified jobs, stipended internships, or 1-on-1 industry mentorship cohorts for AYUSH students & researchers.
             </Muted>
 
             <Card>
-              <div style={{ marginBottom: 16 }}>
-                <div style={{ fontFamily: "var(--ui)", fontSize: 13, color: T.ink, fontWeight: 600, marginBottom: 6 }}>
-                  Role Title
-                </div>
-                <input
-                  value={form.title}
-                  onChange={(e) => setForm({ ...form, title: e.target.value })}
-                  placeholder="e.g. Natural Product Quality Control Trainee"
-                  style={{
-                    width: "100%",
-                    padding: "10px 14px",
-                    borderRadius: 10,
-                    border: `1px solid ${T.border}`,
-                    background: T.bgSurface,
-                    color: T.ink,
-                    fontFamily: "var(--ui)",
-                    fontSize: 14,
-                    outline: "none",
-                  }}
-                />
-              </div>
-
-              <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 14, marginBottom: 16 }}>
-                <div>
-                  <div style={{ fontFamily: "var(--ui)", fontSize: 13, color: T.ink, fontWeight: 600, marginBottom: 6 }}>
-                    AYUSH Sector
-                  </div>
-                  <select
-                    value={form.domain}
-                    onChange={(e) => setForm({ ...form, domain: e.target.value })}
-                    style={{
-                      width: "100%",
-                      padding: "10px 12px",
-                      borderRadius: 10,
-                      border: `1px solid ${T.border}`,
-                      background: T.bgSurface,
-                      color: T.ink,
-                      fontFamily: "var(--ui)",
-                      fontSize: 13.5,
-                      outline: "none",
-                    }}
-                  >
-                    {AYUSH_SECTORS.filter((s) => s.id !== "all").map((s) => (
-                      <option key={s.id} value={s.id}>{s.label}</option>
-                    ))}
-                  </select>
-                </div>
-
-                <div>
-                  <div style={{ fontFamily: "var(--ui)", fontSize: 13, color: T.ink, fontWeight: 600, marginBottom: 6 }}>
-                    Salary (in LPA)
-                  </div>
-                  <input
-                    value={form.pay}
-                    onChange={(e) => setForm({ ...form, pay: e.target.value })}
-                    placeholder="e.g. ₹2.40 LPA"
-                    style={{
-                      width: "100%",
-                      padding: "10px 12px",
-                      borderRadius: 10,
-                      border: `1px solid ${T.border}`,
-                      background: T.bgSurface,
-                      color: T.ink,
-                      fontFamily: "var(--ui)",
-                      fontSize: 13.5,
-                      outline: "none",
-                    }}
-                  />
-                </div>
-              </div>
-
-              <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 14, marginBottom: 16 }}>
-                <div>
-                  <div style={{ fontFamily: "var(--ui)", fontSize: 13, color: T.ink, fontWeight: 600, marginBottom: 6 }}>
-                    Work Mode
-                  </div>
-                  <select
-                    value={form.workMode}
-                    onChange={(e) => setForm({ ...form, workMode: e.target.value })}
-                    style={{
-                      width: "100%",
-                      padding: "10px 12px",
-                      borderRadius: 10,
-                      border: `1px solid ${T.border}`,
-                      background: T.bgSurface,
-                      color: T.ink,
-                      fontFamily: "var(--ui)",
-                      fontSize: 13.5,
-                      outline: "none",
-                    }}
-                  >
-                    <option value="Offline">Offline (On-site)</option>
-                    <option value="Online">Online (Remote)</option>
-                    <option value="Hybrid">Hybrid</option>
-                  </select>
-                </div>
-
-                <div>
-                  <div style={{ fontFamily: "var(--ui)", fontSize: 13, color: T.ink, fontWeight: 600, marginBottom: 6 }}>
-                    Physical Interview Required
-                  </div>
-                  <select
-                    value={form.physicalInterview}
-                    onChange={(e) => setForm({ ...form, physicalInterview: e.target.value })}
-                    style={{
-                      width: "100%",
-                      padding: "10px 12px",
-                      borderRadius: 10,
-                      border: `1px solid ${T.border}`,
-                      background: T.bgSurface,
-                      color: T.ink,
-                      fontFamily: "var(--ui)",
-                      fontSize: 13.5,
-                      outline: "none",
-                    }}
-                  >
-                    <option value="Yes">Yes</option>
-                    <option value="No (Virtual Only)">No (Virtual Only)</option>
-                    <option value="Final Round Only">Final Round Only</option>
-                  </select>
-                </div>
-              </div>
-
-              <div style={{ marginBottom: 18 }}>
+              {/* Opportunity Type Toggle Selector */}
+              <div style={{ marginBottom: 20 }}>
                 <div style={{ fontFamily: "var(--ui)", fontSize: 13, color: T.ink, fontWeight: 600, marginBottom: 8 }}>
-                  Required Skills (Pick up to 4)
+                  Opportunity Type
                 </div>
-                <div style={{ display: "flex", gap: 8, flexWrap: "wrap" }}>
-                  {SKILLS.map((s) => {
-                    const on = form.skills.includes(s.id);
-                    return (
-                      <button
-                        key={s.id}
-                        onClick={() => {
-                          setForm({
-                            ...form,
-                            skills: on
-                              ? form.skills.filter((x) => x !== s.id)
-                              : form.skills.length < 4
-                              ? [...form.skills, s.id]
-                              : form.skills,
-                          });
-                        }}
+                <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 10 }}>
+                  <button
+                    type="button"
+                    onClick={() => setOppType("job")}
+                    style={{
+                      padding: "10px 14px",
+                      borderRadius: 10,
+                      border: `1.5px solid ${oppType === "job" ? T.teal : T.border}`,
+                      background: oppType === "job" ? T.tealSoft : T.bgSurface,
+                      color: oppType === "job" ? T.teal : T.muted,
+                      fontWeight: oppType === "job" ? 700 : 550,
+                      fontFamily: "var(--ui)",
+                      fontSize: 13.5,
+                      cursor: "pointer",
+                      display: "flex",
+                      alignItems: "center",
+                      justifyContent: "center",
+                      gap: 8,
+                      transition: "all .15s ease",
+                    }}
+                  >
+                    <span>💼</span>
+                    <span>Job / Internship</span>
+                  </button>
+
+                  <button
+                    type="button"
+                    onClick={() => setOppType("mentorship")}
+                    style={{
+                      padding: "10px 14px",
+                      borderRadius: 10,
+                      border: `1.5px solid ${oppType === "mentorship" ? T.teal : T.border}`,
+                      background: oppType === "mentorship" ? T.tealSoft : T.bgSurface,
+                      color: oppType === "mentorship" ? T.teal : T.muted,
+                      fontWeight: oppType === "mentorship" ? 700 : 550,
+                      fontFamily: "var(--ui)",
+                      fontSize: 13.5,
+                      cursor: "pointer",
+                      display: "flex",
+                      alignItems: "center",
+                      justifyContent: "center",
+                      gap: 8,
+                      transition: "all .15s ease",
+                    }}
+                  >
+                    <span>🎓</span>
+                    <span>Mentorship Opportunity</span>
+                  </button>
+                </div>
+              </div>
+
+              {/* 1. JOB / INTERNSHIP FIELDS */}
+              {oppType === "job" && (
+                <>
+                  <div style={{ marginBottom: 16 }}>
+                    <div style={{ fontFamily: "var(--ui)", fontSize: 13, color: T.ink, fontWeight: 600, marginBottom: 6 }}>
+                      Role Title
+                    </div>
+                    <input
+                      value={form.title}
+                      onChange={(e) => setForm({ ...form, title: e.target.value })}
+                      placeholder="e.g. Natural Product Quality Control Trainee"
+                      style={{
+                        width: "100%",
+                        padding: "10px 14px",
+                        borderRadius: 10,
+                        border: `1px solid ${T.border}`,
+                        background: T.bgSurface,
+                        color: T.ink,
+                        fontFamily: "var(--ui)",
+                        fontSize: 14,
+                        outline: "none",
+                      }}
+                    />
+                  </div>
+
+                  <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 14, marginBottom: 16 }}>
+                    <div>
+                      <div style={{ fontFamily: "var(--ui)", fontSize: 13, color: T.ink, fontWeight: 600, marginBottom: 6 }}>
+                        AYUSH Sector
+                      </div>
+                      <select
+                        value={form.domain}
+                        onChange={(e) => setForm({ ...form, domain: e.target.value })}
                         style={{
-                          padding: "6px 12px",
-                          borderRadius: 999,
-                          border: `1px solid ${on ? T.sage : T.border}`,
-                          background: on ? T.sageSoft : T.bgSurface,
-                          color: on ? T.sage : T.muted,
-                          fontSize: 12.5,
-                          fontWeight: 550,
-                          cursor: "pointer",
+                          width: "100%",
+                          padding: "10px 12px",
+                          borderRadius: 10,
+                          border: `1px solid ${T.border}`,
+                          background: T.bgSurface,
+                          color: T.ink,
+                          fontFamily: "var(--ui)",
+                          fontSize: 13.5,
+                          outline: "none",
                         }}
                       >
-                        {s.short}
-                      </button>
-                    );
-                  })}
-                </div>
-              </div>
+                        {AYUSH_SECTORS.filter((s) => s.id !== "all").map((s) => (
+                          <option key={s.id} value={s.id}>{s.label}</option>
+                        ))}
+                      </select>
+                    </div>
 
-              <Btn
-                disabled={!form.title.trim() || form.skills.length === 0}
-                onClick={() => {
-                  if (!user) {
-                    setAuthModalRole("industry");
-                    setIsAuthModalOpen(true);
-                    showToast("Please sign in as an Industry Recruiter to publish opportunities.");
-                    return;
-                  }
-                  const req = {};
-                  form.skills.forEach((s) => { req[s] = 65; });
-                  setPosted((p) => [
-                    ...p,
-                    {
-                      id: "n" + (p.length + 1),
-                      title: form.title,
-                      org: "Himalaya Wellness Company",
-                      loc: form.loc || "Bengaluru, Karnataka",
-                      domain: form.domain,
-                      type: form.type,
-                      pay: form.pay.includes("LPA") ? form.pay : `${form.pay} LPA`,
-                      workMode: form.workMode,
-                      physicalInterview: form.physicalInterview,
-                      interviewRounds: "2 Rounds: Technical + HR",
-                      closes: "31 Oct 2026",
-                      requires: req,
-                      about: "Published directly via AyushBridge Recruiter Workspace.",
-                      qualifications: "BAMS / B.Pharm Ayurveda / Relevant Degree",
-                      preferredSkills: "AYUSH GMP, Product Formulation, Standard Lab Testing",
-                      dayInLife: "Supervising laboratory and production activities, analyzing product quality logs.",
-                    },
-                  ]);
-                  setForm({ ...form, title: "", skills: [] });
-                  showToast("Opportunity published to Student board in LPA format!");
-                }}
-              >
-                Publish Opening →
-              </Btn>
+                    <div>
+                      <div style={{ fontFamily: "var(--ui)", fontSize: 13, color: T.ink, fontWeight: 600, marginBottom: 6 }}>
+                        Salary (in LPA)
+                      </div>
+                      <input
+                        value={form.pay}
+                        onChange={(e) => setForm({ ...form, pay: e.target.value })}
+                        placeholder="e.g. ₹2.40 LPA"
+                        style={{
+                          width: "100%",
+                          padding: "10px 12px",
+                          borderRadius: 10,
+                          border: `1px solid ${T.border}`,
+                          background: T.bgSurface,
+                          color: T.ink,
+                          fontFamily: "var(--ui)",
+                          fontSize: 13.5,
+                          outline: "none",
+                        }}
+                      />
+                    </div>
+                  </div>
 
-              {posted.length > 0 && (
+                  <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 14, marginBottom: 16 }}>
+                    <div>
+                      <div style={{ fontFamily: "var(--ui)", fontSize: 13, color: T.ink, fontWeight: 600, marginBottom: 6 }}>
+                        Work Mode
+                      </div>
+                      <select
+                        value={form.workMode}
+                        onChange={(e) => setForm({ ...form, workMode: e.target.value })}
+                        style={{
+                          width: "100%",
+                          padding: "10px 12px",
+                          borderRadius: 10,
+                          border: `1px solid ${T.border}`,
+                          background: T.bgSurface,
+                          color: T.ink,
+                          fontFamily: "var(--ui)",
+                          fontSize: 13.5,
+                          outline: "none",
+                        }}
+                      >
+                        <option value="Offline">Offline (On-site)</option>
+                        <option value="Online">Online (Remote)</option>
+                        <option value="Hybrid">Hybrid</option>
+                      </select>
+                    </div>
+
+                    <div>
+                      <div style={{ fontFamily: "var(--ui)", fontSize: 13, color: T.ink, fontWeight: 600, marginBottom: 6 }}>
+                        Physical Interview Required
+                      </div>
+                      <select
+                        value={form.physicalInterview}
+                        onChange={(e) => setForm({ ...form, physicalInterview: e.target.value })}
+                        style={{
+                          width: "100%",
+                          padding: "10px 12px",
+                          borderRadius: 10,
+                          border: `1px solid ${T.border}`,
+                          background: T.bgSurface,
+                          color: T.ink,
+                          fontFamily: "var(--ui)",
+                          fontSize: 13.5,
+                          outline: "none",
+                        }}
+                      >
+                        <option value="Yes">Yes</option>
+                        <option value="No (Virtual Only)">No (Virtual Only)</option>
+                        <option value="Final Round Only">Final Round Only</option>
+                      </select>
+                    </div>
+                  </div>
+
+                  <div style={{ marginBottom: 18 }}>
+                    <div style={{ fontFamily: "var(--ui)", fontSize: 13, color: T.ink, fontWeight: 600, marginBottom: 8 }}>
+                      Required Skills (Pick up to 4)
+                    </div>
+                    <div style={{ display: "flex", gap: 8, flexWrap: "wrap" }}>
+                      {SKILLS.map((s) => {
+                        const on = form.skills.includes(s.id);
+                        return (
+                          <button
+                            key={s.id}
+                            type="button"
+                            onClick={() => {
+                              setForm({
+                                ...form,
+                                skills: on
+                                  ? form.skills.filter((x) => x !== s.id)
+                                  : form.skills.length < 4
+                                  ? [...form.skills, s.id]
+                                  : form.skills,
+                              });
+                            }}
+                            style={{
+                              padding: "6px 12px",
+                              borderRadius: 999,
+                              border: `1px solid ${on ? T.sage : T.border}`,
+                              background: on ? T.sageSoft : T.bgSurface,
+                              color: on ? T.sage : T.muted,
+                              fontSize: 12.5,
+                              fontWeight: 550,
+                              cursor: "pointer",
+                            }}
+                          >
+                            {s.short}
+                          </button>
+                        );
+                      })}
+                    </div>
+                  </div>
+
+                  <Btn
+                    disabled={!form.title.trim() || form.skills.length === 0}
+                    onClick={() => {
+                      if (!user) {
+                        setAuthModalRole("industry");
+                        setIsAuthModalOpen(true);
+                        showToast("Please sign in as an Industry Recruiter to publish opportunities.");
+                        return;
+                      }
+                      const req = {};
+                      form.skills.forEach((s) => { req[s] = 65; });
+                      setPosted((p) => [
+                        ...p,
+                        {
+                          id: "n" + (p.length + 1),
+                          title: form.title,
+                          org: user.company || "Himalaya Wellness Company",
+                          loc: form.loc || "Bengaluru, Karnataka",
+                          domain: form.domain,
+                          type: form.type,
+                          pay: form.pay.includes("LPA") ? form.pay : `${form.pay} LPA`,
+                          workMode: form.workMode,
+                          physicalInterview: form.physicalInterview,
+                          interviewRounds: "2 Rounds: Technical + HR",
+                          closes: "31 Oct 2026",
+                          requires: req,
+                          about: "Published directly via AyushBridge Recruiter Workspace.",
+                          qualifications: "BAMS / B.Pharm Ayurveda / Relevant Degree",
+                          preferredSkills: "AYUSH GMP, Product Formulation, Standard Lab Testing",
+                          dayInLife: "Supervising laboratory and production activities, analyzing product quality logs.",
+                        },
+                      ]);
+                      setForm({ ...form, title: "", skills: [] });
+                      showToast("Job opening published! Visible on Student Opportunity Board.");
+                    }}
+                  >
+                    Publish Opening →
+                  </Btn>
+                </>
+              )}
+
+              {/* 2. MENTORSHIP FIELDS */}
+              {oppType === "mentorship" && (
+                <>
+                  <div style={{ marginBottom: 14 }}>
+                    <div style={{ fontFamily: "var(--ui)", fontSize: 13, color: T.ink, fontWeight: 600, marginBottom: 6 }}>
+                      Mentorship Title / Topic
+                    </div>
+                    <input
+                      value={mentorForm.title}
+                      onChange={(e) => setMentorForm({ ...mentorForm, title: e.target.value })}
+                      placeholder="e.g. Phytochemical Standardization & HPTLC Column Calibration"
+                      style={{
+                        width: "100%",
+                        padding: "10px 14px",
+                        borderRadius: 10,
+                        border: `1px solid ${T.border}`,
+                        background: T.bgSurface,
+                        color: T.ink,
+                        fontFamily: "var(--ui)",
+                        fontSize: 14,
+                        outline: "none",
+                      }}
+                    />
+                  </div>
+
+                  <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 14, marginBottom: 14 }}>
+                    <div>
+                      <div style={{ fontFamily: "var(--ui)", fontSize: 13, color: T.ink, fontWeight: 600, marginBottom: 6 }}>
+                        Lead Expert / Mentor Name
+                      </div>
+                      <input
+                        value={mentorForm.mentorName}
+                        onChange={(e) => setMentorForm({ ...mentorForm, mentorName: e.target.value })}
+                        placeholder="e.g. Dr. R. K. Singhal"
+                        style={{
+                          width: "100%",
+                          padding: "10px 12px",
+                          borderRadius: 10,
+                          border: `1px solid ${T.border}`,
+                          background: T.bgSurface,
+                          color: T.ink,
+                          fontFamily: "var(--ui)",
+                          fontSize: 13.5,
+                          outline: "none",
+                        }}
+                      />
+                    </div>
+
+                    <div>
+                      <div style={{ fontFamily: "var(--ui)", fontSize: 13, color: T.ink, fontWeight: 600, marginBottom: 6 }}>
+                        Department & Organization
+                      </div>
+                      <input
+                        value={mentorForm.dept}
+                        onChange={(e) => setMentorForm({ ...mentorForm, dept: e.target.value })}
+                        placeholder="e.g. R&D Quality Assurance, Himalaya Wellness"
+                        style={{
+                          width: "100%",
+                          padding: "10px 12px",
+                          borderRadius: 10,
+                          border: `1px solid ${T.border}`,
+                          background: T.bgSurface,
+                          color: T.ink,
+                          fontFamily: "var(--ui)",
+                          fontSize: 13.5,
+                          outline: "none",
+                        }}
+                      />
+                    </div>
+                  </div>
+
+                  <div style={{ marginBottom: 14 }}>
+                    <div style={{ fontFamily: "var(--ui)", fontSize: 13, color: T.ink, fontWeight: 600, marginBottom: 6 }}>
+                      Area of Expertise / Specialization
+                    </div>
+                    <input
+                      value={mentorForm.specialization}
+                      onChange={(e) => setMentorForm({ ...mentorForm, specialization: e.target.value })}
+                      placeholder="e.g. Phytochemical Profiling, HPTLC & Herbal Assay"
+                      style={{
+                        width: "100%",
+                        padding: "10px 12px",
+                        borderRadius: 10,
+                        border: `1px solid ${T.border}`,
+                        background: T.bgSurface,
+                        color: T.ink,
+                        fontFamily: "var(--ui)",
+                        fontSize: 13.5,
+                        outline: "none",
+                      }}
+                    />
+                  </div>
+
+                  <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr 1fr", gap: 12, marginBottom: 14 }}>
+                    <div>
+                      <div style={{ fontFamily: "var(--ui)", fontSize: 13, color: T.ink, fontWeight: 600, marginBottom: 6 }}>
+                        Format
+                      </div>
+                      <select
+                        value={mentorForm.format}
+                        onChange={(e) => setMentorForm({ ...mentorForm, format: e.target.value })}
+                        style={{
+                          width: "100%",
+                          padding: "10px 12px",
+                          borderRadius: 10,
+                          border: `1px solid ${T.border}`,
+                          background: T.bgSurface,
+                          color: T.ink,
+                          fontFamily: "var(--ui)",
+                          fontSize: 13.5,
+                          outline: "none",
+                        }}
+                      >
+                        <option value="Online">Online</option>
+                        <option value="Offline">Offline</option>
+                        <option value="Hybrid">Hybrid</option>
+                      </select>
+                    </div>
+
+                    <div>
+                      <div style={{ fontFamily: "var(--ui)", fontSize: 13, color: T.ink, fontWeight: 600, marginBottom: 6 }}>
+                        Session Duration
+                      </div>
+                      <input
+                        value={mentorForm.duration}
+                        onChange={(e) => setMentorForm({ ...mentorForm, duration: e.target.value })}
+                        placeholder="e.g. 45 mins"
+                        style={{
+                          width: "100%",
+                          padding: "10px 12px",
+                          borderRadius: 10,
+                          border: `1px solid ${T.border}`,
+                          background: T.bgSurface,
+                          color: T.ink,
+                          fontFamily: "var(--ui)",
+                          fontSize: 13.5,
+                          outline: "none",
+                        }}
+                      />
+                    </div>
+
+                    <div>
+                      <div style={{ fontFamily: "var(--ui)", fontSize: 13, color: T.ink, fontWeight: 600, marginBottom: 6 }}>
+                        Pricing Tier
+                      </div>
+                      <select
+                        value={mentorForm.isPaid ? "paid" : "free"}
+                        onChange={(e) => setMentorForm({ ...mentorForm, isPaid: e.target.value === "paid" })}
+                        style={{
+                          width: "100%",
+                          padding: "10px 12px",
+                          borderRadius: 10,
+                          border: `1px solid ${T.border}`,
+                          background: T.bgSurface,
+                          color: T.ink,
+                          fontFamily: "var(--ui)",
+                          fontSize: 13.5,
+                          outline: "none",
+                        }}
+                      >
+                        <option value="free">Free (Industry Outreach)</option>
+                        <option value="paid">Paid Mentorship</option>
+                      </select>
+                    </div>
+                  </div>
+
+                  {mentorForm.isPaid && (
+                    <div style={{ marginBottom: 14 }}>
+                      <div style={{ fontFamily: "var(--ui)", fontSize: 13, color: T.ink, fontWeight: 600, marginBottom: 6 }}>
+                        Mentorship Fee (in ₹)
+                      </div>
+                      <input
+                        type="number"
+                        value={mentorForm.price}
+                        onChange={(e) => setMentorForm({ ...mentorForm, price: e.target.value })}
+                        placeholder="e.g. 499"
+                        style={{
+                          width: "100%",
+                          padding: "10px 12px",
+                          borderRadius: 10,
+                          border: `1px solid ${T.border}`,
+                          background: T.bgSurface,
+                          color: T.ink,
+                          fontFamily: "var(--ui)",
+                          fontSize: 13.5,
+                          outline: "none",
+                        }}
+                      />
+                    </div>
+                  )}
+
+                  <div style={{ marginBottom: 14 }}>
+                    <div style={{ fontFamily: "var(--ui)", fontSize: 13, color: T.ink, fontWeight: 600, marginBottom: 6 }}>
+                      Prerequisites / Required Background
+                    </div>
+                    <input
+                      value={mentorForm.prerequisites}
+                      onChange={(e) => setMentorForm({ ...mentorForm, prerequisites: e.target.value })}
+                      placeholder="e.g. Completed 2nd Year BAMS / B.Pharm Ayurveda with basic pharmacognosy"
+                      style={{
+                        width: "100%",
+                        padding: "10px 12px",
+                        borderRadius: 10,
+                        border: `1px solid ${T.border}`,
+                        background: T.bgSurface,
+                        color: T.ink,
+                        fontFamily: "var(--ui)",
+                        fontSize: 13.5,
+                        outline: "none",
+                      }}
+                    />
+                  </div>
+
+                  <div style={{ marginBottom: 18 }}>
+                    <div style={{ fontFamily: "var(--ui)", fontSize: 13, color: T.ink, fontWeight: 600, marginBottom: 6 }}>
+                      What You'll Learn (Learning Outcomes)
+                    </div>
+                    <textarea
+                      rows={3}
+                      value={mentorForm.learningOutcomes}
+                      onChange={(e) => setMentorForm({ ...mentorForm, learningOutcomes: e.target.value })}
+                      placeholder="Enter learning outcomes or key takeaways..."
+                      style={{
+                        width: "100%",
+                        padding: "10px 12px",
+                        borderRadius: 10,
+                        border: `1px solid ${T.border}`,
+                        background: T.bgSurface,
+                        color: T.ink,
+                        fontFamily: "var(--ui)",
+                        fontSize: 13.5,
+                        outline: "none",
+                        resize: "vertical",
+                      }}
+                    />
+                  </div>
+
+                  <Btn
+                    disabled={!mentorForm.title.trim()}
+                    onClick={() => {
+                      if (!user) {
+                        setAuthModalRole("industry");
+                        setIsAuthModalOpen(true);
+                        showToast("Please sign in as an Industry Partner to publish mentorship opportunities.");
+                        return;
+                      }
+                      const newMentor = {
+                        id: "fm-ind-" + Date.now(),
+                        name: mentorForm.mentorName || user?.name || "Industry Expert Mentor",
+                        title: mentorForm.title,
+                        institution: mentorForm.dept.includes(",") ? mentorForm.dept.split(",")[1].trim() : user?.company || "Himalaya Wellness R&D",
+                        dept: mentorForm.dept.includes(",") ? mentorForm.dept.split(",")[0].trim() : mentorForm.dept,
+                        specialization: mentorForm.specialization,
+                        format: mentorForm.format,
+                        venue: mentorForm.venue,
+                        meetLink: mentorForm.meetLink,
+                        isPaid: mentorForm.isPaid,
+                        price: mentorForm.isPaid ? Number(mentorForm.price) || 499 : 0,
+                        duration: mentorForm.duration || "45 mins",
+                        rating: 4.9,
+                        reviewsCount: 1,
+                        prerequisites: mentorForm.prerequisites || "Open to all AYUSH students and researchers",
+                        learningOutcomes: mentorForm.learningOutcomes
+                          ? mentorForm.learningOutcomes.split("\n").filter(Boolean)
+                          : ["Industry standard testing protocols", "Chromatographic fingerprinting"],
+                        availability: "Next Week",
+                        badge: "Industry Mentor",
+                      };
+                      setPostedMentors((prev) => [newMentor, ...prev]);
+                      setMentorForm({ ...mentorForm, title: "" });
+                      showToast("Mentorship Opportunity published! Visible on student 'Find a Mentor' catalog. ✓");
+                    }}
+                  >
+                    Publish Mentorship Opportunity →
+                  </Btn>
+                </>
+              )}
+
+              {/* Published Openings & Mentorships this Session */}
+              {(posted.length > 0 || postedMentors.length > 0) && (
                 <div style={{ marginTop: 22, paddingTop: 16, borderTop: `1px solid ${T.border}` }}>
                   <Eyebrow>Published this session</Eyebrow>
                   {posted.map((p) => (
                     <div key={p.id} style={{ marginTop: 8, fontFamily: "var(--ui)", fontSize: 13.5, color: T.ink }}>
-                      ✨ {p.title} · {p.pay} — Visible to students on Opportunity Board
+                      💼 <strong>{p.title}</strong> · {p.pay} — Visible on Student Opportunity Board
+                    </div>
+                  ))}
+                  {postedMentors.map((m) => (
+                    <div key={m.id} style={{ marginTop: 8, fontFamily: "var(--ui)", fontSize: 13.5, color: T.ink }}>
+                      🎓 <strong>{m.title || m.name}</strong> · {m.format} ({m.isPaid ? `₹${m.price}` : "Free"}) — Visible on Student "Find a Mentor"
                     </div>
                   ))}
                 </div>
@@ -6227,6 +6693,445 @@ export default function AyushBridge() {
             </Card>
           </>
         )}
+
+        {role === "institution" && tab === "post_program" && (
+          <div style={{ maxWidth: 700 }}>
+            <H size={28}>Publish Institutional Training Programme</H>
+            <Muted style={{ marginTop: 4, marginBottom: 20 }}>
+              Create and publish AYUSH certification courses, apprenticeships, or specialized skill cohorts for students across India.
+            </Muted>
+
+            <Card>
+              <div style={{ marginBottom: 14 }}>
+                <div style={{ fontFamily: "var(--ui)", fontSize: 13, color: T.ink, fontWeight: 600, marginBottom: 6 }}>
+                  Programme Name / Course Title
+                </div>
+                <input
+                  value={progForm.title}
+                  onChange={(e) => setProgForm({ ...progForm, title: e.target.value })}
+                  placeholder="e.g. Advanced Ayurvedic Clinical Methodology & Case Sheet Telemetry"
+                  style={{
+                    width: "100%",
+                    padding: "10px 14px",
+                    borderRadius: 10,
+                    border: `1px solid ${T.border}`,
+                    background: T.bgSurface,
+                    color: T.ink,
+                    fontFamily: "var(--ui)",
+                    fontSize: 14,
+                    outline: "none",
+                  }}
+                />
+              </div>
+
+              <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 14, marginBottom: 14 }}>
+                <div>
+                  <div style={{ fontFamily: "var(--ui)", fontSize: 13, color: T.ink, fontWeight: 600, marginBottom: 6 }}>
+                    Conducting Institution / Body
+                  </div>
+                  <input
+                    value={progForm.institution}
+                    onChange={(e) => setProgForm({ ...progForm, institution: e.target.value })}
+                    placeholder="e.g. All India Institute of Ayurveda (AIIA)"
+                    style={{
+                      width: "100%",
+                      padding: "10px 12px",
+                      borderRadius: 10,
+                      border: `1px solid ${T.border}`,
+                      background: T.bgSurface,
+                      color: T.ink,
+                      fontFamily: "var(--ui)",
+                      fontSize: 13.5,
+                      outline: "none",
+                    }}
+                  />
+                </div>
+
+                <div>
+                  <div style={{ fontFamily: "var(--ui)", fontSize: 13, color: T.ink, fontWeight: 600, marginBottom: 6 }}>
+                    AYUSH Sector / Stream
+                  </div>
+                  <select
+                    value={progForm.sector}
+                    onChange={(e) => setProgForm({ ...progForm, sector: e.target.value })}
+                    style={{
+                      width: "100%",
+                      padding: "10px 12px",
+                      borderRadius: 10,
+                      border: `1px solid ${T.border}`,
+                      background: T.bgSurface,
+                      color: T.ink,
+                      fontFamily: "var(--ui)",
+                      fontSize: 13.5,
+                      outline: "none",
+                    }}
+                  >
+                    <option value="ayurveda">Ayurveda</option>
+                    <option value="yoga">Yoga & Naturopathy</option>
+                    <option value="unani">Unani</option>
+                    <option value="siddha">Siddha</option>
+                    <option value="homoeopathy">Homoeopathy</option>
+                    <option value="cross_ayush">Cross-AYUSH / Integrative</option>
+                  </select>
+                </div>
+              </div>
+
+              <div style={{ marginBottom: 14 }}>
+                <div style={{ fontFamily: "var(--ui)", fontSize: 13, color: T.ink, fontWeight: 600, marginBottom: 6 }}>
+                  Programme Description
+                </div>
+                <textarea
+                  rows={3}
+                  value={progForm.desc}
+                  onChange={(e) => setProgForm({ ...progForm, desc: e.target.value })}
+                  placeholder="Provide comprehensive details on syllabus, clinical rotations, laboratory exposure, and faculty mentors..."
+                  style={{
+                    width: "100%",
+                    padding: "10px 12px",
+                    borderRadius: 10,
+                    border: `1px solid ${T.border}`,
+                    background: T.bgSurface,
+                    color: T.ink,
+                    fontFamily: "var(--ui)",
+                    fontSize: 13.5,
+                    outline: "none",
+                    resize: "vertical",
+                  }}
+                />
+              </div>
+
+              <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr 1fr", gap: 12, marginBottom: 14 }}>
+                <div>
+                  <div style={{ fontFamily: "var(--ui)", fontSize: 13, color: T.ink, fontWeight: 600, marginBottom: 6 }}>
+                    Format
+                  </div>
+                  <select
+                    value={progForm.format}
+                    onChange={(e) => setProgForm({ ...progForm, format: e.target.value })}
+                    style={{
+                      width: "100%",
+                      padding: "10px 12px",
+                      borderRadius: 10,
+                      border: `1px solid ${T.border}`,
+                      background: T.bgSurface,
+                      color: T.ink,
+                      fontFamily: "var(--ui)",
+                      fontSize: 13.5,
+                      outline: "none",
+                    }}
+                  >
+                    <option value="Hybrid">Hybrid</option>
+                    <option value="Offline">Offline (Campus)</option>
+                    <option value="Online">Online (Virtual)</option>
+                  </select>
+                </div>
+
+                <div>
+                  <div style={{ fontFamily: "var(--ui)", fontSize: 13, color: T.ink, fontWeight: 600, marginBottom: 6 }}>
+                    Start Date
+                  </div>
+                  <input
+                    type="date"
+                    value={progForm.startDate}
+                    onChange={(e) => {
+                      const d = e.target.value;
+                      const formatted = new Date(d).toLocaleDateString("en-GB", { day: "2-digit", month: "short", year: "numeric" });
+                      setProgForm({ ...progForm, startDate: d, startDateFormatted: formatted });
+                    }}
+                    style={{
+                      width: "100%",
+                      padding: "9px 12px",
+                      borderRadius: 10,
+                      border: `1px solid ${T.border}`,
+                      background: T.bgSurface,
+                      color: T.ink,
+                      fontFamily: "var(--ui)",
+                      fontSize: 13.5,
+                      outline: "none",
+                    }}
+                  />
+                </div>
+
+                <div>
+                  <div style={{ fontFamily: "var(--ui)", fontSize: 13, color: T.ink, fontWeight: 600, marginBottom: 6 }}>
+                    Duration (Weeks)
+                  </div>
+                  <input
+                    type="number"
+                    value={progForm.weeks}
+                    onChange={(e) => setProgForm({ ...progForm, weeks: e.target.value })}
+                    placeholder="e.g. 6"
+                    style={{
+                      width: "100%",
+                      padding: "10px 12px",
+                      borderRadius: 10,
+                      border: `1px solid ${T.border}`,
+                      background: T.bgSurface,
+                      color: T.ink,
+                      fontFamily: "var(--ui)",
+                      fontSize: 13.5,
+                      outline: "none",
+                    }}
+                  />
+                </div>
+              </div>
+
+              {/* Offline / Hybrid Location */}
+              {(progForm.format === "Offline" || progForm.format === "Hybrid") ? (
+                <div style={{ display: "grid", gridTemplateColumns: "2fr 1fr", gap: 12, marginBottom: 14 }}>
+                  <div>
+                    <div style={{ fontFamily: "var(--ui)", fontSize: 13, color: T.ink, fontWeight: 600, marginBottom: 6 }}>
+                      Reporting Venue / Campus Facility
+                    </div>
+                    <input
+                      value={progForm.venue}
+                      onChange={(e) => setProgForm({ ...progForm, venue: e.target.value })}
+                      placeholder="e.g. Clinical Research Wing, Ground Floor, AIIA Hospital, New Delhi"
+                      style={{
+                        width: "100%",
+                        padding: "10px 12px",
+                        borderRadius: 10,
+                        border: `1px solid ${T.border}`,
+                        background: T.bgSurface,
+                        color: T.ink,
+                        fontFamily: "var(--ui)",
+                        fontSize: 13.5,
+                        outline: "none",
+                      }}
+                    />
+                  </div>
+                  <div>
+                    <div style={{ fontFamily: "var(--ui)", fontSize: 13, color: T.ink, fontWeight: 600, marginBottom: 6 }}>
+                      Reporting Time
+                    </div>
+                    <input
+                      value={progForm.reportingTime}
+                      onChange={(e) => setProgForm({ ...progForm, reportingTime: e.target.value })}
+                      placeholder="09:30 AM IST"
+                      style={{
+                        width: "100%",
+                        padding: "10px 12px",
+                        borderRadius: 10,
+                        border: `1px solid ${T.border}`,
+                        background: T.bgSurface,
+                        color: T.ink,
+                        fontFamily: "var(--ui)",
+                        fontSize: 13.5,
+                        outline: "none",
+                      }}
+                    />
+                  </div>
+                </div>
+              ) : (
+                <div style={{
+                  padding: "10px 14px",
+                  borderRadius: 10,
+                  background: T.bgSurface,
+                  border: `1px solid ${T.border}`,
+                  fontSize: 12.5,
+                  color: T.muted,
+                  marginBottom: 14,
+                  display: "flex",
+                  alignItems: "center",
+                  gap: 8,
+                }}>
+                  <span>ℹ️</span>
+                  <span><strong>Virtual Delivery:</strong> Google Meet / MS Teams session link will be automatically generated and shared with enrolled candidates 1 day before the start date.</span>
+                </div>
+              )}
+
+              <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 14, marginBottom: 14 }}>
+                <div>
+                  <div style={{ fontFamily: "var(--ui)", fontSize: 13, color: T.ink, fontWeight: 600, marginBottom: 6 }}>
+                    Total Seats Available
+                  </div>
+                  <input
+                    type="number"
+                    value={progForm.seats}
+                    onChange={(e) => setProgForm({ ...progForm, seats: e.target.value })}
+                    placeholder="e.g. 35"
+                    style={{
+                      width: "100%",
+                      padding: "10px 12px",
+                      borderRadius: 10,
+                      border: `1px solid ${T.border}`,
+                      background: T.bgSurface,
+                      color: T.ink,
+                      fontFamily: "var(--ui)",
+                      fontSize: 13.5,
+                      outline: "none",
+                    }}
+                  />
+                </div>
+
+                <div>
+                  <div style={{ fontFamily: "var(--ui)", fontSize: 13, color: T.ink, fontWeight: 600, marginBottom: 6 }}>
+                    Application Deadline
+                  </div>
+                  <input
+                    value={progForm.closes}
+                    onChange={(e) => setProgForm({ ...progForm, closes: e.target.value })}
+                    placeholder="e.g. 10 Oct 2026"
+                    style={{
+                      width: "100%",
+                      padding: "10px 12px",
+                      borderRadius: 10,
+                      border: `1px solid ${T.border}`,
+                      background: T.bgSurface,
+                      color: T.ink,
+                      fontFamily: "var(--ui)",
+                      fontSize: 13.5,
+                      outline: "none",
+                    }}
+                  />
+                </div>
+              </div>
+
+              <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 14, marginBottom: 14 }}>
+                <div>
+                  <div style={{ fontFamily: "var(--ui)", fontSize: 13, color: T.ink, fontWeight: 600, marginBottom: 6 }}>
+                    Tuition Fee Tier
+                  </div>
+                  <select
+                    value={progForm.isPaid ? "paid" : "free"}
+                    onChange={(e) => setProgForm({ ...progForm, isPaid: e.target.value === "paid" })}
+                    style={{
+                      width: "100%",
+                      padding: "10px 12px",
+                      borderRadius: 10,
+                      border: `1px solid ${T.border}`,
+                      background: T.bgSurface,
+                      color: T.ink,
+                      fontFamily: "var(--ui)",
+                      fontSize: 13.5,
+                      outline: "none",
+                    }}
+                  >
+                    <option value="free">Free · Ministry / Institutional Initiative</option>
+                    <option value="paid">Paid Programme</option>
+                  </select>
+                </div>
+
+                {progForm.isPaid && (
+                  <div>
+                    <div style={{ fontFamily: "var(--ui)", fontSize: 13, color: T.ink, fontWeight: 600, marginBottom: 6 }}>
+                      Fee Amount (in ₹)
+                    </div>
+                    <input
+                      type="number"
+                      value={progForm.price}
+                      onChange={(e) => setProgForm({ ...progForm, price: e.target.value })}
+                      placeholder="e.g. 1499"
+                      style={{
+                        width: "100%",
+                        padding: "10px 12px",
+                        borderRadius: 10,
+                        border: `1px solid ${T.border}`,
+                        background: T.bgSurface,
+                        color: T.ink,
+                        fontFamily: "var(--ui)",
+                        fontSize: 13.5,
+                        outline: "none",
+                      }}
+                    />
+                  </div>
+                )}
+              </div>
+
+              <div style={{ marginBottom: 14 }}>
+                <div style={{ fontFamily: "var(--ui)", fontSize: 13, color: T.ink, fontWeight: 600, marginBottom: 6 }}>
+                  Eligibility & Prerequisites
+                </div>
+                <input
+                  value={progForm.prerequisites}
+                  onChange={(e) => setProgForm({ ...progForm, prerequisites: e.target.value })}
+                  placeholder="e.g. BAMS Final Year, Interns or PG Scholars with valid institutional registration"
+                  style={{
+                    width: "100%",
+                    padding: "10px 12px",
+                    borderRadius: 10,
+                    border: `1px solid ${T.border}`,
+                    background: T.bgSurface,
+                    color: T.ink,
+                    fontFamily: "var(--ui)",
+                    fontSize: 13.5,
+                    outline: "none",
+                  }}
+                />
+              </div>
+
+              <div style={{ marginBottom: 18 }}>
+                <div style={{ fontFamily: "var(--ui)", fontSize: 13, color: T.ink, fontWeight: 600, marginBottom: 6 }}>
+                  Key Competencies / Skills Gained (Comma separated)
+                </div>
+                <input
+                  value={progForm.skillsGained}
+                  onChange={(e) => setProgForm({ ...progForm, skillsGained: e.target.value })}
+                  placeholder="e.g. Clinical Protocol Drafting, Pharmacopoeial Standardization, Case Sheet Telemetry"
+                  style={{
+                    width: "100%",
+                    padding: "10px 12px",
+                    borderRadius: 10,
+                    border: `1px solid ${T.border}`,
+                    background: T.bgSurface,
+                    color: T.ink,
+                    fontFamily: "var(--ui)",
+                    fontSize: 13.5,
+                    outline: "none",
+                  }}
+                />
+              </div>
+
+              <Btn
+                disabled={!progForm.title.trim()}
+                onClick={() => {
+                  if (!user) {
+                    setAuthModalRole("institution");
+                    setIsAuthModalOpen(true);
+                    showToast("Please sign in as an Institutional Dean / Placement Admin to publish programmes.");
+                    return;
+                  }
+                  const newProg = {
+                    id: "prog-" + Date.now(),
+                    title: progForm.title,
+                    by: progForm.institution || user?.institution || "All India Institute of Ayurveda (AIIA)",
+                    desc: progForm.desc || "Accredited institutional skill advancement cohort.",
+                    sector: progForm.sector,
+                    workMode: progForm.format,
+                    startDate: progForm.startDate,
+                    startDateFormatted: progForm.startDateFormatted || progForm.startDate,
+                    reportingTime: progForm.reportingTime,
+                    venue: progForm.venue,
+                    meetLink: progForm.meetLink,
+                    weeks: Number(progForm.weeks) || 6,
+                    seats: Number(progForm.seats) || 35,
+                    prerequisites: progForm.prerequisites,
+                    skillsGained: typeof progForm.skillsGained === "string" ? progForm.skillsGained.split(",").map((s) => s.trim()).filter(Boolean) : progForm.skillsGained,
+                    boosts: progForm.boosts || "clinical_research",
+                    price: progForm.isPaid ? Number(progForm.price) || 999 : 0,
+                    closes: progForm.closes || "15 Oct 2026",
+                  };
+                  setPostedPrograms((prev) => [newProg, ...prev]);
+                  setProgForm({ ...progForm, title: "", desc: "" });
+                  showToast("Programme published! Visible in Student 'Industry Learning Programs' tab. ✓");
+                }}
+              >
+                Publish Institutional Programme →
+              </Btn>
+
+              {postedPrograms.length > 0 && (
+                <div style={{ marginTop: 22, paddingTop: 16, borderTop: `1px solid ${T.border}` }}>
+                  <Eyebrow>Programmes Published this Session</Eyebrow>
+                  {postedPrograms.map((p) => (
+                    <div key={p.id} style={{ marginTop: 8, fontFamily: "var(--ui)", fontSize: 13.5, color: T.ink }}>
+                      🏛️ <strong>{p.title}</strong> · {p.weeks} weeks · {p.workMode} ({p.price === 0 ? "Free" : `₹${p.price}`}) — Live in Student Catalog
+                    </div>
+                  ))}
+                </div>
+              )}
+            </Card>
+          </div>
+        )}
           </>
         )}
 
@@ -6272,7 +7177,7 @@ export default function AyushBridge() {
       <FindMentorModal
         isOpen={isFindMentorOpen}
         onClose={() => setIsFindMentorOpen(false)}
-        mentors={FACULTY_MENTORS}
+        mentors={[...postedMentors, ...FACULTY_MENTORS]}
         onRequestMentorship={requestFacultyMentorship}
         T={T}
         showToast={showToast}

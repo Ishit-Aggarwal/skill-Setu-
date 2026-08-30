@@ -44,6 +44,8 @@ export default function AyushBridgeAuth({
     email: "",
     password: "",
     fullName: "",
+    linkedin: "",
+    researchgate: "",
     // Student
     studentId: "",
     college: "",
@@ -385,8 +387,8 @@ export default function AyushBridgeAuth({
         verifiedCode: formData.teacherCode || formData.companyCode || formData.instituteCode || null,
         createdAt: new Date().toISOString(),
         links: {
-          linkedin: "https://linkedin.com",
-          researchGate: "https://researchgate.net",
+          linkedin: formData.linkedin || "https://linkedin.com",
+          researchGate: formData.researchgate || "https://researchgate.net",
           website: "https://ayushbridge.gov.in",
         },
       };
@@ -1068,6 +1070,34 @@ export default function AyushBridgeAuth({
                   </div>
                 </>
               )}
+
+              {/* Optional Professional & Research Links */}
+              <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 10, marginTop: 4 }}>
+                <div>
+                  <label style={{ display: "block", fontFamily: "var(--ui)", fontSize: 12, fontWeight: 600, color: T.ink, marginBottom: 4 }}>
+                    LinkedIn <span style={{ color: T.muted, fontWeight: 400 }}>(optional)</span>
+                  </label>
+                  <input
+                    type="url"
+                    placeholder="https://linkedin.com/in/..."
+                    value={formData.linkedin}
+                    onChange={(e) => handleInputChange("linkedin", e.target.value)}
+                    style={{ width: "100%", padding: "9px 12px", borderRadius: 9, border: `1px solid ${T.border}`, background: T.bgSurface, color: T.ink, fontFamily: "var(--ui)", fontSize: 13, boxSizing: "border-box" }}
+                  />
+                </div>
+                <div>
+                  <label style={{ display: "block", fontFamily: "var(--ui)", fontSize: 12, fontWeight: 600, color: T.ink, marginBottom: 4 }}>
+                    ResearchGate <span style={{ color: T.muted, fontWeight: 400 }}>(optional)</span>
+                  </label>
+                  <input
+                    type="url"
+                    placeholder="https://researchgate.net/profile/..."
+                    value={formData.researchgate}
+                    onChange={(e) => handleInputChange("researchgate", e.target.value)}
+                    style={{ width: "100%", padding: "9px 12px", borderRadius: 9, border: `1px solid ${T.border}`, background: T.bgSurface, color: T.ink, fontFamily: "var(--ui)", fontSize: 13, boxSizing: "border-box" }}
+                  />
+                </div>
+              </div>
 
               {/* Common Credentials */}
               <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 10, marginTop: 4 }}>
