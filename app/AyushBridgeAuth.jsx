@@ -45,19 +45,23 @@ export default function AyushBridgeAuth({
     password: "",
     fullName: "",
     // Student
+    studentId: "",
+    college: "",
     age: "",
     dob: "",
-    college: "",
-    // Faculty
+    // Faculty (Faculty & Research Hub)
+    employeeId: "",
     institution: "",
     department: "",
     teacherCode: "",
-    // Industry
+    // Industry (Industry Partner Hub)
     companyName: "",
+    workEmailDomain: "",
     designation: "",
     companyCode: "",
-    // Dean
+    // Dean / Institution (Institution & Placement Dashboard)
     instituteName: "",
+    instituteId: "",
     deanName: "",
     instituteCode: "",
   });
@@ -228,13 +232,13 @@ export default function AyushBridgeAuth({
 
     // Validate Role-specific fields
     if (selectedRole === "student") {
-      if (!formData.fullName || !formData.age || !formData.college) {
-        setError("Please complete all student profile fields (Full Name, Age, College).");
+      if (!formData.fullName || !formData.studentId || !formData.college) {
+        setError("Please complete all student fields: Full Name, Student / Roll Number, and Institution Name.");
         return;
       }
     } else if (selectedRole === "academician") {
-      if (!formData.fullName || !formData.institution || !formData.teacherCode) {
-        setError("Please complete all faculty fields including your official Teacher Code.");
+      if (!formData.fullName || !formData.employeeId || !formData.institution || !formData.teacherCode) {
+        setError("Please complete all faculty fields: Full Name, Faculty / Employee ID, Institution, and Teacher Code.");
         return;
       }
       const codeCheck = validateTeacherCode(formData.teacherCode);
@@ -243,8 +247,8 @@ export default function AyushBridgeAuth({
         return;
       }
     } else if (selectedRole === "industry") {
-      if (!formData.fullName || !formData.companyName || !formData.companyCode) {
-        setError("Please complete all industry recruiter fields including your Company Code.");
+      if (!formData.fullName || !formData.companyName || !formData.workEmailDomain || !formData.companyCode) {
+        setError("Please complete all industry fields: Full Name, Company / Organization Name, Work Email Domain, and Company Code.");
         return;
       }
       const codeCheck = validateCompanyCode(formData.companyCode);
@@ -253,8 +257,8 @@ export default function AyushBridgeAuth({
         return;
       }
     } else if (selectedRole === "institution") {
-      if (!formData.instituteName || !formData.deanName || !formData.instituteCode) {
-        setError("Please complete all institution fields including your accredited Institute Code.");
+      if (!formData.instituteName || !formData.deanName || !formData.instituteId || !formData.instituteCode) {
+        setError("Please complete all institution fields: Administrator Name, Institution Name, Institution / AISHE ID, and Institute Code.");
         return;
       }
       const codeCheck = validateInstituteCode(formData.instituteCode);
@@ -357,23 +361,24 @@ export default function AyushBridgeAuth({
         institution: "AYD",
       }[selectedRole] || "AYB";
 
-      const studentId = `${prefix}-2026-${Math.floor(1000 + Math.random() * 9000)}`;
+      const generatedId = formData.studentId || formData.employeeId || formData.instituteId || `${prefix}-2026-${Math.floor(1000 + Math.random() * 9000)}`;
 
       const profilePayload = {
-        studentId,
+        studentId: generatedId,
+        customId: formData.studentId || formData.employeeId || formData.workEmailDomain || formData.instituteId || generatedId,
         role: selectedRole,
         roleLabel: {
           student: "Student & Intern",
-          academician: "Faculty & Researcher",
-          industry: "Herbal Industry & Recruiter",
-          institution: "AYUSH College & Dean",
+          academician: "Faculty & Research Hub",
+          industry: "Industry Partner Hub",
+          institution: "Institution & Placement Dashboard",
         }[selectedRole],
         email: formData.email,
         name: formData.fullName || formData.deanName || "AYUSH Member",
         avatar: null,
         institution: formData.institution || formData.college || formData.instituteName || "National AYUSH Network",
-        year: selectedRole === "student" ? `${formData.age} yrs · ${formData.college}` : formData.designation || formData.department || "Accredited Member",
-        bio: `Verified AYUSH ${selectedRole} profile on the AyushBridge National Portal.`,
+        year: selectedRole === "student" ? `${formData.studentId ? `ID: ${formData.studentId} · ` : ""}${formData.college}` : formData.designation || formData.department || "Accredited Member",
+        bio: `Verified profile in the ${selectedRole === "academician" ? "Faculty & Research Hub" : selectedRole === "industry" ? "Industry Partner Hub" : selectedRole === "institution" ? "Institution & Placement Dashboard" : "Student Portal"} on AyushBridge.`,
         specializations: selectedRole === "student"
           ? ["Herbal Formulation", "Herb Quality Testing", "Clinical Research"]
           : ["Standardization", "Academic-Industry Collaboration", "Research GCP"],
@@ -398,7 +403,7 @@ export default function AyushBridgeAuth({
 
       setLoading(false);
       onAuthSuccess(profilePayload);
-      showToast(`Account created successfully as ${profilePayload.roleLabel}! ✓`);
+      showToast(`Account created successfully in ${profilePayload.roleLabel}! ✓`);
       onClose();
     } catch (err) {
       setLoading(false);
@@ -407,10 +412,10 @@ export default function AyushBridgeAuth({
   };
 
   const rolesList = [
-    { id: "student", label: "Student & Intern", icon: "🎓", desc: "Take assessments, find internships & enroll" },
-    { id: "academician", label: "Faculty & Researcher", icon: "🔬", desc: "Access grants, sabbaticals & mentorship" },
-    { id: "industry", label: "Herbal Industry & Recruiter", icon: "🌿", desc: "Post openings, recruit & sponsor modules" },
-    { id: "institution", label: "AYUSH College & Dean", icon: "📊", desc: "Track curriculum alignment & placements" },
+    { id: "student", label: "Student & Intern Portal", icon: "🎓", desc: "Take assessments, find internships & enroll" },
+    { id: "industry", label: "Industry Partner Hub", icon: "🌿", desc: "Post openings, recruit & sponsor modules" },
+    { id: "academician", label: "Faculty & Research Hub", icon: "🔬", desc: "Access grants, sabbaticals & mentorship" },
+    { id: "institution", label: "Institution & Placement Dashboard", icon: "📊", desc: "Track curriculum alignment & placements" },
   ];
 
   return (
@@ -741,7 +746,9 @@ export default function AyushBridgeAuth({
               {selectedRole === "student" && (
                 <>
                   <div>
-                    <label style={{ display: "block", fontFamily: "var(--ui)", fontSize: 12, fontWeight: 600, color: T.ink, marginBottom: 4 }}>Full Name</label>
+                    <label style={{ display: "block", fontFamily: "var(--ui)", fontSize: 12, fontWeight: 600, color: T.ink, marginBottom: 4 }}>
+                      Full Name <span style={{ color: T.terra }}>*</span>
+                    </label>
                     <input
                       type="text"
                       required
@@ -753,12 +760,39 @@ export default function AyushBridgeAuth({
                   </div>
                   <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 10 }}>
                     <div>
+                      <label style={{ display: "block", fontFamily: "var(--ui)", fontSize: 12, fontWeight: 600, color: T.ink, marginBottom: 4 }}>
+                        Student / Roll Number <span style={{ color: T.terra }}>*</span>
+                      </label>
+                      <input
+                        type="text"
+                        required
+                        placeholder="e.g. AYU-2024-8821"
+                        value={formData.studentId}
+                        onChange={(e) => handleInputChange("studentId", e.target.value)}
+                        style={{ width: "100%", padding: "9px 12px", borderRadius: 9, border: `1px solid ${T.border}`, background: T.bgSurface, color: T.ink, fontFamily: "var(--ui)", fontSize: 13, boxSizing: "border-box" }}
+                      />
+                    </div>
+                    <div>
+                      <label style={{ display: "block", fontFamily: "var(--ui)", fontSize: 12, fontWeight: 600, color: T.ink, marginBottom: 4 }}>
+                        Institution / College Name <span style={{ color: T.terra }}>*</span>
+                      </label>
+                      <input
+                        type="text"
+                        required
+                        placeholder="e.g. AIIA New Delhi"
+                        value={formData.college}
+                        onChange={(e) => handleInputChange("college", e.target.value)}
+                        style={{ width: "100%", padding: "9px 12px", borderRadius: 9, border: `1px solid ${T.border}`, background: T.bgSurface, color: T.ink, fontFamily: "var(--ui)", fontSize: 13, boxSizing: "border-box" }}
+                      />
+                    </div>
+                  </div>
+                  <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 10 }}>
+                    <div>
                       <label style={{ display: "block", fontFamily: "var(--ui)", fontSize: 12, fontWeight: 600, color: T.ink, marginBottom: 4 }}>Age</label>
                       <input
                         type="number"
                         min="16"
                         max="80"
-                        required
                         placeholder="e.g. 22"
                         value={formData.age}
                         onChange={(e) => handleInputChange("age", e.target.value)}
@@ -769,32 +803,22 @@ export default function AyushBridgeAuth({
                       <label style={{ display: "block", fontFamily: "var(--ui)", fontSize: 12, fontWeight: 600, color: T.ink, marginBottom: 4 }}>Date of Birth</label>
                       <input
                         type="date"
-                        required
                         value={formData.dob}
                         onChange={(e) => handleInputChange("dob", e.target.value)}
                         style={{ width: "100%", padding: "9px 12px", borderRadius: 9, border: `1px solid ${T.border}`, background: T.bgSurface, color: T.ink, fontFamily: "var(--ui)", fontSize: 13, boxSizing: "border-box" }}
                       />
                     </div>
                   </div>
-                  <div>
-                    <label style={{ display: "block", fontFamily: "var(--ui)", fontSize: 12, fontWeight: 600, color: T.ink, marginBottom: 4 }}>College / University</label>
-                    <input
-                      type="text"
-                      required
-                      placeholder="e.g. All India Institute of Ayurveda, New Delhi"
-                      value={formData.college}
-                      onChange={(e) => handleInputChange("college", e.target.value)}
-                      style={{ width: "100%", padding: "9px 12px", borderRadius: 9, border: `1px solid ${T.border}`, background: T.bgSurface, color: T.ink, fontFamily: "var(--ui)", fontSize: 13, boxSizing: "border-box" }}
-                    />
-                  </div>
                 </>
               )}
 
-              {/* FACULTY & RESEARCHER */}
+              {/* FACULTY & RESEARCH HUB */}
               {selectedRole === "academician" && (
                 <>
                   <div>
-                    <label style={{ display: "block", fontFamily: "var(--ui)", fontSize: 12, fontWeight: 600, color: T.ink, marginBottom: 4 }}>Full Name</label>
+                    <label style={{ display: "block", fontFamily: "var(--ui)", fontSize: 12, fontWeight: 600, color: T.ink, marginBottom: 4 }}>
+                      Full Name <span style={{ color: T.terra }}>*</span>
+                    </label>
                     <input
                       type="text"
                       required
@@ -803,6 +827,34 @@ export default function AyushBridgeAuth({
                       onChange={(e) => handleInputChange("fullName", e.target.value)}
                       style={{ width: "100%", padding: "9px 12px", borderRadius: 9, border: `1px solid ${T.border}`, background: T.bgSurface, color: T.ink, fontFamily: "var(--ui)", fontSize: 13, boxSizing: "border-box" }}
                     />
+                  </div>
+                  <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 10 }}>
+                    <div>
+                      <label style={{ display: "block", fontFamily: "var(--ui)", fontSize: 12, fontWeight: 600, color: T.ink, marginBottom: 4 }}>
+                        Faculty / Employee ID <span style={{ color: T.terra }}>*</span>
+                      </label>
+                      <input
+                        type="text"
+                        required
+                        placeholder="e.g. AIIA-EMP-4091"
+                        value={formData.employeeId}
+                        onChange={(e) => handleInputChange("employeeId", e.target.value)}
+                        style={{ width: "100%", padding: "9px 12px", borderRadius: 9, border: `1px solid ${T.border}`, background: T.bgSurface, color: T.ink, fontFamily: "var(--ui)", fontSize: 13, boxSizing: "border-box" }}
+                      />
+                    </div>
+                    <div>
+                      <label style={{ display: "block", fontFamily: "var(--ui)", fontSize: 12, fontWeight: 600, color: T.ink, marginBottom: 4 }}>
+                        Institution Name <span style={{ color: T.terra }}>*</span>
+                      </label>
+                      <input
+                        type="text"
+                        required
+                        placeholder="e.g. AIIA New Delhi"
+                        value={formData.institution}
+                        onChange={(e) => handleInputChange("institution", e.target.value)}
+                        style={{ width: "100%", padding: "9px 12px", borderRadius: 9, border: `1px solid ${T.border}`, background: T.bgSurface, color: T.ink, fontFamily: "var(--ui)", fontSize: 13, boxSizing: "border-box" }}
+                      />
+                    </div>
                   </div>
                   <div>
                     <label style={{ display: "block", fontFamily: "var(--ui)", fontSize: 12, fontWeight: 600, color: T.ink, marginBottom: 4 }}>
@@ -836,38 +888,26 @@ export default function AyushBridgeAuth({
                       Sample valid codes: <code>AIIA-FAC-2026</code>, <code>NIA-FAC-1002</code>, <code>BHU-FAC-4091</code>
                     </div>
                   </div>
-                  <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 10 }}>
-                    <div>
-                      <label style={{ display: "block", fontFamily: "var(--ui)", fontSize: 12, fontWeight: 600, color: T.ink, marginBottom: 4 }}>Institution</label>
-                      <input
-                        type="text"
-                        required
-                        placeholder="e.g. AIIA New Delhi"
-                        value={formData.institution}
-                        onChange={(e) => handleInputChange("institution", e.target.value)}
-                        style={{ width: "100%", padding: "9px 12px", borderRadius: 9, border: `1px solid ${T.border}`, background: T.bgSurface, color: T.ink, fontFamily: "var(--ui)", fontSize: 13, boxSizing: "border-box" }}
-                      />
-                    </div>
-                    <div>
-                      <label style={{ display: "block", fontFamily: "var(--ui)", fontSize: 12, fontWeight: 600, color: T.ink, marginBottom: 4 }}>Department</label>
-                      <input
-                        type="text"
-                        required
-                        placeholder="e.g. Dept. of Dravyaguna"
-                        value={formData.department}
-                        onChange={(e) => handleInputChange("department", e.target.value)}
-                        style={{ width: "100%", padding: "9px 12px", borderRadius: 9, border: `1px solid ${T.border}`, background: T.bgSurface, color: T.ink, fontFamily: "var(--ui)", fontSize: 13, boxSizing: "border-box" }}
-                      />
-                    </div>
+                  <div>
+                    <label style={{ display: "block", fontFamily: "var(--ui)", fontSize: 12, fontWeight: 600, color: T.ink, marginBottom: 4 }}>Department / Research Wing</label>
+                    <input
+                      type="text"
+                      placeholder="e.g. Dept. of Dravyaguna & Clinical Pharmacology"
+                      value={formData.department}
+                      onChange={(e) => handleInputChange("department", e.target.value)}
+                      style={{ width: "100%", padding: "9px 12px", borderRadius: 9, border: `1px solid ${T.border}`, background: T.bgSurface, color: T.ink, fontFamily: "var(--ui)", fontSize: 13, boxSizing: "border-box" }}
+                    />
                   </div>
                 </>
               )}
 
-              {/* HERBAL INDUSTRY & RECRUITER */}
+              {/* INDUSTRY PARTNER HUB */}
               {selectedRole === "industry" && (
                 <>
                   <div>
-                    <label style={{ display: "block", fontFamily: "var(--ui)", fontSize: 12, fontWeight: 600, color: T.ink, marginBottom: 4 }}>Full Name</label>
+                    <label style={{ display: "block", fontFamily: "var(--ui)", fontSize: 12, fontWeight: 600, color: T.ink, marginBottom: 4 }}>
+                      Full Name <span style={{ color: T.terra }}>*</span>
+                    </label>
                     <input
                       type="text"
                       required
@@ -877,9 +917,37 @@ export default function AyushBridgeAuth({
                       style={{ width: "100%", padding: "9px 12px", borderRadius: 9, border: `1px solid ${T.border}`, background: T.bgSurface, color: T.ink, fontFamily: "var(--ui)", fontSize: 13, boxSizing: "border-box" }}
                     />
                   </div>
+                  <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 10 }}>
+                    <div>
+                      <label style={{ display: "block", fontFamily: "var(--ui)", fontSize: 12, fontWeight: 600, color: T.ink, marginBottom: 4 }}>
+                        Company / Organization Name <span style={{ color: T.terra }}>*</span>
+                      </label>
+                      <input
+                        type="text"
+                        required
+                        placeholder="e.g. Kottakkal Arya Vaidya Sala"
+                        value={formData.companyName}
+                        onChange={(e) => handleInputChange("companyName", e.target.value)}
+                        style={{ width: "100%", padding: "9px 12px", borderRadius: 9, border: `1px solid ${T.border}`, background: T.bgSurface, color: T.ink, fontFamily: "var(--ui)", fontSize: 13, boxSizing: "border-box" }}
+                      />
+                    </div>
+                    <div>
+                      <label style={{ display: "block", fontFamily: "var(--ui)", fontSize: 12, fontWeight: 600, color: T.ink, marginBottom: 4 }}>
+                        Work Email Domain / Corp ID <span style={{ color: T.terra }}>*</span>
+                      </label>
+                      <input
+                        type="text"
+                        required
+                        placeholder="e.g. @aryavaidyasala.com"
+                        value={formData.workEmailDomain}
+                        onChange={(e) => handleInputChange("workEmailDomain", e.target.value)}
+                        style={{ width: "100%", padding: "9px 12px", borderRadius: 9, border: `1px solid ${T.border}`, background: T.bgSurface, color: T.ink, fontFamily: "var(--ui)", fontSize: 13, boxSizing: "border-box" }}
+                      />
+                    </div>
+                  </div>
                   <div>
                     <label style={{ display: "block", fontFamily: "var(--ui)", fontSize: 12, fontWeight: 600, color: T.ink, marginBottom: 4 }}>
-                      Company Code <span style={{ color: T.terra }}>*</span>
+                      Company Partner Code <span style={{ color: T.terra }}>*</span>
                     </label>
                     <input
                       type="text"
@@ -909,38 +977,26 @@ export default function AyushBridgeAuth({
                       Sample valid codes: <code>KOTTAKKAL-IND-1902</code>, <code>DABUR-IND-8821</code>, <code>HIMALAYA-IND-4019</code>
                     </div>
                   </div>
-                  <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 10 }}>
-                    <div>
-                      <label style={{ display: "block", fontFamily: "var(--ui)", fontSize: 12, fontWeight: 600, color: T.ink, marginBottom: 4 }}>Company Name</label>
-                      <input
-                        type="text"
-                        required
-                        placeholder="e.g. Kottakkal Arya Vaidya Sala"
-                        value={formData.companyName}
-                        onChange={(e) => handleInputChange("companyName", e.target.value)}
-                        style={{ width: "100%", padding: "9px 12px", borderRadius: 9, border: `1px solid ${T.border}`, background: T.bgSurface, color: T.ink, fontFamily: "var(--ui)", fontSize: 13, boxSizing: "border-box" }}
-                      />
-                    </div>
-                    <div>
-                      <label style={{ display: "block", fontFamily: "var(--ui)", fontSize: 12, fontWeight: 600, color: T.ink, marginBottom: 4 }}>Designation</label>
-                      <input
-                        type="text"
-                        required
-                        placeholder="e.g. Lead Formulations Scientist"
-                        value={formData.designation}
-                        onChange={(e) => handleInputChange("designation", e.target.value)}
-                        style={{ width: "100%", padding: "9px 12px", borderRadius: 9, border: `1px solid ${T.border}`, background: T.bgSurface, color: T.ink, fontFamily: "var(--ui)", fontSize: 13, boxSizing: "border-box" }}
-                      />
-                    </div>
+                  <div>
+                    <label style={{ display: "block", fontFamily: "var(--ui)", fontSize: 12, fontWeight: 600, color: T.ink, marginBottom: 4 }}>Designation</label>
+                    <input
+                      type="text"
+                      placeholder="e.g. Lead Formulations Scientist"
+                      value={formData.designation}
+                      onChange={(e) => handleInputChange("designation", e.target.value)}
+                      style={{ width: "100%", padding: "9px 12px", borderRadius: 9, border: `1px solid ${T.border}`, background: T.bgSurface, color: T.ink, fontFamily: "var(--ui)", fontSize: 13, boxSizing: "border-box" }}
+                    />
                   </div>
                 </>
               )}
 
-              {/* AYUSH COLLEGE & DEAN */}
+              {/* INSTITUTION & PLACEMENT DASHBOARD */}
               {selectedRole === "institution" && (
                 <>
                   <div>
-                    <label style={{ display: "block", fontFamily: "var(--ui)", fontSize: 12, fontWeight: 600, color: T.ink, marginBottom: 4 }}>Dean / Administrator Name</label>
+                    <label style={{ display: "block", fontFamily: "var(--ui)", fontSize: 12, fontWeight: 600, color: T.ink, marginBottom: 4 }}>
+                      Dean / Administrator Name <span style={{ color: T.terra }}>*</span>
+                    </label>
                     <input
                       type="text"
                       required
@@ -950,9 +1006,37 @@ export default function AyushBridgeAuth({
                       style={{ width: "100%", padding: "9px 12px", borderRadius: 9, border: `1px solid ${T.border}`, background: T.bgSurface, color: T.ink, fontFamily: "var(--ui)", fontSize: 13, boxSizing: "border-box" }}
                     />
                   </div>
+                  <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 10 }}>
+                    <div>
+                      <label style={{ display: "block", fontFamily: "var(--ui)", fontSize: 12, fontWeight: 600, color: T.ink, marginBottom: 4 }}>
+                        Institution Name <span style={{ color: T.terra }}>*</span>
+                      </label>
+                      <input
+                        type="text"
+                        required
+                        placeholder="e.g. National Institute of Ayurveda (NIA), Jaipur"
+                        value={formData.instituteName}
+                        onChange={(e) => handleInputChange("instituteName", e.target.value)}
+                        style={{ width: "100%", padding: "9px 12px", borderRadius: 9, border: `1px solid ${T.border}`, background: T.bgSurface, color: T.ink, fontFamily: "var(--ui)", fontSize: 13, boxSizing: "border-box" }}
+                      />
+                    </div>
+                    <div>
+                      <label style={{ display: "block", fontFamily: "var(--ui)", fontSize: 12, fontWeight: 600, color: T.ink, marginBottom: 4 }}>
+                        Institution / AISHE ID <span style={{ color: T.terra }}>*</span>
+                      </label>
+                      <input
+                        type="text"
+                        required
+                        placeholder="e.g. AISHE-U-0412"
+                        value={formData.instituteId}
+                        onChange={(e) => handleInputChange("instituteId", e.target.value)}
+                        style={{ width: "100%", padding: "9px 12px", borderRadius: 9, border: `1px solid ${T.border}`, background: T.bgSurface, color: T.ink, fontFamily: "var(--ui)", fontSize: 13, boxSizing: "border-box" }}
+                      />
+                    </div>
+                  </div>
                   <div>
                     <label style={{ display: "block", fontFamily: "var(--ui)", fontSize: 12, fontWeight: 600, color: T.ink, marginBottom: 4 }}>
-                      Institute Code <span style={{ color: T.terra }}>*</span>
+                      Institute Apex Verification Code <span style={{ color: T.terra }}>*</span>
                     </label>
                     <input
                       type="text"
@@ -981,17 +1065,6 @@ export default function AyushBridgeAuth({
                     <div style={{ fontSize: 10.5, color: T.muted, marginTop: 2 }}>
                       Sample valid codes: <code>AIIA-INST-001</code>, <code>NIA-INST-002</code>, <code>BHU-INST-003</code>
                     </div>
-                  </div>
-                  <div>
-                    <label style={{ display: "block", fontFamily: "var(--ui)", fontSize: 12, fontWeight: 600, color: T.ink, marginBottom: 4 }}>Institution Name</label>
-                    <input
-                      type="text"
-                      required
-                      placeholder="e.g. All India Institute of Ayurveda"
-                      value={formData.instituteName}
-                      onChange={(e) => handleInputChange("instituteName", e.target.value)}
-                      style={{ width: "100%", padding: "9px 12px", borderRadius: 9, border: `1px solid ${T.border}`, background: T.bgSurface, color: T.ink, fontFamily: "var(--ui)", fontSize: 13, boxSizing: "border-box" }}
-                    />
                   </div>
                 </>
               )}

@@ -828,7 +828,7 @@ const ROLE_ACCOUNTS = {
   academician: {
     studentId: "AYF-2026-0048",
     role: "academician",
-    roleLabel: "Faculty & Researcher",
+    roleLabel: "Faculty & Research Hub",
     name: "Prof. Dr. Rajesh K. Vaidya",
     email: "rajesh.vaidya@aiia.gov.in",
     avatar: null,
@@ -845,7 +845,7 @@ const ROLE_ACCOUNTS = {
   industry: {
     studentId: "AYI-2026-0019",
     role: "industry",
-    roleLabel: "Industry Recruiter & R&D Lead",
+    roleLabel: "Industry Partner Hub",
     name: "Dr. Vikramaditya Sen",
     email: "v.sen@dabur.com",
     avatar: null,
@@ -862,7 +862,7 @@ const ROLE_ACCOUNTS = {
   institution: {
     studentId: "AYD-2026-0005",
     role: "institution",
-    roleLabel: "AYUSH College Dean",
+    roleLabel: "Institution & Placement Dashboard",
     name: "Dr. Meenakshi Sundaram",
     email: "dean.ayush@nia.edu.in",
     avatar: null,
@@ -1364,8 +1364,16 @@ function ToastBanner({ msg, onClose }) {
   );
 }
 
-function UserAuthWidget({ user, role, setRole, setTab, setAuthModalRole, setIsAuthModalOpen, showToast, setUser }) {
+function UserAuthWidget({ user, role, setRole, setTab, setAuthModalRole, setIsAuthModalOpen, setIsRoleSwitcherOpen, showToast, setUser }) {
   const { T } = useContext(ThemeContext);
+  
+  const getRoleBadge = (r) => {
+    if (r === "academician") return "Faculty & Research";
+    if (r === "industry") return "Industry Partner";
+    if (r === "institution") return "Institution & Placement";
+    return "Student";
+  };
+
   return user ? (
     <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
       <button
@@ -1399,19 +1407,22 @@ function UserAuthWidget({ user, role, setRole, setTab, setAuthModalRole, setIsAu
           background: T.tealSoft,
           color: T.teal,
           fontWeight: 700,
-          textTransform: "capitalize",
         }}>
-          {user.role === "academician" ? "Faculty" : user.role || "Student"}
+          {getRoleBadge(user.role)}
         </span>
       </button>
 
       <button
         type="button"
         onClick={() => {
-          setAuthModalRole(user.role || "student");
-          setIsAuthModalOpen(true);
+          if (setIsRoleSwitcherOpen) {
+            setIsRoleSwitcherOpen(true);
+          } else {
+            setAuthModalRole(user.role || "student");
+            setIsAuthModalOpen(true);
+          }
         }}
-        title="Switch Account Role"
+        title="Switch Workspace Role"
         style={{
           background: "none",
           border: `1px solid ${T.border}`,
@@ -1432,7 +1443,7 @@ function UserAuthWidget({ user, role, setRole, setTab, setAuthModalRole, setIsAu
         onClick={() => {
           if (setUser) setUser(null);
           if (setRole) setRole(null);
-          showToast("Signed out of Google account");
+          showToast("Signed out of account");
         }}
         title="Sign Out"
         style={{
@@ -1478,12 +1489,168 @@ function UserAuthWidget({ user, role, setRole, setTab, setAuthModalRole, setIsAu
   );
 }
 
+function RoleSwitcherModal({ isOpen, onClose, currentRole, onSelectRole }) {
+  const { T } = useContext(ThemeContext);
+  if (!isOpen) return null;
+
+  const roles = [
+    {
+      id: "student",
+      label: "Student & Intern Portal",
+      desc: "Assessments, verified internships, portfolio & learning programs",
+      icon: "🎓",
+    },
+    {
+      id: "industry",
+      label: "Industry Partner Hub",
+      desc: "Post openings, rank talent by assessment score & sponsor modules",
+      icon: "🌿",
+    },
+    {
+      id: "academician",
+      label: "Faculty & Research Hub",
+      desc: "R&D grants, sabbaticals, corporate advisory & student mentorship",
+      icon: "🔬",
+    },
+    {
+      id: "institution",
+      label: "Institution & Placement Dashboard",
+      desc: "Campus placement funnels, cohort skill gaps & curriculum telemetry",
+      icon: "📊",
+    },
+  ];
+
+  return (
+    <div
+      className="ay-modal-overlay"
+      style={{
+        position: "fixed",
+        inset: 0,
+        background: "rgba(18, 33, 30, 0.72)",
+        backdropFilter: "blur(6px)",
+        zIndex: 9999,
+        display: "flex",
+        alignItems: "center",
+        justifyContent: "center",
+        padding: 16,
+      }}
+      onClick={(e) => {
+        if (e.target === e.currentTarget) onClose();
+      }}
+    >
+      <div
+        className="ay-modal-content"
+        style={{
+          background: T.bgCard,
+          border: `1.5px solid ${T.border}`,
+          borderRadius: 20,
+          padding: "26px 28px",
+          maxWidth: 520,
+          width: "100%",
+          boxShadow: "0 20px 40px rgba(0,0,0,0.35)",
+          color: T.ink,
+        }}
+      >
+        <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 14 }}>
+          <div>
+            <div style={{ fontFamily: "var(--display)", fontSize: 20, fontWeight: 700, color: T.ink }}>
+              Switch Workspace Role
+            </div>
+            <div style={{ fontFamily: "var(--ui)", fontSize: 12.5, color: T.muted, marginTop: 2 }}>
+              Select any stakeholder portal to switch your active view instantly.
+            </div>
+          </div>
+          <button
+            type="button"
+            onClick={onClose}
+            style={{
+              background: "none",
+              border: "none",
+              color: T.muted,
+              cursor: "pointer",
+              fontSize: 16,
+              padding: 4,
+            }}
+          >
+            ✕
+          </button>
+        </div>
+
+        <div style={{ display: "flex", flexDirection: "column", gap: 10, marginTop: 16 }}>
+          {roles.map((r) => {
+            const isActive = currentRole === r.id;
+            return (
+              <button
+                key={r.id}
+                type="button"
+                className="ay-btn"
+                onClick={() => {
+                  onSelectRole(r.id);
+                  onClose();
+                }}
+                style={{
+                  display: "flex",
+                  alignItems: "flex-start",
+                  gap: 14,
+                  padding: "13px 16px",
+                  borderRadius: 12,
+                  border: `1.5px solid ${isActive ? T.teal : T.border}`,
+                  background: isActive ? T.tealSoft : T.bgSurface,
+                  cursor: "pointer",
+                  textAlign: "left",
+                  transition: "all .15s ease",
+                  width: "100%",
+                }}
+              >
+                <div
+                  style={{
+                    fontSize: 22,
+                    lineHeight: 1,
+                    padding: 8,
+                    borderRadius: 10,
+                    background: T.bgCard,
+                    border: `1px solid ${T.border}`,
+                  }}
+                >
+                  {r.icon}
+                </div>
+                <div style={{ flex: 1 }}>
+                  <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between" }}>
+                    <span style={{ fontFamily: "var(--ui)", fontSize: 14.5, fontWeight: 700, color: isActive ? T.teal : T.ink }}>
+                      {r.label}
+                    </span>
+                    {isActive && (
+                      <span style={{
+                        fontSize: 11,
+                        padding: "2px 8px",
+                        borderRadius: 999,
+                        background: T.teal,
+                        color: "#FFFFFF",
+                        fontWeight: 700,
+                      }}>
+                        Active
+                      </span>
+                    )}
+                  </div>
+                  <div style={{ fontFamily: "var(--ui)", fontSize: 12, color: T.muted, marginTop: 3, lineHeight: 1.35 }}>
+                    {r.desc}
+                  </div>
+                </div>
+              </button>
+            );
+          })}
+        </div>
+      </div>
+    </div>
+  );
+}
+
 function LockedPortalGate({ targetRole, setAuthModalRole, setIsAuthModalOpen, setRole, setTab }) {
   const { T } = useContext(ThemeContext);
   const roleMeta = {
     academician: {
-      title: "Faculty & Researcher Workspace Locked",
-      roleLabel: "Faculty & Researcher",
+      title: "Faculty & Research Hub Locked",
+      roleLabel: "Faculty & Research Hub",
       icon: "🔬",
       codeType: "Teacher Code / Reference Number",
       desc: "This workspace is restricted to accredited AYUSH faculty members, principal investigators, and researchers. Access requires a verified Teacher Code registered with the Ministry of Ayush / AICTE / National Apex Institutes.",
@@ -1494,8 +1661,8 @@ function LockedPortalGate({ targetRole, setAuthModalRole, setIsAuthModalOpen, se
       ],
     },
     industry: {
-      title: "Herbal Industry & Recruiter Workspace Locked",
-      roleLabel: "Herbal Industry & Recruiter",
+      title: "Industry Partner Hub Locked",
+      roleLabel: "Industry Partner Hub",
       icon: "🌿",
       codeType: "Company Partner Code",
       desc: "This workspace is reserved for authorized AYUSH pharmaceutical manufacturers, FMCG enterprises, and accredited clinical research organizations. Access requires an official Company Code.",
@@ -1506,8 +1673,8 @@ function LockedPortalGate({ targetRole, setAuthModalRole, setIsAuthModalOpen, se
       ],
     },
     institution: {
-      title: "AYUSH College & Dean Telemetry Locked",
-      roleLabel: "AYUSH College & Dean",
+      title: "Institution & Placement Dashboard Locked",
+      roleLabel: "Institution & Placement Dashboard",
       icon: "📊",
       codeType: "Institute Apex Code",
       desc: "This workspace is reserved for Deans, Principals, and Academic Directors of accredited AYUSH colleges. Access requires an official Institute Code verified by NCISM / NCH / Ministry of Ayush.",
@@ -1687,6 +1854,8 @@ export default function AyushBridge() {
   // Authentication State with Stored Role on Account (null = anonymous visitor)
   const [user, setUser] = useState(null);
   const [authModalRole, setAuthModalRole] = useState("student");
+  const [isRoleSwitcherOpen, setIsRoleSwitcherOpen] = useState(false);
+  const [appSubTab, setAppSubTab] = useState("applied"); // 'applied' | 'saved'
   const [applicantSearch, setApplicantSearch] = useState("");
   const [isAuthModalOpen, setIsAuthModalOpen] = useState(false);
   const [isEditProfileOpen, setIsEditProfileOpen] = useState(false);
@@ -2068,6 +2237,7 @@ export default function AyushBridge() {
                   setTab={setTab}
                   setAuthModalRole={setAuthModalRole}
                   setIsAuthModalOpen={setIsAuthModalOpen}
+                  setIsRoleSwitcherOpen={setIsRoleSwitcherOpen}
                   showToast={showToast}
                   setUser={setUser}
                 />
@@ -2125,6 +2295,18 @@ export default function AyushBridge() {
                       {c}
                     </span>
                   ))}
+                  <span style={{
+                    fontSize: 11.5,
+                    fontFamily: "var(--ui)",
+                    fontWeight: 700,
+                    color: T.teal,
+                    background: T.tealSoft,
+                    padding: "3px 10px",
+                    borderRadius: 6,
+                    border: `1px solid ${T.teal}40`,
+                  }}>
+                    +18 More Partners
+                  </span>
                 </div>
               </div>
 
@@ -2294,8 +2476,8 @@ export default function AyushBridge() {
                     </div>
                   </div>
 
-                  {/* Bottom Live Ecosystem Summary */}
-                  <div style={{ paddingTop: 14, borderTop: `1px solid ${T.borderSubtle || T.border}`, display: "flex", flexDirection: "column", gap: 12 }}>
+                  {/* Bottom Live Ecosystem Summary without duplicate button */}
+                  <div style={{ paddingTop: 14, borderTop: `1px solid ${T.borderSubtle || T.border}`, display: "flex", flexDirection: "column", gap: 10 }}>
                     <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", gap: 8, flexWrap: "wrap", fontSize: 12, fontFamily: "var(--ui)", color: T.muted }}>
                       <span>🏛️ 7 Apex Partners</span>
                       <span>•</span>
@@ -2303,32 +2485,23 @@ export default function AyushBridge() {
                       <span>•</span>
                       <span>🎯 ₹2.4–4.8 LPA</span>
                     </div>
-
-                    <button
-                      type="button"
-                      className="ay-btn"
-                      onClick={() => { setRole("student"); setTab("assessment"); }}
-                      style={{
-                        width: "100%",
-                        padding: "11px 16px",
-                        borderRadius: 10,
-                        border: "none",
-                        background: T.teal,
-                        color: themeMode === "dark" ? "#07120E" : "#FFFFFF",
-                        fontFamily: "var(--ui)",
-                        fontSize: 13.5,
-                        fontWeight: 700,
-                        cursor: "pointer",
-                        display: "flex",
-                        alignItems: "center",
-                        justifyContent: "center",
-                        gap: 6,
-                        boxShadow: "0 2px 10px rgba(45, 212, 191, 0.25)",
-                      }}
-                    >
-                      <span>Start Your Skill Assessment</span>
-                      <span>→</span>
-                    </button>
+                    <div style={{
+                      display: "flex",
+                      alignItems: "center",
+                      justifyContent: "center",
+                      gap: 6,
+                      fontSize: 11.5,
+                      fontFamily: "var(--ui)",
+                      fontWeight: 650,
+                      color: T.teal,
+                      background: T.tealSoft,
+                      padding: "6px 12px",
+                      borderRadius: 8,
+                      border: `1px solid ${T.teal}35`,
+                    }}>
+                      <span style={{ width: 6, height: 6, borderRadius: "50%", background: T.teal }} />
+                      Continuous Live Matching Engine Active
+                    </div>
                   </div>
                 </div>
               </div>
@@ -2340,10 +2513,10 @@ export default function AyushBridge() {
 
             <div className="ay-grid4" style={{ display: "grid", gap: 16 }}>
               {[
-                { id: "student", t: "Student & Intern", d: "Assess your skills, find matched internships, enroll in certified programs, and build your verified portfolio.", icon: "🎓" },
-                { id: "academician", t: "Faculty & Researcher", d: "Access industry training sabbaticals, joint R&D grants, corporate advisory, and student mentorship.", icon: "🔬" },
-                { id: "industry", t: "Herbal Industry & Recruiter", d: "Post openings, discover ranked candidates with verified skills, and sponsor skill modules.", icon: "🌿" },
-                { id: "institution", t: "AYUSH College & Dean", d: "Track campus skill gaps, placement pipelines, and curriculum-industry alignment metrics.", icon: "📊" },
+                { id: "student", t: "Student & Intern Portal", d: "Assess your skills, find matched internships, enroll in certified programs, and build your verified portfolio.", icon: "🎓" },
+                { id: "industry", t: "Industry Partner Hub", d: "Post openings, discover ranked candidates with verified skills, and sponsor skill modules.", icon: "🌿" },
+                { id: "academician", t: "Faculty & Research Hub", d: "Access industry training sabbaticals, joint R&D grants, corporate advisory, and student mentorship.", icon: "🔬" },
+                { id: "institution", t: "Institution & Placement Dashboard", d: "Track campus skill gaps, placement pipelines, and curriculum-industry alignment metrics.", icon: "📊" },
               ].map((r) => (
                 <button
                   key={r.id}
@@ -2361,7 +2534,7 @@ export default function AyushBridge() {
                       if (user && (user.isMasterDemo || user.role === r.id)) {
                         setRole(r.id);
                         setTab("overview");
-                        showToast(`Viewing ${r.t} Workspace (${user.name}) ✓`);
+                        showToast(`Viewing ${r.t} (${user.name}) ✓`);
                       } else {
                         setAuthModalRole(r.id);
                         setIsAuthModalOpen(true);
@@ -2422,6 +2595,19 @@ export default function AyushBridge() {
             setIsAuthModalOpen(false);
           }}
         />
+
+        {/* Instant Role Switcher Modal */}
+        <RoleSwitcherModal
+          isOpen={isRoleSwitcherOpen}
+          onClose={() => setIsRoleSwitcherOpen(false)}
+          currentRole={role || user?.role || "student"}
+          onSelectRole={(newRole) => {
+            setRole(newRole);
+            setTab("overview");
+            if (user) setUser({ ...user, role: newRole });
+            showToast(`Switched to ${newRole === "academician" ? "Faculty & Research Hub" : newRole === "industry" ? "Industry Partner Hub" : newRole === "institution" ? "Institution & Placement Dashboard" : "Student & Intern Portal"} ✓`);
+          }}
+        />
       </Shell>
     </ThemeContext.Provider>
   );
@@ -2441,17 +2627,17 @@ export default function AyushBridge() {
       ["portfolio", "Profile & Portfolio"],
     ],
     academician: [
-      ["overview", "Faculty Dashboard"],
+      ["overview", "Faculty & Research Hub"],
       ["faculty", "R&D & Industry Immersion"],
       ["mentorship", "Mentorship & Live Problem Statements"],
     ],
     industry: [
-      ["overview", "Recruiter Workspace"],
-      ["post", "Post an Opening"],
+      ["overview", "Industry Partner Hub"],
+      ["post", "Publish Opening"],
       ["applicants", "Ranked AYUSH Candidates"],
     ],
     institution: [
-      ["overview", "Campus Dashboard"],
+      ["overview", "Institution & Placement"],
       ["cohort", "Cohort Skill Gaps"],
       ["placement", "Placement Pipeline"],
     ],
@@ -2519,12 +2705,12 @@ export default function AyushBridge() {
               </span>
               <span style={{ fontFamily: "var(--ui)", fontSize: 13, fontWeight: 700, color: T.ink }}>
                 {role === "student"
-                  ? "Student Workspace"
+                  ? "Student & Intern Portal"
                   : role === "academician"
-                  ? "Faculty & Research Portal"
+                  ? "Faculty & Research Hub"
                   : role === "industry"
-                  ? "Industry & Recruiter Hub"
-                  : "Institutional Dean Telemetry"}
+                  ? "Industry Partner Hub"
+                  : "Institution & Placement Dashboard"}
               </span>
               <span style={{
                 fontSize: 11,
@@ -2661,6 +2847,7 @@ export default function AyushBridge() {
                 setTab={setTab}
                 setAuthModalRole={setAuthModalRole}
                 setIsAuthModalOpen={setIsAuthModalOpen}
+                setIsRoleSwitcherOpen={setIsRoleSwitcherOpen}
                 showToast={showToast}
                 setUser={setUser}
               />
@@ -3460,49 +3647,412 @@ export default function AyushBridge() {
             <div>
               <H size={28}>My Applications & Mentorship</H>
               <Muted style={{ marginTop: 4, marginBottom: 20 }}>
-                Track the progress of your AYUSH industry internship applications and faculty mentorship requests.
+                Track the status of your AYUSH industry internship applications, bookmarked openings, and faculty mentorship requests.
               </Muted>
 
-              {apps.length === 0 ? (
-                <Card style={{ maxWidth: 580, padding: 30, marginBottom: 24 }}>
-                  <H size={22}>No Applications Yet</H>
-                  <Muted style={{ marginTop: 8, marginBottom: 20 }}>
-                    Explore verified opportunities across herbal manufacturing, clinical research, wellness, and tele-AYUSH.
-                  </Muted>
-                  <Btn onClick={() => changeTab("opportunities")}>Browse Opportunities</Btn>
-                </Card>
-              ) : (
-                <div style={{ marginBottom: 28 }}>
-                  <div style={{ fontFamily: "var(--display)", fontSize: 20, fontWeight: 600, color: T.ink, marginBottom: 12 }}>
-                    Submitted Applications ({apps.length})
-                  </div>
-                  <div style={{ display: "flex", flexDirection: "column", gap: 12 }}>
+              {/* Sub-Tabs: Submitted Applications vs Saved Opportunities */}
+              <div style={{
+                display: "flex",
+                gap: 12,
+                borderBottom: `1px solid ${T.border}`,
+                marginBottom: 20,
+                paddingBottom: 2,
+              }}>
+                <button
+                  type="button"
+                  onClick={() => setAppSubTab("applied")}
+                  style={{
+                    background: "none",
+                    border: "none",
+                    padding: "8px 14px",
+                    cursor: "pointer",
+                    fontFamily: "var(--ui)",
+                    fontSize: 14,
+                    fontWeight: appSubTab === "applied" ? 700 : 550,
+                    color: appSubTab === "applied" ? T.teal : T.muted,
+                    borderBottom: `2.5px solid ${appSubTab === "applied" ? T.teal : "transparent"}`,
+                    marginBottom: -3,
+                    display: "flex",
+                    alignItems: "center",
+                    gap: 6,
+                    transition: "all .15s ease",
+                  }}
+                >
+                  <span>📑</span>
+                  <span>Submitted Applications ({apps.length})</span>
+                </button>
+
+                <button
+                  type="button"
+                  onClick={() => setAppSubTab("saved")}
+                  style={{
+                    background: "none",
+                    border: "none",
+                    padding: "8px 14px",
+                    cursor: "pointer",
+                    fontFamily: "var(--ui)",
+                    fontSize: 14,
+                    fontWeight: appSubTab === "saved" ? 700 : 550,
+                    color: appSubTab === "saved" ? T.teal : T.muted,
+                    borderBottom: `2.5px solid ${appSubTab === "saved" ? T.teal : "transparent"}`,
+                    marginBottom: -3,
+                    display: "flex",
+                    alignItems: "center",
+                    gap: 6,
+                    transition: "all .15s ease",
+                  }}
+                >
+                  <span>🔖</span>
+                  <span>Saved Opportunities ({savedJobs.length})</span>
+                </button>
+              </div>
+
+              {/* SUB-VIEW 1: SUBMITTED APPLICATIONS */}
+              {appSubTab === "applied" && (
+                apps.length === 0 ? (
+                  <Card style={{ maxWidth: 580, padding: 30, marginBottom: 24 }}>
+                    <H size={22}>No Applications Yet</H>
+                    <Muted style={{ marginTop: 8, marginBottom: 20 }}>
+                      Explore verified opportunities across herbal manufacturing, clinical research, wellness, and tele-AYUSH.
+                    </Muted>
+                    <Btn onClick={() => changeTab("opportunities")}>Browse Opportunities</Btn>
+                  </Card>
+                ) : (
+                  <div style={{ marginBottom: 28, display: "flex", flexDirection: "column", gap: 14 }}>
                     {apps.map((a) => {
                       const o = [...OPPORTUNITIES, ...posted].find((x) => x.id === a.oppId) || OPPORTUNITIES[0];
-                      const stages = ["Applied", "Shortlisted", "Selected"];
-                      const at = stages.indexOf(a.status);
+                      const isAwaiting = a.status === "Applied" || !a.status;
+                      const isShortlisted = a.status === "Shortlisted";
+                      const isSelected = a.status === "Selected";
+
                       return (
-                        <Card key={a.oppId} style={{ display: "flex", justifyContent: "space-between", gap: 18, flexWrap: "wrap", alignItems: "center" }}>
-                          <div>
-                            <div style={{ fontFamily: "var(--display)", fontSize: 18, fontWeight: 600, color: T.ink }}>
-                              {o.title}
+                        <Card key={a.oppId} style={{ display: "flex", flexDirection: "column", gap: 16, padding: 22 }}>
+                          <div style={{ display: "flex", justifyContent: "space-between", gap: 16, flexWrap: "wrap", alignItems: "flex-start" }}>
+                            <div>
+                              <div style={{ display: "flex", alignItems: "center", gap: 8, flexWrap: "wrap" }}>
+                                <span style={{ fontFamily: "var(--display)", fontSize: 18.5, fontWeight: 700, color: T.ink }}>
+                                  {o.title}
+                                </span>
+                                {isAwaiting && (
+                                  <span style={{
+                                    display: "inline-flex",
+                                    alignItems: "center",
+                                    gap: 5,
+                                    fontSize: 12,
+                                    fontFamily: "var(--ui)",
+                                    fontWeight: 700,
+                                    color: "#D97706",
+                                    background: "rgba(245, 158, 11, 0.12)",
+                                    border: "1px solid rgba(245, 158, 11, 0.35)",
+                                    padding: "3px 10px",
+                                    borderRadius: 999,
+                                  }}>
+                                    <span style={{ width: 6, height: 6, borderRadius: "50%", background: "#D97706" }} />
+                                    Awaiting Response · Under Review
+                                  </span>
+                                )}
+                                {isShortlisted && (
+                                  <span style={{
+                                    display: "inline-flex",
+                                    alignItems: "center",
+                                    gap: 5,
+                                    fontSize: 12,
+                                    fontFamily: "var(--ui)",
+                                    fontWeight: 700,
+                                    color: "#059669",
+                                    background: "rgba(16, 185, 129, 0.12)",
+                                    border: "1px solid rgba(16, 185, 129, 0.35)",
+                                    padding: "3px 10px",
+                                    borderRadius: 999,
+                                  }}>
+                                    <span style={{ width: 6, height: 6, borderRadius: "50%", background: "#059669" }} />
+                                    Shortlisted for Interview
+                                  </span>
+                                )}
+                                {isSelected && (
+                                  <span style={{
+                                    display: "inline-flex",
+                                    alignItems: "center",
+                                    gap: 5,
+                                    fontSize: 12,
+                                    fontFamily: "var(--ui)",
+                                    fontWeight: 700,
+                                    color: "#10B981",
+                                    background: "rgba(16, 185, 129, 0.20)",
+                                    border: "1px solid rgba(16, 185, 129, 0.5)",
+                                    padding: "3px 10px",
+                                    borderRadius: 999,
+                                  }}>
+                                    🎉 Offer Extended · Selected
+                                  </span>
+                                )}
+                              </div>
+                              <Muted style={{ fontSize: 13, marginTop: 4 }}>
+                                {o.org} · {o.loc || "Hybrid / On-site"} · Stipend: {o.pay} · Applied on {a.on}
+                              </Muted>
                             </div>
-                            <Muted style={{ fontSize: 13, marginTop: 2 }}>{o.org} · {o.pay} · Applied on {a.on}</Muted>
+
+                            <div style={{ display: "flex", alignItems: "center", gap: 6 }}>
+                              <Chip tone="good">Role Match: {o.match || 88}%</Chip>
+                            </div>
                           </div>
 
-                          <div style={{ display: "flex", gap: 8, alignItems: "center" }}>
-                            {stages.map((s, i) => (
-                              <React.Fragment key={s}>
-                                {i > 0 && <div style={{ width: 24, height: 1, background: i <= at ? T.sage : T.border }} />}
-                                <Chip tone={i <= at ? "good" : "neutral"}>{s}</Chip>
-                              </React.Fragment>
-                            ))}
+                          {/* 3-Step Visual Pipeline Tracker */}
+                          <div style={{
+                            background: T.bgSurface,
+                            border: `1px solid ${T.border}`,
+                            borderRadius: 12,
+                            padding: "12px 16px",
+                            display: "grid",
+                            gridTemplateColumns: "1fr auto 1fr auto 1fr",
+                            alignItems: "center",
+                            gap: 8,
+                          }}>
+                            {/* Step 1: Applied */}
+                            <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
+                              <div style={{
+                                width: 24,
+                                height: 24,
+                                borderRadius: "50%",
+                                background: T.teal,
+                                color: "#FFF",
+                                fontSize: 12,
+                                fontWeight: 700,
+                                display: "flex",
+                                alignItems: "center",
+                                justifyContent: "center",
+                              }}>
+                                ✓
+                              </div>
+                              <div>
+                                <div style={{ fontFamily: "var(--ui)", fontSize: 12.5, fontWeight: 700, color: T.ink }}>
+                                  Application Submitted
+                                </div>
+                                <div style={{ fontFamily: "var(--ui)", fontSize: 11, color: T.muted }}>
+                                  {a.on || "Verified submission"}
+                                </div>
+                              </div>
+                            </div>
+
+                            {/* Arrow 1 */}
+                            <div style={{ color: isShortlisted || isSelected ? T.teal : isAwaiting ? "#D97706" : T.border, fontSize: 14 }}>
+                              →
+                            </div>
+
+                            {/* Step 2: Recruiter Review & Shortlist */}
+                            <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
+                              <div style={{
+                                width: 24,
+                                height: 24,
+                                borderRadius: "50%",
+                                background: isShortlisted || isSelected ? T.teal : isAwaiting ? "rgba(245, 158, 11, 0.2)" : T.bgCard,
+                                color: isShortlisted || isSelected ? "#FFF" : isAwaiting ? "#D97706" : T.muted,
+                                border: `1.5px solid ${isShortlisted || isSelected ? T.teal : isAwaiting ? "#D97706" : T.border}`,
+                                fontSize: 12,
+                                fontWeight: 700,
+                                display: "flex",
+                                alignItems: "center",
+                                justifyContent: "center",
+                              }}>
+                                {isShortlisted || isSelected ? "✓" : "2"}
+                              </div>
+                              <div>
+                                <div style={{ fontFamily: "var(--ui)", fontSize: 12.5, fontWeight: 700, color: isShortlisted || isSelected ? T.teal : isAwaiting ? "#D97706" : T.muted }}>
+                                  Recruiter Shortlisting
+                                </div>
+                                <div style={{ fontFamily: "var(--ui)", fontSize: 11, color: isAwaiting ? "#D97706" : T.muted }}>
+                                  {isShortlisted || isSelected ? "Candidate Shortlisted" : "Profile Under Evaluation"}
+                                </div>
+                              </div>
+                            </div>
+
+                            {/* Arrow 2 */}
+                            <div style={{ color: isSelected ? T.teal : T.border, fontSize: 14 }}>
+                              →
+                            </div>
+
+                            {/* Step 3: Final Selection */}
+                            <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
+                              <div style={{
+                                width: 24,
+                                height: 24,
+                                borderRadius: "50%",
+                                background: isSelected ? T.teal : T.bgCard,
+                                color: isSelected ? "#FFF" : T.muted,
+                                border: `1.5px solid ${isSelected ? T.teal : T.border}`,
+                                fontSize: 12,
+                                fontWeight: 700,
+                                display: "flex",
+                                alignItems: "center",
+                                justifyContent: "center",
+                              }}>
+                                {isSelected ? "🎉" : "3"}
+                              </div>
+                              <div>
+                                <div style={{ fontFamily: "var(--ui)", fontSize: 12.5, fontWeight: 700, color: isSelected ? T.teal : T.muted }}>
+                                  Final Selection
+                                </div>
+                                <div style={{ fontFamily: "var(--ui)", fontSize: 11, color: T.muted }}>
+                                  {isSelected ? "Offer Extended" : "Awaiting interview round"}
+                                </div>
+                              </div>
+                            </div>
                           </div>
                         </Card>
                       );
                     })}
                   </div>
-                </div>
+                )
+              )}
+
+              {/* SUB-VIEW 2: SAVED OPPORTUNITIES */}
+              {appSubTab === "saved" && (
+                (() => {
+                  const savedList = [...OPPORTUNITIES, ...posted].filter(o => savedJobs.includes(o.id));
+                  if (savedList.length === 0) {
+                    return (
+                      <Card style={{ maxWidth: 580, padding: 30, marginBottom: 24 }}>
+                        <H size={22}>No Saved Opportunities</H>
+                        <Muted style={{ marginTop: 8, marginBottom: 20 }}>
+                          You haven't bookmarked any opportunities yet. Click the 📑 Save button on any internship or job card to track it here.
+                        </Muted>
+                        <Btn onClick={() => changeTab("opportunities")}>Browse Opportunities</Btn>
+                      </Card>
+                    );
+                  }
+
+                  return (
+                    <div style={{ marginBottom: 28, display: "flex", flexDirection: "column", gap: 14 }}>
+                      {savedList.map((o) => {
+                        const hasApplied = apps.some((a) => a.oppId === o.id);
+                        const isOpen = openOpp === o.id;
+
+                        return (
+                          <Card key={o.id} style={{ display: "flex", flexDirection: "column", gap: 14, padding: 22 }}>
+                            <div style={{ display: "flex", justifyContent: "space-between", gap: 14, flexWrap: "wrap", alignItems: "flex-start" }}>
+                              <div>
+                                <div style={{ display: "flex", alignItems: "center", gap: 8, flexWrap: "wrap" }}>
+                                  <span style={{ fontFamily: "var(--display)", fontSize: 18.5, fontWeight: 700, color: T.ink }}>
+                                    {o.title}
+                                  </span>
+                                  <span style={{
+                                    fontSize: 11.5,
+                                    fontFamily: "var(--ui)",
+                                    fontWeight: 650,
+                                    color: T.teal,
+                                    background: T.tealSoft,
+                                    padding: "2px 8px",
+                                    borderRadius: 6,
+                                  }}>
+                                    {o.sector || "AYUSH Healthcare"}
+                                  </span>
+                                </div>
+                                <Muted style={{ fontSize: 13, marginTop: 4 }}>
+                                  {o.org} · {o.loc || "National / Hybrid"} · {o.pay}
+                                </Muted>
+                              </div>
+
+                              <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
+                                <Chip tone="good">Readiness: {o.match || 85}%</Chip>
+                              </div>
+                            </div>
+
+                            {/* Required Skills & Focus */}
+                            <div style={{ display: "flex", gap: 6, flexWrap: "wrap", alignItems: "center" }}>
+                              <span style={{ fontSize: 11.5, color: T.muted, fontWeight: 600 }}>Required Skills:</span>
+                              {o.requires?.map((req) => (
+                                <span
+                                  key={req}
+                                  style={{
+                                    fontSize: 11.5,
+                                    fontFamily: "var(--ui)",
+                                    background: T.bgSurface,
+                                    border: `1px solid ${T.border}`,
+                                    padding: "2px 8px",
+                                    borderRadius: 6,
+                                    color: T.ink,
+                                  }}
+                                >
+                                  {req}
+                                </span>
+                              ))}
+                            </div>
+
+                            {/* Actions Bar */}
+                            <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", paddingTop: 10, borderTop: `1px solid ${T.borderSubtle || T.border}`, flexWrap: "wrap", gap: 10 }}>
+                              <div style={{ display: "flex", gap: 8 }}>
+                                <Btn
+                                  small
+                                  variant={hasApplied ? "outline" : "solid"}
+                                  disabled={hasApplied}
+                                  onClick={(e) => {
+                                    e?.preventDefault?.();
+                                    if (!hasApplied) applyOpp(o.id);
+                                  }}
+                                >
+                                  {hasApplied ? "Applied ✓" : "Apply Now →"}
+                                </Btn>
+                                <Btn
+                                  small
+                                  variant="ghost"
+                                  onClick={(e) => {
+                                    e?.preventDefault?.();
+                                    setOpenOpp(isOpen ? null : o.id);
+                                  }}
+                                >
+                                  {isOpen ? "Hide Breakdown ▲" : "View Breakdown ▼"}
+                                </Btn>
+                              </div>
+
+                              <button
+                                type="button"
+                                onClick={(e) => {
+                                  e?.preventDefault?.();
+                                  toggleSaveJob(o.id);
+                                  showToast("Removed from saved opportunities");
+                                }}
+                                style={{
+                                  background: "none",
+                                  border: `1px solid ${T.border}`,
+                                  borderRadius: 8,
+                                  padding: "6px 12px",
+                                  fontSize: 12,
+                                  fontFamily: "var(--ui)",
+                                  color: T.terra,
+                                  cursor: "pointer",
+                                  display: "flex",
+                                  alignItems: "center",
+                                  gap: 5,
+                                }}
+                              >
+                                <span>🗑️</span>
+                                <span>Remove from Saved</span>
+                              </button>
+                            </div>
+
+                            {/* Expanded Breakdown */}
+                            {isOpen && (
+                              <div style={{
+                                marginTop: 8,
+                                padding: 14,
+                                background: T.bgSurface,
+                                border: `1px solid ${T.border}`,
+                                borderRadius: 10,
+                                fontSize: 13,
+                                lineHeight: 1.5,
+                              }}>
+                                <div style={{ fontWeight: 650, color: T.ink, marginBottom: 4 }}>Role Overview & Objectives:</div>
+                                <div style={{ color: T.muted }}>
+                                  {o.desc || "Engage in research-driven botanical formulation, laboratory quality standard validation, and regulatory documentation under the supervision of senior AYUSH industry mentors."}
+                                </div>
+                              </div>
+                            )}
+                          </Card>
+                        );
+                      })}
+                    </div>
+                  );
+                })()
               )}
 
               {/* Student's Sent Mentorship Requests Section */}
@@ -4046,7 +4596,7 @@ export default function AyushBridge() {
 
         {role === "academician" && tab === "overview" && (
           <>
-            <H size={30}>Faculty Workspace</H>
+            <H size={30}>Faculty & Research Hub</H>
             <Muted style={{ marginTop: 4, marginBottom: 22 }}>
               Dr. A. Nair · Department of Clinical Studies · All India Institute of Ayurveda
             </Muted>
@@ -4253,8 +4803,8 @@ export default function AyushBridge() {
 
         {role === "industry" && tab === "overview" && (
           <>
-            <H size={30}>Himalaya Wellness & AYUSH Industry Hub</H>
-            <Muted style={{ marginTop: 4, marginBottom: 22 }}>Verified Industry Partner Workspace</Muted>
+            <H size={30}>Industry Partner Hub</H>
+            <Muted style={{ marginTop: 4, marginBottom: 22 }}>Verified Industry Partner Workspace · Himalaya Wellness</Muted>
 
             <div style={{ display: "flex", gap: 14, flexWrap: "wrap" }}>
               <KPI value={5 + posted.length} label="Active Postings" icon="📌" />
@@ -4661,9 +5211,9 @@ export default function AyushBridge() {
 
         {role === "institution" && tab === "overview" && (
           <>
-            <H size={30}>All India Institute of Ayurveda</H>
+            <H size={30}>Institution & Placement Dashboard</H>
             <Muted style={{ marginTop: 4, marginBottom: 22 }}>
-              Institutional Analytics & Placement Dashboard · Academic Year 2026–27
+              All India Institute of Ayurveda · Institutional Analytics & Placement Telemetry · AY 2026–27
             </Muted>
 
             <div style={{ display: "flex", gap: 14, flexWrap: "wrap" }}>
@@ -4849,6 +5399,19 @@ export default function AyushBridge() {
           }
           setTab("overview");
           setIsAuthModalOpen(false);
+        }}
+      />
+
+      {/* Instant Role Switcher Modal */}
+      <RoleSwitcherModal
+        isOpen={isRoleSwitcherOpen}
+        onClose={() => setIsRoleSwitcherOpen(false)}
+        currentRole={role || user?.role || "student"}
+        onSelectRole={(newRole) => {
+          setRole(newRole);
+          setTab("overview");
+          if (user) setUser({ ...user, role: newRole });
+          showToast(`Switched to ${newRole === "academician" ? "Faculty & Research Hub" : newRole === "industry" ? "Industry Partner Hub" : newRole === "institution" ? "Institution & Placement Dashboard" : "Student & Intern Portal"} ✓`);
         }}
       />
 
