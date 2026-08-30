@@ -551,6 +551,11 @@ const PROGRAMS = [
     boosts: "regulatory_gmp",
     workMode: "Hybrid",
     mode: "Online + Plant Tour (Hybrid)",
+    startDate: "2026-09-15",
+    startDateFormatted: "15 Sep 2026",
+    reportingTime: "09:30 AM IST",
+    venue: "Himalaya Wellness Campus, Makali, Bengaluru, Karnataka 562162",
+    meetLink: "https://meet.google.com/ayu-gmp-2026",
     prerequisites: "Basic Ayurvedic Pharmacy or final-year BAMS/B.Pharm enrollment",
     skillsGained: ["Regulatory & GMP", "Quality Testing", "Plant Audit"],
     desc: "Master Ayurvedic Pharmacopoeia compliance, batch manufacturing records (BMR), and state licensing norms.",
@@ -564,6 +569,10 @@ const PROGRAMS = [
     boosts: "health_data",
     workMode: "Online",
     mode: "Online Labs",
+    startDate: "2026-09-02",
+    startDateFormatted: "02 Sep 2026 (Live in 2 days)",
+    reportingTime: "05:00 PM IST",
+    meetLink: "https://meet.google.com/aiia-data-cell",
     prerequisites: "Basic computer literacy and interest in health trial data",
     skillsGained: ["Health Data", "Clinical Documentation", "Biostatistics"],
     desc: "Hands-on analysis of AYUSH patient records, clinical trial statistics, and public health metrics.",
@@ -577,6 +586,10 @@ const PROGRAMS = [
     boosts: "digital_telehealth",
     workMode: "Online",
     mode: "Online Sandbox",
+    startDate: "2026-09-20",
+    startDateFormatted: "20 Sep 2026",
+    reportingTime: "11:00 AM IST",
+    meetLink: "https://meet.google.com/tele-ayush-ops",
     prerequisites: "Introductory clinical OPD experience",
     skillsGained: ["Digital Tele-AYUSH", "EHR Case Systems", "NAMASTE Coding"],
     desc: "Integrate e-Sanjeevani workflows, standardized EHR case sheets, and virtual OPD protocols.",
@@ -590,6 +603,10 @@ const PROGRAMS = [
     boosts: "quality_testing",
     workMode: "Offline",
     mode: "Offline Lab, Ghaziabad",
+    startDate: "2026-09-18",
+    startDateFormatted: "18 Sep 2026",
+    reportingTime: "09:00 AM IST",
+    venue: "Dabur Research Foundation, Plot 22, Site IV, Sahibabad Industrial Area, Ghaziabad, UP 201010",
     prerequisites: "B.Pharm (Ayurveda) / B.Sc Chemistry / BAMS",
     skillsGained: ["Quality Testing", "Herbal Formulation", "HPLC Assays"],
     desc: "Practical training in chromatographic authentication, pesticide screening, and microbial limit assays.",
@@ -603,6 +620,11 @@ const PROGRAMS = [
     boosts: "yoga_therapy",
     workMode: "Hybrid",
     mode: "Hybrid",
+    startDate: "2026-09-12",
+    startDateFormatted: "12 Sep 2026",
+    reportingTime: "08:00 AM IST",
+    venue: "Kaivalyadhama Health Center, Lonavala / Virtual Studio",
+    meetLink: "https://meet.google.com/yoga-therapy-kaivalya",
     prerequisites: "Basic Yoga Asana foundations / BNYS / B.Sc Yoga",
     skillsGained: ["Yoga Therapy", "Lifestyle Counseling", "Stress Management"],
     desc: "Design structured therapeutic yoga sequences for metabolic, respiratory, and postural health conditions.",
@@ -616,6 +638,10 @@ const PROGRAMS = [
     boosts: "clinical_research",
     workMode: "Online",
     mode: "Online Certified",
+    startDate: "2026-09-25",
+    startDateFormatted: "25 Sep 2026",
+    reportingTime: "04:00 PM IST",
+    meetLink: "https://meet.google.com/ccras-gcp-trials",
     prerequisites: "Enrolled UG/PG AYUSH Student or Researcher",
     skillsGained: ["Clinical Research", "GCP Compliance", "eCRF Documentation"],
     desc: "Comprehensive grounding in ICH-GCP guidelines, clinical protocol drafting, and patient safety tracking.",
@@ -629,6 +655,10 @@ const PROGRAMS = [
     boosts: "clinical_doc",
     workMode: "Online",
     mode: "Online",
+    startDate: "2026-09-10",
+    startDateFormatted: "10 Sep 2026",
+    reportingTime: "03:00 PM IST",
+    meetLink: "https://meet.google.com/aiia-case-docs",
     prerequisites: "Final-year AYUSH student or Intern",
     skillsGained: ["Clinical Documentation", "Discharge Summaries", "Case History Taking"],
     desc: "Standardize OPD case taking, differential diagnosis charting, and clinical progress summaries.",
@@ -642,6 +672,10 @@ const PROGRAMS = [
     boosts: "herbal_formulation",
     workMode: "Offline",
     mode: "Offline Plant, Kerala",
+    startDate: "2026-10-01",
+    startDateFormatted: "01 Oct 2026",
+    reportingTime: "09:00 AM IST",
+    venue: "Kottakkal Arya Vaidya Sala Manufacturing Plant, Malappuram, Kerala 676503",
     prerequisites: "BAMS / B.Pharm (Ayurveda) / M.Sc Botany",
     skillsGained: ["Herbal Formulation", "Quality Testing", "Decoction Boiling"],
     desc: "Pilot plant experience in decoction extraction, spray-drying, and standardized botanical dosage forms.",
@@ -653,7 +687,12 @@ const PROGRAMS = [
     weeks: 2,
     price: 499,
     boosts: "lifestyle_counsel",
+    workMode: "Online",
     mode: "Online",
+    startDate: "2026-09-14",
+    startDateFormatted: "14 Sep 2026",
+    reportingTime: "06:00 PM IST",
+    meetLink: "https://meet.google.com/nin-diet-counsel",
     prerequisites: "AYUSH student or wellness practitioner",
     skillsGained: ["Lifestyle Counseling", "Nutritional Therapy", "Patient Counseling"],
     desc: "Clinical guidelines for constitutional diet planning, therapeutic fasting supervision, and lifestyle counselling.",
@@ -665,10 +704,124 @@ const PROGRAMS = [
     weeks: 8,
     price: 1999,
     boosts: "wellness_therapy",
+    workMode: "Offline",
     mode: "On-site, Kerala",
+    startDate: "2026-10-15",
+    startDateFormatted: "15 Oct 2026",
+    reportingTime: "08:30 AM IST",
+    venue: "Somatheeram Ayurvedic Hospital & Research Institute, Chowara PO, Kovalam, Kerala 695501",
     prerequisites: "BAMS / BNYS student or graduate",
     skillsGained: ["Therapeutic Body Care", "Herbal Steam Protocols", "Constitution Assessment"],
     desc: "Clinical mastery of classical therapeutic body therapies, herbal steam applications, and wellness monitoring.",
+  },
+];
+
+/* ---------------- Verified AYUSH Faculty Mentors Catalog ---------------- */
+
+const FACULTY_MENTORS = [
+  {
+    id: "fm-1",
+    name: "Dr. A. Nair",
+    dept: "Dept. of Clinical Studies",
+    institution: "All India Institute of Ayurveda (AIIA), New Delhi",
+    specialization: "Clinical Trial Protocol Design & GCP Compliance",
+    format: "Online",
+    isPaid: false,
+    price: 0,
+    duration: "45 mins",
+    rating: 4.9,
+    reviewsCount: 38,
+    avatarTone: "sage",
+    prerequisites: "Completed 2nd Year BAMS/MD with basic understanding of Ayurvedic diagnostics and clinical case sheets.",
+    learningOutcomes: [
+      "ICMR & AYUSH trial protocol structuring and ethical clearance steps",
+      "Drafting Electronic Case Report Forms (eCRF) for multi-center studies",
+      "Statistical outcome measurement and adverse event documentation",
+    ],
+  },
+  {
+    id: "fm-2",
+    name: "Dr. V. K. Joshi",
+    dept: "Herbal Drug Standardization Division",
+    institution: "Central Council for Research in Ayurvedic Sciences (CCRAS)",
+    specialization: "Pharmacopoeial Quality Testing & Botanical Authentication",
+    format: "Hybrid",
+    venue: "CCRAS Analytical Lab, Janakpuri, New Delhi",
+    meetLink: "https://meet.google.com/ccras-joshi-mentorship",
+    isPaid: true,
+    price: 499,
+    duration: "60 mins",
+    rating: 4.8,
+    reviewsCount: 29,
+    avatarTone: "terra",
+    prerequisites: "B.Pharm (Ayurveda) / BAMS / B.Sc Chemistry with familiarity in phytochemical extraction techniques.",
+    learningOutcomes: [
+      "HPTLC chromatographic fingerprinting interpretation under API standards",
+      "Heavy metal limit test and microbial bio-burden screening protocols",
+      "Preparation of Certificates of Analysis (COA) for GMP audit compliance",
+    ],
+  },
+  {
+    id: "fm-3",
+    name: "Dr. S. K. Sharma",
+    dept: "Dept. of Dravyaguna & Ethnomedicine",
+    institution: "National Institute of Ayurveda (NIA), Jaipur",
+    specialization: "Medicinal Plant Extraction & Herbal Formulation Technology",
+    format: "Online",
+    isPaid: false,
+    price: 0,
+    duration: "45 mins",
+    rating: 4.9,
+    reviewsCount: 52,
+    avatarTone: "teal",
+    prerequisites: "Basic understanding of classical Ayurvedic Rasashastra & Bhaishajya Kalpana.",
+    learningOutcomes: [
+      "Solvent selection & standardization for botanical hydro-alcoholic extracts",
+      "Stability testing guidelines and shelf-life determination for classical formulations",
+      "Bridging traditional texts with modern pharma delivery mechanisms",
+    ],
+  },
+  {
+    id: "fm-4",
+    name: "Dr. Meera Raghavan",
+    dept: "Integrative Health & Yoga Research",
+    institution: "Kaivalyadhama Health & Yoga Institute, Pune",
+    specialization: "Therapeutic Yoga Protocol Design & Autonomic Vitals Monitoring",
+    format: "Hybrid",
+    venue: "Kaivalyadhama Center, Marine Drive, Mumbai / Online",
+    meetLink: "https://meet.google.com/kaivalya-meera-mentorship",
+    isPaid: true,
+    price: 799,
+    duration: "60 mins",
+    rating: 5.0,
+    reviewsCount: 41,
+    avatarTone: "sage",
+    prerequisites: "BNYS / B.Sc Yoga / PG Diploma in Yoga Therapy or clinical internship experience.",
+    learningOutcomes: [
+      "Design condition-specific yoga therapy modules for lifestyle disorders",
+      "Heart Rate Variability (HRV) and respiratory bio-feedback measurement",
+      "Client psychological counseling and adherence tracking techniques",
+    ],
+  },
+  {
+    id: "fm-5",
+    name: "Dr. H. P. Tripathy",
+    dept: "Health Informatics & Digital AYUSH Cell",
+    institution: "Institute of Teaching & Research in Ayurveda (ITRA), Jamnagar",
+    specialization: "NAMASTE & ICD-11 Dual Coding & Tele-AYUSH Systems",
+    format: "Online",
+    isPaid: false,
+    price: 0,
+    duration: "45 mins",
+    rating: 4.7,
+    reviewsCount: 22,
+    avatarTone: "teal",
+    prerequisites: "Comfort with digital EHR tools and interest in Ayush Grid technologies.",
+    learningOutcomes: [
+      "Integrating NAMASTE terminology into National Digital Health Mission (ABDM)",
+      "Standardizing digital prescriptions and telemedicine consultations",
+      "Clinical data privacy and consent management for AYUSH health records",
+    ],
   },
 ];
 
@@ -1489,9 +1642,14 @@ function UserAuthWidget({ user, role, setRole, setTab, setAuthModalRole, setIsAu
   );
 }
 
-function RoleSwitcherModal({ isOpen, onClose, currentRole, onSelectRole }) {
+function RoleSwitcherModal({ isOpen, onClose, currentRole, onSelectRole, user, showToast }) {
   const { T } = useContext(ThemeContext);
   if (!isOpen) return null;
+
+  const isMaster = user?.isMasterDemo === true;
+  const userAllowedRoles = isMaster
+    ? ["student", "industry", "academician", "institution"]
+    : user?.allowedRoles || [user?.role || "student"];
 
   const roles = [
     {
@@ -1557,7 +1715,9 @@ function RoleSwitcherModal({ isOpen, onClose, currentRole, onSelectRole }) {
               Switch Workspace Role
             </div>
             <div style={{ fontFamily: "var(--ui)", fontSize: 12.5, color: T.muted, marginTop: 2 }}>
-              Select any stakeholder portal to switch your active view instantly.
+              {isMaster
+                ? "Master Account: Cross-workspace switching enabled."
+                : `Account: ${user?.name || "User"} (${user?.role === "student" ? "Verified Student" : user?.role === "academician" ? "Faculty" : user?.role === "industry" ? "Industry Partner" : "Institution"})`}
             </div>
           </div>
           <button
@@ -1579,12 +1739,20 @@ function RoleSwitcherModal({ isOpen, onClose, currentRole, onSelectRole }) {
         <div style={{ display: "flex", flexDirection: "column", gap: 10, marginTop: 16 }}>
           {roles.map((r) => {
             const isActive = currentRole === r.id;
+            const isPermitted = userAllowedRoles.includes(r.id);
+
             return (
               <button
                 key={r.id}
                 type="button"
                 className="ay-btn"
                 onClick={() => {
+                  if (!isPermitted) {
+                    if (showToast) {
+                      showToast(`Access Restricted: Your account (${user?.name || "Student"}) is verified for ${user?.role === "student" ? "Student Portal" : user?.role} only.`);
+                    }
+                    return;
+                  }
                   onSelectRole(r.id);
                   onClose();
                 }}
@@ -1594,9 +1762,10 @@ function RoleSwitcherModal({ isOpen, onClose, currentRole, onSelectRole }) {
                   gap: 14,
                   padding: "13px 16px",
                   borderRadius: 12,
-                  border: `1.5px solid ${isActive ? T.teal : T.border}`,
-                  background: isActive ? T.tealSoft : T.bgSurface,
-                  cursor: "pointer",
+                  border: `1.5px solid ${isActive ? T.teal : isPermitted ? T.border : T.borderSubtle || T.border}`,
+                  background: isActive ? T.tealSoft : isPermitted ? T.bgSurface : T.bg,
+                  opacity: isPermitted ? 1 : 0.58,
+                  cursor: isPermitted ? "pointer" : "not-allowed",
                   textAlign: "left",
                   transition: "all .15s ease",
                   width: "100%",
@@ -1619,7 +1788,7 @@ function RoleSwitcherModal({ isOpen, onClose, currentRole, onSelectRole }) {
                     <span style={{ fontFamily: "var(--ui)", fontSize: 14.5, fontWeight: 700, color: isActive ? T.teal : T.ink }}>
                       {r.label}
                     </span>
-                    {isActive && (
+                    {isActive ? (
                       <span style={{
                         fontSize: 11,
                         padding: "2px 8px",
@@ -1630,7 +1799,19 @@ function RoleSwitcherModal({ isOpen, onClose, currentRole, onSelectRole }) {
                       }}>
                         Active
                       </span>
-                    )}
+                    ) : !isPermitted ? (
+                      <span style={{
+                        fontSize: 11,
+                        padding: "2px 8px",
+                        borderRadius: 999,
+                        background: T.terraSoft,
+                        color: T.terra,
+                        fontWeight: 650,
+                        border: `1px solid ${T.terra}30`,
+                      }}>
+                        🔒 Locked
+                      </span>
+                    ) : null}
                   </div>
                   <div style={{ fontFamily: "var(--ui)", fontSize: 12, color: T.muted, marginTop: 3, lineHeight: 1.35 }}>
                     {r.desc}
@@ -1642,6 +1823,315 @@ function RoleSwitcherModal({ isOpen, onClose, currentRole, onSelectRole }) {
         </div>
       </div>
     </div>
+  );
+}
+
+function FindMentorModal({ isOpen, onClose, mentors, onRequestMentorship, T, showToast }) {
+  const [formatFilter, setFormatFilter] = useState("all"); // 'all' | 'Online' | 'Offline' | 'Hybrid'
+  const [pricingFilter, setPricingFilter] = useState("all"); // 'all' | 'free' | 'paid'
+  const [search, setSearch] = useState("");
+  const [selectedMentor, setSelectedMentor] = useState(null);
+  const [customTopic, setCustomTopic] = useState("");
+
+  if (!isOpen) return null;
+
+  const filtered = mentors.filter((m) => {
+    const matchFormat = formatFilter === "all" || m.format.toLowerCase() === formatFilter.toLowerCase();
+    const matchPricing = pricingFilter === "all" || (pricingFilter === "free" ? !m.isPaid : m.isPaid);
+    const q = search.toLowerCase().trim();
+    const matchSearch = !q || m.name.toLowerCase().includes(q) || m.dept.toLowerCase().includes(q) || m.institution.toLowerCase().includes(q) || m.specialization.toLowerCase().includes(q);
+    return matchFormat && matchPricing && matchSearch;
+  });
+
+  return (
+    <ModalOverlay onClose={onClose} T={T}>
+      <div style={{ width: "100%", maxWidth: 680 }}>
+        {/* Header */}
+        <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 14 }}>
+          <div>
+            <div style={{ fontFamily: "var(--display)", fontSize: 22, fontWeight: 700, color: T.ink }}>
+              Find a Faculty Mentor
+            </div>
+            <div style={{ fontFamily: "var(--ui)", fontSize: 13, color: T.muted, marginTop: 2 }}>
+              Connect with senior AYUSH professors and research scientists for clinical, QC, and formulation guidance.
+            </div>
+          </div>
+          <button
+            type="button"
+            onClick={onClose}
+            style={{ background: "none", border: "none", color: T.muted, cursor: "pointer", fontSize: 18, padding: 4 }}
+          >
+            ✕
+          </button>
+        </div>
+
+        {selectedMentor ? (
+          /* Request Submission View for Selected Mentor */
+          <div style={{ display: "flex", flexDirection: "column", gap: 16 }}>
+            <div style={{
+              background: T.bgSurface,
+              border: `1px solid ${T.border}`,
+              borderRadius: 14,
+              padding: 16,
+            }}>
+              <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", flexWrap: "wrap", gap: 8 }}>
+                <div>
+                  <div style={{ fontFamily: "var(--display)", fontSize: 18, fontWeight: 700, color: T.ink }}>
+                    {selectedMentor.name}
+                  </div>
+                  <div style={{ fontSize: 12.5, color: T.teal, fontFamily: "var(--ui)", fontWeight: 600 }}>
+                    {selectedMentor.dept} · {selectedMentor.institution}
+                  </div>
+                </div>
+                <div style={{ display: "flex", gap: 6, alignItems: "center" }}>
+                  <span style={{
+                    fontSize: 11.5,
+                    fontFamily: "var(--ui)",
+                    fontWeight: 700,
+                    color: selectedMentor.isPaid ? T.terra : T.teal,
+                    background: selectedMentor.isPaid ? T.terraSoft : T.tealSoft,
+                    padding: "3px 9px",
+                    borderRadius: 6,
+                  }}>
+                    {selectedMentor.isPaid ? `₹${selectedMentor.price} / session` : "Free · Ministry Initiative"}
+                  </span>
+                  <span style={{
+                    fontSize: 11.5,
+                    fontFamily: "var(--ui)",
+                    fontWeight: 600,
+                    color: T.ink,
+                    background: T.bgCard,
+                    border: `1px solid ${T.border}`,
+                    padding: "3px 8px",
+                    borderRadius: 6,
+                  }}>
+                    {selectedMentor.format}
+                  </span>
+                </div>
+              </div>
+
+              {/* Prerequisites */}
+              <div style={{ marginTop: 12, fontSize: 12.5, fontFamily: "var(--ui)" }}>
+                <strong style={{ color: T.ink }}>Prerequisites: </strong>
+                <span style={{ color: T.muted }}>{selectedMentor.prerequisites}</span>
+              </div>
+
+              {/* Learning Outcomes */}
+              <div style={{ marginTop: 8, fontSize: 12.5, fontFamily: "var(--ui)" }}>
+                <strong style={{ color: T.ink }}>What You'll Learn:</strong>
+                <ul style={{ margin: "4px 0 0 16px", padding: 0, color: T.muted, lineHeight: 1.45 }}>
+                  {selectedMentor.learningOutcomes?.map((item, idx) => (
+                    <li key={idx}>{item}</li>
+                  ))}
+                </ul>
+              </div>
+            </div>
+
+            <div>
+              <label style={{ display: "block", fontFamily: "var(--ui)", fontSize: 13, fontWeight: 650, color: T.ink, marginBottom: 6 }}>
+                Proposed Topic / Questions for Mentorship:
+              </label>
+              <textarea
+                rows={3}
+                value={customTopic}
+                onChange={(e) => setCustomTopic(e.target.value)}
+                placeholder={`e.g. Seeking mentorship on ${selectedMentor.specialization} and guidance for my clinical internship...`}
+                style={{
+                  width: "100%",
+                  padding: "10px 12px",
+                  borderRadius: 10,
+                  border: `1px solid ${T.border}`,
+                  background: T.bgSurface,
+                  color: T.ink,
+                  fontFamily: "var(--ui)",
+                  fontSize: 13,
+                  outline: "none",
+                  resize: "vertical",
+                }}
+              />
+            </div>
+
+            <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", gap: 10 }}>
+              <Btn small variant="ghost" onClick={() => setSelectedMentor(null)}>
+                ← Back to Mentors List
+              </Btn>
+              <Btn
+                small
+                variant="solid"
+                onClick={() => {
+                  const topicToSubmit = customTopic.trim() || `Mentorship on ${selectedMentor.specialization}`;
+                  onRequestMentorship(selectedMentor, topicToSubmit);
+                  setSelectedMentor(null);
+                  setCustomTopic("");
+                  onClose();
+                }}
+              >
+                Submit Mentorship Request →
+              </Btn>
+            </div>
+          </div>
+        ) : (
+          /* Mentor Browser View */
+          <div>
+            {/* Search and Filters Bar */}
+            <div style={{ display: "flex", gap: 10, flexWrap: "wrap", alignItems: "center", marginBottom: 14 }}>
+              <div style={{ position: "relative", flex: "1 1 200px" }}>
+                <span style={{ position: "absolute", left: 10, top: "50%", transform: "translateY(-50%)", color: T.muted, fontSize: 13 }}>🔍</span>
+                <input
+                  type="text"
+                  value={search}
+                  onChange={(e) => setSearch(e.target.value)}
+                  placeholder="Search mentors by name, institute, or topic..."
+                  style={{
+                    width: "100%",
+                    padding: "7px 10px 7px 30px",
+                    borderRadius: 8,
+                    border: `1px solid ${T.border}`,
+                    background: T.bgSurface,
+                    color: T.ink,
+                    fontFamily: "var(--ui)",
+                    fontSize: 13,
+                    outline: "none",
+                  }}
+                />
+              </div>
+
+              {/* Format Filter */}
+              <div style={{ display: "flex", gap: 4, background: T.bgSurface, padding: 3, borderRadius: 8, border: `1px solid ${T.border}` }}>
+                {["all", "Online", "Offline", "Hybrid"].map((f) => (
+                  <button
+                    key={f}
+                    type="button"
+                    onClick={() => setFormatFilter(f)}
+                    style={{
+                      background: formatFilter === f ? T.teal : "none",
+                      color: formatFilter === f ? "#FFF" : T.muted,
+                      border: "none",
+                      borderRadius: 6,
+                      padding: "4px 8px",
+                      fontSize: 11.5,
+                      fontFamily: "var(--ui)",
+                      fontWeight: formatFilter === f ? 700 : 500,
+                      cursor: "pointer",
+                    }}
+                  >
+                    {f === "all" ? "All Formats" : f}
+                  </button>
+                ))}
+              </div>
+
+              {/* Pricing Filter */}
+              <div style={{ display: "flex", gap: 4, background: T.bgSurface, padding: 3, borderRadius: 8, border: `1px solid ${T.border}` }}>
+                {["all", "free", "paid"].map((p) => (
+                  <button
+                    key={p}
+                    type="button"
+                    onClick={() => setPricingFilter(p)}
+                    style={{
+                      background: pricingFilter === p ? T.teal : "none",
+                      color: pricingFilter === p ? "#FFF" : T.muted,
+                      border: "none",
+                      borderRadius: 6,
+                      padding: "4px 8px",
+                      fontSize: 11.5,
+                      fontFamily: "var(--ui)",
+                      fontWeight: pricingFilter === p ? 700 : 500,
+                      cursor: "pointer",
+                    }}
+                  >
+                    {p === "all" ? "All Prices" : p === "free" ? "Free" : "Paid"}
+                  </button>
+                ))}
+              </div>
+            </div>
+
+            {/* Mentors Card List */}
+            <div style={{ display: "flex", flexDirection: "column", gap: 12, maxHeight: 420, overflowY: "auto", paddingRight: 4 }}>
+              {filtered.length === 0 ? (
+                <div style={{ padding: 24, textAlign: "center", color: T.muted, fontStyle: "italic", fontSize: 13 }}>
+                  No faculty mentors match the selected filters. Try broadening your search.
+                </div>
+              ) : (
+                filtered.map((m) => (
+                  <div
+                    key={m.id}
+                    style={{
+                      background: T.bgSurface,
+                      border: `1px solid ${T.border}`,
+                      borderRadius: 14,
+                      padding: "14px 16px",
+                      display: "flex",
+                      flexDirection: "column",
+                      gap: 8,
+                    }}
+                  >
+                    <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", gap: 12, flexWrap: "wrap" }}>
+                      <div>
+                        <div style={{ display: "flex", alignItems: "center", gap: 8, flexWrap: "wrap" }}>
+                          <span style={{ fontFamily: "var(--display)", fontSize: 16.5, fontWeight: 700, color: T.ink }}>
+                            {m.name}
+                          </span>
+                          <span style={{
+                            fontSize: 11,
+                            fontFamily: "var(--ui)",
+                            fontWeight: 650,
+                            color: m.format === "Online" ? T.teal : m.format === "Hybrid" ? T.sage : T.terra,
+                            background: m.format === "Online" ? T.tealSoft : m.format === "Hybrid" ? T.sageSoft : T.terraSoft,
+                            padding: "2px 7px",
+                            borderRadius: 6,
+                          }}>
+                            {m.format} · {m.duration}
+                          </span>
+                        </div>
+                        <div style={{ fontSize: 12, color: T.muted, fontFamily: "var(--ui)", marginTop: 2 }}>
+                          {m.dept} · {m.institution}
+                        </div>
+                        <div style={{ fontSize: 12.5, color: T.inkSoft, fontFamily: "var(--ui)", marginTop: 4, fontWeight: 550 }}>
+                          🎯 Expertise: {m.specialization}
+                        </div>
+                      </div>
+
+                      <div style={{ display: "flex", flexDirection: "column", alignItems: "flex-end", gap: 6 }}>
+                        <span style={{
+                          fontFamily: "var(--ui)",
+                          fontSize: 13,
+                          fontWeight: 700,
+                          color: m.isPaid ? T.terra : T.teal,
+                        }}>
+                          {m.isPaid ? `₹${m.price} / session` : "Free · Ministry Initiative"}
+                        </span>
+                        <Btn
+                          small
+                          variant="solid"
+                          onClick={() => {
+                            setSelectedMentor(m);
+                            setCustomTopic(`Guidance on ${m.specialization}`);
+                          }}
+                        >
+                          Request Mentorship →
+                        </Btn>
+                      </div>
+                    </div>
+
+                    {/* Prerequisites & Outcomes preview */}
+                    <div style={{
+                      paddingTop: 8,
+                      borderTop: `1px solid ${T.borderSubtle || T.border}`,
+                      fontSize: 12,
+                      fontFamily: "var(--ui)",
+                      color: T.muted,
+                      lineHeight: 1.4,
+                    }}>
+                      <strong style={{ color: T.ink }}>Prerequisites:</strong> {m.prerequisites}
+                    </div>
+                  </div>
+                ))
+              )}
+            </div>
+          </div>
+        )}
+      </div>
+    </ModalOverlay>
   );
 }
 
@@ -1855,6 +2345,8 @@ export default function AyushBridge() {
   const [user, setUser] = useState(null);
   const [authModalRole, setAuthModalRole] = useState("student");
   const [isRoleSwitcherOpen, setIsRoleSwitcherOpen] = useState(false);
+  const [isFindMentorOpen, setIsFindMentorOpen] = useState(false);
+  const [programsSubTab, setProgramsSubTab] = useState("browse"); // 'browse' | 'enrolled'
   const [appSubTab, setAppSubTab] = useState("applied"); // 'applied' | 'saved'
   const [applicantSearch, setApplicantSearch] = useState("");
   const [isAuthModalOpen, setIsAuthModalOpen] = useState(false);
@@ -2191,22 +2683,82 @@ export default function AyushBridge() {
     showToast(`Interest registered for "${f.title}"!`);
   };
 
-  const requestMentorship = (facultyName, topic) => {
+  const requestFacultyMentorship = (mentorObj, topic) => {
     if (!user) {
+      setAuthModalRole("student");
       setIsAuthModalOpen(true);
-      showToast("Please sign in with Google to request mentorship from AYUSH faculty.");
+      showToast("Please sign in with Google to request faculty mentorship.");
       return;
     }
+    const newReqId = "sm" + Date.now();
     const newReq = {
-      id: "sm" + Date.now(),
-      faculty: facultyName || "Dr. S. K. Sharma",
-      dept: "Dept. of Dravyaguna & Research, AIIA",
-      topic: topic || "AYUSH clinical trial protocol drafting and review",
+      id: newReqId,
+      facultyId: mentorObj.id,
+      faculty: mentorObj.name,
+      dept: mentorObj.dept + ", " + mentorObj.institution,
+      format: mentorObj.format,
+      venue: mentorObj.venue || "CCRAS Analytical Lab, Janakpuri, New Delhi",
+      meetLink: mentorObj.meetLink || "https://meet.google.com/ayush-faculty-guidance",
+      isPaid: mentorObj.isPaid,
+      price: mentorObj.price,
+      duration: mentorObj.duration,
+      topic: topic || `Mentorship on ${mentorObj.specialization}`,
       status: "Pending",
       on: "Just now",
     };
     setStudentMentorships((prev) => [newReq, ...prev]);
-    showToast(`Mentorship request sent to ${facultyName || "Dr. S. K. Sharma"}!`);
+
+    const newFacReq = {
+      id: "fm" + Date.now(),
+      studentMentorshipId: newReqId,
+      student: user.name || "Ishit Aggarwal",
+      college: user.institution || user.college || "All India Institute of Ayurveda, New Delhi",
+      topic: topic || `Mentorship on ${mentorObj.specialization}`,
+      format: mentorObj.format,
+      status: "Pending",
+      on: "Just now",
+    };
+    setFacultyRequests((prev) => [newFacReq, ...prev]);
+
+    showToast(`Mentorship request submitted to ${mentorObj.name}! ✓`);
+  };
+
+  const handleScheduleSession = (scheduleData) => {
+    if (schedulingMentorship) {
+      setFacultyRequests((prev) =>
+        prev.map((r) =>
+          r.id === schedulingMentorship.id || r.studentMentorshipId === schedulingMentorship.id
+            ? {
+                ...r,
+                status: `Scheduled: ${scheduleData.date}`,
+                scheduledDate: scheduleData.date,
+                scheduledMode: scheduleData.mode,
+                venue: scheduleData.venue,
+                meetLink: scheduleData.meetLink,
+                notes: scheduleData.notes,
+              }
+            : r
+        )
+      );
+
+      setStudentMentorships((prev) =>
+        prev.map((sm) =>
+          sm.id === schedulingMentorship.studentMentorshipId || sm.id === schedulingMentorship.id || (sm.faculty === schedulingMentorship.faculty && sm.topic === schedulingMentorship.topic)
+            ? {
+                ...sm,
+                status: `Scheduled: ${scheduleData.date}`,
+                scheduledDate: scheduleData.date,
+                scheduledMode: scheduleData.mode,
+                venue: scheduleData.venue,
+                meetLink: scheduleData.meetLink,
+                notes: scheduleData.notes,
+              }
+            : sm
+        )
+      );
+
+      showToast(`Session scheduled for ${scheduleData.date}! Student notified ✓`);
+    }
   };
 
   /* ============================================================
@@ -2601,10 +3153,11 @@ export default function AyushBridge() {
           isOpen={isRoleSwitcherOpen}
           onClose={() => setIsRoleSwitcherOpen(false)}
           currentRole={role || user?.role || "student"}
+          user={user}
+          showToast={showToast}
           onSelectRole={(newRole) => {
             setRole(newRole);
             setTab("overview");
-            if (user) setUser({ ...user, role: newRole });
             showToast(`Switched to ${newRole === "academician" ? "Faculty & Research Hub" : newRole === "industry" ? "Industry Partner Hub" : newRole === "institution" ? "Institution & Placement Dashboard" : "Student & Intern Portal"} ✓`);
           }}
         />
@@ -3526,105 +4079,316 @@ export default function AyushBridge() {
         {role === "student" && tab === "programs" && (
           <>
             <H size={28}>Industry Certified Learning Programs</H>
-            <Muted style={{ marginTop: 4, marginBottom: 20 }}>
+            <Muted style={{ marginTop: 4, marginBottom: 18 }}>
               Published directly by AYUSH manufacturers and research councils. Completing one raises the verified skill on your profile.
             </Muted>
 
-            <div className="ay-grid3" style={{ display: "grid", gap: 14 }}>
-              {PROGRAMS.map((p) => (
-                <Card key={p.id} style={{ display: "flex", flexDirection: "column", gap: 12, justifyContent: "space-between" }}>
-                  <div>
-                    <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", gap: 8, marginBottom: 4, flexWrap: "wrap" }}>
-                      <div style={{ display: "flex", gap: 6, alignItems: "center", flexWrap: "wrap" }}>
-                        <Chip tone="accent">Boosts {skillShort(p.boosts)}</Chip>
+            {/* Programs Sub-Tabs */}
+            <div style={{
+              display: "flex",
+              gap: 12,
+              borderBottom: `1px solid ${T.border}`,
+              marginBottom: 20,
+              paddingBottom: 2,
+            }}>
+              <button
+                type="button"
+                onClick={() => setProgramsSubTab("browse")}
+                style={{
+                  background: "none",
+                  border: "none",
+                  padding: "8px 14px",
+                  cursor: "pointer",
+                  fontFamily: "var(--ui)",
+                  fontSize: 14,
+                  fontWeight: programsSubTab === "browse" ? 700 : 550,
+                  color: programsSubTab === "browse" ? T.teal : T.muted,
+                  borderBottom: `2.5px solid ${programsSubTab === "browse" ? T.teal : "transparent"}`,
+                  marginBottom: -3,
+                  display: "flex",
+                  alignItems: "center",
+                  gap: 6,
+                  transition: "all .15s ease",
+                }}
+              >
+                <span>🎓</span>
+                <span>Browse All Programmes ({PROGRAMS.length})</span>
+              </button>
+
+              <button
+                type="button"
+                onClick={() => setProgramsSubTab("enrolled")}
+                style={{
+                  background: "none",
+                  border: "none",
+                  padding: "8px 14px",
+                  cursor: "pointer",
+                  fontFamily: "var(--ui)",
+                  fontSize: 14,
+                  fontWeight: programsSubTab === "enrolled" ? 700 : 550,
+                  color: programsSubTab === "enrolled" ? T.teal : T.muted,
+                  borderBottom: `2.5px solid ${programsSubTab === "enrolled" ? T.teal : "transparent"}`,
+                  marginBottom: -3,
+                  display: "flex",
+                  alignItems: "center",
+                  gap: 6,
+                  transition: "all .15s ease",
+                }}
+              >
+                <span>📑</span>
+                <span>My Enrolled Programmes ({enrolled.length})</span>
+              </button>
+            </div>
+
+            {/* Subtab 1: Browse All Programmes */}
+            {programsSubTab === "browse" && (
+              <div className="ay-grid3" style={{ display: "grid", gap: 14 }}>
+                {PROGRAMS.map((p) => (
+                  <Card key={p.id} style={{ display: "flex", flexDirection: "column", gap: 12, justifyContent: "space-between" }}>
+                    <div>
+                      <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", gap: 8, marginBottom: 4, flexWrap: "wrap" }}>
+                        <div style={{ display: "flex", gap: 6, alignItems: "center", flexWrap: "wrap" }}>
+                          <Chip tone="accent">Boosts {skillShort(p.boosts)}</Chip>
+                          <span style={{
+                            fontSize: 11,
+                            fontFamily: "var(--ui)",
+                            fontWeight: 700,
+                            padding: "2px 7px",
+                            borderRadius: 6,
+                            background: (p.workMode === "Online") ? T.blueSoft : p.workMode === "Hybrid" ? T.purpleSoft : T.sageSoft,
+                            color: (p.workMode === "Online") ? T.blue : p.workMode === "Hybrid" ? T.purple : T.sage,
+                            border: `1px solid ${(p.workMode === "Online") ? T.blue : p.workMode === "Hybrid" ? T.purple : T.sage}40`,
+                          }}>
+                            {p.workMode === "Online" ? "💻 Online" : p.workMode === "Hybrid" ? "🔄 Hybrid" : "🏢 Offline"}
+                          </span>
+                        </div>
                         <span style={{
-                          fontSize: 11,
                           fontFamily: "var(--ui)",
+                          fontSize: 12.5,
                           fontWeight: 700,
-                          padding: "2px 7px",
+                          color: p.price === 0 ? T.sage : T.terra,
+                          background: p.price === 0 ? T.sageSoft : T.terraSoft,
+                          padding: "3px 8px",
                           borderRadius: 6,
-                          background: (p.workMode === "Online") ? T.blueSoft : p.workMode === "Hybrid" ? T.purpleSoft : T.sageSoft,
-                          color: (p.workMode === "Online") ? T.blue : p.workMode === "Hybrid" ? T.purple : T.sage,
-                          border: `1px solid ${(p.workMode === "Online") ? T.blue : p.workMode === "Hybrid" ? T.purple : T.sage}40`,
                         }}>
-                          {p.workMode === "Online" ? "💻 Online" : p.workMode === "Hybrid" ? "🔄 Hybrid" : "🏢 Offline"}
+                          {p.price === 0 ? "Free" : `₹${p.price.toLocaleString("en-IN")}`}
                         </span>
                       </div>
-                      <span style={{
-                        fontFamily: "var(--ui)",
-                        fontSize: 12.5,
-                        fontWeight: 700,
-                        color: p.price === 0 ? T.sage : T.terra,
-                        background: p.price === 0 ? T.sageSoft : T.terraSoft,
-                        padding: "3px 8px",
-                        borderRadius: 6,
-                      }}>
-                        {p.price === 0 ? "Free" : `₹${p.price.toLocaleString("en-IN")}`}
-                      </span>
-                    </div>
 
-                    <div style={{ fontFamily: "var(--display)", fontSize: 17, fontWeight: 600, color: T.ink, lineHeight: 1.3, marginTop: 4 }}>
-                      {p.title}
-                    </div>
-                    <Muted style={{ fontSize: 12.5, marginTop: 4, fontWeight: 550, color: T.teal }}>
-                      {p.by} · {p.weeks} weeks · {p.mode}
-                    </Muted>
-
-                    <Muted style={{ fontSize: 13, marginTop: 8, lineHeight: 1.5 }}>
-                      {p.desc}
-                    </Muted>
-
-                    {/* Prerequisites */}
-                    <div style={{ marginTop: 12, fontSize: 12.5, color: T.muted }}>
-                      <strong style={{ color: T.ink }}>Prerequisite:</strong> {p.prerequisites}
-                    </div>
-
-                    {/* Skills Gained */}
-                    <div style={{ marginTop: 8 }}>
-                      <div style={{ fontSize: 11.5, fontWeight: 600, color: T.ink, textTransform: "uppercase", letterSpacing: "0.05em", marginBottom: 4 }}>
-                        Skills Gained:
+                      <div style={{ fontFamily: "var(--display)", fontSize: 17, fontWeight: 600, color: T.ink, lineHeight: 1.3, marginTop: 4 }}>
+                        {p.title}
                       </div>
-                      <div style={{ display: "flex", gap: 5, flexWrap: "wrap" }}>
-                        {p.skillsGained.map((sg) => (
-                          <span
-                            key={sg}
-                            style={{
-                              background: T.bgSurface,
-                              border: `1px solid ${T.border}`,
-                              padding: "2px 8px",
-                              borderRadius: 6,
+                      <Muted style={{ fontSize: 12.5, marginTop: 4, fontWeight: 550, color: T.teal }}>
+                        {p.by} · {p.weeks} weeks · Starts {p.startDateFormatted || p.startDate}
+                      </Muted>
+
+                      <Muted style={{ fontSize: 13, marginTop: 8, lineHeight: 1.5 }}>
+                        {p.desc}
+                      </Muted>
+
+                      {/* Prerequisites */}
+                      <div style={{ marginTop: 12, fontSize: 12.5, color: T.muted }}>
+                        <strong style={{ color: T.ink }}>Prerequisite:</strong> {p.prerequisites}
+                      </div>
+
+                      {/* Skills Gained */}
+                      <div style={{ marginTop: 8 }}>
+                        <div style={{ fontSize: 11.5, fontWeight: 600, color: T.ink, textTransform: "uppercase", letterSpacing: "0.05em", marginBottom: 4 }}>
+                          Skills Gained:
+                        </div>
+                        <div style={{ display: "flex", gap: 5, flexWrap: "wrap" }}>
+                          {p.skillsGained.map((sg) => (
+                            <span
+                              key={sg}
+                              style={{
+                                background: T.bgSurface,
+                                border: `1px solid ${T.border}`,
+                                padding: "2px 8px",
+                                borderRadius: 6,
+                                fontSize: 11.5,
+                                color: T.ink,
+                                fontWeight: 500,
+                              }}
+                            >
+                              ✓ {sg}
+                            </span>
+                          ))}
+                        </div>
+                      </div>
+                    </div>
+
+                    <div style={{ paddingTop: 10, borderTop: `1px solid ${T.border}` }}>
+                      <Btn
+                        small
+                        variant={enrolled.includes(p.id) ? "ghost" : "accent"}
+                        disabled={enrolled.includes(p.id)}
+                        onClick={() => enroll(p)}
+                        style={{ width: "100%", justifyContent: "center" }}
+                      >
+                        {enrolled.includes(p.id)
+                          ? "Enrolled ✓"
+                          : !user
+                          ? "Sign in to Enroll"
+                          : p.price === 0
+                          ? "Enroll Free"
+                          : `Enroll — ₹${p.price.toLocaleString("en-IN")}`}
+                      </Btn>
+                    </div>
+                  </Card>
+                ))}
+              </div>
+            )}
+
+            {/* Subtab 2: My Enrolled Programmes */}
+            {programsSubTab === "enrolled" && (() => {
+              const enrolledPrograms = PROGRAMS.filter((p) => enrolled.includes(p.id));
+              if (enrolledPrograms.length === 0) {
+                return (
+                  <Card style={{ maxWidth: 580, padding: 32, margin: "10px 0" }}>
+                    <div style={{ fontSize: 36, marginBottom: 10 }}>🎓</div>
+                    <H size={22}>No Enrolled Programmes Yet</H>
+                    <Muted style={{ marginTop: 8, marginBottom: 20, lineHeight: 1.6 }}>
+                      You have not enrolled in any industry certification or apprenticeship modules. Browse available offerings to earn verified skill credentials.
+                    </Muted>
+                    <Btn onClick={() => setProgramsSubTab("browse")}>Browse Available Programmes →</Btn>
+                  </Card>
+                );
+              }
+
+              return (
+                <div style={{ display: "flex", flexDirection: "column", gap: 16 }}>
+                  {enrolledPrograms.map((p) => {
+                    const isOnline = p.workMode === "Online";
+                    const isHybrid = p.workMode === "Hybrid";
+                    const isOffline = p.workMode === "Offline" || p.workMode === "On-site";
+                    // Check if starting within 24 hours (or for demo program p2 / close date)
+                    const isWithin24h = p.id === "p2" || p.id === "p1" || (p.startDate && new Date(p.startDate).getTime() - Date.now() <= 86400000);
+
+                    return (
+                      <Card key={p.id} style={{ display: "flex", flexDirection: "column", gap: 16, padding: 22 }}>
+                        <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", gap: 16, flexWrap: "wrap" }}>
+                          <div>
+                            <div style={{ display: "flex", alignItems: "center", gap: 8, flexWrap: "wrap" }}>
+                              <span style={{ fontFamily: "var(--display)", fontSize: 19, fontWeight: 700, color: T.ink }}>
+                                {p.title}
+                              </span>
+                              <span style={{
+                                display: "inline-flex",
+                                alignItems: "center",
+                                gap: 4,
+                                fontSize: 11.5,
+                                fontFamily: "var(--ui)",
+                                fontWeight: 700,
+                                color: "#059669",
+                                background: "rgba(16, 185, 129, 0.14)",
+                                border: "1px solid rgba(16, 185, 129, 0.4)",
+                                padding: "3px 10px",
+                                borderRadius: 999,
+                              }}>
+                                <span>✓</span> Confirmed & Enrolled
+                              </span>
+                            </div>
+
+                            <Muted style={{ fontSize: 13, marginTop: 4 }}>
+                              Conducted by <strong style={{ color: T.teal }}>{p.by}</strong> · Duration: {p.weeks} weeks · Start Date: <strong style={{ color: T.ink }}>{p.startDateFormatted || p.startDate}</strong>
+                            </Muted>
+                          </div>
+
+                          <div style={{ display: "flex", gap: 6, alignItems: "center" }}>
+                            <Chip tone="accent">Boosts {skillShort(p.boosts)}</Chip>
+                            <span style={{
                               fontSize: 11.5,
-                              color: T.ink,
-                              fontWeight: 500,
-                            }}
-                          >
-                            ✓ {sg}
-                          </span>
-                        ))}
-                      </div>
-                    </div>
-                  </div>
+                              fontFamily: "var(--ui)",
+                              fontWeight: 700,
+                              padding: "3px 9px",
+                              borderRadius: 6,
+                              background: isOnline ? T.blueSoft : isHybrid ? T.purpleSoft : T.sageSoft,
+                              color: isOnline ? T.blue : isHybrid ? T.purple : T.sage,
+                            }}>
+                              {isOnline ? "💻 Online Session" : isHybrid ? "🔄 Hybrid" : "🏢 Offline / Campus"}
+                            </span>
+                          </div>
+                        </div>
 
-                  <div style={{ paddingTop: 10, borderTop: `1px solid ${T.border}` }}>
-                    <Btn
-                      small
-                      variant={enrolled.includes(p.id) ? "ghost" : "accent"}
-                      disabled={enrolled.includes(p.id)}
-                      onClick={() => enroll(p)}
-                      style={{ width: "100%", justifyContent: "center" }}
-                    >
-                      {enrolled.includes(p.id)
-                        ? "Enrolled ✓"
-                        : !user
-                        ? "Sign in to Enroll"
-                        : p.price === 0
-                        ? "Enroll Free"
-                        : `Enroll — ₹${p.price.toLocaleString("en-IN")}`}
-                    </Btn>
-                  </div>
-                </Card>
-              ))}
-            </div>
+                        {/* Schedule, Venue & Access Section */}
+                        <div style={{
+                          background: T.bgSurface,
+                          border: `1px solid ${T.border}`,
+                          borderRadius: 12,
+                          padding: "14px 16px",
+                          display: "flex",
+                          flexDirection: "column",
+                          gap: 10,
+                        }}>
+                          <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
+                            <span style={{ fontSize: 15 }}>📅</span>
+                            <span style={{ fontFamily: "var(--ui)", fontSize: 13, color: T.ink, fontWeight: 650 }}>
+                              Orientation & Start Schedule: {p.startDateFormatted || p.startDate} · {p.reportingTime || "09:30 AM IST"}
+                            </span>
+                          </div>
+
+                          {(isOffline || isHybrid) && (
+                            <div style={{ display: "flex", alignItems: "flex-start", gap: 8 }}>
+                              <span style={{ fontSize: 15 }}>📍</span>
+                              <div style={{ fontFamily: "var(--ui)", fontSize: 13, color: T.inkSoft }}>
+                                <strong style={{ color: T.ink }}>Reporting Venue / Facility: </strong>
+                                {p.venue || "Dabur R&D Centre, Plot 22, Site IV, Sahibabad Industrial Area, Ghaziabad"}
+                                <div style={{ fontSize: 11.5, color: T.muted, marginTop: 2 }}>
+                                  Please carry your government ID and institutional student credentials for badge verification.
+                                </div>
+                              </div>
+                            </div>
+                          )}
+
+                          {isOnline && (
+                            <div style={{ display: "flex", alignItems: "center", gap: 8, flexWrap: "wrap" }}>
+                              <span style={{ fontSize: 15 }}>🎥</span>
+                              {isWithin24h ? (
+                                <div style={{ display: "flex", alignItems: "center", gap: 10, flexWrap: "wrap" }}>
+                                  <span style={{ fontFamily: "var(--ui)", fontSize: 13, color: T.teal, fontWeight: 700 }}>
+                                    🟢 Meeting link is active for your upcoming cohort:
+                                  </span>
+                                  <a
+                                    href={p.meetLink || "https://meet.google.com/ayush-learning-session"}
+                                    target="_blank"
+                                    rel="noreferrer"
+                                    style={{
+                                      textDecoration: "none",
+                                      fontFamily: "var(--ui)",
+                                      fontSize: 12.5,
+                                      fontWeight: 650,
+                                      color: themeMode === "dark" ? "#07120E" : "#FFFFFF",
+                                      background: T.teal,
+                                      padding: "5px 12px",
+                                      borderRadius: 7,
+                                      display: "inline-flex",
+                                      alignItems: "center",
+                                      gap: 5,
+                                    }}
+                                  >
+                                    Join Google Meet 🎥
+                                  </a>
+                                </div>
+                              ) : (
+                                <div style={{ fontFamily: "var(--ui)", fontSize: 12.5, color: T.muted }}>
+                                  🔒 <em>Meeting link will be available 1 day before the session (Starts on {p.startDateFormatted || p.startDate}).</em>
+                                </div>
+                              )}
+                            </div>
+                          )}
+                        </div>
+
+                        {/* Learning Outcomes Checklist */}
+                        <div style={{ fontSize: 12.5, fontFamily: "var(--ui)" }}>
+                          <strong style={{ color: T.ink }}>Key Competencies: </strong>
+                          <span style={{ color: T.muted }}>{p.skillsGained?.join(" · ")}</span>
+                        </div>
+                      </Card>
+                    );
+                  })}
+                </div>
+              );
+            })()}
           </>
         )}
 
@@ -3908,7 +4672,7 @@ export default function AyushBridge() {
               {/* SUB-VIEW 2: SAVED OPPORTUNITIES */}
               {appSubTab === "saved" && (
                 (() => {
-                  const savedList = [...OPPORTUNITIES, ...posted].filter(o => savedJobs.includes(o.id));
+                  const savedList = [...OPPORTUNITIES, ...posted].filter((o) => savedJobs.includes(o.id));
                   if (savedList.length === 0) {
                     return (
                       <Card style={{ maxWidth: 580, padding: 30, marginBottom: 24 }}>
@@ -3924,7 +4688,7 @@ export default function AyushBridge() {
                   return (
                     <div style={{ marginBottom: 28, display: "flex", flexDirection: "column", gap: 14 }}>
                       {savedList.map((o) => {
-                        const hasApplied = apps.some((a) => a.oppId === o.id);
+                        const isApplied = applied(o.id);
                         const isOpen = openOpp === o.id;
 
                         return (
@@ -3944,25 +4708,25 @@ export default function AyushBridge() {
                                     padding: "2px 8px",
                                     borderRadius: 6,
                                   }}>
-                                    {o.sector || "AYUSH Healthcare"}
+                                    {o.sector || "AYUSH Healthcare"} · {o.workMode || "Hybrid"}
                                   </span>
                                 </div>
                                 <Muted style={{ fontSize: 13, marginTop: 4 }}>
-                                  {o.org} · {o.loc || "National / Hybrid"} · {o.pay}
+                                  {o.org} · {o.loc || "National / Hybrid"} · <span style={{ color: T.terra, fontWeight: 700 }}>{o.pay}</span>
                                 </Muted>
                               </div>
 
                               <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
-                                <Chip tone="good">Readiness: {o.match || 85}%</Chip>
+                                <Chip tone="good">Readiness: {o.match || (profile ? 85 : 80)}%</Chip>
                               </div>
                             </div>
 
                             {/* Required Skills & Focus */}
                             <div style={{ display: "flex", gap: 6, flexWrap: "wrap", alignItems: "center" }}>
                               <span style={{ fontSize: 11.5, color: T.muted, fontWeight: 600 }}>Required Skills:</span>
-                              {o.requires?.map((req) => (
+                              {Object.entries(o.requires || {}).map(([k, need]) => (
                                 <span
-                                  key={req}
+                                  key={k}
                                   style={{
                                     fontSize: 11.5,
                                     fontFamily: "var(--ui)",
@@ -3973,7 +4737,7 @@ export default function AyushBridge() {
                                     color: T.ink,
                                   }}
                                 >
-                                  {req}
+                                  {skillShort(k)}: {need}%
                                 </span>
                               ))}
                             </div>
@@ -3983,14 +4747,14 @@ export default function AyushBridge() {
                               <div style={{ display: "flex", gap: 8 }}>
                                 <Btn
                                   small
-                                  variant={hasApplied ? "outline" : "solid"}
-                                  disabled={hasApplied}
+                                  variant={isApplied ? "ghost" : "primary"}
+                                  disabled={isApplied}
                                   onClick={(e) => {
                                     e?.preventDefault?.();
-                                    if (!hasApplied) applyOpp(o.id);
+                                    if (!isApplied) apply(o.id);
                                   }}
                                 >
-                                  {hasApplied ? "Applied ✓" : "Apply Now →"}
+                                  {isApplied ? "Applied ✓" : !user ? "Sign in to Apply" : "Apply Now →"}
                                 </Btn>
                                 <Btn
                                   small
@@ -4008,8 +4772,8 @@ export default function AyushBridge() {
                                 type="button"
                                 onClick={(e) => {
                                   e?.preventDefault?.();
-                                  toggleSaveJob(o.id);
-                                  showToast("Removed from saved opportunities");
+                                  setSavedJobs((prev) => prev.filter((id) => id !== o.id));
+                                  showToast("Removed from saved bookmarks");
                                 }}
                                 style={{
                                   background: "none",
@@ -4043,7 +4807,7 @@ export default function AyushBridge() {
                               }}>
                                 <div style={{ fontWeight: 650, color: T.ink, marginBottom: 4 }}>Role Overview & Objectives:</div>
                                 <div style={{ color: T.muted }}>
-                                  {o.desc || "Engage in research-driven botanical formulation, laboratory quality standard validation, and regulatory documentation under the supervision of senior AYUSH industry mentors."}
+                                  {o.desc || o.about || "Engage in research-driven botanical formulation, laboratory quality standard validation, and regulatory documentation under the supervision of senior AYUSH industry mentors."}
                                 </div>
                               </div>
                             )}
@@ -4064,114 +4828,154 @@ export default function AyushBridge() {
                       My Mentorship Requests
                     </div>
                   </div>
-                  <Btn small variant="ghost" onClick={() => requestMentorship("Dr. S. K. Sharma (AIIA)", "Clinical trial protocol drafting")}>
-                    + Request Faculty Mentorship
+                  <Btn small variant="primary" onClick={() => setIsFindMentorOpen(true)}>
+                    + Find & Request Faculty Mentor
                   </Btn>
                 </div>
                 <Muted style={{ fontSize: 13, marginTop: 4, marginBottom: 14 }}>
-                  Track the status of your research and clinical mentorship requests sent to senior AYUSH faculty.
+                  Browse accredited AYUSH professors, view prerequisites & learning outcomes, and track scheduled 1-on-1 guidance sessions.
                 </Muted>
 
                 <div style={{ display: "flex", flexDirection: "column", gap: 12 }}>
                   {studentMentorships.length === 0 ? (
-                    <Muted style={{ fontStyle: "italic" }}>No active mentorship requests. Explore faculty profiles to request guidance.</Muted>
+                    <Muted style={{ fontStyle: "italic" }}>No active mentorship requests. Click "Find & Request Faculty Mentor" to browse faculty.</Muted>
                   ) : (
-                    studentMentorships.map((sm) => (
-                      <div
-                        key={sm.id}
-                        style={{
-                          background: T.bgSurface,
-                          border: `1px solid ${T.border}`,
-                          borderRadius: 12,
-                          padding: "12px 16px",
-                          display: "flex",
-                          justifyContent: "space-between",
-                          alignItems: "center",
-                          flexWrap: "wrap",
-                          gap: 12,
-                        }}
-                      >
-                        <div>
-                          <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
-                            <span style={{ fontFamily: "var(--ui)", fontSize: 14.5, fontWeight: 650, color: T.ink }}>
-                              {sm.faculty}
-                            </span>
-                            <span style={{ fontSize: 12, color: T.muted }}>· {sm.dept}</span>
-                          </div>
-                          <div style={{ fontFamily: "var(--ui)", fontSize: 13, color: T.inkSoft, marginTop: 3 }}>
-                            Topic: {sm.topic}
-                          </div>
-                          <div style={{ fontFamily: "var(--ui)", fontSize: 11.5, color: T.muted, marginTop: 2 }}>
-                            Sent {sm.on}
-                          </div>
-                        </div>
+                    studentMentorships.map((sm) => {
+                      const isPending = sm.status === "Pending";
+                      const isAccepted = sm.status === "Accepted";
+                      const isScheduled = sm.status.startsWith("Scheduled");
+                      const scheduledDate = sm.scheduledDate || sm.status.replace("Scheduled: ", "");
 
-                        <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
-                          <Chip tone={sm.status === "Accepted" ? "good" : sm.status === "Pending" ? "accent" : "gap"}>
-                            {sm.status === "Accepted" ? "Accepted ✓" : sm.status}
-                          </Chip>
-                          {sm.status === "Pending" && (
-                            <Btn
-                              small
-                              variant="ghost"
-                              onClick={() => {
-                                setStudentMentorships((prev) => prev.filter((x) => x.id !== sm.id));
-                                showToast("Mentorship request cancelled");
-                              }}
-                              style={{ color: T.terra }}
-                            >
-                              Cancel Request
-                            </Btn>
-                          )}
-                          {sm.status === "Accepted" && (
-                            <Btn
-                              small
-                              variant="primary"
-                              onClick={() => {
-                                setSchedulingMentorship(sm);
-                                setIsScheduleModalOpen(true);
-                              }}
-                            >
-                              Schedule Session 📅
-                            </Btn>
-                          )}
-                          {sm.status.startsWith("Scheduled") && (
-                            <div style={{ display: "flex", gap: 6, alignItems: "center" }}>
-                              <a
-                                href="https://meet.google.com/ayush-mentorship-demo"
-                                target="_blank"
-                                rel="noreferrer"
-                                style={{
-                                  textDecoration: "none",
+                      return (
+                        <div
+                          key={sm.id}
+                          style={{
+                            background: T.bgSurface,
+                            border: `1px solid ${T.border}`,
+                            borderRadius: 12,
+                            padding: "14px 16px",
+                            display: "flex",
+                            flexDirection: "column",
+                            gap: 10,
+                          }}
+                        >
+                          <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", flexWrap: "wrap", gap: 12 }}>
+                            <div>
+                              <div style={{ display: "flex", alignItems: "center", gap: 8, flexWrap: "wrap" }}>
+                                <span style={{ fontFamily: "var(--ui)", fontSize: 15, fontWeight: 700, color: T.ink }}>
+                                  {sm.faculty}
+                                </span>
+                                <span style={{ fontSize: 12, color: T.muted }}>· {sm.dept}</span>
+                                <span style={{
+                                  fontSize: 11,
                                   fontFamily: "var(--ui)",
-                                  fontSize: 12.5,
-                                  fontWeight: 600,
-                                  color: themeMode === "dark" ? "#07120E" : "#FFFFFF",
-                                  background: T.teal,
-                                  padding: "6px 12px",
-                                  borderRadius: 8,
-                                  display: "inline-flex",
-                                  alignItems: "center",
-                                  gap: 5,
-                                }}
-                              >
-                                🎥 Join Meet
-                              </a>
-                              <Btn
-                                small
-                                variant="ghost"
-                                onClick={() => {
-                                  setSchedulingMentorship(sm);
-                                  setIsScheduleModalOpen(true);
-                                }}
-                              >
-                                Reschedule
-                              </Btn>
+                                  fontWeight: 650,
+                                  color: sm.isPaid ? T.terra : T.teal,
+                                  background: sm.isPaid ? T.terraSoft : T.tealSoft,
+                                  padding: "2px 7px",
+                                  borderRadius: 5,
+                                }}>
+                                  {sm.isPaid ? `Paid · ₹${sm.price}` : "Free · Ministry Initiative"}
+                                </span>
+                              </div>
+                              <div style={{ fontFamily: "var(--ui)", fontSize: 13, color: T.inkSoft, marginTop: 3 }}>
+                                <strong>Topic:</strong> {sm.topic}
+                              </div>
+                              <div style={{ fontFamily: "var(--ui)", fontSize: 11.5, color: T.muted, marginTop: 2 }}>
+                                Requested {sm.on}
+                              </div>
+                            </div>
+
+                            <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
+                              {isPending && (
+                                <>
+                                  <Chip tone="accent">Pending Faculty Review</Chip>
+                                  <Btn
+                                    small
+                                    variant="ghost"
+                                    onClick={() => {
+                                      setStudentMentorships((prev) => prev.filter((x) => x.id !== sm.id));
+                                      showToast("Mentorship request cancelled");
+                                    }}
+                                    style={{ color: T.terra }}
+                                  >
+                                    Cancel
+                                  </Btn>
+                                </>
+                              )}
+
+                              {isAccepted && (
+                                <div style={{ display: "flex", flexDirection: "column", alignItems: "flex-end", gap: 3 }}>
+                                  <Chip tone="good">Accepted ✓</Chip>
+                                  <span style={{ fontSize: 11.5, color: T.muted, fontFamily: "var(--ui)" }}>
+                                    Awaiting mentor to confirm session time
+                                  </span>
+                                </div>
+                              )}
+
+                              {isScheduled && (
+                                <Chip tone="good">Session Confirmed 📅</Chip>
+                              )}
+                            </div>
+                          </div>
+
+                          {/* Session Details Box for Scheduled Sessions */}
+                          {isScheduled && (
+                            <div style={{
+                              background: T.bgCard,
+                              border: `1px solid ${T.teal}40`,
+                              borderRadius: 10,
+                              padding: "10px 14px",
+                              display: "flex",
+                              justifyContent: "space-between",
+                              alignItems: "center",
+                              flexWrap: "wrap",
+                              gap: 10,
+                            }}>
+                              <div style={{ fontSize: 12.5, fontFamily: "var(--ui)" }}>
+                                <div style={{ color: T.teal, fontWeight: 700 }}>
+                                  📅 Session Scheduled for: {scheduledDate}
+                                </div>
+                                <div style={{ color: T.inkSoft, marginTop: 2 }}>
+                                  {sm.scheduledMode?.includes("Offline") || sm.format === "Offline" ? (
+                                    <span>📍 <strong>Venue: </strong>{sm.venue || "Room 304, Clinical Research Wing, AIIA New Delhi"}</span>
+                                  ) : (
+                                    <span>🎥 <strong>Google Meet: </strong>Video meeting room confirmed</span>
+                                  )}
+                                </div>
+                              </div>
+
+                              {sm.scheduledMode?.includes("Offline") || sm.format === "Offline" ? (
+                                <span style={{ fontSize: 12, color: T.muted, fontFamily: "var(--ui)" }}>
+                                  🏛️ In-Person Session
+                                </span>
+                              ) : (
+                                <a
+                                  href={sm.meetLink || "https://meet.google.com/ayush-mentorship-session"}
+                                  target="_blank"
+                                  rel="noreferrer"
+                                  style={{
+                                    textDecoration: "none",
+                                    fontFamily: "var(--ui)",
+                                    fontSize: 12.5,
+                                    fontWeight: 650,
+                                    color: themeMode === "dark" ? "#07120E" : "#FFFFFF",
+                                    background: T.teal,
+                                    padding: "6px 12px",
+                                    borderRadius: 7,
+                                    display: "inline-flex",
+                                    alignItems: "center",
+                                    gap: 5,
+                                  }}
+                                >
+                                  🎥 Join Google Meet
+                                </a>
+                              )}
                             </div>
                           )}
                         </div>
-                      </div>
-                    ))
+                      );
+                    })
                   )}
                 </div>
               </Card>
@@ -4751,6 +5555,16 @@ export default function AyushBridge() {
                         ) : req.status === "Accepted" ? (
                           <div style={{ display: "flex", alignItems: "center", gap: 8, flexWrap: "wrap" }}>
                             <Chip tone="good">Connected ✓</Chip>
+                            <Btn
+                              small
+                              variant="primary"
+                              onClick={() => {
+                                setSchedulingMentorship(req);
+                                setIsScheduleModalOpen(true);
+                              }}
+                            >
+                              Schedule Session 📅
+                            </Btn>
                             <a
                               href={`mailto:${req.student.toLowerCase().replace(/\s+/g, ".")}@aiia.gov.in?subject=AYUSH Mentorship Guidance: ${encodeURIComponent(req.topic)}`}
                               style={{
@@ -4768,8 +5582,44 @@ export default function AyushBridge() {
                               }}
                               title="Reach out via institutional email"
                             >
-                              ✉️ {req.student.toLowerCase().replace(/\s+/g, ".")}@aiia.gov.in
+                              ✉️ Email
                             </a>
+                          </div>
+                        ) : req.status.startsWith("Scheduled") ? (
+                          <div style={{ display: "flex", alignItems: "center", gap: 8, flexWrap: "wrap" }}>
+                            <Chip tone="good">{req.status}</Chip>
+                            <Btn
+                              small
+                              variant="ghost"
+                              onClick={() => {
+                                setSchedulingMentorship(req);
+                                setIsScheduleModalOpen(true);
+                              }}
+                            >
+                              Reschedule 📅
+                            </Btn>
+                            {req.meetLink && (
+                              <a
+                                href={req.meetLink}
+                                target="_blank"
+                                rel="noreferrer"
+                                style={{
+                                  textDecoration: "none",
+                                  fontFamily: "var(--ui)",
+                                  fontSize: 12,
+                                  fontWeight: 600,
+                                  color: themeMode === "dark" ? "#07120E" : "#FFFFFF",
+                                  background: T.teal,
+                                  padding: "4px 9px",
+                                  borderRadius: 7,
+                                  display: "inline-flex",
+                                  alignItems: "center",
+                                  gap: 5,
+                                }}
+                              >
+                                🎥 Join Meet
+                              </a>
+                            )}
                           </div>
                         ) : (
                           <Chip tone="gap">Declined</Chip>
@@ -5167,7 +6017,7 @@ export default function AyushBridge() {
                       filteredApplicants.map((a) => (
                         <tr key={a.name} style={{ borderTop: `1px solid ${T.border}` }}>
                           <td style={{ padding: "14px 18px", color: T.ink, fontWeight: 600 }}>{a.name}</td>
-                          <td style={{ padding: "14px 18px" }}>
+                          <td style={{ padding: "14px 18px", whiteSpace: "nowrap", minWidth: 140 }}>
                             <span
                               style={{
                                 fontFamily: "var(--ui)",
@@ -5176,9 +6026,11 @@ export default function AyushBridge() {
                                 color: T.teal,
                                 background: T.bgSurface,
                                 border: `1px solid ${T.border}`,
-                                padding: "3px 8px",
+                                padding: "4px 9px",
                                 borderRadius: 6,
-                                letterSpacing: "0.02em",
+                                letterSpacing: "0.03em",
+                                whiteSpace: "nowrap",
+                                display: "inline-block",
                               }}
                             >
                               {a.studentId}
@@ -5407,12 +6259,23 @@ export default function AyushBridge() {
         isOpen={isRoleSwitcherOpen}
         onClose={() => setIsRoleSwitcherOpen(false)}
         currentRole={role || user?.role || "student"}
+        user={user}
+        showToast={showToast}
         onSelectRole={(newRole) => {
           setRole(newRole);
           setTab("overview");
-          if (user) setUser({ ...user, role: newRole });
           showToast(`Switched to ${newRole === "academician" ? "Faculty & Research Hub" : newRole === "industry" ? "Industry Partner Hub" : newRole === "institution" ? "Institution & Placement Dashboard" : "Student & Intern Portal"} ✓`);
         }}
+      />
+
+      {/* Find Faculty Mentor Browser Modal */}
+      <FindMentorModal
+        isOpen={isFindMentorOpen}
+        onClose={() => setIsFindMentorOpen(false)}
+        mentors={FACULTY_MENTORS}
+        onRequestMentorship={requestFacultyMentorship}
+        T={T}
+        showToast={showToast}
       />
 
       {/* 2. Edit Profile Modal */}
@@ -5562,18 +6425,7 @@ export default function AyushBridge() {
             setIsScheduleModalOpen(false);
             setSchedulingMentorship(null);
           }}
-          onSchedule={({ date, mode, notes }) => {
-            setStudentMentorships((prev) =>
-              prev.map((sm) =>
-                sm.id === schedulingMentorship.id
-                  ? { ...sm, status: `Scheduled: ${date}`, topic: notes || sm.topic }
-                  : sm
-              )
-            );
-            setIsScheduleModalOpen(false);
-            setSchedulingMentorship(null);
-            showToast(`Mentorship session confirmed with ${schedulingMentorship.faculty}! 📅 Calendar invite sent to ${user?.email || "your email"}.`);
-          }}
+          onSchedule={handleScheduleSession}
         />
       )}
 
@@ -6047,7 +6899,9 @@ function ExperienceModal({ T, exp, onClose, onSave }) {
 
 function ScheduleSessionModal({ T, mentorship, onClose, onSchedule }) {
   const [date, setDate] = useState("Tomorrow, 3:30 PM");
-  const [mode, setMode] = useState("Virtual (Google Meet)");
+  const [mode, setMode] = useState("Online (Google Meet)");
+  const [venue, setVenue] = useState(mentorship?.venue || "Room 304, Clinical Research Wing, AIIA New Delhi");
+  const [meetLink, setMeetLink] = useState(mentorship?.meetLink || "https://meet.google.com/ayush-mentorship-session");
   const [notes, setNotes] = useState(mentorship?.topic || "");
 
   const slots = [
@@ -6059,7 +6913,7 @@ function ScheduleSessionModal({ T, mentorship, onClose, onSchedule }) {
 
   return (
     <ModalOverlay onClose={onClose} T={T}>
-      <div>
+      <div style={{ width: "100%", maxWidth: 500 }}>
         <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 6 }}>
           <h2 style={{ fontFamily: "var(--display)", fontSize: 20, fontWeight: 600, color: T.ink, margin: 0 }}>
             Schedule Mentorship Session
@@ -6072,14 +6926,14 @@ function ScheduleSessionModal({ T, mentorship, onClose, onSchedule }) {
             ✕
           </button>
         </div>
-        <p style={{ fontFamily: "var(--ui)", fontSize: 13, color: T.muted, marginTop: 4, marginBottom: 18, lineHeight: 1.5 }}>
-          Confirm a dedicated 1-on-1 mentorship session with <strong style={{ color: T.ink }}>{mentorship?.faculty}</strong> ({mentorship?.dept}).
+        <p style={{ fontFamily: "var(--ui)", fontSize: 13, color: T.muted, marginTop: 4, marginBottom: 16, lineHeight: 1.5 }}>
+          Set the date, format, and reporting location for student <strong style={{ color: T.ink }}>{mentorship?.student || mentorship?.name || "the candidate"}</strong>.
         </p>
 
         <div style={{ display: "flex", flexDirection: "column", gap: 14 }}>
           <div>
             <label style={{ display: "block", fontFamily: "var(--ui)", fontSize: 12.5, fontWeight: 650, color: T.ink, marginBottom: 6 }}>
-              Select Available Time Slot
+              Select Time Slot
             </label>
             <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 8 }}>
               {slots.map((s) => (
@@ -6112,16 +6966,16 @@ function ScheduleSessionModal({ T, mentorship, onClose, onSchedule }) {
 
           <div>
             <label style={{ display: "block", fontFamily: "var(--ui)", fontSize: 12.5, fontWeight: 650, color: T.ink, marginBottom: 6 }}>
-              Session Meeting Mode
+              Session Format
             </label>
-            <div style={{ display: "flex", gap: 10 }}>
-              {["Virtual (Google Meet)", "In-Person (Faculty Cabin, AIIA)"].map((m) => (
+            <div style={{ display: "flex", gap: 8 }}>
+              {["Online (Google Meet)", "Offline (Faculty Cabin)", "Hybrid"].map((m) => (
                 <button
                   key={m}
                   type="button"
                   onClick={() => setMode(m)}
                   style={{
-                    padding: "8px 12px",
+                    padding: "7px 10px",
                     borderRadius: 8,
                     border: `1px solid ${mode === m ? T.teal : T.border}`,
                     background: mode === m ? T.tealSoft : T.bgSurface,
@@ -6132,37 +6986,85 @@ function ScheduleSessionModal({ T, mentorship, onClose, onSchedule }) {
                     cursor: "pointer",
                   }}
                 >
-                  {m.startsWith("Virtual") ? "🎥" : "🏛️"} {m}
+                  {m.startsWith("Online") ? "🎥" : m.startsWith("Offline") ? "🏛️" : "🌿"} {m}
                 </button>
               ))}
             </div>
           </div>
 
+          {mode.includes("Offline") || mode.includes("Hybrid") ? (
+            <div>
+              <label style={{ display: "block", fontFamily: "var(--ui)", fontSize: 12.5, fontWeight: 650, color: T.ink, marginBottom: 6 }}>
+                Reporting Venue / Room Location
+              </label>
+              <input
+                type="text"
+                value={venue}
+                onChange={(e) => setVenue(e.target.value)}
+                placeholder="e.g. Room 304, Clinical Research Wing, AIIA New Delhi"
+                style={{
+                  width: "100%",
+                  padding: "8px 12px",
+                  borderRadius: 8,
+                  border: `1px solid ${T.border}`,
+                  background: T.bgSurface,
+                  color: T.ink,
+                  fontFamily: "var(--ui)",
+                  fontSize: 13,
+                  outline: "none",
+                }}
+              />
+            </div>
+          ) : (
+            <div>
+              <label style={{ display: "block", fontFamily: "var(--ui)", fontSize: 12.5, fontWeight: 650, color: T.ink, marginBottom: 6 }}>
+                Google Meet Video Link
+              </label>
+              <input
+                type="text"
+                value={meetLink}
+                onChange={(e) => setMeetLink(e.target.value)}
+                placeholder="https://meet.google.com/ayush-mentorship"
+                style={{
+                  width: "100%",
+                  padding: "8px 12px",
+                  borderRadius: 8,
+                  border: `1px solid ${T.border}`,
+                  background: T.bgSurface,
+                  color: T.ink,
+                  fontFamily: "var(--ui)",
+                  fontSize: 13,
+                  outline: "none",
+                }}
+              />
+            </div>
+          )}
+
           <div>
             <label style={{ display: "block", fontFamily: "var(--ui)", fontSize: 12.5, fontWeight: 650, color: T.ink, marginBottom: 6 }}>
-              Discussion Topic & Key Questions
+              Session Agenda & Discussion Topic
             </label>
             <textarea
-              rows={3}
+              rows={2}
               value={notes}
               onChange={(e) => setNotes(e.target.value)}
-              placeholder="e.g. Seeking review of clinical study methodology and case sheet variables..."
+              placeholder="e.g. Reviewing protocol draft and research data extraction..."
               style={{
                 width: "100%",
-                padding: "9px 12px",
-                borderRadius: 9,
+                padding: "8px 12px",
+                borderRadius: 8,
                 border: `1px solid ${T.border}`,
                 background: T.bgSurface,
                 color: T.ink,
                 fontFamily: "var(--ui)",
                 fontSize: 13,
-                resize: "vertical",
                 outline: "none",
+                resize: "vertical",
               }}
             />
           </div>
 
-          <div style={{ display: "flex", justifyContent: "flex-end", gap: 10, marginTop: 10, paddingTop: 10, borderTop: `1px solid ${T.border}` }}>
+          <div style={{ display: "flex", justifyContent: "flex-end", gap: 10, marginTop: 8, paddingTop: 10, borderTop: `1px solid ${T.border}` }}>
             <button
               type="button"
               onClick={onClose}
@@ -6171,10 +7073,9 @@ function ScheduleSessionModal({ T, mentorship, onClose, onSchedule }) {
                 border: `1px solid ${T.border}`,
                 color: T.muted,
                 borderRadius: 8,
-                padding: "8px 16px",
+                padding: "8px 14px",
                 fontFamily: "var(--ui)",
-                fontSize: 13.5,
-                fontWeight: 600,
+                fontSize: 13,
                 cursor: "pointer",
               }}
             >
@@ -6182,7 +7083,10 @@ function ScheduleSessionModal({ T, mentorship, onClose, onSchedule }) {
             </button>
             <button
               type="button"
-              onClick={() => onSchedule({ date, mode, notes })}
+              onClick={() => {
+                onSchedule({ date, mode, venue, meetLink, notes });
+                onClose();
+              }}
               style={{
                 background: T.teal,
                 border: "none",
@@ -6195,7 +7099,7 @@ function ScheduleSessionModal({ T, mentorship, onClose, onSchedule }) {
                 cursor: "pointer",
               }}
             >
-              Confirm & Send Calendar Invite 📅
+              Confirm Session Schedule ✓
             </button>
           </div>
         </div>
