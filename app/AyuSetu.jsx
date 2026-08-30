@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState, useMemo, useRef, useEffect } from "react";
+import React, { useState, useMemo, useRef, useEffect, useContext, createContext } from "react";
 import {
   Radar, RadarChart, PolarGrid, PolarAngleAxis, PolarRadiusAxis,
   ResponsiveContainer, BarChart, Bar, XAxis, YAxis, CartesianGrid,
@@ -879,6 +879,788 @@ const ROLE_ACCOUNTS = {
 };
 
 /* ============================================================
+   THEME CONTEXT & STABLE TOP-LEVEL UI COMPONENTS
+   ============================================================ */
+
+const ThemeContext = createContext({
+  T: THEMES.dark,
+  themeMode: "dark",
+  setThemeMode: () => {},
+});
+
+function Eyebrow({ children, color, style }) {
+  const { T } = useContext(ThemeContext);
+  return (
+    <div style={{
+      fontFamily: "var(--ui)",
+      fontSize: 11,
+      letterSpacing: ".15em",
+      textTransform: "uppercase",
+      color: color || T.sage,
+      fontWeight: 650,
+      marginBottom: 4,
+      ...style,
+    }}>
+      {children}
+    </div>
+  );
+}
+
+function Chip({ children, tone = "neutral", style }) {
+  const { T } = useContext(ThemeContext);
+  const tones = {
+    neutral: { bg: T.bgSurface, fg: T.inkSoft, bd: T.border },
+    gap: { bg: T.terraSoft, fg: T.terra, bd: T.terra },
+    good: { bg: T.sageSoft, fg: T.sage, bd: T.sage },
+    accent: { bg: T.tealSoft, fg: T.teal, bd: T.teal },
+  }[tone] || { bg: T.bgSurface, fg: T.inkSoft, bd: T.border };
+
+  return (
+    <span style={{
+      display: "inline-flex",
+      alignItems: "center",
+      padding: "4px 10px",
+      borderRadius: 999,
+      fontSize: 12,
+      background: tones.bg,
+      color: tones.fg,
+      border: `1px solid ${tones.bd}40`,
+      fontWeight: 550,
+      whiteSpace: "nowrap",
+      ...style,
+    }}>
+      {children}
+    </span>
+  );
+}
+
+function Btn({ children, onClick, variant = "primary", small, disabled, style, type = "button" }) {
+  const { T, themeMode } = useContext(ThemeContext);
+  const styles = {
+    primary: {
+      background: T.teal,
+      color: themeMode === "dark" ? "#07120E" : "#FFFFFF",
+      border: `1px solid ${T.teal}`,
+      boxShadow: themeMode === "dark" ? "0 2px 10px rgba(45, 212, 191, 0.22)" : "0 2px 8px rgba(18, 160, 130, 0.20)",
+    },
+    accent: {
+      background: T.terra,
+      color: themeMode === "dark" ? "#120803" : "#FFFFFF",
+      border: `1px solid ${T.terra}`,
+      boxShadow: "0 2px 8px rgba(224, 112, 80, 0.20)",
+    },
+    ghost: {
+      background: "transparent",
+      color: T.ink,
+      border: `1px solid ${T.border}`,
+      boxShadow: "none",
+    },
+  }[variant];
+
+  return (
+    <button
+      type={type}
+      className="ay-btn"
+      onClick={onClick}
+      disabled={disabled}
+      style={{
+        ...styles,
+        padding: small ? "7px 14px" : "11px 22px",
+        minHeight: small ? 34 : 44,
+        boxSizing: "border-box",
+        borderRadius: 10,
+        cursor: disabled ? "not-allowed" : "pointer",
+        fontFamily: "var(--ui)",
+        fontSize: small ? 13 : 14.5,
+        fontWeight: 600,
+        lineHeight: 1.2,
+        opacity: disabled ? 0.45 : 1,
+        display: "inline-flex",
+        alignItems: "center",
+        justifyContent: "center",
+        gap: 6,
+        transition: "all .16s ease",
+        ...style,
+      }}
+    >
+      {children}
+    </button>
+  );
+}
+
+function Card({ children, style, className = "" }) {
+  const { T } = useContext(ThemeContext);
+  return (
+    <div
+      className={`ay-card ${className}`}
+      style={{
+        background: T.bgCard,
+        border: `1px solid ${T.border}`,
+        borderRadius: 16,
+        boxShadow: T.cardShadow,
+        padding: 22,
+        ...style,
+      }}
+    >
+      {children}
+    </div>
+  );
+}
+
+function SkeletonCard() {
+  const { T } = useContext(ThemeContext);
+  return (
+    <div
+      className="ay-shimmer"
+      style={{
+        background: T.bgCard,
+        border: `1px solid ${T.border}`,
+        borderRadius: 16,
+        padding: 24,
+        display: "flex",
+        flexDirection: "column",
+        gap: 14,
+      }}
+    >
+      <div style={{ display: "flex", gap: 10 }}>
+        <div style={{ width: 110, height: 22, borderRadius: 999, background: T.bgSurfaceHover, opacity: 0.8 }} />
+        <div style={{ width: 80, height: 22, borderRadius: 999, background: T.bgSurfaceHover, opacity: 0.8 }} />
+      </div>
+      <div style={{ width: "55%", height: 26, borderRadius: 8, background: T.bgSurfaceHover, opacity: 0.8 }} />
+      <div style={{ width: "35%", height: 16, borderRadius: 6, background: T.bgSurfaceHover, opacity: 0.6 }} />
+      <div style={{ width: "90%", height: 14, borderRadius: 6, background: T.bgSurfaceHover, opacity: 0.5 }} />
+      <div style={{ width: "75%", height: 14, borderRadius: 6, background: T.bgSurfaceHover, opacity: 0.5 }} />
+    </div>
+  );
+}
+
+function H({ children, size = 26, style }) {
+  const { T } = useContext(ThemeContext);
+  return (
+    <h2 style={{
+      fontFamily: "var(--display)",
+      fontWeight: 600,
+      fontSize: size,
+      color: T.ink,
+      margin: 0,
+      letterSpacing: "-.015em",
+      ...style,
+    }}>
+      {children}
+    </h2>
+  );
+}
+
+function Muted({ children, style }) {
+  const { T } = useContext(ThemeContext);
+  return (
+    <p style={{
+      fontFamily: "var(--ui)",
+      color: T.muted,
+      fontSize: 14,
+      lineHeight: 1.6,
+      margin: 0,
+      ...style,
+    }}>
+      {children}
+    </p>
+  );
+}
+
+function KPI({ label, value, sub, icon }) {
+  const { T } = useContext(ThemeContext);
+  return (
+    <Card style={{ padding: 18, flex: "1 1 170px", minWidth: 150 }}>
+      <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start" }}>
+        <div style={{ fontFamily: "var(--display)", fontSize: 30, fontWeight: 700, color: T.teal, letterSpacing: "-.02em" }}>
+          {value}
+        </div>
+        {icon && <span style={{ fontSize: 20 }}>{icon}</span>}
+      </div>
+      <div style={{ fontFamily: "var(--ui)", fontSize: 13.5, color: T.ink, marginTop: 4, fontWeight: 600 }}>{label}</div>
+      {sub && <div style={{ fontFamily: "var(--ui)", fontSize: 12, color: T.muted, marginTop: 2 }}>{sub}</div>}
+    </Card>
+  );
+}
+
+function ReadinessMeter({ pct, gaps, compact }) {
+  const { T, themeMode } = useContext(ThemeContext);
+  return (
+    <div>
+      <div style={{ display: "flex", alignItems: "baseline", justifyContent: "space-between", marginBottom: 10 }}>
+        <span style={{ fontFamily: "var(--ui)", fontSize: 13, color: T.muted, fontWeight: 550 }}>Role Readiness Index</span>
+        <span style={{
+          fontFamily: "var(--display)",
+          fontSize: compact ? 22 : 32,
+          fontWeight: 700,
+          color: pct >= 80 ? T.sage : pct >= 60 ? T.teal : T.terra,
+          letterSpacing: "-.02em",
+        }}>
+          {pct}%
+        </span>
+      </div>
+
+      <div style={{
+        position: "relative",
+        height: 10,
+        background: themeMode === "dark" ? "rgba(255,255,255,0.08)" : "rgba(0,0,0,0.06)",
+        borderRadius: 999,
+        overflow: "hidden",
+        boxShadow: "inset 0 1.5px 3px rgba(0,0,0,0.22)",
+        border: `1px solid ${T.borderSubtle || T.border}`,
+      }}>
+        <div
+          className="ay-fill"
+          style={{
+            width: `${Math.min(pct, 100)}%`,
+            height: "100%",
+            borderRadius: 999,
+            background: pct >= 80
+              ? `linear-gradient(90deg, ${T.teal} 0%, #10B981 60%, ${T.sage} 100%)`
+              : pct >= 60
+              ? `linear-gradient(90deg, ${T.terra} 0%, ${T.teal} 100%)`
+              : `linear-gradient(90deg, #EF4444 0%, ${T.terra} 100%)`,
+            boxShadow: pct >= 80 ? "0 0 12px rgba(16, 185, 129, 0.45)" : "none",
+            transition: "width 0.6s cubic-bezier(0.16, 1, 0.3, 1)",
+          }}
+        />
+      </div>
+
+      <div style={{ position: "relative", height: 16, marginTop: 4 }}>
+        <div style={{ position: "absolute", left: "80%", top: 0, transform: "translateX(-50%)", textAlign: "center" }}>
+          <div style={{ width: 1.5, height: 6, background: T.muted, margin: "0 auto", borderRadius: 1 }} />
+          <div style={{ fontFamily: "var(--ui)", fontSize: 10, fontWeight: 600, color: T.muted, whiteSpace: "nowrap", marginTop: 1 }}>
+            80% benchmark
+          </div>
+        </div>
+      </div>
+
+      {gaps && gaps.length > 0 && (
+        <div style={{ marginTop: 12 }}>
+          <div style={{ fontFamily: "var(--ui)", fontSize: 12, color: T.muted, fontWeight: 550, marginBottom: 7 }}>
+            Key competencies to bridge:
+          </div>
+          <div style={{ display: "flex", flexWrap: "wrap", gap: 6 }}>
+            {gaps.slice(0, 3).map((g) => (
+              <span
+                key={g.skill}
+                style={{
+                  fontFamily: "var(--ui)",
+                  fontSize: 11.5,
+                  fontWeight: 600,
+                  color: T.terra,
+                  background: T.terraSoft,
+                  border: `1px solid ${T.terra}35`,
+                  padding: "3px 9px",
+                  borderRadius: 6,
+                }}
+              >
+                {skillShort(g.skill)} · +{g.short} pts
+              </span>
+            ))}
+          </div>
+        </div>
+      )}
+    </div>
+  );
+}
+
+function ThemeToggle() {
+  const { T, themeMode, setThemeMode } = useContext(ThemeContext);
+  return (
+    <button
+      type="button"
+      onClick={() => setThemeMode(themeMode === "light" ? "dark" : "light")}
+      className="ay-theme-btn"
+      title={`Switch to ${themeMode === "light" ? "Dark" : "Light"} mode`}
+      style={{
+        background: T.bgSurface,
+        border: `1px solid ${T.border}`,
+        borderRadius: 999,
+        padding: "6px 12px",
+        cursor: "pointer",
+        display: "inline-flex",
+        alignItems: "center",
+        gap: 8,
+        color: T.ink,
+        fontFamily: "var(--ui)",
+        fontSize: 12.5,
+        fontWeight: 550,
+      }}
+    >
+      {themeMode === "light" ? (
+        <>
+          <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke={T.terra} strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round">
+            <path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z" />
+          </svg>
+          <span>Dark</span>
+        </>
+      ) : (
+        <>
+          <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke={T.amber} strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round">
+            <circle cx="12" cy="12" r="5" />
+            <line x1="12" y1="1" x2="12" y2="3" />
+            <line x1="12" y1="21" x2="12" y2="23" />
+            <line x1="4.22" y1="4.22" x2="5.64" y2="5.64" />
+            <line x1="18.36" y1="18.36" x2="19.78" y2="19.78" />
+            <line x1="1" y1="12" x2="3" y2="12" />
+            <line x1="21" y1="12" x2="23" y2="12" />
+            <line x1="4.22" y1="19.78" x2="5.64" y2="18.36" />
+            <line x1="18.36" y1="5.64" x2="19.78" y2="4.22" />
+          </svg>
+          <span>Light</span>
+        </>
+      )}
+    </button>
+  );
+}
+
+function Logo({ small }) {
+  const { T } = useContext(ThemeContext);
+  return (
+    <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
+      <div style={{
+        width: small ? 30 : 36,
+        height: small ? 30 : 36,
+        borderRadius: 10,
+        background: `linear-gradient(135deg, ${T.teal}, ${T.sage})`,
+        display: "flex",
+        alignItems: "center",
+        justifyContent: "center",
+        flexShrink: 0,
+        boxShadow: `0 2px 10px ${T.teal}40`,
+      }}>
+        <svg width={small ? 16 : 20} height={small ? 16 : 20} viewBox="0 0 24 24" fill="none">
+          <path d="M3 17c4 0 5-10 9-10s5 10 9 10" stroke="#FFFFFF" strokeWidth="2.2" strokeLinecap="round" />
+          <circle cx="12" cy="7" r="2.2" fill={T.terra} />
+        </svg>
+      </div>
+      <div>
+        <div style={{
+          fontFamily: "var(--display)",
+          fontSize: small ? 19 : 22,
+          fontWeight: 700,
+          color: T.ink,
+          letterSpacing: "-.02em",
+          lineHeight: 1,
+        }}>
+          AyushBridge
+        </div>
+        {!small && (
+          <div style={{ fontFamily: "var(--ui)", fontSize: 11, color: T.muted, marginTop: 2, fontWeight: 500 }}>
+            National AYUSH Academia · Industry Portal
+          </div>
+        )}
+      </div>
+    </div>
+  );
+}
+
+function UserAvatar({ size = 32, userObj }) {
+  const { T } = useContext(ThemeContext);
+  const u = userObj;
+  const initials = u?.name
+    ? u.name.split(" ").map((n) => n[0]).join("").substring(0, 2).toUpperCase()
+    : "AY";
+
+  if (u?.avatar) {
+    return (
+      <img
+        src={u.avatar}
+        alt={u.name}
+        style={{
+          width: size,
+          height: size,
+          borderRadius: 999,
+          objectFit: "cover",
+          border: `1.5px solid ${T.teal}`,
+        }}
+      />
+    );
+  }
+
+  return (
+    <div style={{
+      width: size,
+      height: size,
+      borderRadius: 999,
+      background: `linear-gradient(135deg, ${T.teal}, ${T.sage})`,
+      color: "#FFFFFF",
+      display: "flex",
+      alignItems: "center",
+      justifyContent: "center",
+      fontFamily: "var(--ui)",
+      fontSize: size * 0.4,
+      fontWeight: 700,
+      letterSpacing: "0.02em",
+      border: `1.5px solid ${T.teal}`,
+      flexShrink: 0,
+    }}>
+      {initials}
+    </div>
+  );
+}
+
+function ToastBanner({ msg, onClose }) {
+  const { T } = useContext(ThemeContext);
+  if (!msg) return null;
+  return (
+    <div
+      style={{
+        position: "fixed",
+        bottom: 28,
+        right: 28,
+        background: T.bgCard,
+        border: `1.5px solid ${T.teal}`,
+        color: T.ink,
+        padding: "12px 18px",
+        borderRadius: 12,
+        boxShadow: "0 14px 36px -6px rgba(0,0,0,0.45)",
+        fontFamily: "var(--ui)",
+        fontSize: 13.5,
+        fontWeight: 600,
+        zIndex: 999,
+        display: "flex",
+        alignItems: "center",
+        gap: 10,
+        animation: "fadeIn .18s ease",
+        backdropFilter: "blur(10px)",
+        maxWidth: 440,
+      }}
+    >
+      <div
+        style={{
+          width: 22,
+          height: 22,
+          borderRadius: 999,
+          background: T.tealSoft,
+          color: T.teal,
+          display: "flex",
+          alignItems: "center",
+          justifyContent: "center",
+          fontSize: 12,
+          fontWeight: 800,
+          flexShrink: 0,
+        }}
+      >
+        ✓
+      </div>
+      <span style={{ lineHeight: 1.4, flex: 1 }}>{msg}</span>
+      <button
+        type="button"
+        onClick={onClose}
+        style={{
+          background: "none",
+          border: "none",
+          color: T.muted,
+          cursor: "pointer",
+          padding: "0 0 0 6px",
+          fontSize: 14,
+        }}
+      >
+        ✕
+      </button>
+    </div>
+  );
+}
+
+function UserAuthWidget({ user, role, setRole, setTab, setAuthModalRole, setIsAuthModalOpen, showToast, setUser }) {
+  const { T } = useContext(ThemeContext);
+  return user ? (
+    <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
+      <button
+        type="button"
+        onClick={() => {
+          const destRole = user.role || "student";
+          setRole(destRole);
+          setTab("overview");
+        }}
+        style={{
+          background: T.bgSurface,
+          border: `1px solid ${T.border}`,
+          borderRadius: 999,
+          padding: "4px 12px 4px 6px",
+          display: "flex",
+          alignItems: "center",
+          gap: 8,
+          cursor: "pointer",
+          color: T.ink,
+          fontFamily: "var(--ui)",
+          fontSize: 13,
+          fontWeight: 600,
+        }}
+      >
+        <UserAvatar size={26} userObj={user} />
+        <span>{user.name.split(" ")[0]}</span>
+        <span style={{
+          fontSize: 10.5,
+          padding: "2px 7px",
+          borderRadius: 999,
+          background: T.tealSoft,
+          color: T.teal,
+          fontWeight: 700,
+          textTransform: "capitalize",
+        }}>
+          {user.role === "academician" ? "Faculty" : user.role || "Student"}
+        </span>
+      </button>
+
+      <button
+        type="button"
+        onClick={() => {
+          setAuthModalRole(user.role || "student");
+          setIsAuthModalOpen(true);
+        }}
+        title="Switch Account Role"
+        style={{
+          background: "none",
+          border: `1px solid ${T.border}`,
+          color: T.muted,
+          cursor: "pointer",
+          fontSize: 11.5,
+          fontFamily: "var(--ui)",
+          padding: "4px 8px",
+          borderRadius: 6,
+          fontWeight: 550,
+        }}
+      >
+        Switch Role
+      </button>
+
+      <button
+        type="button"
+        onClick={() => {
+          if (setUser) setUser(null);
+          if (setRole) setRole(null);
+          showToast("Signed out of Google account");
+        }}
+        title="Sign Out"
+        style={{
+          background: "none",
+          border: "none",
+          color: T.terra,
+          cursor: "pointer",
+          fontSize: 12,
+          fontFamily: "var(--ui)",
+          padding: "4px 6px",
+        }}
+      >
+        Sign Out
+      </button>
+    </div>
+  ) : (
+    <button
+      type="button"
+      onClick={() => {
+        setAuthModalRole(role || "student");
+        setIsAuthModalOpen(true);
+      }}
+      className="ay-google-btn"
+      style={{
+        background: T.bgSurface,
+        border: `1.5px solid ${T.teal}`,
+        borderRadius: 999,
+        padding: "6px 14px",
+        display: "flex",
+        alignItems: "center",
+        gap: 8,
+        cursor: "pointer",
+        color: T.teal,
+        fontFamily: "var(--ui)",
+        fontSize: 13,
+        fontWeight: 700,
+        transition: "all .15s ease",
+      }}
+    >
+      <span style={{ fontSize: 14 }}>🌿</span>
+      <span>Sign In / Register</span>
+    </button>
+  );
+}
+
+function LockedPortalGate({ targetRole, setAuthModalRole, setIsAuthModalOpen, setRole, setTab }) {
+  const { T } = useContext(ThemeContext);
+  const roleMeta = {
+    academician: {
+      title: "Faculty & Researcher Workspace Locked",
+      roleLabel: "Faculty & Researcher",
+      icon: "🔬",
+      codeType: "Teacher Code / Reference Number",
+      desc: "This workspace is restricted to accredited AYUSH faculty members, principal investigators, and researchers. Access requires a verified Teacher Code registered with the Ministry of Ayush / AICTE / National Apex Institutes.",
+      bullets: [
+        "Apply for industry-sponsored R&D sabbaticals and joint botanical research grants",
+        "Access corporate advisory opportunities and university-industry joint labs",
+        "Review student research thesis drafts and guide clinical trial protocols",
+      ],
+    },
+    industry: {
+      title: "Herbal Industry & Recruiter Workspace Locked",
+      roleLabel: "Herbal Industry & Recruiter",
+      icon: "🌿",
+      codeType: "Company Partner Code",
+      desc: "This workspace is reserved for authorized AYUSH pharmaceutical manufacturers, FMCG enterprises, and accredited clinical research organizations. Access requires an official Company Code.",
+      bullets: [
+        "Publish paid internships, apprenticeships, and full-time AYUSH openings",
+        "Discover top-ranked talent with verified clinical & pharmacognosy assessments",
+        "Sponsor skill certification modules and review candidate credential vaults",
+      ],
+    },
+    institution: {
+      title: "AYUSH College & Dean Telemetry Locked",
+      roleLabel: "AYUSH College & Dean",
+      icon: "📊",
+      codeType: "Institute Apex Code",
+      desc: "This workspace is reserved for Deans, Principals, and Academic Directors of accredited AYUSH colleges. Access requires an official Institute Code verified by NCISM / NCH / Ministry of Ayush.",
+      bullets: [
+        "Track real-time campus skill gap heatmaps and curriculum alignment metrics",
+        "Monitor placement pipeline statistics and industry hiring conversion rates",
+        "Benchmark institutional syllabus against national pharmacopoeia standards",
+      ],
+    },
+  }[targetRole] || {
+    title: "Restricted Stakeholder Workspace",
+    roleLabel: "Authorized Stakeholder",
+    icon: "🔒",
+    codeType: "Verification Code",
+    desc: "This workspace requires authenticated credentials.",
+    bullets: [],
+  };
+
+  return (
+    <div style={{ maxWidth: 740, margin: "24px auto 48px" }}>
+      <Card style={{ padding: "36px 32px", border: `2px solid ${T.teal}40`, boxShadow: "0 14px 40px rgba(0,0,0,0.12)" }}>
+        <div style={{ textAlign: "center", marginBottom: 24 }}>
+          <div style={{
+            width: 64,
+            height: 64,
+            borderRadius: "50%",
+            background: T.tealSoft,
+            color: T.teal,
+            display: "inline-flex",
+            alignItems: "center",
+            justifyContent: "center",
+            fontSize: 32,
+            marginBottom: 16,
+            border: `1.5px solid ${T.teal}40`,
+          }}>
+            {roleMeta.icon}
+          </div>
+          <div>
+            <span style={{
+              display: "inline-block",
+              background: `${T.terra}18`,
+              color: T.terra,
+              border: `1px solid ${T.terra}45`,
+              borderRadius: 999,
+              padding: "3px 12px",
+              fontSize: 11.5,
+              fontWeight: 700,
+              fontFamily: "var(--ui)",
+              marginBottom: 10,
+            }}>
+              🔒 Restricted Stakeholder Access
+            </span>
+          </div>
+          <H size={26} style={{ color: T.ink, margin: "0 0 8px" }}>{roleMeta.title}</H>
+          <p style={{ fontFamily: "var(--ui)", fontSize: 14, color: T.muted, maxWidth: 580, margin: "0 auto", lineHeight: 1.6 }}>
+            {roleMeta.desc}
+          </p>
+        </div>
+
+        <div style={{
+          background: T.bgSurface,
+          borderRadius: 14,
+          padding: "18px 20px",
+          border: `1px solid ${T.border}`,
+          marginBottom: 24,
+        }}>
+          <div style={{ fontFamily: "var(--ui)", fontSize: 13, fontWeight: 700, color: T.ink, marginBottom: 8 }}>
+            Workspace Features Included Upon Verification:
+          </div>
+          <ul style={{ margin: 0, paddingLeft: 20, fontFamily: "var(--ui)", fontSize: 13, color: T.inkSoft, lineHeight: 1.7 }}>
+            {roleMeta.bullets.map((b, idx) => (
+              <li key={idx}>{b}</li>
+            ))}
+          </ul>
+        </div>
+
+        <div style={{ display: "flex", flexDirection: "column", gap: 12, alignItems: "center" }}>
+          <button
+            type="button"
+            onClick={() => {
+              setAuthModalRole(targetRole);
+              setIsAuthModalOpen(true);
+            }}
+            style={{
+              width: "100%",
+              maxWidth: 420,
+              padding: "13px 22px",
+              borderRadius: 12,
+              border: "none",
+              background: T.teal,
+              color: "#FFFFFF",
+              fontFamily: "var(--ui)",
+              fontSize: 14.5,
+              fontWeight: 700,
+              cursor: "pointer",
+              boxShadow: "0 4px 14px rgba(27, 75, 67, 0.28)",
+              display: "flex",
+              alignItems: "center",
+              justifyContent: "center",
+              gap: 8,
+            }}
+          >
+            <span>🔑</span>
+            <span>Sign In / Register as {roleMeta.roleLabel}</span>
+            <span>→</span>
+          </button>
+
+          <div style={{ display: "flex", gap: 12, flexWrap: "wrap", justifyContent: "center", marginTop: 4 }}>
+            <button
+              type="button"
+              onClick={() => {
+                setRole("student");
+                setTab("overview");
+              }}
+              style={{
+                background: "transparent",
+                border: `1px solid ${T.border}`,
+                color: T.teal,
+                padding: "8px 16px",
+                borderRadius: 10,
+                fontFamily: "var(--ui)",
+                fontSize: 13,
+                fontWeight: 650,
+                cursor: "pointer",
+              }}
+            >
+              🎓 Browse Student & Intern Portal (Open Access)
+            </button>
+
+            <button
+              type="button"
+              onClick={() => setRole(null)}
+              style={{
+                background: "transparent",
+                border: "none",
+                color: T.muted,
+                padding: "8px 12px",
+                fontFamily: "var(--ui)",
+                fontSize: 13,
+                cursor: "pointer",
+                textDecoration: "underline",
+              }}
+            >
+              ← Return to Homepage
+            </button>
+          </div>
+        </div>
+      </Card>
+    </div>
+  );
+}
+
+/* ============================================================
    MAIN AYUSHBRIDGE COMPONENT
    ============================================================ */
 
@@ -1258,933 +2040,299 @@ export default function AyushBridge() {
     showToast(`Mentorship request sent to ${facultyName || "Dr. S. K. Sharma"}!`);
   };
 
-  /* ---------------- UI Atoms ---------------- */
-
-  const Eyebrow = ({ children, color }) => (
-    <div style={{
-      fontFamily: "var(--ui)",
-      fontSize: 11,
-      letterSpacing: ".15em",
-      textTransform: "uppercase",
-      color: color || T.sage,
-      fontWeight: 650,
-      marginBottom: 4,
-    }}>
-      {children}
-    </div>
-  );
-
-  const Chip = ({ children, tone = "neutral", style }) => {
-    const tones = {
-      neutral: { bg: T.bgSurface, fg: T.inkSoft, bd: T.border },
-      gap: { bg: T.terraSoft, fg: T.terra, bd: T.terra },
-      good: { bg: T.sageSoft, fg: T.sage, bd: T.sage },
-      accent: { bg: T.tealSoft, fg: T.teal, bd: T.teal },
-    }[tone] || { bg: T.bgSurface, fg: T.inkSoft, bd: T.border };
-
-    return (
-      <span style={{
-        display: "inline-flex",
-        alignItems: "center",
-        padding: "4px 10px",
-        borderRadius: 999,
-        fontSize: 12,
-        background: tones.bg,
-        color: tones.fg,
-        border: `1px solid ${tones.bd}40`,
-        fontWeight: 550,
-        whiteSpace: "nowrap",
-        ...style,
-      }}>
-        {children}
-      </span>
-    );
-  };
-
-  const Btn = ({ children, onClick, variant = "primary", small, disabled, style }) => {
-    const styles = {
-      primary: {
-        background: T.teal,
-        color: themeMode === "dark" ? "#07120E" : "#FFFFFF",
-        border: `1px solid ${T.teal}`,
-        boxShadow: themeMode === "dark" ? "0 2px 10px rgba(45, 212, 191, 0.22)" : "0 2px 8px rgba(18, 160, 130, 0.20)",
-      },
-      accent: {
-        background: T.terra,
-        color: themeMode === "dark" ? "#120803" : "#FFFFFF",
-        border: `1px solid ${T.terra}`,
-        boxShadow: "0 2px 8px rgba(224, 112, 80, 0.20)",
-      },
-      ghost: {
-        background: "transparent",
-        color: T.ink,
-        border: `1px solid ${T.border}`,
-        boxShadow: "none",
-      },
-    }[variant];
-
-    return (
-      <button
-        className="ay-btn"
-        onClick={onClick}
-        disabled={disabled}
-        style={{
-          ...styles,
-          padding: small ? "7px 14px" : "11px 22px",
-          minHeight: small ? 34 : 44,
-          boxSizing: "border-box",
-          borderRadius: 10,
-          cursor: disabled ? "not-allowed" : "pointer",
-          fontFamily: "var(--ui)",
-          fontSize: small ? 13 : 14.5,
-          fontWeight: 600,
-          lineHeight: 1.2,
-          opacity: disabled ? 0.45 : 1,
-          display: "inline-flex",
-          alignItems: "center",
-          justifyContent: "center",
-          gap: 6,
-          transition: "all .16s ease",
-          ...style,
-        }}
-      >
-        {children}
-      </button>
-    );
-  };
-
-  const Card = ({ children, style, className = "" }) => (
-    <div
-      className={`ay-card ${className}`}
-      style={{
-        background: T.bgCard,
-        border: `1px solid ${T.border}`,
-        borderRadius: 16,
-        boxShadow: T.cardShadow,
-        padding: 22,
-        ...style,
-      }}
-    >
-      {children}
-    </div>
-  );
-
-  const SkeletonCard = () => (
-    <div
-      className="ay-shimmer"
-      style={{
-        background: T.bgCard,
-        border: `1px solid ${T.border}`,
-        borderRadius: 16,
-        padding: 24,
-        display: "flex",
-        flexDirection: "column",
-        gap: 14,
-      }}
-    >
-      <div style={{ display: "flex", gap: 10 }}>
-        <div style={{ width: 110, height: 22, borderRadius: 999, background: T.bgSurfaceHover, opacity: 0.8 }} />
-        <div style={{ width: 80, height: 22, borderRadius: 999, background: T.bgSurfaceHover, opacity: 0.8 }} />
-      </div>
-      <div style={{ width: "55%", height: 26, borderRadius: 8, background: T.bgSurfaceHover, opacity: 0.8 }} />
-      <div style={{ width: "35%", height: 16, borderRadius: 6, background: T.bgSurfaceHover, opacity: 0.6 }} />
-      <div style={{ width: "90%", height: 14, borderRadius: 6, background: T.bgSurfaceHover, opacity: 0.5 }} />
-      <div style={{ width: "75%", height: 14, borderRadius: 6, background: T.bgSurfaceHover, opacity: 0.5 }} />
-    </div>
-  );
-
-  const H = ({ children, size = 26, style }) => (
-    <h2 style={{
-      fontFamily: "var(--display)",
-      fontWeight: 600,
-      fontSize: size,
-      color: T.ink,
-      margin: 0,
-      letterSpacing: "-.015em",
-      ...style,
-    }}>
-      {children}
-    </h2>
-  );
-
-  const Muted = ({ children, style }) => (
-    <p style={{
-      fontFamily: "var(--ui)",
-      color: T.muted,
-      fontSize: 14,
-      lineHeight: 1.6,
-      margin: 0,
-      ...style,
-    }}>
-      {children}
-    </p>
-  );
-
-  const KPI = ({ label, value, sub, icon }) => (
-    <Card style={{ padding: 18, flex: "1 1 170px", minWidth: 150 }}>
-      <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start" }}>
-        <div style={{ fontFamily: "var(--display)", fontSize: 30, fontWeight: 700, color: T.teal, letterSpacing: "-.02em" }}>
-          {value}
-        </div>
-        {icon && <span style={{ fontSize: 20 }}>{icon}</span>}
-      </div>
-      <div style={{ fontFamily: "var(--ui)", fontSize: 13.5, color: T.ink, marginTop: 4, fontWeight: 600 }}>{label}</div>
-      {sub && <div style={{ fontFamily: "var(--ui)", fontSize: 12, color: T.muted, marginTop: 2 }}>{sub}</div>}
-    </Card>
-  );
-
-  const ReadinessMeter = ({ pct, gaps, compact }) => (
-    <div>
-      <div style={{ display: "flex", alignItems: "baseline", justifyContent: "space-between", marginBottom: 10 }}>
-        <span style={{ fontFamily: "var(--ui)", fontSize: 13, color: T.muted, fontWeight: 550 }}>Role Readiness Index</span>
-        <span style={{
-          fontFamily: "var(--display)",
-          fontSize: compact ? 22 : 32,
-          fontWeight: 700,
-          color: pct >= 80 ? T.sage : pct >= 60 ? T.teal : T.terra,
-          letterSpacing: "-.02em",
-        }}>
-          {pct}%
-        </span>
-      </div>
-
-      {/* Designed Progress Bar with Depth & Luminous Gradient */}
-      <div style={{
-        position: "relative",
-        height: 10,
-        background: themeMode === "dark" ? "rgba(255,255,255,0.08)" : "rgba(0,0,0,0.06)",
-        borderRadius: 999,
-        overflow: "hidden",
-        boxShadow: "inset 0 1.5px 3px rgba(0,0,0,0.22)",
-        border: `1px solid ${T.borderSubtle || T.border}`,
-      }}>
-        <div
-          className="ay-fill"
-          style={{
-            width: `${Math.min(pct, 100)}%`,
-            height: "100%",
-            borderRadius: 999,
-            background: pct >= 80
-              ? `linear-gradient(90deg, ${T.teal} 0%, #10B981 60%, ${T.sage} 100%)`
-              : pct >= 60
-              ? `linear-gradient(90deg, ${T.terra} 0%, ${T.teal} 100%)`
-              : `linear-gradient(90deg, #EF4444 0%, ${T.terra} 100%)`,
-            boxShadow: pct >= 80 ? "0 0 12px rgba(16, 185, 129, 0.45)" : "none",
-            transition: "width 0.6s cubic-bezier(0.16, 1, 0.3, 1)",
-          }}
-        />
-      </div>
-
-      {/* Benchmark Tick Mark */}
-      <div style={{ position: "relative", height: 16, marginTop: 4 }}>
-        <div style={{ position: "absolute", left: "80%", top: 0, transform: "translateX(-50%)", textAlign: "center" }}>
-          <div style={{ width: 1.5, height: 6, background: T.muted, margin: "0 auto", borderRadius: 1 }} />
-          <div style={{ fontFamily: "var(--ui)", fontSize: 10, fontWeight: 600, color: T.muted, whiteSpace: "nowrap", marginTop: 1 }}>
-            80% benchmark
-          </div>
-        </div>
-      </div>
-
-      {gaps && gaps.length > 0 && (
-        <div style={{ marginTop: 12 }}>
-          <div style={{ fontFamily: "var(--ui)", fontSize: 12, color: T.muted, fontWeight: 550, marginBottom: 7 }}>
-            Key competencies to bridge:
-          </div>
-          <div style={{ display: "flex", flexWrap: "wrap", gap: 6 }}>
-            {gaps.slice(0, 3).map((g) => (
-              <span
-                key={g.skill}
-                style={{
-                  fontFamily: "var(--ui)",
-                  fontSize: 11.5,
-                  fontWeight: 600,
-                  color: T.terra,
-                  background: T.terraSoft,
-                  border: `1px solid ${T.terra}35`,
-                  padding: "3px 9px",
-                  borderRadius: 6,
-                }}
-              >
-                {skillShort(g.skill)} · +{g.short} pts
-              </span>
-            ))}
-          </div>
-        </div>
-      )}
-    </div>
-  );
-
-  const ThemeToggle = () => (
-    <button
-      onClick={() => setThemeMode(themeMode === "light" ? "dark" : "light")}
-      className="ay-theme-btn"
-      title={`Switch to ${themeMode === "light" ? "Dark" : "Light"} mode`}
-      style={{
-        background: T.bgSurface,
-        border: `1px solid ${T.border}`,
-        borderRadius: 999,
-        padding: "6px 12px",
-        cursor: "pointer",
-        display: "inline-flex",
-        alignItems: "center",
-        gap: 8,
-        color: T.ink,
-        fontFamily: "var(--ui)",
-        fontSize: 12.5,
-        fontWeight: 550,
-      }}
-    >
-      {themeMode === "light" ? (
-        <>
-          <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke={T.terra} strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round">
-            <path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z" />
-          </svg>
-          <span>Dark</span>
-        </>
-      ) : (
-        <>
-          <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke={T.amber} strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round">
-            <circle cx="12" cy="12" r="5" />
-            <line x1="12" y1="1" x2="12" y2="3" />
-            <line x1="12" y1="21" x2="12" y2="23" />
-            <line x1="4.22" y1="4.22" x2="5.64" y2="5.64" />
-            <line x1="18.36" y1="18.36" x2="19.78" y2="19.78" />
-            <line x1="1" y1="12" x2="3" y2="12" />
-            <line x1="21" y1="12" x2="23" y2="12" />
-            <line x1="4.22" y1="19.78" x2="5.64" y2="18.36" />
-            <line x1="18.36" y1="5.64" x2="19.78" y2="4.22" />
-          </svg>
-          <span>Light</span>
-        </>
-      )}
-    </button>
-  );
-
-  const Logo = ({ small }) => (
-    <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
-      <div style={{
-        width: small ? 30 : 36,
-        height: small ? 30 : 36,
-        borderRadius: 10,
-        background: `linear-gradient(135deg, ${T.teal}, ${T.sage})`,
-        display: "flex",
-        alignItems: "center",
-        justifyContent: "center",
-        flexShrink: 0,
-        boxShadow: `0 2px 10px ${T.teal}40`,
-      }}>
-        <svg width={small ? 16 : 20} height={small ? 16 : 20} viewBox="0 0 24 24" fill="none">
-          <path d="M3 17c4 0 5-10 9-10s5 10 9 10" stroke="#FFFFFF" strokeWidth="2.2" strokeLinecap="round" />
-          <circle cx="12" cy="7" r="2.2" fill={T.terra} />
-        </svg>
-      </div>
-      <div>
-        <div style={{
-          fontFamily: "var(--display)",
-          fontSize: small ? 19 : 22,
-          fontWeight: 700,
-          color: T.ink,
-          letterSpacing: "-.02em",
-          lineHeight: 1,
-        }}>
-          AyushBridge
-        </div>
-        {!small && (
-          <div style={{ fontFamily: "var(--ui)", fontSize: 11, color: T.muted, marginTop: 2, fontWeight: 500 }}>
-            National AYUSH Academia · Industry Portal
-          </div>
-        )}
-      </div>
-    </div>
-  );
-
-  /* --- User Profile Avatar Component (Initials or Uploaded Photo) --- */
-  const UserAvatar = ({ size = 32, userObj }) => {
-    const u = userObj || user;
-    const initials = u?.name
-      ? u.name.split(" ").map((n) => n[0]).join("").substring(0, 2).toUpperCase()
-      : "AY";
-
-    if (u?.avatar) {
-      return (
-        <img
-          src={u.avatar}
-          alt={u.name}
-          style={{
-            width: size,
-            height: size,
-            borderRadius: 999,
-            objectFit: "cover",
-            border: `1.5px solid ${T.teal}`,
-          }}
-        />
-      );
-    }
-
-    return (
-      <div style={{
-        width: size,
-        height: size,
-        borderRadius: 999,
-        background: `linear-gradient(135deg, ${T.teal}, ${T.sage})`,
-        color: "#FFFFFF",
-        display: "flex",
-        alignItems: "center",
-        justifyContent: "center",
-        fontFamily: "var(--ui)",
-        fontSize: size * 0.4,
-        fontWeight: 700,
-        letterSpacing: "0.02em",
-        border: `1.5px solid ${T.teal}`,
-        flexShrink: 0,
-      }}>
-        {initials}
-      </div>
-    );
-  };
-
-  /* --- User Profile / Google Sign-In Header Widget --- */
-  const UserAuthWidget = () => (
-    user ? (
-      <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
-        <button
-          onClick={() => {
-            const destRole = user.role || "student";
-            setRole(destRole);
-            setTab("overview");
-          }}
-          style={{
-            background: T.bgSurface,
-            border: `1px solid ${T.border}`,
-            borderRadius: 999,
-            padding: "4px 12px 4px 6px",
-            display: "flex",
-            alignItems: "center",
-            gap: 8,
-            cursor: "pointer",
-            color: T.ink,
-            fontFamily: "var(--ui)",
-            fontSize: 13,
-            fontWeight: 600,
-          }}
-        >
-          <UserAvatar size={26} />
-          <span>{user.name.split(" ")[0]}</span>
-          <span style={{
-            fontSize: 10.5,
-            padding: "2px 7px",
-            borderRadius: 999,
-            background: T.tealSoft,
-            color: T.teal,
-            fontWeight: 700,
-            textTransform: "capitalize",
-          }}>
-            {user.role === "academician" ? "Faculty" : user.role || "Student"}
-          </span>
-        </button>
-
-        <button
-          onClick={() => {
-            setAuthModalRole(user.role || "student");
-            setIsAuthModalOpen(true);
-          }}
-          title="Switch Account Role"
-          style={{
-            background: "none",
-            border: `1px solid ${T.border}`,
-            color: T.muted,
-            cursor: "pointer",
-            fontSize: 11.5,
-            fontFamily: "var(--ui)",
-            padding: "4px 8px",
-            borderRadius: 6,
-            fontWeight: 550,
-          }}
-        >
-          Switch Role
-        </button>
-
-        <button
-          onClick={() => {
-            setUser(null);
-            setRole(null);
-            showToast("Signed out of Google account");
-          }}
-          title="Sign Out"
-          style={{
-            background: "none",
-            border: "none",
-            color: T.terra,
-            cursor: "pointer",
-            fontSize: 12,
-            fontFamily: "var(--ui)",
-            padding: "4px 6px",
-          }}
-        >
-          Sign Out
-        </button>
-      </div>
-    ) : (
-      <button
-        onClick={() => {
-          setAuthModalRole(role || "student");
-          setIsAuthModalOpen(true);
-        }}
-        className="ay-google-btn"
-        style={{
-          background: T.bgSurface,
-          border: `1.5px solid ${T.teal}`,
-          borderRadius: 999,
-          padding: "6px 14px",
-          display: "flex",
-          alignItems: "center",
-          gap: 8,
-          cursor: "pointer",
-          color: T.teal,
-          fontFamily: "var(--ui)",
-          fontSize: 13,
-          fontWeight: 700,
-          transition: "all .15s ease",
-        }}
-      >
-        <span style={{ fontSize: 14 }}>🌿</span>
-        <span>Sign In / Register</span>
-      </button>
-    )
-  );
-
-  /* --- Global Toast Notification Banner Atom --- */
-  const ToastBanner = ({ msg, onClose }) => {
-    if (!msg) return null;
-    return (
-      <div
-        style={{
-          position: "fixed",
-          bottom: 28,
-          right: 28,
-          background: T.bgCard,
-          border: `1.5px solid ${T.teal}`,
-          color: T.ink,
-          padding: "12px 18px",
-          borderRadius: 12,
-          boxShadow: "0 14px 36px -6px rgba(0,0,0,0.45)",
-          fontFamily: "var(--ui)",
-          fontSize: 13.5,
-          fontWeight: 600,
-          zIndex: 999,
-          display: "flex",
-          alignItems: "center",
-          gap: 10,
-          animation: "fadeIn .18s ease",
-          backdropFilter: "blur(10px)",
-          maxWidth: 440,
-        }}
-      >
-        <div
-          style={{
-            width: 22,
-            height: 22,
-            borderRadius: 999,
-            background: T.tealSoft,
-            color: T.teal,
-            display: "flex",
-            alignItems: "center",
-            justifyContent: "center",
-            fontSize: 12,
-            fontWeight: 800,
-            flexShrink: 0,
-          }}
-        >
-          ✓
-        </div>
-        <span style={{ lineHeight: 1.4, flex: 1 }}>{msg}</span>
-        <button
-          onClick={onClose}
-          style={{
-            background: "none",
-            border: "none",
-            color: T.muted,
-            cursor: "pointer",
-            padding: "0 0 0 6px",
-            fontSize: 14,
-          }}
-        >
-          ✕
-        </button>
-      </div>
-    );
-  };
-
-  /* --- Locked Portal Gate Component (for Gated Stakeholder Access) --- */
-  const LockedPortalGate = ({ targetRole }) => {
-    const roleMeta = {
-      academician: {
-        title: "Faculty & Researcher Workspace Locked",
-        roleLabel: "Faculty & Researcher",
-        icon: "🔬",
-        codeType: "Teacher Code / Reference Number",
-        desc: "This workspace is restricted to accredited AYUSH faculty members, principal investigators, and researchers. Access requires a verified Teacher Code registered with the Ministry of Ayush / AICTE / National Apex Institutes.",
-        bullets: [
-          "Apply for industry-sponsored R&D sabbaticals and joint botanical research grants",
-          "Access corporate advisory opportunities and university-industry joint labs",
-          "Review student research thesis drafts and guide clinical trial protocols",
-        ],
-      },
-      industry: {
-        title: "Herbal Industry & Recruiter Workspace Locked",
-        roleLabel: "Herbal Industry & Recruiter",
-        icon: "🌿",
-        codeType: "Company Partner Code",
-        desc: "This workspace is reserved for authorized AYUSH pharmaceutical manufacturers, FMCG enterprises, and accredited clinical research organizations. Access requires an official Company Code.",
-        bullets: [
-          "Publish paid internships, apprenticeships, and full-time AYUSH openings",
-          "Discover top-ranked talent with verified clinical & pharmacognosy assessments",
-          "Sponsor skill certification modules and review candidate credential vaults",
-        ],
-      },
-      institution: {
-        title: "AYUSH College & Dean Telemetry Locked",
-        roleLabel: "AYUSH College & Dean",
-        icon: "📊",
-        codeType: "Institute Apex Code",
-        desc: "This workspace is reserved for Deans, Principals, and Academic Directors of accredited AYUSH colleges. Access requires an official Institute Code verified by NCISM / NCH / Ministry of Ayush.",
-        bullets: [
-          "Track real-time campus skill gap heatmaps and curriculum alignment metrics",
-          "Monitor placement pipeline statistics and industry hiring conversion rates",
-          "Benchmark institutional syllabus against national pharmacopoeia standards",
-        ],
-      },
-    }[targetRole] || {
-      title: "Restricted Stakeholder Workspace",
-      roleLabel: "Authorized Stakeholder",
-      icon: "🔒",
-      codeType: "Verification Code",
-      desc: "This workspace requires authenticated credentials.",
-      bullets: [],
-    };
-
-    return (
-      <div style={{ maxWidth: 740, margin: "24px auto 48px" }}>
-        <Card style={{ padding: "36px 32px", border: `2px solid ${T.teal}40`, boxShadow: "0 14px 40px rgba(0,0,0,0.12)" }}>
-          <div style={{ textAlign: "center", marginBottom: 24 }}>
-            <div style={{
-              width: 64,
-              height: 64,
-              borderRadius: "50%",
-              background: T.tealSoft,
-              color: T.teal,
-              display: "inline-flex",
-              alignItems: "center",
-              justifyContent: "center",
-              fontSize: 32,
-              marginBottom: 16,
-              border: `1.5px solid ${T.teal}40`,
-            }}>
-              {roleMeta.icon}
-            </div>
-            <div>
-              <span style={{
-                display: "inline-block",
-                background: `${T.terra}18`,
-                color: T.terra,
-                border: `1px solid ${T.terra}45`,
-                borderRadius: 999,
-                padding: "3px 12px",
-                fontSize: 11.5,
-                fontWeight: 700,
-                fontFamily: "var(--ui)",
-                marginBottom: 10,
-              }}>
-                🔒 Restricted Stakeholder Access
-              </span>
-            </div>
-            <H size={26} style={{ color: T.ink, margin: "0 0 8px" }}>{roleMeta.title}</H>
-            <p style={{ fontFamily: "var(--ui)", fontSize: 14, color: T.muted, maxWidth: 580, margin: "0 auto", lineHeight: 1.6 }}>
-              {roleMeta.desc}
-            </p>
-          </div>
-
-          <div style={{
-            background: T.bgSurface,
-            borderRadius: 14,
-            padding: "18px 20px",
-            border: `1px solid ${T.border}`,
-            marginBottom: 24,
-          }}>
-            <div style={{ fontFamily: "var(--ui)", fontSize: 13, fontWeight: 700, color: T.ink, marginBottom: 8 }}>
-              Workspace Features Included Upon Verification:
-            </div>
-            <ul style={{ margin: 0, paddingLeft: 20, fontFamily: "var(--ui)", fontSize: 13, color: T.inkSoft, lineHeight: 1.7 }}>
-              {roleMeta.bullets.map((b, idx) => (
-                <li key={idx}>{b}</li>
-              ))}
-            </ul>
-          </div>
-
-          <div style={{ display: "flex", flexDirection: "column", gap: 12, alignItems: "center" }}>
-            <button
-              type="button"
-              onClick={() => {
-                setAuthModalRole(targetRole);
-                setIsAuthModalOpen(true);
-              }}
-              style={{
-                width: "100%",
-                maxWidth: 420,
-                padding: "13px 22px",
-                borderRadius: 12,
-                border: "none",
-                background: T.teal,
-                color: "#FFFFFF",
-                fontFamily: "var(--ui)",
-                fontSize: 14.5,
-                fontWeight: 700,
-                cursor: "pointer",
-                boxShadow: "0 4px 14px rgba(27, 75, 67, 0.28)",
-                display: "flex",
-                alignItems: "center",
-                justifyContent: "center",
-                gap: 8,
-              }}
-            >
-              <span>🔑</span>
-              <span>Sign In / Register as {roleMeta.roleLabel}</span>
-              <span>→</span>
-            </button>
-
-            <div style={{ display: "flex", gap: 12, flexWrap: "wrap", justifyContent: "center", marginTop: 4 }}>
-              <button
-                type="button"
-                onClick={() => {
-                  setRole("student");
-                  setTab("overview");
-                }}
-                style={{
-                  background: "transparent",
-                  border: `1px solid ${T.border}`,
-                  color: T.teal,
-                  padding: "8px 16px",
-                  borderRadius: 10,
-                  fontFamily: "var(--ui)",
-                  fontSize: 13,
-                  fontWeight: 650,
-                  cursor: "pointer",
-                }}
-              >
-                🎓 Browse Student & Intern Portal (Open Access)
-              </button>
-
-              <button
-                type="button"
-                onClick={() => setRole(null)}
-                style={{
-                  background: "transparent",
-                  border: "none",
-                  color: T.muted,
-                  padding: "8px 12px",
-                  fontFamily: "var(--ui)",
-                  fontSize: 13,
-                  cursor: "pointer",
-                  textDecoration: "underline",
-                }}
-              >
-                ← Return to Homepage
-              </button>
-            </div>
-          </div>
-        </Card>
-      </div>
-    );
-  };
-
   /* ============================================================
      1. LANDING PAGE VIEW
      ============================================================ */
 
   if (!role) {
-    const sampleRole = ROLES[0];
-    const sample = scoreAgainst(SAMPLE_PROFILE, sampleRole.requires, certifications);
-
     return (
-      <Shell T={T}>
-        <ToastBanner msg={toastMessage} onClose={() => setToastMessage(null)} />
-        <div style={{ maxWidth: 1180, margin: "0 auto", padding: "0 22px" }}>
-          
-          <header style={{
-            display: "flex",
-            alignItems: "center",
-            justifyContent: "space-between",
-            padding: "24px 0",
-            borderBottom: `1px solid ${T.borderSubtle}`,
-          }}>
-            <Logo />
-            <div style={{ display: "flex", alignItems: "center", gap: 14 }}>
-              <ThemeToggle />
-              <UserAuthWidget />
-            </div>
-          </header>
-
-          <section className="ay-hero" style={{
-            display: "flex",
-            gap: 48,
-            alignItems: "center",
-            padding: "48px 0 60px",
-          }}>
-            <div style={{ flex: "1 1 540px", minWidth: 300 }}>
-              <Eyebrow>Ayurveda · Yoga · Unani · Siddha · Homoeopathy</Eyebrow>
-
-              <h1 style={{
-                fontFamily: "var(--display)",
-                fontSize: "clamp(34px, 5vw, 54px)",
-                lineHeight: 1.1,
-                letterSpacing: "-.025em",
-                color: T.ink,
-                margin: "14px 0 0",
-                fontWeight: 700,
-              }}>
-                Connecting AYUSH students and faculty with<br />
-                <span style={{ color: T.sage }}>leading herbal and healthcare industries.</span>
-              </h1>
-
-              <Muted style={{ fontSize: 16.5, marginTop: 18, maxWidth: 540, lineHeight: 1.65 }}>
-                AyushBridge measures your hands-on competencies in herbal formulation, quality testing, wellness protocols, and clinical research — directly matching you to verified internships, industry R&D grants, and placement pipelines across India.
-              </Muted>
-
-              <div style={{ display: "flex", gap: 12, marginTop: 30, flexWrap: "wrap", alignItems: "center" }}>
-                <Btn onClick={() => { setRole("student"); setTab("assessment"); }}>
-                  Take AYUSH Skill Assessment →
-                </Btn>
-                <Btn variant="ghost" onClick={() => { setRole("student"); setProfile(SAMPLE_PROFILE); setTab("overview"); }}>
-                  Open Sample Student Profile
-                </Btn>
+      <ThemeContext.Provider value={{ T, themeMode, setThemeMode }}>
+        <Shell T={T}>
+          <ToastBanner msg={toastMessage} onClose={() => setToastMessage(null)} />
+          <div style={{ maxWidth: 1180, margin: "0 auto", padding: "0 22px" }}>
+            
+            <header style={{
+              display: "flex",
+              alignItems: "center",
+              justifyContent: "space-between",
+              padding: "24px 0",
+              borderBottom: `1px solid ${T.borderSubtle}`,
+            }}>
+              <Logo />
+              <div style={{ display: "flex", alignItems: "center", gap: 14 }}>
+                <ThemeToggle />
+                <UserAuthWidget
+                  user={user}
+                  role={role}
+                  setRole={setRole}
+                  setTab={setTab}
+                  setAuthModalRole={setAuthModalRole}
+                  setIsAuthModalOpen={setIsAuthModalOpen}
+                  showToast={showToast}
+                  setUser={setUser}
+                />
               </div>
+            </header>
 
-              <div style={{ display: "flex", gap: 8, marginTop: 32, flexWrap: "wrap", alignItems: "center" }}>
-                <span style={{ fontFamily: "var(--ui)", fontSize: 12, color: T.muted, fontWeight: 600 }}>Active Partners:</span>
-                {["Dabur Research", "Himalaya Wellness", "Patanjali Labs", "AIIA New Delhi", "CCRAS", "Kottakkal", "Organic India"].map((c) => (
-                  <span key={c} style={{
-                    fontSize: 11.5,
-                    fontFamily: "var(--ui)",
-                    fontWeight: 500,
-                    color: T.inkSoft,
-                    background: T.bgSurface,
-                    padding: "3px 9px",
-                    borderRadius: 6,
-                    border: `1px solid ${T.borderSubtle || T.border}`,
-                  }}>
-                    {c}
-                  </span>
-                ))}
-              </div>
-            </div>
+            <section className="ay-hero" style={{
+              display: "flex",
+              gap: 48,
+              alignItems: "center",
+              padding: "48px 0 60px",
+            }}>
+              <div style={{ flex: "1 1 540px", minWidth: 300 }}>
+                <Eyebrow>Ayurveda · Yoga · Unani · Siddha · Homoeopathy</Eyebrow>
 
-            <div style={{ flex: "1 1 370px", minWidth: 290 }}>
-              <div
-                className="ay-card"
-                style={{
-                  padding: 26,
-                  background: themeMode === "dark"
-                    ? "linear-gradient(155deg, rgba(16, 36, 30, 0.85) 0%, rgba(10, 22, 18, 0.95) 100%)"
-                    : "linear-gradient(155deg, #FFFFFF 0%, #FAF7F2 100%)",
-                  border: `1.5px solid ${themeMode === "dark" ? "rgba(45, 212, 191, 0.28)" : "rgba(18, 33, 30, 0.10)"}`,
-                  borderRadius: 20,
-                  boxShadow: themeMode === "dark"
-                    ? "0 24px 48px -12px rgba(0,0,0,0.75), 0 0 35px -8px rgba(45, 212, 191, 0.14)"
-                    : "0 20px 40px -12px rgba(18, 33, 30, 0.08), 0 2px 6px rgba(18, 33, 30, 0.04)",
-                  backdropFilter: "blur(12px)",
-                  position: "relative",
-                }}
-              >
-                {/* Top Meta Bar */}
-                <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 8, flexWrap: "wrap", gap: 6 }}>
-                  <span style={{
-                    display: "inline-flex",
-                    alignItems: "center",
-                    gap: 6,
-                    fontSize: 11.5,
-                    fontFamily: "var(--ui)",
-                    fontWeight: 650,
-                    color: T.teal,
-                    background: T.tealSoft,
-                    padding: "3px 10px",
-                    borderRadius: 999,
-                    border: `1px solid ${T.teal}40`,
-                    letterSpacing: "0.02em",
-                  }}>
-                    <span style={{ width: 6, height: 6, borderRadius: "50%", background: T.teal, display: "inline-block", boxShadow: `0 0 6px ${T.teal}` }} />
-                    Sample Match Preview
-                  </span>
-
-                  <span style={{
-                    fontSize: 11.5,
-                    fontFamily: "var(--ui)",
-                    color: T.sage,
-                    background: T.sageSoft,
-                    padding: "3px 9px",
-                    borderRadius: 6,
-                    fontWeight: 650,
-                    border: `1px solid ${T.sage}35`,
-                  }}>
-                    ✓ Verified Criteria
-                  </span>
-                </div>
-
-                {/* Explicit Explanation Line */}
-                <div style={{
-                  fontFamily: "var(--ui)",
-                  fontSize: 12,
-                  color: T.muted,
-                  marginBottom: 10,
-                  fontStyle: "italic",
+                <h1 style={{
+                  fontFamily: "var(--display)",
+                  fontSize: "clamp(34px, 5vw, 54px)",
+                  lineHeight: 1.1,
+                  letterSpacing: "-.025em",
+                  color: T.ink,
+                  margin: "14px 0 0",
+                  fontWeight: 700,
                 }}>
-                  This is what your personalized match looks like after assessment
+                  Connecting AYUSH students and faculty with<br />
+                  <span style={{ color: T.sage }}>leading herbal and healthcare industries.</span>
+                </h1>
+
+                <Muted style={{ fontSize: 16.5, marginTop: 18, maxWidth: 540, lineHeight: 1.65 }}>
+                  AyushBridge measures your hands-on competencies in herbal formulation, quality testing, wellness protocols, and clinical research — directly matching you to verified internships, industry R&D grants, and placement pipelines across India.
+                </Muted>
+
+                <div style={{ display: "flex", gap: 12, marginTop: 30, flexWrap: "wrap", alignItems: "center" }}>
+                  <Btn onClick={() => { setRole("student"); setTab("assessment"); }}>
+                    Take AYUSH Skill Assessment →
+                  </Btn>
+                  <Btn variant="ghost" onClick={() => { setRole("student"); setProfile(SAMPLE_PROFILE); setTab("overview"); }}>
+                    Open Sample Student Profile
+                  </Btn>
                 </div>
 
-                <h3 style={{ fontFamily: "var(--display)", fontSize: 21, fontWeight: 600, color: T.ink, margin: "4px 0 0", lineHeight: 1.3 }}>
-                  {sampleRole.title}
-                </h3>
-                <div style={{ fontFamily: "var(--ui)", fontSize: 13, color: T.teal, fontWeight: 550, marginTop: 4, marginBottom: 18 }}>
-                  {sampleRole.sector}
+                <div style={{ display: "flex", gap: 8, marginTop: 32, flexWrap: "wrap", alignItems: "center" }}>
+                  <span style={{ fontFamily: "var(--ui)", fontSize: 12, color: T.muted, fontWeight: 600 }}>Active Partners:</span>
+                  {["Dabur Research", "Himalaya Wellness", "Patanjali Labs", "AIIA New Delhi", "CCRAS", "Kottakkal", "Organic India"].map((c) => (
+                    <span key={c} style={{
+                      fontSize: 11.5,
+                      fontFamily: "var(--ui)",
+                      fontWeight: 500,
+                      color: T.inkSoft,
+                      background: T.bgSurface,
+                      padding: "3px 9px",
+                      borderRadius: 6,
+                      border: `1px solid ${T.borderSubtle || T.border}`,
+                    }}>
+                      {c}
+                    </span>
+                  ))}
                 </div>
+              </div>
 
-                <ReadinessMeter pct={sample.pct} gaps={sample.gaps} />
+              <div style={{ flex: "1 1 380px", minWidth: 300 }}>
+                <div
+                  className="ay-card"
+                  style={{
+                    padding: 26,
+                    background: themeMode === "dark"
+                      ? "linear-gradient(155deg, rgba(16, 36, 30, 0.85) 0%, rgba(10, 22, 18, 0.95) 100%)"
+                      : "linear-gradient(155deg, #FFFFFF 0%, #FAF7F2 100%)",
+                    border: `1.5px solid ${themeMode === "dark" ? "rgba(45, 212, 191, 0.28)" : "rgba(18, 33, 30, 0.10)"}`,
+                    borderRadius: 20,
+                    boxShadow: themeMode === "dark"
+                      ? "0 24px 48px -12px rgba(0,0,0,0.75), 0 0 35px -8px rgba(45, 212, 191, 0.14)"
+                      : "0 20px 40px -12px rgba(18, 33, 30, 0.08), 0 2px 6px rgba(18, 33, 30, 0.04)",
+                    backdropFilter: "blur(12px)",
+                    position: "relative",
+                  }}
+                >
+                  {/* Top Meta Bar */}
+                  <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 12, flexWrap: "wrap", gap: 6 }}>
+                    <span style={{
+                      display: "inline-flex",
+                      alignItems: "center",
+                      gap: 6,
+                      fontSize: 11.5,
+                      fontFamily: "var(--ui)",
+                      fontWeight: 650,
+                      color: T.teal,
+                      background: T.tealSoft,
+                      padding: "3px 10px",
+                      borderRadius: 999,
+                      border: `1px solid ${T.teal}40`,
+                      letterSpacing: "0.02em",
+                    }}>
+                      <span style={{ width: 6, height: 6, borderRadius: "50%", background: T.teal, display: "inline-block", boxShadow: `0 0 6px ${T.teal}` }} />
+                      How AyushBridge Works
+                    </span>
 
-                <div style={{ marginTop: 20, paddingTop: 14, borderTop: `1px solid ${T.borderSubtle || T.border}`, display: "flex", flexDirection: "column", gap: 12 }}>
-                  <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
-                    <span style={{ fontSize: 14 }}>🎯</span>
-                    <p style={{ fontFamily: "var(--ui)", fontSize: 12, color: T.muted, margin: 0, lineHeight: 1.5 }}>
-                      Benchmarked from 10 concrete assessment items against live criteria set by accredited AYUSH employers.
-                    </p>
+                    <span style={{
+                      fontSize: 11.5,
+                      fontFamily: "var(--ui)",
+                      color: T.sage,
+                      background: T.sageSoft,
+                      padding: "3px 9px",
+                      borderRadius: 6,
+                      fontWeight: 650,
+                      border: `1px solid ${T.sage}35`,
+                    }}>
+                      ✓ Live Ecosystem
+                    </span>
                   </div>
 
-                  {/* Call-to-action */}
-                  <button
-                    className="ay-btn"
-                    onClick={() => { setRole("student"); setTab("assessment"); }}
-                    style={{
-                      width: "100%",
-                      padding: "10px 14px",
-                      borderRadius: 10,
-                      border: `1px solid ${T.teal}`,
-                      background: T.tealSoft,
-                      color: T.teal,
-                      fontFamily: "var(--ui)",
-                      fontSize: 13,
-                      fontWeight: 650,
-                      cursor: "pointer",
+                  <h3 style={{ fontFamily: "var(--display)", fontSize: 20, fontWeight: 600, color: T.ink, margin: "0 0 6px", lineHeight: 1.3 }}>
+                    3 Steps from Assessment to Placement
+                  </h3>
+                  <p style={{ fontFamily: "var(--ui)", fontSize: 12.5, color: T.muted, margin: "0 0 16px", lineHeight: 1.5 }}>
+                    Bridging AYUSH graduates directly to verified pharma & clinical pipelines.
+                  </p>
+
+                  {/* 3 Step Visual Cards */}
+                  <div style={{ display: "flex", flexDirection: "column", gap: 10, marginBottom: 18 }}>
+                    <div style={{
                       display: "flex",
-                      alignItems: "center",
-                      justifyContent: "center",
-                      gap: 6,
-                    }}
-                  >
-                    <span>Take the Assessment to See Yours</span>
-                    <span>→</span>
-                  </button>
+                      alignItems: "flex-start",
+                      gap: 12,
+                      padding: "10px 12px",
+                      borderRadius: 12,
+                      background: T.bgSurface,
+                      border: `1px solid ${T.borderSubtle || T.border}`,
+                    }}>
+                      <div style={{
+                        width: 28,
+                        height: 28,
+                        borderRadius: 8,
+                        background: T.tealSoft,
+                        color: T.teal,
+                        fontWeight: 750,
+                        fontSize: 12,
+                        display: "flex",
+                        alignItems: "center",
+                        justifyContent: "center",
+                        flexShrink: 0,
+                        fontFamily: "var(--ui)",
+                      }}>
+                        01
+                      </div>
+                      <div>
+                        <div style={{ fontFamily: "var(--ui)", fontSize: 13, fontWeight: 650, color: T.ink }}>
+                          Take 10-Q Skill Assessment
+                        </div>
+                        <div style={{ fontFamily: "var(--ui)", fontSize: 11.5, color: T.muted, marginTop: 2, lineHeight: 1.4 }}>
+                          Measures hands-on formulation, clinical records, and QC readiness.
+                        </div>
+                      </div>
+                    </div>
+
+                    <div style={{
+                      display: "flex",
+                      alignItems: "flex-start",
+                      gap: 12,
+                      padding: "10px 12px",
+                      borderRadius: 12,
+                      background: T.bgSurface,
+                      border: `1px solid ${T.borderSubtle || T.border}`,
+                    }}>
+                      <div style={{
+                        width: 28,
+                        height: 28,
+                        borderRadius: 8,
+                        background: T.terraSoft,
+                        color: T.terra,
+                        fontWeight: 750,
+                        fontSize: 12,
+                        display: "flex",
+                        alignItems: "center",
+                        justifyContent: "center",
+                        flexShrink: 0,
+                        fontFamily: "var(--ui)",
+                      }}>
+                        02
+                      </div>
+                      <div>
+                        <div style={{ fontFamily: "var(--ui)", fontSize: 13, fontWeight: 650, color: T.ink }}>
+                          Calibrate Role Readiness
+                        </div>
+                        <div style={{ fontFamily: "var(--ui)", fontSize: 11.5, color: T.muted, marginTop: 2, lineHeight: 1.4 }}>
+                          Real-time percentage matching against employer hiring thresholds.
+                        </div>
+                      </div>
+                    </div>
+
+                    <div style={{
+                      display: "flex",
+                      alignItems: "flex-start",
+                      gap: 12,
+                      padding: "10px 12px",
+                      borderRadius: 12,
+                      background: T.bgSurface,
+                      border: `1px solid ${T.borderSubtle || T.border}`,
+                    }}>
+                      <div style={{
+                        width: 28,
+                        height: 28,
+                        borderRadius: 8,
+                        background: T.sageSoft,
+                        color: T.sage,
+                        fontWeight: 750,
+                        fontSize: 12,
+                        display: "flex",
+                        alignItems: "center",
+                        justifyContent: "center",
+                        flexShrink: 0,
+                        fontFamily: "var(--ui)",
+                      }}>
+                        03
+                      </div>
+                      <div>
+                        <div style={{ fontFamily: "var(--ui)", fontSize: 13, fontWeight: 650, color: T.ink }}>
+                          Apply with Verified Credentials
+                        </div>
+                        <div style={{ fontFamily: "var(--ui)", fontSize: 11.5, color: T.muted, marginTop: 2, lineHeight: 1.4 }}>
+                          1-click applications to stipended openings (₹2.4–4.8 LPA).
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+
+                  {/* Bottom Live Ecosystem Summary */}
+                  <div style={{ paddingTop: 14, borderTop: `1px solid ${T.borderSubtle || T.border}`, display: "flex", flexDirection: "column", gap: 12 }}>
+                    <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", gap: 8, flexWrap: "wrap", fontSize: 12, fontFamily: "var(--ui)", color: T.muted }}>
+                      <span>🏛️ 7 Apex Partners</span>
+                      <span>•</span>
+                      <span>🌿 14+ Live Openings</span>
+                      <span>•</span>
+                      <span>🎯 ₹2.4–4.8 LPA</span>
+                    </div>
+
+                    <button
+                      type="button"
+                      className="ay-btn"
+                      onClick={() => { setRole("student"); setTab("assessment"); }}
+                      style={{
+                        width: "100%",
+                        padding: "11px 16px",
+                        borderRadius: 10,
+                        border: "none",
+                        background: T.teal,
+                        color: themeMode === "dark" ? "#07120E" : "#FFFFFF",
+                        fontFamily: "var(--ui)",
+                        fontSize: 13.5,
+                        fontWeight: 700,
+                        cursor: "pointer",
+                        display: "flex",
+                        alignItems: "center",
+                        justifyContent: "center",
+                        gap: 6,
+                        boxShadow: "0 2px 10px rgba(45, 212, 191, 0.25)",
+                      }}
+                    >
+                      <span>Start Your Skill Assessment</span>
+                      <span>→</span>
+                    </button>
+                  </div>
                 </div>
               </div>
-            </div>
-          </section>
+            </section>
 
           <section className="ay-reveal" style={{ paddingBottom: 75 }}>
             <Eyebrow>Choose a role to enter the portal</Eyebrow>
@@ -2275,8 +2423,9 @@ export default function AyushBridge() {
           }}
         />
       </Shell>
-    );
-  }
+    </ThemeContext.Provider>
+  );
+}
 
   /* ============================================================
      2. AUTHENTICATED APP WORKSPACE SHELL
@@ -2309,9 +2458,10 @@ export default function AyushBridge() {
   }[role];
 
   return (
-    <Shell T={T}>
-      {/* Hidden Global File Inputs for Photo and Vault Uploads */}
-      <input
+    <ThemeContext.Provider value={{ T, themeMode, setThemeMode }}>
+      <Shell T={T}>
+        {/* Hidden Global File Inputs for Photo and Vault Uploads */}
+        <input
         type="file"
         ref={photoInputRef}
         onChange={handlePhotoUpload}
@@ -2504,7 +2654,16 @@ export default function AyushBridge() {
               </div>
 
               <ThemeToggle />
-              <UserAuthWidget />
+              <UserAuthWidget
+                user={user}
+                role={role}
+                setRole={setRole}
+                setTab={setTab}
+                setAuthModalRole={setAuthModalRole}
+                setIsAuthModalOpen={setIsAuthModalOpen}
+                showToast={showToast}
+                setUser={setUser}
+              />
               <Btn small variant="ghost" onClick={() => setRole(null)}>Exit to Home</Btn>
             </div>
           </div>
@@ -2545,7 +2704,13 @@ export default function AyushBridge() {
 
       <main style={{ maxWidth: 1180, margin: "0 auto", padding: "32px 22px 80px" }}>
         {role !== "student" && !(user && (user.isMasterDemo || user.role === role)) ? (
-          <LockedPortalGate targetRole={role} />
+          <LockedPortalGate
+            targetRole={role}
+            setAuthModalRole={setAuthModalRole}
+            setIsAuthModalOpen={setIsAuthModalOpen}
+            setRole={setRole}
+            setTab={setTab}
+          />
         ) : isTabLoading ? (
           <div style={{ display: "flex", flexDirection: "column", gap: 16 }}>
             <SkeletonCard />
@@ -3034,7 +3199,10 @@ export default function AyushBridge() {
                           <Btn
                             small
                             disabled={applied(o.id)}
-                            onClick={() => apply(o.id)}
+                            onClick={(e) => {
+                              e?.preventDefault?.();
+                              apply(o.id);
+                            }}
                             variant={applied(o.id) ? "ghost" : "primary"}
                             style={{ flex: 1, justifyContent: "center" }}
                           >
@@ -3043,7 +3211,10 @@ export default function AyushBridge() {
                           <Btn
                             small
                             variant="ghost"
-                            onClick={() => setOpenOpp(openOpp === o.id ? null : o.id)}
+                            onClick={(e) => {
+                              e?.preventDefault?.();
+                              setOpenOpp(openOpp === o.id ? null : o.id);
+                            }}
                           >
                             {openOpp === o.id ? "Hide Details" : "View Breakdown"}
                           </Btn>
@@ -4851,7 +5022,8 @@ export default function AyushBridge() {
           onClose={() => setViewingVaultDoc(null)}
         />
       )}
-    </Shell>
+      </Shell>
+    </ThemeContext.Provider>
   );
 }
 
