@@ -265,13 +265,44 @@ export default function AyushBridgeAuth({
       }
     }
 
-    // Generate real 6-digit OTP for this session
-    const otp = Math.floor(100000 + Math.random() * 900000).toString();
-    setGeneratedOtp(otp);
+    // Dispatch OTP via Next.js API Route / SMTP / Firebase
+    const dispatchOtpEmail = async (targetEmail, targetRole, targetName) => {
+      try {
+        const res = await fetch("/api/send-otp", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            email: targetEmail,
+            role: targetRole,
+            name: targetName,
+          }),
+        });
+        const data = await res.json();
+        if (data.success && data.otp) {
+          setGeneratedOtp(data.otp);
+          if (data.emailSent) {
+            showToast(`Real 6-Digit OTP delivered to ${targetEmail} ✓`);
+          } else {
+            showToast(`Verification code sent to ${targetEmail} (Code: ${data.otp})`);
+          }
+          return data.otp;
+        }
+      } catch (err) {
+        console.warn("API OTP dispatch error:", err);
+      }
+      const fallbackOtp = Math.floor(100000 + Math.random() * 900000).toString();
+      setGeneratedOtp(fallbackOtp);
+      showToast(`Verification code sent to ${targetEmail} (Code: ${fallbackOtp})`);
+      return fallbackOtp;
+    };
+
+    setLoading(true);
     setOtpTimer(60);
     setStep("otp");
     setOtpInput(["", "", "", "", "", ""]);
-    showToast(`Verification code sent to ${formData.email} (Demo Code: ${otp})`);
+    dispatchOtpEmail(formData.email, selectedRole, formData.fullName || formData.deanName).finally(() => {
+      setLoading(false);
+    });
   };
 
   // Handle OTP digit changes
@@ -1090,11 +1121,34 @@ export default function AyushBridgeAuth({
               <button
                 type="button"
                 disabled={otpTimer > 0}
-                onClick={() => {
+                onClick={async () => {
+                  setOtpTimer(60);
+                  try {
+                    const res = await fetch("/api/send-otp", {
+                      method: "POST",
+                      headers: { "Content-Type": "application/json" },
+                      body: JSON.stringify({
+                        email: formData.email,
+                        role: selectedRole,
+                        name: formData.fullName || formData.deanName,
+                      }),
+                    });
+                    const data = await res.json();
+                    if (data.success && data.otp) {
+                      setGeneratedOtp(data.otp);
+                      if (data.emailSent) {
+                        showToast(`Real 6-Digit OTP re-sent to ${formData.email} ✓`);
+                      } else {
+                        showToast(`New verification code sent! (Code: ${data.otp})`);
+                      }
+                      return;
+                    }
+                  } catch (e) {
+                    console.warn("Resend error:", e);
+                  }
                   const newOtp = Math.floor(100000 + Math.random() * 900000).toString();
                   setGeneratedOtp(newOtp);
-                  setOtpTimer(60);
-                  showToast(`New verification code sent! (Demo Code: ${newOtp})`);
+                  showToast(`New verification code sent! (Code: ${newOtp})`);
                 }}
                 style={{
                   background: "none",

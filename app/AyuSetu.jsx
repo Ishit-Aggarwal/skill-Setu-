@@ -233,7 +233,7 @@ const OPPORTUNITIES = [
     domain: "clinical_research",
     type: "Internship",
     pay: "₹2.16 LPA",
-    workMode: "On-site",
+    workMode: "Offline",
     physicalInterview: "Yes (Clinical Simulation Round)",
     interviewRounds: "2 Rounds: Written Technical Test + Faculty PI Panel",
     closes: "15 Oct 2026",
@@ -257,7 +257,7 @@ const OPPORTUNITIES = [
     domain: "quality_testing",
     type: "Apprenticeship",
     pay: "₹2.40 LPA",
-    workMode: "On-site",
+    workMode: "Offline",
     physicalInterview: "Yes (Lab Practical Round)",
     interviewRounds: "3 Rounds: Online Screening + Wet Lab Practical + Technical Panel",
     closes: "22 Oct 2026",
@@ -305,7 +305,7 @@ const OPPORTUNITIES = [
     domain: "digital_ayush",
     type: "Internship",
     pay: "₹2.40 LPA",
-    workMode: "Remote",
+    workMode: "Online",
     physicalInterview: "No (Virtual Only)",
     interviewRounds: "2 Rounds: Digital Health Assignment + Technical Interview",
     closes: "10 Oct 2026",
@@ -329,7 +329,7 @@ const OPPORTUNITIES = [
     domain: "herbal_mfg",
     type: "Internship",
     pay: "₹1.92 LPA",
-    workMode: "On-site",
+    workMode: "Offline",
     physicalInterview: "Yes",
     interviewRounds: "2 Rounds: Technical Interview + Plant Tour Walkthrough",
     closes: "30 Oct 2026",
@@ -377,7 +377,7 @@ const OPPORTUNITIES = [
     domain: "wellness_yoga",
     type: "Full-time (PG Level)",
     pay: "₹5.40 LPA",
-    workMode: "On-site",
+    workMode: "Offline",
     physicalInterview: "Final Round Only",
     interviewRounds: "2 Rounds: Video Screening + On-site Practical Assessment",
     closes: "28 Sep 2026",
@@ -401,7 +401,7 @@ const OPPORTUNITIES = [
     domain: "clinical_research",
     type: "Fellowship (PG Level)",
     pay: "₹5.04 LPA",
-    workMode: "On-site",
+    workMode: "Offline",
     physicalInterview: "Yes",
     interviewRounds: "2 Rounds: Written Research Aptitude Test + Council Panel Interview",
     closes: "05 Nov 2026",
@@ -425,7 +425,7 @@ const OPPORTUNITIES = [
     domain: "herbal_mfg",
     type: "Apprenticeship",
     pay: "₹1.80 LPA",
-    workMode: "On-site",
+    workMode: "Offline",
     physicalInterview: "Yes",
     interviewRounds: "2 Rounds: Technical Interview + Factory Floor Practical",
     closes: "12 Oct 2026",
@@ -449,7 +449,7 @@ const OPPORTUNITIES = [
     domain: "hospital_admin",
     type: "Internship",
     pay: "₹1.80 LPA",
-    workMode: "On-site",
+    workMode: "Offline",
     physicalInterview: "Yes",
     interviewRounds: "2 Rounds: Case Analysis + Senior Faculty Interview",
     closes: "20 Oct 2026",
@@ -497,7 +497,7 @@ const OPPORTUNITIES = [
     domain: "wellness_yoga",
     type: "Internship",
     pay: "₹1.80 LPA",
-    workMode: "On-site",
+    workMode: "Offline",
     physicalInterview: "Yes",
     interviewRounds: "2 Rounds: Diet Case Consultation + Faculty Panel",
     closes: "24 Oct 2026",
@@ -549,7 +549,8 @@ const PROGRAMS = [
     weeks: 4,
     price: 0,
     boosts: "regulatory_gmp",
-    mode: "Online + Plant Tour",
+    workMode: "Hybrid",
+    mode: "Online + Plant Tour (Hybrid)",
     prerequisites: "Basic Ayurvedic Pharmacy or final-year BAMS/B.Pharm enrollment",
     skillsGained: ["Regulatory & GMP", "Quality Testing", "Plant Audit"],
     desc: "Master Ayurvedic Pharmacopoeia compliance, batch manufacturing records (BMR), and state licensing norms.",
@@ -561,6 +562,7 @@ const PROGRAMS = [
     weeks: 6,
     price: 999,
     boosts: "health_data",
+    workMode: "Online",
     mode: "Online Labs",
     prerequisites: "Basic computer literacy and interest in health trial data",
     skillsGained: ["Health Data", "Clinical Documentation", "Biostatistics"],
@@ -573,6 +575,7 @@ const PROGRAMS = [
     weeks: 3,
     price: 0,
     boosts: "digital_telehealth",
+    workMode: "Online",
     mode: "Online Sandbox",
     prerequisites: "Introductory clinical OPD experience",
     skillsGained: ["Digital Tele-AYUSH", "EHR Case Systems", "NAMASTE Coding"],
@@ -585,7 +588,8 @@ const PROGRAMS = [
     weeks: 5,
     price: 1499,
     boosts: "quality_testing",
-    mode: "On-site Lab, Ghaziabad",
+    workMode: "Offline",
+    mode: "Offline Lab, Ghaziabad",
     prerequisites: "B.Pharm (Ayurveda) / B.Sc Chemistry / BAMS",
     skillsGained: ["Quality Testing", "Herbal Formulation", "HPLC Assays"],
     desc: "Practical training in chromatographic authentication, pesticide screening, and microbial limit assays.",
@@ -597,6 +601,7 @@ const PROGRAMS = [
     weeks: 4,
     price: 499,
     boosts: "yoga_therapy",
+    workMode: "Hybrid",
     mode: "Hybrid",
     prerequisites: "Basic Yoga Asana foundations / BNYS / B.Sc Yoga",
     skillsGained: ["Yoga Therapy", "Lifestyle Counseling", "Stress Management"],
@@ -609,6 +614,7 @@ const PROGRAMS = [
     weeks: 4,
     price: 0,
     boosts: "clinical_research",
+    workMode: "Online",
     mode: "Online Certified",
     prerequisites: "Enrolled UG/PG AYUSH Student or Researcher",
     skillsGained: ["Clinical Research", "GCP Compliance", "eCRF Documentation"],
@@ -621,6 +627,7 @@ const PROGRAMS = [
     weeks: 2,
     price: 0,
     boosts: "clinical_doc",
+    workMode: "Online",
     mode: "Online",
     prerequisites: "Final-year AYUSH student or Intern",
     skillsGained: ["Clinical Documentation", "Discharge Summaries", "Case History Taking"],
@@ -633,7 +640,8 @@ const PROGRAMS = [
     weeks: 6,
     price: 2499,
     boosts: "herbal_formulation",
-    mode: "On-site, Kerala",
+    workMode: "Offline",
+    mode: "Offline Plant, Kerala",
     prerequisites: "BAMS / B.Pharm (Ayurveda) / M.Sc Botany",
     skillsGained: ["Herbal Formulation", "Quality Testing", "Decoction Boiling"],
     desc: "Pilot plant experience in decoction extraction, spray-drying, and standardized botanical dosage forms.",
@@ -996,9 +1004,10 @@ export default function AyushBridge() {
   const [openOpp, setOpenOpp] = useState(null);
   const [posted, setPosted] = useState([]);
 
-  // Bookmarks / Saved Opportunities State
-  const [savedJobs, setSavedJobs] = useState(["o1", "o3"]);
+  // Bookmarks / Saved Opportunities State (Gated)
+  const [savedJobs, setSavedJobs] = useState([]);
   const [showSavedOnly, setShowSavedOnly] = useState(false);
+  const [workModeFilter, setWorkModeFilter] = useState("all"); // 'all' | 'Offline' | 'Online' | 'Hybrid'
 
   // Notifications State & Dropdown
   const [isNotifOpen, setIsNotifOpen] = useState(false);
@@ -1034,7 +1043,7 @@ export default function AyushBridge() {
     type: "Internship",
     loc: "Bengaluru, Karnataka",
     pay: "₹2.40 LPA",
-    workMode: "On-site",
+    workMode: "Offline",
     physicalInterview: "Yes",
     interviewRounds: "2 Rounds",
     skills: [],
@@ -1093,6 +1102,12 @@ export default function AyushBridge() {
     if (activeSector !== "all") {
       list = list.filter((o) => o.domain === activeSector);
     }
+    if (workModeFilter !== "all") {
+      list = list.filter((o) => {
+        const wm = (o.workMode === "On-site" ? "Offline" : o.workMode === "Remote" ? "Online" : o.workMode || "Offline").toLowerCase();
+        return wm === workModeFilter.toLowerCase();
+      });
+    }
     if (showSavedOnly) {
       list = list.filter((o) => savedJobs.includes(o.id));
     }
@@ -1112,7 +1127,7 @@ export default function AyushBridge() {
       return list.map((o) => ({ ...o, pct: null, gaps: [] }));
     }
     return list.map((o) => ({ ...o, ...scoreAgainst(profile, o.requires, certifications) })).sort((a, b) => (b.pct || 0) - (a.pct || 0));
-  }, [profile, posted, activeSector, searchQuery, certifications, showSavedOnly, savedJobs]);
+  }, [profile, posted, activeSector, workModeFilter, searchQuery, certifications, showSavedOnly, savedJobs]);
 
   const topGaps = useMemo(() => {
     if (!profile) return [];
@@ -1779,6 +1794,188 @@ export default function AyushBridge() {
     );
   };
 
+  /* --- Locked Portal Gate Component (for Gated Stakeholder Access) --- */
+  const LockedPortalGate = ({ targetRole }) => {
+    const roleMeta = {
+      academician: {
+        title: "Faculty & Researcher Workspace Locked",
+        roleLabel: "Faculty & Researcher",
+        icon: "🔬",
+        codeType: "Teacher Code / Reference Number",
+        desc: "This workspace is restricted to accredited AYUSH faculty members, principal investigators, and researchers. Access requires a verified Teacher Code registered with the Ministry of Ayush / AICTE / National Apex Institutes.",
+        bullets: [
+          "Apply for industry-sponsored R&D sabbaticals and joint botanical research grants",
+          "Access corporate advisory opportunities and university-industry joint labs",
+          "Review student research thesis drafts and guide clinical trial protocols",
+        ],
+      },
+      industry: {
+        title: "Herbal Industry & Recruiter Workspace Locked",
+        roleLabel: "Herbal Industry & Recruiter",
+        icon: "🌿",
+        codeType: "Company Partner Code",
+        desc: "This workspace is reserved for authorized AYUSH pharmaceutical manufacturers, FMCG enterprises, and accredited clinical research organizations. Access requires an official Company Code.",
+        bullets: [
+          "Publish paid internships, apprenticeships, and full-time AYUSH openings",
+          "Discover top-ranked talent with verified clinical & pharmacognosy assessments",
+          "Sponsor skill certification modules and review candidate credential vaults",
+        ],
+      },
+      institution: {
+        title: "AYUSH College & Dean Telemetry Locked",
+        roleLabel: "AYUSH College & Dean",
+        icon: "📊",
+        codeType: "Institute Apex Code",
+        desc: "This workspace is reserved for Deans, Principals, and Academic Directors of accredited AYUSH colleges. Access requires an official Institute Code verified by NCISM / NCH / Ministry of Ayush.",
+        bullets: [
+          "Track real-time campus skill gap heatmaps and curriculum alignment metrics",
+          "Monitor placement pipeline statistics and industry hiring conversion rates",
+          "Benchmark institutional syllabus against national pharmacopoeia standards",
+        ],
+      },
+    }[targetRole] || {
+      title: "Restricted Stakeholder Workspace",
+      roleLabel: "Authorized Stakeholder",
+      icon: "🔒",
+      codeType: "Verification Code",
+      desc: "This workspace requires authenticated credentials.",
+      bullets: [],
+    };
+
+    return (
+      <div style={{ maxWidth: 740, margin: "24px auto 48px" }}>
+        <Card style={{ padding: "36px 32px", border: `2px solid ${T.teal}40`, boxShadow: "0 14px 40px rgba(0,0,0,0.12)" }}>
+          <div style={{ textAlign: "center", marginBottom: 24 }}>
+            <div style={{
+              width: 64,
+              height: 64,
+              borderRadius: "50%",
+              background: T.tealSoft,
+              color: T.teal,
+              display: "inline-flex",
+              alignItems: "center",
+              justifyContent: "center",
+              fontSize: 32,
+              marginBottom: 16,
+              border: `1.5px solid ${T.teal}40`,
+            }}>
+              {roleMeta.icon}
+            </div>
+            <div>
+              <span style={{
+                display: "inline-block",
+                background: `${T.terra}18`,
+                color: T.terra,
+                border: `1px solid ${T.terra}45`,
+                borderRadius: 999,
+                padding: "3px 12px",
+                fontSize: 11.5,
+                fontWeight: 700,
+                fontFamily: "var(--ui)",
+                marginBottom: 10,
+              }}>
+                🔒 Restricted Stakeholder Access
+              </span>
+            </div>
+            <H size={26} style={{ color: T.ink, margin: "0 0 8px" }}>{roleMeta.title}</H>
+            <p style={{ fontFamily: "var(--ui)", fontSize: 14, color: T.muted, maxWidth: 580, margin: "0 auto", lineHeight: 1.6 }}>
+              {roleMeta.desc}
+            </p>
+          </div>
+
+          <div style={{
+            background: T.bgSurface,
+            borderRadius: 14,
+            padding: "18px 20px",
+            border: `1px solid ${T.border}`,
+            marginBottom: 24,
+          }}>
+            <div style={{ fontFamily: "var(--ui)", fontSize: 13, fontWeight: 700, color: T.ink, marginBottom: 8 }}>
+              Workspace Features Included Upon Verification:
+            </div>
+            <ul style={{ margin: 0, paddingLeft: 20, fontFamily: "var(--ui)", fontSize: 13, color: T.inkSoft, lineHeight: 1.7 }}>
+              {roleMeta.bullets.map((b, idx) => (
+                <li key={idx}>{b}</li>
+              ))}
+            </ul>
+          </div>
+
+          <div style={{ display: "flex", flexDirection: "column", gap: 12, alignItems: "center" }}>
+            <button
+              type="button"
+              onClick={() => {
+                setAuthModalRole(targetRole);
+                setIsAuthModalOpen(true);
+              }}
+              style={{
+                width: "100%",
+                maxWidth: 420,
+                padding: "13px 22px",
+                borderRadius: 12,
+                border: "none",
+                background: T.teal,
+                color: "#FFFFFF",
+                fontFamily: "var(--ui)",
+                fontSize: 14.5,
+                fontWeight: 700,
+                cursor: "pointer",
+                boxShadow: "0 4px 14px rgba(27, 75, 67, 0.28)",
+                display: "flex",
+                alignItems: "center",
+                justifyContent: "center",
+                gap: 8,
+              }}
+            >
+              <span>🔑</span>
+              <span>Sign In / Register as {roleMeta.roleLabel}</span>
+              <span>→</span>
+            </button>
+
+            <div style={{ display: "flex", gap: 12, flexWrap: "wrap", justifyContent: "center", marginTop: 4 }}>
+              <button
+                type="button"
+                onClick={() => {
+                  setRole("student");
+                  setTab("overview");
+                }}
+                style={{
+                  background: "transparent",
+                  border: `1px solid ${T.border}`,
+                  color: T.teal,
+                  padding: "8px 16px",
+                  borderRadius: 10,
+                  fontFamily: "var(--ui)",
+                  fontSize: 13,
+                  fontWeight: 650,
+                  cursor: "pointer",
+                }}
+              >
+                🎓 Browse Student & Intern Portal (Open Access)
+              </button>
+
+              <button
+                type="button"
+                onClick={() => setRole(null)}
+                style={{
+                  background: "transparent",
+                  border: "none",
+                  color: T.muted,
+                  padding: "8px 12px",
+                  fontFamily: "var(--ui)",
+                  fontSize: 13,
+                  cursor: "pointer",
+                  textDecoration: "underline",
+                }}
+              >
+                ← Return to Homepage
+              </button>
+            </div>
+          </div>
+        </Card>
+      </div>
+    );
+  };
+
   /* ============================================================
      1. LANDING PAGE VIEW
      ============================================================ */
@@ -1944,12 +2141,25 @@ export default function AyushBridge() {
                   key={r.id}
                   className="ay-persona"
                   onClick={() => {
-                    setRole(r.id);
-                    setTab("overview");
-                    if (user) {
-                      showToast(`Viewing ${r.t} Workspace (${user.name}) ✓`);
+                    if (r.id === "student") {
+                      setRole("student");
+                      setTab("overview");
+                      if (user) {
+                        showToast(`Viewing Student Workspace (${user.name}) ✓`);
+                      } else {
+                        showToast(`Browsing Student & Intern Portal (Open Access)`);
+                      }
                     } else {
-                      showToast(`Browsing ${r.t} Portal (Guest Preview Mode)`);
+                      if (user && (user.isMasterDemo || user.role === r.id)) {
+                        setRole(r.id);
+                        setTab("overview");
+                        showToast(`Viewing ${r.t} Workspace (${user.name}) ✓`);
+                      } else {
+                        setAuthModalRole(r.id);
+                        setIsAuthModalOpen(true);
+                        setRole(r.id);
+                        setTab("overview");
+                      }
                     }
                   }}
                   style={{
@@ -1985,6 +2195,25 @@ export default function AyushBridge() {
 
           <Footer T={T} />
         </div>
+
+        {/* Gated Multi-Role Auth Modal on Homepage */}
+        <AyushBridgeAuth
+          isOpen={isAuthModalOpen}
+          onClose={() => {
+            setIsAuthModalOpen(false);
+          }}
+          initialRole={authModalRole || "student"}
+          T={T}
+          showToast={showToast}
+          onAuthSuccess={(profile) => {
+            setUser(profile);
+            if (profile?.role) {
+              setRole(profile.role);
+            }
+            setTab("overview");
+            setIsAuthModalOpen(false);
+          }}
+        />
       </Shell>
     );
   }
@@ -2218,35 +2447,44 @@ export default function AyushBridge() {
             </div>
           </div>
 
-          <nav style={{ display: "flex", gap: 24, overflowX: "auto", paddingBottom: 2 }}>
-            {TABS.map(([id, label]) => (
-              <button
-                key={id}
-                onClick={() => changeTab(id)}
-                style={{
-                  background: "none",
-                  border: "none",
-                  cursor: "pointer",
-                  padding: "0 0 12px",
-                  whiteSpace: "nowrap",
-                  fontFamily: "var(--ui)",
-                  fontSize: 14,
-                  fontWeight: tab === id ? 650 : 500,
-                  color: tab === id ? T.ink : T.muted,
-                  borderBottom: `2px solid ${tab === id ? T.terra : "transparent"}`,
-                  marginBottom: -1,
-                  transition: "all .15s ease",
-                }}
-              >
-                {label}
-              </button>
-            ))}
-          </nav>
+          {role === "student" || (user && (user.isMasterDemo || user.role === role)) ? (
+            <nav style={{ display: "flex", gap: 24, overflowX: "auto", paddingBottom: 2 }}>
+              {TABS.map(([id, label]) => (
+                <button
+                  key={id}
+                  onClick={() => changeTab(id)}
+                  style={{
+                    background: "none",
+                    border: "none",
+                    cursor: "pointer",
+                    padding: "0 0 12px",
+                    whiteSpace: "nowrap",
+                    fontFamily: "var(--ui)",
+                    fontSize: 14,
+                    fontWeight: tab === id ? 650 : 500,
+                    color: tab === id ? T.ink : T.muted,
+                    borderBottom: `2px solid ${tab === id ? T.terra : "transparent"}`,
+                    marginBottom: -1,
+                    transition: "all .15s ease",
+                  }}
+                >
+                  {label}
+                </button>
+              ))}
+            </nav>
+          ) : (
+            <div style={{ padding: "6px 0 10px", fontFamily: "var(--ui)", fontSize: 12.5, color: T.terra, fontWeight: 650, display: "flex", alignItems: "center", gap: 6 }}>
+              <span>🔒</span>
+              <span>Restricted Stakeholder Workspace — Credential Verification Required</span>
+            </div>
+          )}
         </div>
       </div>
 
       <main style={{ maxWidth: 1180, margin: "0 auto", padding: "32px 22px 80px" }}>
-        {isTabLoading ? (
+        {role !== "student" && !(user && (user.isMasterDemo || user.role === role)) ? (
+          <LockedPortalGate targetRole={role} />
+        ) : isTabLoading ? (
           <div style={{ display: "flex", flexDirection: "column", gap: 16 }}>
             <SkeletonCard />
             <SkeletonCard />
@@ -2529,8 +2767,8 @@ export default function AyushBridge() {
                 display: "flex",
                 gap: 8,
                 overflowX: "auto",
-                paddingBottom: 14,
-                marginBottom: 12,
+                paddingBottom: 10,
+                marginBottom: 10,
                 cursor: "grab",
                 userSelect: "none",
                 WebkitOverflowScrolling: "touch",
@@ -2561,6 +2799,42 @@ export default function AyushBridge() {
               ))}
             </div>
 
+            {/* Work Mode Filter Options */}
+            <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 16, flexWrap: "wrap" }}>
+              <span style={{ fontFamily: "var(--ui)", fontSize: 12, fontWeight: 700, color: T.muted }}>
+                Work Mode:
+              </span>
+              {[
+                { id: "all", label: "All Work Modes", icon: "🌐" },
+                { id: "Offline", label: "Offline (On-site)", icon: "🏢" },
+                { id: "Online", label: "Online (Remote)", icon: "💻" },
+                { id: "Hybrid", label: "Hybrid", icon: "🔄" },
+              ].map((wm) => (
+                <button
+                  key={wm.id}
+                  onClick={() => setWorkModeFilter(wm.id)}
+                  style={{
+                    padding: "5px 12px",
+                    borderRadius: 999,
+                    border: `1px solid ${workModeFilter === wm.id ? T.teal : T.border}`,
+                    background: workModeFilter === wm.id ? T.tealSoft : "transparent",
+                    color: workModeFilter === wm.id ? T.teal : T.muted,
+                    fontFamily: "var(--ui)",
+                    fontSize: 12,
+                    fontWeight: workModeFilter === wm.id ? 700 : 550,
+                    cursor: "pointer",
+                    display: "flex",
+                    alignItems: "center",
+                    gap: 5,
+                    transition: "all .14s ease",
+                  }}
+                >
+                  <span>{wm.icon}</span>
+                  <span>{wm.label}</span>
+                </button>
+              ))}
+            </div>
+
             {/* Opportunities List or Consistent Clean Empty State */}
             {filteredOpps.length === 0 ? (
               <Card style={{ padding: 36, textAlign: "center", maxWidth: 580, margin: "20px auto" }}>
@@ -2569,7 +2843,7 @@ export default function AyushBridge() {
                 <Muted style={{ marginTop: 6, marginBottom: 20 }}>
                   {showSavedOnly
                     ? "You haven't bookmarked any opportunities yet. Click the bookmark icon on any job card to save it for quick review."
-                    : `No postings match your current filter (${searchQuery || "selected sector"}). Try searching different terms.`}
+                    : `No postings match your current filter (${searchQuery || "selected sector / work mode"}). Try resetting filters.`}
                 </Muted>
                 <div style={{ display: "flex", justifyContent: "center" }}>
                   <Btn
@@ -2578,6 +2852,7 @@ export default function AyushBridge() {
                     onClick={() => {
                       setSearchQuery("");
                       setActiveSector("all");
+                      setWorkModeFilter("all");
                       setShowSavedOnly(false);
                     }}
                   >
@@ -2593,7 +2868,22 @@ export default function AyushBridge() {
                       <div style={{ flex: "1 1 500px", minWidth: 280 }}>
                         <div style={{ display: "flex", gap: 8, alignItems: "center", flexWrap: "wrap" }}>
                           <Chip tone="accent">{o.type}</Chip>
-                          <Chip>{o.workMode || "On-site"}</Chip>
+                          <span style={{
+                            fontSize: 11.5,
+                            fontFamily: "var(--ui)",
+                            fontWeight: 700,
+                            padding: "3px 9px",
+                            borderRadius: 6,
+                            background: (o.workMode === "Online" || o.workMode === "Remote") ? T.blueSoft : o.workMode === "Hybrid" ? T.purpleSoft : T.sageSoft,
+                            color: (o.workMode === "Online" || o.workMode === "Remote") ? T.blue : o.workMode === "Hybrid" ? T.purple : T.sage,
+                            border: `1px solid ${(o.workMode === "Online" || o.workMode === "Remote") ? T.blue : o.workMode === "Hybrid" ? T.purple : T.sage}40`,
+                            display: "inline-flex",
+                            alignItems: "center",
+                            gap: 4,
+                          }}>
+                            <span>{(o.workMode === "Online" || o.workMode === "Remote") ? "💻" : o.workMode === "Hybrid" ? "🔄" : "🏢"}</span>
+                            <span>{o.workMode === "On-site" ? "Offline" : o.workMode || "Offline"}</span>
+                          </span>
                           <Chip>{o.loc}</Chip>
                           <span style={{
                             fontSize: 12,
@@ -2614,6 +2904,12 @@ export default function AyushBridge() {
                           <button
                             onClick={(e) => {
                               e.stopPropagation();
+                              if (!user) {
+                                setAuthModalRole("student");
+                                setIsAuthModalOpen(true);
+                                showToast("Please sign in or create an account to save opportunities to your bookmarks.");
+                                return;
+                              }
                               if (savedJobs.includes(o.id)) {
                                 setSavedJobs((prev) => prev.filter((id) => id !== o.id));
                                 showToast(`Removed from saved bookmarks`);
@@ -2769,7 +3065,11 @@ export default function AyushBridge() {
                               <div style={{ color: T.muted }}>{o.preferredSkills || "GCP, Case Documentation, Pharmacopoeial Assays"}</div>
                             </div>
 
-                            <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 10, marginTop: 4, background: T.bgCard, padding: 10, borderRadius: 8, border: `1px solid ${T.border}` }}>
+                            <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr 1fr", gap: 10, marginTop: 4, background: T.bgCard, padding: 10, borderRadius: 8, border: `1px solid ${T.border}` }}>
+                              <div>
+                                <div style={{ fontSize: 11, color: T.muted, textTransform: "uppercase", fontWeight: 600 }}>Work Mode</div>
+                                <div style={{ fontWeight: 600, color: T.teal, marginTop: 2 }}>{o.workMode === "On-site" ? "Offline" : o.workMode || "Offline"}</div>
+                              </div>
                               <div>
                                 <div style={{ fontSize: 11, color: T.muted, textTransform: "uppercase", fontWeight: 600 }}>Physical Interview</div>
                                 <div style={{ fontWeight: 600, color: T.ink, marginTop: 2 }}>{o.physicalInterview || "No (Virtual)"}</div>
@@ -2814,8 +3114,22 @@ export default function AyushBridge() {
               {PROGRAMS.map((p) => (
                 <Card key={p.id} style={{ display: "flex", flexDirection: "column", gap: 12, justifyContent: "space-between" }}>
                   <div>
-                    <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", gap: 8, marginBottom: 4 }}>
-                      <Chip tone="accent">Boosts {skillShort(p.boosts)}</Chip>
+                    <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", gap: 8, marginBottom: 4, flexWrap: "wrap" }}>
+                      <div style={{ display: "flex", gap: 6, alignItems: "center", flexWrap: "wrap" }}>
+                        <Chip tone="accent">Boosts {skillShort(p.boosts)}</Chip>
+                        <span style={{
+                          fontSize: 11,
+                          fontFamily: "var(--ui)",
+                          fontWeight: 700,
+                          padding: "2px 7px",
+                          borderRadius: 6,
+                          background: (p.workMode === "Online") ? T.blueSoft : p.workMode === "Hybrid" ? T.purpleSoft : T.sageSoft,
+                          color: (p.workMode === "Online") ? T.blue : p.workMode === "Hybrid" ? T.purple : T.sage,
+                          border: `1px solid ${(p.workMode === "Online") ? T.blue : p.workMode === "Hybrid" ? T.purple : T.sage}40`,
+                        }}>
+                          {p.workMode === "Online" ? "💻 Online" : p.workMode === "Hybrid" ? "🔄 Hybrid" : "🏢 Offline"}
+                        </span>
+                      </div>
                       <span style={{
                         fontFamily: "var(--ui)",
                         fontSize: 12.5,
@@ -3868,9 +4182,9 @@ export default function AyushBridge() {
                       outline: "none",
                     }}
                   >
-                    <option value="On-site">On-site</option>
+                    <option value="Offline">Offline (On-site)</option>
+                    <option value="Online">Online (Remote)</option>
                     <option value="Hybrid">Hybrid</option>
-                    <option value="Remote">Remote</option>
                   </select>
                 </div>
 
