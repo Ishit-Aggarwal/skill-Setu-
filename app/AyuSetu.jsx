@@ -1056,6 +1056,26 @@ export default function AyushBridge() {
     setTimeout(() => setToastMessage(null), 3200);
   }
 
+  // Scroll reveal observer for subtle, fast entrance micro-interactions
+  useEffect(() => {
+    if (typeof window === "undefined" || !("IntersectionObserver" in window)) return;
+    const elements = document.querySelectorAll(".ay-reveal");
+    if (!elements.length) return;
+    const observer = new IntersectionObserver(
+      (entries) => {
+        entries.forEach((entry) => {
+          if (entry.isIntersecting) {
+            entry.target.classList.add("ay-visible");
+            observer.unobserve(entry.target);
+          }
+        });
+      },
+      { threshold: 0.06 }
+    );
+    elements.forEach((el) => observer.observe(el));
+    return () => observer.disconnect();
+  }, [role, tab]);
+
   // Handle Photo Upload via file input
   function handlePhotoUpload(e) {
     const file = e.target.files?.[0];
@@ -1351,6 +1371,7 @@ export default function AyushBridge() {
 
   const SkeletonCard = () => (
     <div
+      className="ay-shimmer"
       style={{
         background: T.bgCard,
         border: `1px solid ${T.border}`,
@@ -2059,6 +2080,7 @@ export default function AyushBridge() {
 
             <div style={{ flex: "1 1 370px", minWidth: 290 }}>
               <div
+                className="ay-card"
                 style={{
                   padding: 26,
                   background: themeMode === "dark"
@@ -2074,7 +2096,7 @@ export default function AyushBridge() {
                 }}
               >
                 {/* Top Meta Bar */}
-                <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 14 }}>
+                <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 8, flexWrap: "wrap", gap: 6 }}>
                   <span style={{
                     display: "inline-flex",
                     alignItems: "center",
@@ -2090,7 +2112,7 @@ export default function AyushBridge() {
                     letterSpacing: "0.02em",
                   }}>
                     <span style={{ width: 6, height: 6, borderRadius: "50%", background: T.teal, display: "inline-block", boxShadow: `0 0 6px ${T.teal}` }} />
-                    Live Match Engine
+                    Sample Match Preview
                   </span>
 
                   <span style={{
@@ -2107,26 +2129,64 @@ export default function AyushBridge() {
                   </span>
                 </div>
 
+                {/* Explicit Explanation Line */}
+                <div style={{
+                  fontFamily: "var(--ui)",
+                  fontSize: 12,
+                  color: T.muted,
+                  marginBottom: 10,
+                  fontStyle: "italic",
+                }}>
+                  This is what your personalized match looks like after assessment
+                </div>
+
                 <h3 style={{ fontFamily: "var(--display)", fontSize: 21, fontWeight: 600, color: T.ink, margin: "4px 0 0", lineHeight: 1.3 }}>
                   {sampleRole.title}
                 </h3>
-                <div style={{ fontFamily: "var(--ui)", fontSize: 13, color: T.teal, fontWeight: 550, marginTop: 4, marginBottom: 20 }}>
+                <div style={{ fontFamily: "var(--ui)", fontSize: 13, color: T.teal, fontWeight: 550, marginTop: 4, marginBottom: 18 }}>
                   {sampleRole.sector}
                 </div>
 
                 <ReadinessMeter pct={sample.pct} gaps={sample.gaps} />
 
-                <div style={{ marginTop: 20, paddingTop: 14, borderTop: `1px solid ${T.borderSubtle || T.border}`, display: "flex", alignItems: "center", gap: 8 }}>
-                  <span style={{ fontSize: 14 }}>🎯</span>
-                  <p style={{ fontFamily: "var(--ui)", fontSize: 12, color: T.muted, margin: 0, lineHeight: 1.5 }}>
-                    Benchmarked from 10 concrete assessment items against live criteria set by accredited AYUSH employers.
-                  </p>
+                <div style={{ marginTop: 20, paddingTop: 14, borderTop: `1px solid ${T.borderSubtle || T.border}`, display: "flex", flexDirection: "column", gap: 12 }}>
+                  <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
+                    <span style={{ fontSize: 14 }}>🎯</span>
+                    <p style={{ fontFamily: "var(--ui)", fontSize: 12, color: T.muted, margin: 0, lineHeight: 1.5 }}>
+                      Benchmarked from 10 concrete assessment items against live criteria set by accredited AYUSH employers.
+                    </p>
+                  </div>
+
+                  {/* Call-to-action */}
+                  <button
+                    className="ay-btn"
+                    onClick={() => { setRole("student"); setTab("assessment"); }}
+                    style={{
+                      width: "100%",
+                      padding: "10px 14px",
+                      borderRadius: 10,
+                      border: `1px solid ${T.teal}`,
+                      background: T.tealSoft,
+                      color: T.teal,
+                      fontFamily: "var(--ui)",
+                      fontSize: 13,
+                      fontWeight: 650,
+                      cursor: "pointer",
+                      display: "flex",
+                      alignItems: "center",
+                      justifyContent: "center",
+                      gap: 6,
+                    }}
+                  >
+                    <span>Take the Assessment to See Yours</span>
+                    <span>→</span>
+                  </button>
                 </div>
               </div>
             </div>
           </section>
 
-          <section style={{ paddingBottom: 75 }}>
+          <section className="ay-reveal" style={{ paddingBottom: 75 }}>
             <Eyebrow>Choose a role to enter the portal</Eyebrow>
             <H size={26} style={{ marginTop: 4, marginBottom: 18 }}>Role-Based Portals</H>
 
@@ -2375,19 +2435,21 @@ export default function AyushBridge() {
                 </button>
 
                 {isNotifOpen && (
-                  <div style={{
-                    position: "absolute",
-                    top: 46,
-                    right: 0,
-                    width: 320,
-                    background: T.bgCard,
-                    border: `1px solid ${T.border}`,
-                    borderRadius: 14,
-                    boxShadow: "0 14px 40px rgba(0,0,0,0.22)",
-                    zIndex: 50,
-                    padding: "14px 16px",
-                    animation: "fadeIn .15s ease",
-                  }}>
+                  <div
+                    className="ay-dropdown"
+                    style={{
+                      position: "absolute",
+                      top: 46,
+                      right: 0,
+                      width: 320,
+                      background: T.bgCard,
+                      border: `1px solid ${T.border}`,
+                      borderRadius: 14,
+                      boxShadow: "0 14px 40px rgba(0,0,0,0.22)",
+                      zIndex: 50,
+                      padding: "14px 16px",
+                    }}
+                  >
                     <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 10, borderBottom: `1px solid ${T.border}`, paddingBottom: 8 }}>
                       <span style={{ fontFamily: "var(--display)", fontSize: 15, fontWeight: 650, color: T.ink }}>
                         Notifications ({notifications.filter((n) => n.unread).length} new)
@@ -4797,31 +4859,40 @@ export default function AyushBridge() {
 
 function ModalOverlay({ children, onClose, T }) {
   return (
-    <div style={{
-      position: "fixed",
-      top: 0,
-      left: 0,
-      right: 0,
-      bottom: 0,
-      background: "rgba(0,0,0,0.65)",
-      backdropFilter: "blur(6px)",
-      display: "flex",
-      alignItems: "center",
-      justifyContent: "center",
-      zIndex: 1000,
-      padding: 20,
-    }}>
-      <div style={{
-        background: T.bgCard,
-        border: `1px solid ${T.border}`,
-        borderRadius: 18,
-        width: "100%",
-        maxWidth: 540,
-        maxHeight: "90vh",
-        overflowY: "auto",
-        padding: 26,
-        boxShadow: "0 20px 50px rgba(0,0,0,0.5)",
-      }}>
+    <div
+      className="ay-modal-overlay"
+      style={{
+        position: "fixed",
+        top: 0,
+        left: 0,
+        right: 0,
+        bottom: 0,
+        background: "rgba(0,0,0,0.65)",
+        backdropFilter: "blur(6px)",
+        display: "flex",
+        alignItems: "center",
+        justifyContent: "center",
+        zIndex: 1000,
+        padding: 20,
+      }}
+      onClick={(e) => {
+        if (e.target === e.currentTarget && onClose) onClose();
+      }}
+    >
+      <div
+        className="ay-modal-content"
+        style={{
+          background: T.bgCard,
+          border: `1px solid ${T.border}`,
+          borderRadius: 18,
+          width: "100%",
+          maxWidth: 540,
+          maxHeight: "90vh",
+          overflowY: "auto",
+          padding: 26,
+          boxShadow: "0 20px 50px rgba(0,0,0,0.5)",
+        }}
+      >
         {children}
       </div>
     </div>
@@ -5583,16 +5654,122 @@ function Shell({ children, T }) {
           0%, 100% { opacity: 0.85; }
           50% { opacity: 0.35; }
         }
-        .ay-btn { transition: transform .12s ease, filter .12s ease, box-shadow .12s ease; }
-        .ay-btn:hover:not(:disabled) { transform: translateY(-1px); filter: brightness(1.08); }
-        .ay-btn:active:not(:disabled) { transform: translateY(0); }
-        .ay-persona:hover { transform: translateY(-3px); box-shadow: 0 16px 36px -18px rgba(0,0,0,.45); border-color: ${T.teal}80 !important; }
-        .ay-card { transition: border-color .16s ease, transform .16s ease, box-shadow .16s ease; }
-        .ay-card:hover { border-color: ${T.teal}40 !important; }
-        .ay-opt:hover { border-color: ${T.teal} !important; background: ${T.bgSurfaceHover} !important; }
-        .ay-theme-btn { transition: all .15s ease; }
-        .ay-theme-btn:hover { border-color: ${T.teal} !important; }
-        .ay-google-btn:hover { border-color: ${T.teal} !important; background: ${T.bgSurfaceHover} !important; }
+
+        /* --- Fast, Lightweight Micro-Interactions --- */
+        button, .ay-btn, .ay-persona, .ay-theme-btn, .ay-google-btn, .ay-opt {
+          transition: transform 0.2s ease-out, background-color 0.2s ease-out, border-color 0.2s ease-out, box-shadow 0.2s ease-out, opacity 0.2s ease-out;
+        }
+        button:hover:not(:disabled):not(.no-anim), .ay-btn:hover:not(:disabled), .ay-theme-btn:hover, .ay-google-btn:hover {
+          transform: scale(1.02);
+        }
+        button:active:not(:disabled):not(.no-anim), .ay-btn:active:not(:disabled), .ay-theme-btn:active, .ay-google-btn:active {
+          transform: scale(0.97);
+        }
+
+        .ay-persona:hover {
+          transform: translateY(-2px) scale(1.015);
+          box-shadow: 0 16px 36px -18px rgba(0,0,0,.45);
+          border-color: ${T.teal}80 !important;
+        }
+        .ay-persona:active {
+          transform: scale(0.98);
+        }
+
+        .ay-card {
+          transition: border-color .18s ease-out, transform .18s ease-out, box-shadow .18s ease-out;
+        }
+        .ay-card:hover {
+          border-color: ${T.teal}40 !important;
+        }
+
+        .ay-opt:hover {
+          border-color: ${T.teal} !important;
+          background: ${T.bgSurfaceHover} !important;
+          transform: scale(1.01);
+        }
+        .ay-opt:active {
+          transform: scale(0.99);
+        }
+
+        /* --- Modal, Popover & Dropdown Animations --- */
+        @keyframes modalFadeIn {
+          from {
+            opacity: 0;
+            transform: translateY(10px) scale(0.99);
+          }
+          to {
+            opacity: 1;
+            transform: translateY(0) scale(1);
+          }
+        }
+
+        @keyframes backdropFadeIn {
+          from { opacity: 0; }
+          to { opacity: 1; }
+        }
+
+        @keyframes dropdownSlide {
+          from {
+            opacity: 0;
+            transform: translateY(-6px);
+          }
+          to {
+            opacity: 1;
+            transform: translateY(0);
+          }
+        }
+
+        .ay-modal-overlay {
+          animation: backdropFadeIn 0.2s ease-out forwards;
+        }
+
+        .ay-modal-content {
+          animation: modalFadeIn 0.2s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+        }
+
+        .ay-dropdown {
+          animation: dropdownSlide 0.18s ease-out forwards;
+        }
+
+        /* --- Loading State Shimmer & Spinner --- */
+        @keyframes shimmer {
+          0% { background-position: -200% 0; }
+          100% { background-position: 200% 0; }
+        }
+
+        .ay-shimmer {
+          background: linear-gradient(90deg, rgba(255,255,255,0.02) 25%, rgba(255,255,255,0.08) 50%, rgba(255,255,255,0.02) 75%);
+          background-size: 200% 100%;
+          animation: shimmer 1.5s infinite linear;
+        }
+
+        @keyframes aySpin {
+          to { transform: rotate(360deg); }
+        }
+
+        .ay-spinner {
+          display: inline-block;
+          width: 14px;
+          height: 14px;
+          border: 2px solid currentColor;
+          border-right-color: transparent;
+          border-radius: 50%;
+          animation: aySpin 0.6s linear infinite;
+          vertical-align: middle;
+        }
+
+        /* --- Below-the-fold Scroll Reveal --- */
+        .ay-reveal {
+          opacity: 0;
+          transform: translateY(10px);
+          transition: opacity 0.28s ease-out, transform 0.28s ease-out;
+          will-change: opacity, transform;
+        }
+        .ay-reveal.ay-visible {
+          opacity: 1;
+          transform: translateY(0);
+        }
+
         .ay-no-scroll::-webkit-scrollbar { display: none; }
         .ay-no-scroll { scrollbar-width: none; -ms-overflow-style: none; }
         .ay-fill { transition: width .6s cubic-bezier(.22,1,.36,1); }

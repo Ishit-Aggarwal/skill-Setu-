@@ -72,7 +72,6 @@ export default function AyushBridgeAuth({
   // OTP Step State
   const [step, setStep] = useState("form"); // 'form' | 'otp'
   const [otpInput, setOtpInput] = useState(["", "", "", "", "", ""]);
-  const [generatedOtp, setGeneratedOtp] = useState("842019"); // Default 6-digit mock/demo OTP
   const [otpTimer, setOtpTimer] = useState(60);
 
   useEffect(() => {
@@ -265,44 +264,37 @@ export default function AyushBridgeAuth({
       }
     }
 
-    // Dispatch OTP via Next.js API Route / SMTP / Firebase
-    const dispatchOtpEmail = async (targetEmail, targetRole, targetName) => {
+    // Dispatch OTP via /api/send-otp
+    const dispatchOtpEmail = async (targetEmail) => {
+      setLoading(true);
+      setError(null);
       try {
         const res = await fetch("/api/send-otp", {
           method: "POST",
           headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({
-            email: targetEmail,
-            role: targetRole,
-            name: targetName,
-          }),
+          body: JSON.stringify({ email: targetEmail }),
         });
         const data = await res.json();
-        if (data.success && data.otp) {
-          setGeneratedOtp(data.otp);
-          if (data.emailSent) {
-            showToast(`Real 6-Digit OTP delivered to ${targetEmail} ✓`);
-          } else {
-            showToast(`Verification code sent to ${targetEmail} (Code: ${data.otp})`);
-          }
-          return data.otp;
+        if (res.ok && data.success) {
+          showToast(`Verification code sent to ${targetEmail} ✓`);
+          setOtpTimer(60);
+          setStep("otp");
+          setOtpInput(["", "", "", "", "", ""]);
+          return true;
+        } else {
+          setError(data.error || "Failed to send verification code. Please verify email settings.");
+          return false;
         }
       } catch (err) {
-        console.warn("API OTP dispatch error:", err);
+        console.error("API OTP dispatch error:", err);
+        setError("Network error while requesting OTP. Please check your connection and try again.");
+        return false;
+      } finally {
+        setLoading(false);
       }
-      const fallbackOtp = Math.floor(100000 + Math.random() * 900000).toString();
-      setGeneratedOtp(fallbackOtp);
-      showToast(`Verification code sent to ${targetEmail} (Code: ${fallbackOtp})`);
-      return fallbackOtp;
     };
 
-    setLoading(true);
-    setOtpTimer(60);
-    setStep("otp");
-    setOtpInput(["", "", "", "", "", ""]);
-    dispatchOtpEmail(formData.email, selectedRole, formData.fullName || formData.deanName).finally(() => {
-      setLoading(false);
-    });
+    dispatchOtpEmail(formData.email);
   };
 
   // Handle OTP digit changes
@@ -311,6 +303,7 @@ export default function AyushBridgeAuth({
     const newOtp = [...otpInput];
     newOtp[index] = value.slice(-1);
     setOtpInput(newOtp);
+    setError(null);
 
     // Auto-focus next input
     if (value && index < 5) {
@@ -328,14 +321,9 @@ export default function AyushBridgeAuth({
 
   // Verify OTP and complete account registration
   const handleVerifyOtpAndRegister = async () => {
-    const enteredOtp = otpInput.join("");
-    if (enteredOtp.length !== 6) {
+    const enteredOtp = otpInput.join("").trim();
+    if (!enteredOtp || enteredOtp.length !== 6 || otpInput.some((d) => !d)) {
       setError("Please enter the complete 6-digit OTP code.");
-      return;
-    }
-
-    if (enteredOtp !== generatedOtp && enteredOtp !== "842019") {
-      setError("Incorrect OTP code. Please enter the valid 6-digit verification code.");
       return;
     }
 
@@ -343,6 +331,25 @@ export default function AyushBridgeAuth({
     setError(null);
 
     try {
+      // Call /api/verify-otp to validate against stored in-memory OTP & expiry
+      const verifyRes = await fetch("/api/verify-otp", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          email: formData.email,
+          otp: enteredOtp,
+        }),
+      });
+
+      const verifyData = await verifyRes.json();
+
+      if (!verifyRes.ok || !verifyData.success) {
+        setError(verifyData.error || "Invalid OTP code. Please try again.");
+        setLoading(false);
+        return;
+      }
+
+      // Verification successful -> proceed with account registration
       const prefix = {
         student: "AYB",
         academician: "AYF",
@@ -408,6 +415,7 @@ export default function AyushBridgeAuth({
 
   return (
     <div
+      className="ay-modal-overlay"
       style={{
         position: "fixed",
         inset: 0,
@@ -424,6 +432,7 @@ export default function AyushBridgeAuth({
       }}
     >
       <div
+        className="ay-modal-content"
         style={{
           background: T.bgCard,
           border: `1.5px solid ${T.border}`,
@@ -1020,6 +1029,8 @@ export default function AyushBridgeAuth({
 
               <button
                 type="submit"
+                disabled={loading}
+                className="ay-btn"
                 style={{
                   width: "100%",
                   padding: "12px 18px",
@@ -1030,12 +1041,17 @@ export default function AyushBridgeAuth({
                   fontFamily: "var(--ui)",
                   fontSize: 14,
                   fontWeight: 700,
-                  cursor: "pointer",
+                  cursor: loading ? "not-allowed" : "pointer",
                   marginTop: 10,
                   boxShadow: "0 4px 14px rgba(27, 75, 67, 0.25)",
+                  display: "flex",
+                  alignItems: "center",
+                  justifyContent: "center",
+                  gap: 8,
                 }}
               >
-                Send 6-Digit Email OTP Code →
+                {loading && <span className="ay-spinner" />}
+                <span>{loading ? "Sending Verification Code..." : "Send 6-Digit Email OTP Code →"}</span>
               </button>
             </div>
           </form>
@@ -1090,6 +1106,7 @@ export default function AyushBridgeAuth({
             <button
               type="button"
               disabled={loading}
+              className="ay-btn"
               onClick={handleVerifyOtpAndRegister}
               style={{
                 width: "100%",
@@ -1104,9 +1121,14 @@ export default function AyushBridgeAuth({
                 cursor: loading ? "not-allowed" : "pointer",
                 boxShadow: "0 4px 14px rgba(27, 75, 67, 0.25)",
                 marginBottom: 16,
+                display: "flex",
+                alignItems: "center",
+                justifyContent: "center",
+                gap: 8,
               }}
             >
-              {loading ? "Verifying & Creating Profile..." : "Verify OTP & Complete Registration ✓"}
+              {loading && <span className="ay-spinner" />}
+              <span>{loading ? "Verifying & Creating Profile..." : "Verify OTP & Complete Registration ✓"}</span>
             </button>
 
             <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", fontSize: 12.5, fontFamily: "var(--ui)" }}>
@@ -1120,46 +1142,41 @@ export default function AyushBridgeAuth({
 
               <button
                 type="button"
-                disabled={otpTimer > 0}
+                disabled={otpTimer > 0 || loading}
                 onClick={async () => {
-                  setOtpTimer(60);
+                  setLoading(true);
+                  setError(null);
                   try {
                     const res = await fetch("/api/send-otp", {
                       method: "POST",
                       headers: { "Content-Type": "application/json" },
-                      body: JSON.stringify({
-                        email: formData.email,
-                        role: selectedRole,
-                        name: formData.fullName || formData.deanName,
-                      }),
+                      body: JSON.stringify({ email: formData.email }),
                     });
                     const data = await res.json();
-                    if (data.success && data.otp) {
-                      setGeneratedOtp(data.otp);
-                      if (data.emailSent) {
-                        showToast(`Real 6-Digit OTP re-sent to ${formData.email} ✓`);
-                      } else {
-                        showToast(`New verification code sent! (Code: ${data.otp})`);
-                      }
-                      return;
+                    if (res.ok && data.success) {
+                      setOtpTimer(60);
+                      setOtpInput(["", "", "", "", "", ""]);
+                      showToast(`New verification code sent to ${formData.email} ✓`);
+                    } else {
+                      setError(data.error || "Failed to resend verification code.");
                     }
                   } catch (e) {
-                    console.warn("Resend error:", e);
+                    console.error("Resend OTP error:", e);
+                    setError("Network error while resending OTP. Please try again.");
+                  } finally {
+                    setLoading(false);
                   }
-                  const newOtp = Math.floor(100000 + Math.random() * 900000).toString();
-                  setGeneratedOtp(newOtp);
-                  showToast(`New verification code sent! (Code: ${newOtp})`);
                 }}
                 style={{
                   background: "none",
                   border: "none",
-                  color: otpTimer > 0 ? T.muted : T.terra,
-                  cursor: otpTimer > 0 ? "default" : "pointer",
+                  color: otpTimer > 0 || loading ? T.muted : T.terra,
+                  cursor: otpTimer > 0 || loading ? "default" : "pointer",
                   fontWeight: 600,
                   padding: 0,
                 }}
               >
-                {otpTimer > 0 ? `Resend code in ${otpTimer}s` : "Resend OTP"}
+                {loading ? "Sending..." : otpTimer > 0 ? `Resend code in ${otpTimer}s` : "Resend OTP"}
               </button>
             </div>
           </div>
