@@ -6,6 +6,7 @@ import {
   ResponsiveContainer, BarChart, Bar, XAxis, YAxis, CartesianGrid,
   Tooltip, Legend, LineChart, Line, Cell, AreaChart, Area,
 } from "recharts";
+import AyushBridgeAuth from "./AyushBridgeAuth";
 
 /* ============================================================
    AyushBridge — National AYUSH Academia–Industry Portal
@@ -163,6 +164,14 @@ const OPTIONS = [
 /* ---------------- AYUSH Industry Roles ---------------- */
 
 const ROLES = [
+  {
+    id: "herbal_res",
+    title: "Ayurvedic Formulation Research Intern",
+    sector: "Kottakkal Arya Vaidya Sala",
+    domain: "herbal_mfg",
+    demand: "Very High",
+    requires: { herbal_formulation: 75, quality_testing: 70, regulatory_gmp: 60, clinical_doc: 50 },
+  },
   {
     id: "cra",
     title: "Clinical Research Associate (AYUSH Trials)",
@@ -885,8 +894,8 @@ export default function AyushBridge() {
   const photoInputRef = useRef(null);
   const vaultInputRef = useRef(null);
 
-  // Authentication State with Stored Role on Account
-  const [user, setUser] = useState(ROLE_ACCOUNTS.student);
+  // Authentication State with Stored Role on Account (null = anonymous visitor)
+  const [user, setUser] = useState(null);
   const [authModalRole, setAuthModalRole] = useState("student");
   const [applicantSearch, setApplicantSearch] = useState("");
   const [isAuthModalOpen, setIsAuthModalOpen] = useState(false);
@@ -1682,33 +1691,28 @@ export default function AyushBridge() {
     ) : (
       <button
         onClick={() => {
-          setAuthModalRole("student");
+          setAuthModalRole(role || "student");
           setIsAuthModalOpen(true);
         }}
         className="ay-google-btn"
         style={{
           background: T.bgSurface,
-          border: `1px solid ${T.border}`,
+          border: `1.5px solid ${T.teal}`,
           borderRadius: 999,
           padding: "6px 14px",
           display: "flex",
           alignItems: "center",
           gap: 8,
           cursor: "pointer",
-          color: T.ink,
+          color: T.teal,
           fontFamily: "var(--ui)",
           fontSize: 13,
-          fontWeight: 600,
+          fontWeight: 700,
           transition: "all .15s ease",
         }}
       >
-        <svg width="16" height="16" viewBox="0 0 24 24">
-          <path fill="#4285F4" d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z" />
-          <path fill="#34A853" d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z" />
-          <path fill="#FBBC05" d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.06H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.94l2.85-2.22.81-.63z" />
-          <path fill="#EA4335" d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.06l3.66 2.84c.87-2.6 3.3-4.52 6.16-4.52z" />
-        </svg>
-        <span>Sign In with Google</span>
+        <span style={{ fontSize: 14 }}>🌿</span>
+        <span>Sign In / Register</span>
       </button>
     )
   );
@@ -1940,11 +1944,13 @@ export default function AyushBridge() {
                   key={r.id}
                   className="ay-persona"
                   onClick={() => {
-                    const account = ROLE_ACCOUNTS[r.id] || ROLE_ACCOUNTS.student;
-                    setUser(account);
                     setRole(r.id);
                     setTab("overview");
-                    showToast(`Logged into ${r.t} Workspace (${account.name}) ✓`);
+                    if (user) {
+                      showToast(`Viewing ${r.t} Workspace (${user.name}) ✓`);
+                    } else {
+                      showToast(`Browsing ${r.t} Portal (Guest Preview Mode)`);
+                    }
                   }}
                   style={{
                     background: T.bgCard,
@@ -3935,6 +3941,12 @@ export default function AyushBridge() {
               <Btn
                 disabled={!form.title.trim() || form.skills.length === 0}
                 onClick={() => {
+                  if (!user) {
+                    setAuthModalRole("industry");
+                    setIsAuthModalOpen(true);
+                    showToast("Please sign in as an Industry Recruiter to publish opportunities.");
+                    return;
+                  }
                   const req = {};
                   form.skills.forEach((s) => { req[s] = 65; });
                   setPosted((p) => [
@@ -4276,106 +4288,22 @@ export default function AyushBridge() {
           MODALS: AUTH, PROFILE EDIT, CERTIFICATIONS, EXPERIENCES
           ============================================================ */}
 
-      {/* 1. Google Auth & Role Selection Modal */}
-      {isAuthModalOpen && (
-        <ModalOverlay onClose={() => setIsAuthModalOpen(false)} T={T}>
-          <div style={{ textAlign: "center", padding: "8px 0" }}>
-            <div style={{ display: "inline-flex", padding: 12, background: T.bgSurface, borderRadius: 999, marginBottom: 12 }}>
-              <svg width="28" height="28" viewBox="0 0 24 24">
-                <path fill="#4285F4" d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z" />
-                <path fill="#34A853" d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z" />
-                <path fill="#FBBC05" d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.06H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.94l2.85-2.22.81-.63z" />
-                <path fill="#EA4335" d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.06l3.66 2.84c.87-2.6 3.3-4.52 6.16-4.52z" />
-              </svg>
-            </div>
-            <H size={22}>Sign Up / Sign In with Google</H>
-            <Muted style={{ fontSize: 13, marginTop: 4, marginBottom: 18 }}>
-              Select your designated role to activate your verified account and access your dedicated dashboard.
-            </Muted>
-
-            {/* Step 1: Role Selection at Signup */}
-            <div style={{ textAlign: "left", marginBottom: 18 }}>
-              <label style={{ display: "block", fontFamily: "var(--ui)", fontSize: 12.5, fontWeight: 700, color: T.ink, marginBottom: 8 }}>
-                Step 1: Select Your Account Role *
-              </label>
-              <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 10 }}>
-                {[
-                  { id: "student", label: "Student / Intern", icon: "🎓", sub: "Take assessments & apply" },
-                  { id: "academician", label: "Faculty / Researcher", icon: "🔬", sub: "R&D grants & sabbaticals" },
-                  { id: "industry", label: "Industry / Recruiter", icon: "🌿", sub: "Hire talent & post roles" },
-                  { id: "institution", label: "Institution / Dean", icon: "📊", sub: "Placement & skill analytics" },
-                ].map((r) => (
-                  <button
-                    key={r.id}
-                    type="button"
-                    onClick={() => setAuthModalRole(r.id)}
-                    style={{
-                      display: "flex",
-                      flexDirection: "column",
-                      alignItems: "flex-start",
-                      textAlign: "left",
-                      padding: "10px 12px",
-                      borderRadius: 12,
-                      border: `1.5px solid ${authModalRole === r.id ? T.teal : T.border}`,
-                      background: authModalRole === r.id ? T.tealSoft : T.bgSurface,
-                      cursor: "pointer",
-                      transition: "all .15s ease",
-                    }}
-                  >
-                    <div style={{ display: "flex", alignItems: "center", gap: 6 }}>
-                      <span style={{ fontSize: 18 }}>{r.icon}</span>
-                      <span style={{ fontFamily: "var(--ui)", fontSize: 13, fontWeight: 700, color: authModalRole === r.id ? T.teal : T.ink }}>
-                        {r.label}
-                      </span>
-                    </div>
-                    <span style={{ fontFamily: "var(--ui)", fontSize: 11, color: T.muted, marginTop: 4, lineHeight: 1.3 }}>
-                      {r.sub}
-                    </span>
-                  </button>
-                ))}
-              </div>
-            </div>
-
-            {/* Step 2: One-Click Google OAuth */}
-            <div style={{ textAlign: "left", marginBottom: 6 }}>
-              <label style={{ display: "block", fontFamily: "var(--ui)", fontSize: 12.5, fontWeight: 700, color: T.ink, marginBottom: 8 }}>
-                Step 2: Sign in with Google Account
-              </label>
-              <button
-                type="button"
-                onClick={() => {
-                  const account = ROLE_ACCOUNTS[authModalRole] || ROLE_ACCOUNTS.student;
-                  setUser(account);
-                  setRole(authModalRole);
-                  setTab("overview");
-                  setIsAuthModalOpen(false);
-                  showToast(`Signed up & logged in as ${account.name} (${account.roleLabel}) via Google OAuth ✓`);
-                }}
-                style={{
-                  width: "100%",
-                  padding: "12px 18px",
-                  borderRadius: 12,
-                  border: `1.5px solid ${T.teal}`,
-                  background: T.teal,
-                  color: themeMode === "dark" ? "#07120E" : "#FFFFFF",
-                  fontFamily: "var(--ui)",
-                  fontSize: 14,
-                  fontWeight: 700,
-                  cursor: "pointer",
-                  display: "flex",
-                  alignItems: "center",
-                  justifyContent: "center",
-                  gap: 10,
-                  boxShadow: "0 4px 14px rgba(18, 160, 130, 0.25)",
-                }}
-              >
-                <span>Continue as {ROLE_ACCOUNTS[authModalRole]?.name.split(" ")[0]} ({ROLE_ACCOUNTS[authModalRole]?.roleLabel})</span>
-                <span>→</span>
-              </button>
-            </div>
-          </div>
-        </ModalOverlay>
-      )}
+      {/* 1. Gated Multi-Role Authentication Modal (Firebase Auth + Registry Code Validation + OTP) */}
+      <AyushBridgeAuth
+        isOpen={isAuthModalOpen}
+        onClose={() => setIsAuthModalOpen(false)}
+        initialRole={authModalRole || "student"}
+        T={T}
+        showToast={showToast}
+        onAuthSuccess={(profile) => {
+          setUser(profile);
+          if (profile?.role) {
+            setRole(profile.role);
+          }
+          setTab("overview");
+          setIsAuthModalOpen(false);
+        }}
+      />
 
       {/* 2. Edit Profile Modal */}
       {isEditProfileOpen && (
@@ -4442,7 +4370,7 @@ export default function AyushBridge() {
               <input
                 type="text"
                 value={user?.links?.linkedin || ""}
-                onChange={(e) => setUser({ ...user, links: { ...user.links, linkedin: e.target.value } })}
+                onChange={(e) => setUser({ ...(user || {}), links: { ...(user?.links || {}), linkedin: e.target.value } })}
                 placeholder="https://linkedin.com/in/..."
                 style={{ width: "100%", padding: "9px 12px", borderRadius: 9, border: `1px solid ${T.border}`, background: T.bgSurface, color: T.ink, fontFamily: "var(--ui)", fontSize: 13.5 }}
               />
