@@ -1,0 +1,96 @@
+@import url("https://fonts.googleapis.com/css2?family=Inter:opsz,wght@14..32,300;14..32,400;14..32,500;14..32,600;14..32,700&display=swap");
+
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+:root {
+  --background: #fafaf7;
+  --foreground: #19191a;
+  --card: #ffffff;
+  --card-foreground: #19191a;
+  --primary: #6b7c3c;
+  --primary-foreground: #ffffff;
+  --secondary: #f2f3ee;
+  --secondary-foreground: #3a3a38;
+  --muted: #eaeae5;
+  --muted-foreground: #737370;
+  --border: #e1e1da;
+  --accent: #8a9a4a;
+  --accent-foreground: #ffffff;
+}
+
+.dark {
+  --background: #181a14;
+  --foreground: #f0f0eb;
+  --card: #20231c;
+  --card-foreground: #f0f0eb;
+  --primary: #8fa440;
+  --primary-foreground: #ffffff;
+  --secondary: #292c22;
+  --secondary-foreground: #c5c5bc;
+  --muted: #242820;
+  --muted-foreground: #88887f;
+  --border: #31352a;
+  --accent: #9cb048;
+  --accent-foreground: #ffffff;
+}
+
+html,
+body,
+#__next {
+  height: 100%;
+}
+
+* {
+  scrollbar-width: none;
+}
+
+*::-webkit-scrollbar {
+  display: none;
+}
+
+body {
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+  font-family: "Inter", system-ui, sans-serif;
+  background: var(--background);
+  color: var(--foreground);
+}
+
+@keyframes fadeSlideIn {
+  from {
+    opacity: 0;
+    transform: translateY(6px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@keyframes skeletonPulse {
+  0%,
+  100% {
+    opacity: 1;
+  }
+  50% {
+    opacity: 0.4;
+  }
+}
+
+@keyframes spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+.animate-fade-slide {
+  animation: fadeSlideIn 0.2s ease-out forwards;
+}
+
+.skeleton {
+  animation: skeletonPulse 1.6s ease-in-out infinite;
+  background-color: var(--muted);
+  border-radius: 6px;
+}

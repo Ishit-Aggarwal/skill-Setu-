@@ -57,14 +57,14 @@ export default async function handler(req, res) {
     });
 
     const mailOptions = {
-      from: `"AyushBridge — Ministry of Ayush" <${emailUser}>`,
+      from: `"Setu — Academia-Industry Portal" <${emailUser}>`,
       to: normalizedEmail,
-      subject: `${otp} is your AyushBridge Verification Code`,
+      subject: `${otp} is your Setu Verification Code`,
       html: `
         <div style="font-family: Arial, sans-serif; max-width: 560px; margin: 0 auto; padding: 24px; background: #FAF7F2; border: 1px solid #DFD6C6; border-radius: 12px;">
           <div style="text-align: center; margin-bottom: 20px;">
-            <h2 style="color: #1B4B43; margin: 0;">🌿 AyushBridge</h2>
-            <p style="color: #61706B; font-size: 13px; margin: 4px 0 0;">National AYUSH Academia–Industry Portal · Ministry of Ayush</p>
+            <h2 style="color: #1B4B43; margin: 0;">🌉 Setu</h2>
+            <p style="color: #61706B; font-size: 13px; margin: 4px 0 0;">Academia–Industry Collaboration Portal</p>
           </div>
           <div style="background: #FFFFFF; padding: 24px; border-radius: 10px; border: 1px solid #EDE4D6; text-align: center;">
             <p style="font-size: 15px; color: #12211E; margin-top: 0;">Hello,</p>
@@ -75,7 +75,7 @@ export default async function handler(req, res) {
             <p style="font-size: 12px; color: #8B9B96; margin-bottom: 0;">This code is valid for <strong>5 minutes</strong>. Please do not share this OTP with anyone.</p>
           </div>
           <div style="text-align: center; margin-top: 18px; font-size: 11px; color: #8B9B96;">
-            Smart India Hackathon SIH26044 · Team CODE BREAKERS
+            Smart India Hackathon · Problem Statement SIH26044
           </div>
         </div>
       `,

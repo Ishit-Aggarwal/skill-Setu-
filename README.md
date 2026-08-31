@@ -1,35 +1,31 @@
-# AyushBridge — National AYUSH Academia–Industry Portal
+# Setu — Academia–Industry Collaboration Portal
 
-**Skill Assessment, Industry Collaboration & Placement Network**  
-Ministry of Ayush · All India Institute of Ayurveda (AIIA)  
-Smart India Hackathon (SIH) · Team CODE BREAKERS
+**Skill Mapping, Internships & Placements**
+Smart India Hackathon · Problem Statement SIH26044
 
 ---
 
-## What is AyushBridge?
+## What is Setu?
 
-**AyushBridge** is a national digital platform that bridges AYUSH students, academicians, and herbal & wellness enterprises across all five streams:
-- **Ayurveda** (Herbal Formulations, Botanical QC, Natural Therapeutics)
-- **Yoga & Naturopathy** (Corporate Wellness, Stress Care, Physical Therapy Protocols)
-- **Unani & Siddha** (Standardized Botanical Extracts, Clinical Studies)
-- **Homoeopathy** (Clinical Documentation, Case Management, Drug Studies)
-- **Tele-AYUSH & Digital Health** (EHR Systems, Patient Tele-Consultations, Health Data)
+**Setu** ("bridge") is a unified platform connecting **students**, **academicians**, **industry partners**, and **institutions** across every sector — not just one industry. It covers the full lifecycle described in the problem statement: skill assessment, skill mapping, internship & job discovery, industry learning programs, and placement analytics.
 
-## Key Highlights
+## Four Dedicated Workspaces
 
-1. **Seamless Dark & Light Mode**: Switch between high-contrast dark mode and editorial warm paper light mode with an instant toggle.
-2. **Clear, Jargon-Free Terminology**: All competencies, questions, and roles are phrased in accessible, professional English (e.g. *Herbal Formulation & Manufacturing*, *Herb Quality Control & Lab Testing*, *Therapeutic Body & Wellness Care*, *Clinical Patient Documentation*).
-3. **18+ AYUSH Industry Opportunities**: Live internships and apprenticeships from leading organizations (Dabur Research Foundation, Himalaya Wellness, Patanjali Labs, AIIA New Delhi, Kaivalyadhama, Kottakkal, Organic India, CCRAS, etc.).
-4. **Google Sign-In / OAuth**: One-click Google sign-in with user profile synchronization (Name, Institution, Email, Avatar).
-5. **Student Profile & Digital Portfolio**:
-   - **Certifications & Credentials CRUD**: Add, edit, and remove verified credentials from CCRAS, Himalaya, Kaivalyadhama, etc., which directly boost your matched skill proficiency and role readiness.
-   - **Clinical & Internship History**: Add/edit hospital OPD rotations, research apprenticeships, and laboratory experience.
-   - **Digital Resume Export**: One-click shareable profile link and PDF resume download.
-6. **4 Dedicated Workspaces**:
-   - **Student Workspace**: Assessment, role readiness radar, certifications boost, gap-closing micro-credentials, and verified digital portfolio.
-   - **Faculty / Academician Workspace**: Industry training sabbaticals, joint R&D grants, consultancy retainers, and capstone challenge statements.
-   - **Herbal Industry Workspace**: Role publishing builder, ranked candidate pool, and skill demand telemetry.
-   - **Campus / Institutional Dashboard**: Placement funnel analytics, cohort skill gap breakdowns, and curriculum alignment recommendations.
+- **Student** — take skill tests, browse & apply to internships/jobs, build a verified digital portfolio, track applications.
+- **Industry** — post internships/jobs, manage an applicant pipeline (Applied → Shortlisted → Interview → Hired), host skill tests.
+- **Academician** — host Faculty Development Programs (FDPs), respond to research collaboration requests, track student progress.
+- **Institution** — a dedicated placement & skill analytics dashboard (funnel, cohort skill gaps, course-wise placement rates).
+
+## How it's built
+
+- **Next.js 14** (App Router) + **Tailwind CSS** for the UI.
+- **Local, browser-persisted data layer** (`lib/store.js`) standing in for a database — every "collection" (users, internships, applications, skill tests, portfolios, programs) is a JSON array in `localStorage`. No external service required to run or deploy.
+- **Real OTP-verified signup** via `pages/api/send-otp.js` / `pages/api/verify-otp.js` (Nodemailer). Without email credentials configured, verification codes are shown directly in the UI (dev mode) instead of being emailed.
+- Role-based signup is gated by verification codes for industry/academician/institution accounts (`lib/registry.js`) — a small stand-in for a real organisation-verification workflow.
+
+### Note on data persistence
+
+Because there's no live database wired up, all data (accounts, postings, applications, skill test results) lives in the browser's `localStorage`. It's fully functional for demoing every flow, but data is per-browser rather than shared across devices. To upgrade to a real shared backend, swap the functions in `lib/store.js` for calls to Firebase/Firestore, Supabase, or any REST API — the rest of the app only depends on that module's function signatures.
 
 ## Run Locally
 
@@ -40,9 +36,20 @@ npm run dev
 
 Open [http://localhost:3000](http://localhost:3000)
 
+To send real OTP emails, add Gmail SMTP credentials to `.env.local`:
+
+```
+EMAIL_USER=your-email@gmail.com
+EMAIL_PASS=your-16-character-app-password
+```
+
+(Generate an App Password at https://myaccount.google.com/apppasswords.) Leave both blank to use dev mode, where the code is shown directly in the UI.
+
 ## Build for Production
 
 ```bash
 npm run build
 npm run start
 ```
+
+Deploys cleanly to Vercel with zero extra configuration.

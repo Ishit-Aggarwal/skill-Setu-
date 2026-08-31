@@ -1,13 +1,21 @@
+import "./globals.css";
+import { ThemeProvider } from "../lib/theme";
+import { AuthProvider } from "../lib/auth";
+
 export const metadata = {
-  title: "AyushBridge — National AYUSH Academia-Industry Portal",
+  title: "Setu — Academia-Industry Collaboration Portal",
   description:
-    "Skill assessment, industry collaboration, and placement platform connecting AYUSH students, academicians, and wellness enterprises across Ayurveda, Yoga, Unani, Siddha, and Homoeopathy.",
+    "Skill mapping, internships, and placements — a unified platform connecting students, academicians, and industry across every sector.",
 };
 
 export default function RootLayout({ children }) {
   return (
     <html lang="en">
-      <body style={{ margin: 0 }}>{children}</body>
+      <body className="bg-background text-foreground font-sans">
+        <ThemeProvider>
+          <AuthProvider>{children}</AuthProvider>
+        </ThemeProvider>
+      </body>
     </html>
   );
 }
