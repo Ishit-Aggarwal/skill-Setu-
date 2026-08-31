@@ -56,9 +56,14 @@ const sectors = [
 ];
 
 export default function LandingPage() {
-  const { user } = useAuth();
+  const { user, logout } = useAuth();
   const { darkMode, setDarkMode } = useTheme();
   const router = useRouter();
+
+  function handleSignOut() {
+    logout();
+    router.push("/");
+  }
 
   function goToLogin(role) {
     router.push(`/login?role=${role}&mode=signup`);
@@ -80,9 +85,14 @@ export default function LandingPage() {
               {darkMode ? <IconSun /> : <IconMoon />}
             </button>
             {user ? (
-              <button onClick={() => router.push(PAGE_PATHS[roleHomePage(user.role)])} className="text-sm font-medium bg-primary hover:bg-accent text-white px-4 py-2 rounded-xl transition-all duration-150 hover:shadow-md">
-                Go to Dashboard →
-              </button>
+              <>
+                <button onClick={handleSignOut} className="text-sm font-medium text-muted-foreground hover:text-foreground transition-colors px-3 py-1.5">
+                  Sign out
+                </button>
+                <button onClick={() => router.push(PAGE_PATHS[roleHomePage(user.role)])} className="text-sm font-medium bg-primary hover:bg-accent text-white px-4 py-2 rounded-xl transition-all duration-150 hover:shadow-md">
+                  Go to Dashboard →
+                </button>
+              </>
             ) : (
               <>
                 <div className="flex flex-col items-end">
@@ -103,8 +113,8 @@ export default function LandingPage() {
       <section className="relative min-h-[92vh] flex items-center overflow-hidden">
         <div className="absolute inset-0">
           <img
-            src="https://images.unsplash.com/photo-1659292862395-2ded345088df?w=1600&h=900&fit=crop&auto=format"
-            alt="Indian Institute of Advanced Study, Shimla"
+            src="https://images.unsplash.com/photo-1656321717360-be568acc171b?w=1600&h=900&fit=crop&auto=format"
+            alt="Presidency University, Kolkata"
             className="w-full h-full object-cover"
           />
           <div className="absolute inset-0 bg-gradient-to-br from-olive-900/85 via-olive-800/70 to-olive-700/50" />

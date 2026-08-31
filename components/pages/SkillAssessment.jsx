@@ -47,7 +47,7 @@ function StudentView({ user }) {
       {tab === "browse" && (
         <>
           <p className="text-sm text-muted-foreground">
-            Tests hosted by industry partners and academic institutions. Register first — online tests unlock a proctored test room at the scheduled time, offline tests confirm your reporting details.
+            Tests hosted by industry partners and academic institutions. Register first — for online tests, the meeting link appears here 1 day before the scheduled time; offline tests confirm your reporting details.
           </p>
           <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-4">
             {tests.map((test) => (

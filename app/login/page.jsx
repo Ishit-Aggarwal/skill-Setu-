@@ -81,6 +81,12 @@ function LoginPageInner() {
   }, [authLoading, user, router]);
 
   useEffect(() => {
+    const paramRole = params.get("role");
+    if (paramRole && roleConfig[paramRole]) setRole(paramRole);
+    setMode(params.get("mode") === "signup" ? "signup" : "login");
+  }, [params]);
+
+  useEffect(() => {
     if (otpTimer <= 0) return;
     const t = setInterval(() => setOtpTimer((s) => s - 1), 1000);
     return () => clearInterval(t);

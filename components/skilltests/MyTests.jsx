@@ -11,7 +11,7 @@ const statusBadge = {
 
 const statusLabel = {
   upcoming: "Upcoming",
-  available: "Ready to take",
+  available: "Confirm attendance",
   completed: "Completed",
   missed: "Missed",
 };
