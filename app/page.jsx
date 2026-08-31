@@ -187,26 +187,29 @@ export default function LandingPage() {
           ].map((card) => (
             <div
               key={card.role}
-              className={`flex flex-col rounded-2xl p-7 border transition-all duration-200 hover:shadow-lg group ${
-                card.featured ? "bg-primary text-white border-transparent shadow-md" : "bg-card text-foreground border-border hover:-translate-y-1"
+              className={`relative flex flex-col rounded-2xl p-7 border transition-all duration-200 hover:shadow-lg hover:-translate-y-1 group ${
+                card.featured ? "bg-card text-foreground border-primary/60 shadow-md" : "bg-card text-foreground border-border"
               }`}
             >
+              {card.featured && (
+                <span className="absolute -top-3 left-7 text-[10px] font-semibold tracking-wide uppercase bg-primary text-white px-2.5 py-1 rounded-full">
+                  Most Active
+                </span>
+              )}
               <div className="text-3xl mb-4">{card.emoji}</div>
-              <h3 className={`text-xl font-semibold mb-1 ${card.featured ? "text-white" : "text-foreground"}`}>{card.title}</h3>
-              <p className={`text-sm mb-5 ${card.featured ? "text-white/70" : "text-muted-foreground"}`}>{card.subtitle}</p>
+              <h3 className="text-xl font-semibold mb-1 text-foreground">{card.title}</h3>
+              <p className="text-sm mb-5 text-muted-foreground">{card.subtitle}</p>
               <ul className="space-y-2 mb-7">
                 {card.features.map((f) => (
-                  <li key={f} className={`flex items-center gap-2 text-sm ${card.featured ? "text-white/85" : "text-muted-foreground"}`}>
-                    <span className={`w-1.5 h-1.5 rounded-full flex-shrink-0 ${card.featured ? "bg-white" : "bg-primary"}`} />
+                  <li key={f} className="flex items-center gap-2 text-sm text-muted-foreground">
+                    <span className="w-1.5 h-1.5 rounded-full flex-shrink-0 bg-primary" />
                     {f}
                   </li>
                 ))}
               </ul>
               <button
                 onClick={() => goToLogin(card.role)}
-                className={`mt-auto w-full py-3 rounded-xl text-sm font-medium transition-all duration-150 hover:scale-105 border ${
-                  card.featured ? "bg-white text-primary border-transparent hover:bg-olive-50" : "bg-primary/10 text-primary border-primary/20 hover:bg-primary hover:text-white hover:border-transparent"
-                }`}
+                className="mt-auto w-full py-3 rounded-xl text-sm font-medium transition-all duration-150 hover:scale-105 border bg-primary/10 text-primary border-primary/20 hover:bg-primary hover:text-white hover:border-transparent"
               >
                 {card.cta}
               </button>

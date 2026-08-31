@@ -18,6 +18,23 @@
   --border: #e1e1da;
   --accent: #8a9a4a;
   --accent-foreground: #ffffff;
+
+  /* RGB channel triplets (no #, no rgb()) so Tailwind's `bg-primary/40`-style
+     opacity modifiers can compose them via rgb(var(--x-rgb) / <alpha-value>) —
+     plain hex custom properties above can't be sliced for opacity. */
+  --background-rgb: 250 250 247;
+  --foreground-rgb: 25 25 26;
+  --card-rgb: 255 255 255;
+  --card-foreground-rgb: 25 25 26;
+  --primary-rgb: 107 124 60;
+  --primary-foreground-rgb: 255 255 255;
+  --secondary-rgb: 242 243 238;
+  --secondary-foreground-rgb: 58 58 56;
+  --muted-rgb: 234 234 229;
+  --muted-foreground-rgb: 115 115 112;
+  --border-rgb: 225 225 218;
+  --accent-rgb: 138 154 74;
+  --accent-foreground-rgb: 255 255 255;
 }
 
 .dark {
@@ -34,6 +51,20 @@
   --border: #31352a;
   --accent: #9cb048;
   --accent-foreground: #ffffff;
+
+  --background-rgb: 24 26 20;
+  --foreground-rgb: 240 240 235;
+  --card-rgb: 32 35 28;
+  --card-foreground-rgb: 240 240 235;
+  --primary-rgb: 143 164 64;
+  --primary-foreground-rgb: 255 255 255;
+  --secondary-rgb: 41 44 34;
+  --secondary-foreground-rgb: 197 197 188;
+  --muted-rgb: 36 40 32;
+  --muted-foreground-rgb: 136 136 127;
+  --border-rgb: 49 53 42;
+  --accent-rgb: 156 176 72;
+  --accent-foreground-rgb: 255 255 255;
 }
 
 html,

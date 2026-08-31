@@ -5,14 +5,29 @@ module.exports = {
   theme: {
     extend: {
       colors: {
-        background: "var(--background)",
-        foreground: "var(--foreground)",
-        card: { DEFAULT: "var(--card)", foreground: "var(--card-foreground)" },
-        primary: { DEFAULT: "var(--primary)", foreground: "var(--primary-foreground)" },
-        secondary: { DEFAULT: "var(--secondary)", foreground: "var(--secondary-foreground)" },
-        muted: { DEFAULT: "var(--muted)", foreground: "var(--muted-foreground)" },
-        border: "var(--border)",
-        accent: { DEFAULT: "var(--accent)", foreground: "var(--accent-foreground)" },
+        background: "rgb(var(--background-rgb) / <alpha-value>)",
+        foreground: "rgb(var(--foreground-rgb) / <alpha-value>)",
+        card: {
+          DEFAULT: "rgb(var(--card-rgb) / <alpha-value>)",
+          foreground: "rgb(var(--card-foreground-rgb) / <alpha-value>)",
+        },
+        primary: {
+          DEFAULT: "rgb(var(--primary-rgb) / <alpha-value>)",
+          foreground: "rgb(var(--primary-foreground-rgb) / <alpha-value>)",
+        },
+        secondary: {
+          DEFAULT: "rgb(var(--secondary-rgb) / <alpha-value>)",
+          foreground: "rgb(var(--secondary-foreground-rgb) / <alpha-value>)",
+        },
+        muted: {
+          DEFAULT: "rgb(var(--muted-rgb) / <alpha-value>)",
+          foreground: "rgb(var(--muted-foreground-rgb) / <alpha-value>)",
+        },
+        border: "rgb(var(--border-rgb) / <alpha-value>)",
+        accent: {
+          DEFAULT: "rgb(var(--accent-rgb) / <alpha-value>)",
+          foreground: "rgb(var(--accent-foreground-rgb) / <alpha-value>)",
+        },
         olive: {
           50: "#f5f7ec",
           100: "#e9eed4",
