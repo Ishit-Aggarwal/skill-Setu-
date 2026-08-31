@@ -79,11 +79,11 @@ function LoginPageInner() {
   useEffect(() => {
     if (authLoading || !user) return;
     const requestedRole = params.get("role");
-    const requestedMode = params.get("mode");
-    // Let an already-logged-in user still view a different role's own signup
-    // form (e.g. clicking "For Industries" from the landing page) instead of
-    // always bouncing back to their existing dashboard.
-    if (requestedMode === "signup" && requestedRole && requestedRole !== user.role) return;
+    // Let an already-logged-in user still view a different role's own
+    // signup/sign-in form (e.g. clicking "For Industries" from the landing
+    // page, or switching accounts via the role switcher) instead of always
+    // bouncing back to their existing dashboard.
+    if (requestedRole && requestedRole !== user.role) return;
     router.replace(PAGE_PATHS[roleHomePage(user.role)]);
   }, [authLoading, user, router, params]);
 

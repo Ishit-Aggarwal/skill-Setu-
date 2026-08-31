@@ -65,7 +65,12 @@ body {
   }
   to {
     opacity: 1;
-    transform: translateY(0);
+    /* Must resolve to the "none" keyword (not an identity translateY(0))
+       so this element stops being a containing block for fixed-position
+       descendants once the animation settles — otherwise every modal
+       nested inside a .animate-fade-slide wrapper renders anchored to
+       this box instead of the viewport. */
+    transform: none;
   }
 }
 
@@ -86,7 +91,10 @@ body {
 }
 
 .animate-fade-slide {
-  animation: fadeSlideIn 0.2s ease-out forwards;
+  /* No `forwards`: an active transform animation (even holding an identity
+     matrix via fill-mode) makes this element a containing block, which
+     breaks `position: fixed` for any modal nested inside it. */
+  animation: fadeSlideIn 0.2s ease-out;
 }
 
 .skeleton {

@@ -5,6 +5,7 @@ import { useAuth } from "../lib/auth";
 import { useTheme } from "../lib/theme";
 import { roleHomePage, PAGE_PATHS } from "../lib/nav";
 import DemoModeMenu from "../components/DemoModeMenu";
+import RoleSwitcher from "../components/RoleSwitcher";
 
 function IconArrowRight() {
   return (
@@ -86,6 +87,7 @@ export default function LandingPage() {
             </button>
             {user ? (
               <>
+                <RoleSwitcher />
                 <button onClick={handleSignOut} className="text-sm font-medium text-muted-foreground hover:text-foreground transition-colors px-3 py-1.5">
                   Sign out
                 </button>
