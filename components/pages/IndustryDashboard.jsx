@@ -210,7 +210,7 @@ export default function IndustryDashboard() {
       {showPostJob && (
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
           <div className="absolute inset-0 bg-black/40 backdrop-blur-sm" onClick={() => setShowPostJob(false)} />
-          <div className="relative z-10 bg-card border border-border rounded-2xl p-6 w-full max-w-md shadow-xl animate-fade-slide">
+          <div className="relative z-10 bg-card border border-border rounded-2xl p-6 w-full max-w-md shadow-xl animate-fade-slide max-h-[90vh] overflow-y-auto">
             <h3 className="font-semibold text-foreground text-lg mb-5">Post New Opportunity</h3>
             <form onSubmit={handleCreate} className="space-y-4">
               <div>

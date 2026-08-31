@@ -1,6 +1,5 @@
 "use client";
 
-import { useEffect } from "react";
 import { useRouter } from "next/navigation";
 import { useAuth } from "../lib/auth";
 import { useTheme } from "../lib/theme";
@@ -57,13 +56,9 @@ const sectors = [
 ];
 
 export default function LandingPage() {
-  const { user, loading } = useAuth();
+  const { user } = useAuth();
   const { darkMode, setDarkMode } = useTheme();
   const router = useRouter();
-
-  useEffect(() => {
-    if (!loading && user) router.replace(PAGE_PATHS[roleHomePage(user.role)]);
-  }, [loading, user, router]);
 
   function goToLogin(role) {
     router.push(`/login?role=${role}&mode=signup`);
@@ -84,15 +79,23 @@ export default function LandingPage() {
             <button onClick={() => setDarkMode(!darkMode)} className="p-2 rounded-lg text-muted-foreground hover:bg-secondary transition-colors">
               {darkMode ? <IconSun /> : <IconMoon />}
             </button>
-            <div className="flex flex-col items-end">
-              <button onClick={() => router.push("/login")} className="text-sm font-medium text-muted-foreground hover:text-foreground transition-colors px-3 py-1.5">
-                Sign In
+            {user ? (
+              <button onClick={() => router.push(PAGE_PATHS[roleHomePage(user.role)])} className="text-sm font-medium bg-primary hover:bg-accent text-white px-4 py-2 rounded-xl transition-all duration-150 hover:shadow-md">
+                Go to Dashboard →
               </button>
-              <DemoModeMenu className="mr-1" />
-            </div>
-            <button onClick={() => goToLogin("student")} className="text-sm font-medium bg-primary hover:bg-accent text-white px-4 py-2 rounded-xl transition-all duration-150 hover:shadow-md">
-              Get Started
-            </button>
+            ) : (
+              <>
+                <div className="flex flex-col items-end">
+                  <button onClick={() => router.push("/login")} className="text-sm font-medium text-muted-foreground hover:text-foreground transition-colors px-3 py-1.5">
+                    Sign In
+                  </button>
+                  <DemoModeMenu className="mr-1" />
+                </div>
+                <button onClick={() => goToLogin("student")} className="text-sm font-medium bg-primary hover:bg-accent text-white px-4 py-2 rounded-xl transition-all duration-150 hover:shadow-md">
+                  Get Started
+                </button>
+              </>
+            )}
           </div>
         </div>
       </nav>

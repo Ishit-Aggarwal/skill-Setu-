@@ -2,6 +2,7 @@
 
 import { useEffect, useMemo, useState } from "react";
 import DashboardLayout from "../DashboardLayout";
+import ApplyConfirmModal from "../ApplyConfirmModal";
 import { useAuth } from "../../lib/auth";
 import { useNav } from "../../lib/nav";
 import {
@@ -35,6 +36,7 @@ function StudentView({ user }) {
   const [type, setType] = useState("All");
   const [sortBy, setSortBy] = useState("match");
   const [saved, setSaved] = useState([]);
+  const [applyTarget, setApplyTarget] = useState(null);
 
   function refresh() {
     setInternships(listInternships());
@@ -58,8 +60,13 @@ function StudentView({ user }) {
   }, [internships, assessment, search, domain, type, sortBy]);
 
   function handleApply(intern) {
-    applyToInternship(intern, user, intern.match);
-    setAppliedIds((prev) => new Set([...prev, intern.id]));
+    setApplyTarget(intern);
+  }
+
+  function confirmApply(note) {
+    applyToInternship(applyTarget, user, applyTarget.match, note);
+    setAppliedIds((prev) => new Set([...prev, applyTarget.id]));
+    setApplyTarget(null);
   }
 
   return (
@@ -171,6 +178,10 @@ function StudentView({ user }) {
             );
           })}
         </div>
+      )}
+
+      {applyTarget && (
+        <ApplyConfirmModal internship={applyTarget} user={user} onConfirm={confirmApply} onClose={() => setApplyTarget(null)} />
       )}
     </div>
   );

@@ -60,6 +60,7 @@ function LoginPageInner() {
     password: "",
     institution: "",
     course: "",
+    year: "",
     companyName: "",
     workEmailDomain: "",
     companyCode: "",
@@ -141,6 +142,7 @@ function LoginPageInner() {
       role,
       institution: form.institution || form.instituteName,
       course: form.course,
+      year: form.year,
       companyName: form.companyName,
       workEmailDomain: form.workEmailDomain,
       employeeId: form.employeeId,
@@ -337,10 +339,20 @@ function LoginPageInner() {
                     <input type="text" value={form.institution} onChange={(e) => setField("institution", e.target.value)} placeholder="IIT Delhi"
                       className="w-full bg-card border border-border rounded-xl px-4 py-3 text-sm text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-primary/30 focus:border-primary transition-all" />
                   </div>
-                  <div>
-                    <label className="block text-sm font-medium text-foreground mb-1.5">Course <span className="text-muted-foreground font-normal">(optional)</span></label>
-                    <input type="text" value={form.course} onChange={(e) => setField("course", e.target.value)} placeholder="B.Tech Final Year"
-                      className="w-full bg-card border border-border rounded-xl px-4 py-3 text-sm text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-primary/30 focus:border-primary transition-all" />
+                  <div className="grid grid-cols-2 gap-3">
+                    <div>
+                      <label className="block text-sm font-medium text-foreground mb-1.5">Course <span className="text-muted-foreground font-normal">(optional)</span></label>
+                      <input type="text" value={form.course} onChange={(e) => setField("course", e.target.value)} placeholder="B.Tech CSE"
+                        className="w-full bg-card border border-border rounded-xl px-4 py-3 text-sm text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-primary/30 focus:border-primary transition-all" />
+                    </div>
+                    <div>
+                      <label className="block text-sm font-medium text-foreground mb-1.5">Year</label>
+                      <select value={form.year} onChange={(e) => setField("year", e.target.value)}
+                        className="w-full bg-card border border-border rounded-xl px-4 py-3 text-sm text-foreground focus:outline-none focus:ring-2 focus:ring-primary/30 focus:border-primary transition-all">
+                        <option value="">Select</option>
+                        {["1st Year", "2nd Year", "3rd Year", "4th Year", "5th Year", "Final Year", "Graduated"].map((y) => <option key={y}>{y}</option>)}
+                      </select>
+                    </div>
                   </div>
                 </>
               )}

@@ -21,7 +21,18 @@ const typeColor = {
 
 const typeIcon = { Education: "🎓", Internship: "💼", Research: "🔬", Publication: "📄", Achievement: "🏆" };
 
-const emptyPortfolio = { bio: "", skillBadges: {}, certifications: [], timeline: [] };
+const emptyPortfolio = { bio: "", skillBadges: {}, certifications: [], timeline: [], documents: [] };
+const MAX_DOC_BYTES = 2 * 1024 * 1024;
+const DOC_TYPES = ["Resume", "Degree / Marksheet", "ID Proof", "Other"];
+
+function readFileAsDataUrl(file) {
+  return new Promise((resolve, reject) => {
+    const reader = new FileReader();
+    reader.onload = () => resolve(reader.result);
+    reader.onerror = reject;
+    reader.readAsDataURL(file);
+  });
+}
 
 export default function StudentPortfolio() {
   const { user } = useAuth();
@@ -35,6 +46,9 @@ export default function StudentPortfolio() {
   const [certForm, setCertForm] = useState({ name: "", issuer: "", year: "", score: "" });
   const [timelineForm, setTimelineForm] = useState({ year: "", title: "", org: "", type: "Internship" });
   const [showAdd, setShowAdd] = useState(null);
+  const [docType, setDocType] = useState("Resume");
+  const [docError, setDocError] = useState(null);
+  const [uploading, setUploading] = useState(false);
 
   useEffect(() => {
     if (!user) return;
@@ -82,6 +96,30 @@ export default function StudentPortfolio() {
     setShowAdd(null);
   }
 
+  async function handleDocUpload(e) {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    if (file.size > MAX_DOC_BYTES) {
+      setDocError("Please choose a file under 2MB.");
+      return;
+    }
+    setDocError(null);
+    setUploading(true);
+    const dataUrl = await readFileAsDataUrl(file);
+    persist({
+      documents: [
+        ...(portfolio.documents || []),
+        { id: `doc_${Date.now()}`, type: docType, fileName: file.name, dataUrl, uploadedAt: new Date().toISOString() },
+      ],
+    });
+    setUploading(false);
+    e.target.value = "";
+  }
+
+  function removeDoc(id) {
+    persist({ documents: (portfolio.documents || []).filter((d) => d.id !== id) });
+  }
+
   const certCount = portfolio.certifications?.length || 0;
   const publicationCount = (portfolio.timeline || []).filter((t) => t.type === "Publication").length;
   const avgMatch = applications.length ? Math.round(applications.reduce((s, a) => s + (a.match || 0), 0) / applications.length) : 0;
@@ -98,10 +136,12 @@ export default function StudentPortfolio() {
           <div className="px-6 pb-6 -mt-10 relative">
             <div className="flex flex-wrap items-end justify-between gap-4">
               <div className="flex items-end gap-4">
-                <div className="w-20 h-20 rounded-2xl bg-primary flex items-center justify-center text-white text-2xl font-bold border-4 border-card shadow-md">{userInitials}</div>
+                <div className="w-20 h-20 rounded-2xl bg-primary flex items-center justify-center text-white text-2xl font-bold border-4 border-card shadow-md overflow-hidden">
+                  {user.avatarDataUrl ? <img src={user.avatarDataUrl} alt="" className="w-full h-full object-cover" /> : userInitials}
+                </div>
                 <div className="pb-1">
                   <h2 className="text-xl font-semibold text-foreground">{user.name}</h2>
-                  <p className="text-sm text-muted-foreground">{user.course || "Student"} · {user.institution}</p>
+                  <p className="text-sm text-muted-foreground">{[user.course, user.year].filter(Boolean).join(" · ") || "Student"} · {user.institution}</p>
                 </div>
               </div>
               <button onClick={handleDownload} className={`flex items-center gap-2 text-sm font-medium px-4 py-2.5 rounded-xl transition-all duration-200 flex-shrink-0 ${downloaded ? "bg-green-50 text-green-600 dark:bg-green-950/30" : "bg-primary hover:bg-accent text-white hover:shadow-md"}`}>
@@ -148,6 +188,7 @@ export default function StudentPortfolio() {
             { key: "skills", label: "Skills & Competencies" },
             { key: "certs", label: "Certifications" },
             { key: "timeline", label: "Career Timeline" },
+            { key: "documents", label: "Documents" },
           ].map((tab) => (
             <button key={tab.key} onClick={() => { setActiveSection(tab.key); setShowAdd(null); }} className={`flex-1 py-2.5 rounded-lg text-sm font-medium transition-all duration-150 ${activeSection === tab.key ? "bg-card text-foreground shadow-sm" : "text-muted-foreground hover:text-foreground"}`}>
               {tab.label}
@@ -273,6 +314,46 @@ export default function StudentPortfolio() {
             ) : (
               <button onClick={() => setShowAdd("timeline")} className="w-full text-sm text-center text-primary hover:underline py-2">+ Add Timeline Entry</button>
             )}
+          </div>
+        )}
+
+        {activeSection === "documents" && (
+          <div className="space-y-3 animate-fade-slide">
+            {docError && (
+              <div className="flex items-start gap-2 rounded-xl border border-red-200 bg-red-50 px-3.5 py-2.5 text-xs text-red-700 dark:border-red-900/40 dark:bg-red-950/30 dark:text-red-300">
+                <span>⚠️</span><span>{docError}</span>
+              </div>
+            )}
+
+            {(portfolio.documents || []).length === 0 && (
+              <div className="bg-card border border-border rounded-2xl p-6 text-center text-sm text-muted-foreground">No documents uploaded yet.</div>
+            )}
+
+            {(portfolio.documents || []).map((doc) => (
+              <div key={doc.id} className="bg-card border border-border rounded-2xl p-4 flex items-center gap-4 hover:shadow-sm transition-shadow">
+                <div className="w-12 h-12 rounded-xl bg-secondary flex items-center justify-center text-xl flex-shrink-0">📄</div>
+                <div className="flex-1 min-w-0">
+                  <div className="text-sm font-semibold text-foreground truncate">{doc.fileName}</div>
+                  <div className="text-xs text-muted-foreground mt-0.5">{doc.type} · Uploaded {new Date(doc.uploadedAt).toLocaleDateString("en-IN")}</div>
+                </div>
+                <a href={doc.dataUrl} target="_blank" rel="noreferrer" className="text-xs font-medium text-primary hover:underline flex-shrink-0">View</a>
+                <button onClick={() => removeDoc(doc.id)} className="text-xs text-muted-foreground hover:text-red-600 flex-shrink-0">Remove</button>
+              </div>
+            ))}
+
+            <div className="bg-card border border-border rounded-2xl p-5 space-y-3">
+              <div className="text-sm font-semibold text-foreground">Upload a document</div>
+              <p className="text-xs text-muted-foreground">Add your resume, degree certificate, or ID proof. PDF or image, under 2MB.</p>
+              <div className="grid grid-cols-2 gap-3">
+                <select value={docType} onChange={(e) => setDocType(e.target.value)} className="bg-background border border-border rounded-xl px-3 py-2.5 text-sm">
+                  {DOC_TYPES.map((t) => <option key={t}>{t}</option>)}
+                </select>
+                <label className="flex items-center justify-center gap-2 bg-primary/10 text-primary hover:bg-primary hover:text-white rounded-xl px-3 py-2.5 text-sm font-medium cursor-pointer text-center transition-colors">
+                  {uploading ? "Uploading…" : "Choose File"}
+                  <input type="file" accept=".pdf,image/*" onChange={handleDocUpload} disabled={uploading} className="hidden" />
+                </label>
+              </div>
+            </div>
           </div>
         )}
       </div>

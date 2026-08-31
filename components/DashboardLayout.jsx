@@ -4,6 +4,7 @@ import { useState } from "react";
 import { useAuth } from "../lib/auth";
 import { useTheme } from "../lib/theme";
 import { useNav } from "../lib/nav";
+import EditProfileModal from "./EditProfileModal";
 
 function IconGrid() {
   return (
@@ -140,6 +141,7 @@ const ROLE_LABEL = {
 
 export default function DashboardLayout({ children, activePage, title }) {
   const [sidebarOpen, setSidebarOpen] = useState(false);
+  const [showEditProfile, setShowEditProfile] = useState(false);
   const { user, logout } = useAuth();
   const { darkMode, setDarkMode } = useTheme();
   const navigate = useNav();
@@ -171,15 +173,15 @@ export default function DashboardLayout({ children, activePage, title }) {
       >
         {mobile && <div className="absolute inset-0 bg-black/40" onClick={() => setSidebarOpen(false)} />}
         <div className={mobile ? "relative z-10 flex flex-col w-64 min-h-screen bg-card border-r border-border" : "flex flex-col w-60 min-h-screen"}>
-          <div className="flex items-center gap-2.5 px-5 py-5 border-b border-border">
-            <div className="w-8 h-8 rounded-lg bg-primary flex items-center justify-center text-white">
+          <button onClick={() => navigate("landing")} className="flex items-center gap-2.5 px-5 py-5 border-b border-border text-left hover:bg-secondary/50 transition-colors">
+            <div className="w-8 h-8 rounded-lg bg-primary flex items-center justify-center text-white flex-shrink-0">
               <LogoLeaf />
             </div>
             <div>
               <div className="text-sm font-semibold text-foreground leading-tight">Setu</div>
               <div className="text-xs text-muted-foreground">Academia × Industry</div>
             </div>
-          </div>
+          </button>
 
           <nav className="flex-1 px-3 py-4 space-y-0.5">
             {navItems.map((item) => {
@@ -211,15 +213,16 @@ export default function DashboardLayout({ children, activePage, title }) {
               {darkMode ? <IconSun /> : <IconMoon />}
               {darkMode ? "Light Mode" : "Dark Mode"}
             </button>
-            <div className="flex items-center gap-2.5 px-3 py-2">
-              <div className="w-8 h-8 rounded-full bg-primary/15 flex items-center justify-center text-primary text-xs font-semibold flex-shrink-0">
-                {userInitials}
+            <button onClick={() => setShowEditProfile(true)} className="w-full flex items-center gap-2.5 px-3 py-2 rounded-xl hover:bg-secondary transition-colors text-left">
+              <div className="w-8 h-8 rounded-full bg-primary/15 flex items-center justify-center text-primary text-xs font-semibold flex-shrink-0 overflow-hidden">
+                {user?.avatarDataUrl ? <img src={user.avatarDataUrl} alt="" className="w-full h-full object-cover" /> : userInitials}
               </div>
-              <div className="min-w-0">
+              <div className="min-w-0 flex-1">
                 <div className="text-sm font-medium text-foreground truncate">{userName}</div>
                 <div className="text-xs text-muted-foreground truncate">{userSub}</div>
               </div>
-            </div>
+              <span className="text-[10px] text-muted-foreground flex-shrink-0">Edit</span>
+            </button>
             <button onClick={handleSignOut} className="w-full text-left px-3 py-2 text-xs text-muted-foreground hover:text-foreground transition-colors">
               Sign out
             </button>
@@ -240,12 +243,12 @@ export default function DashboardLayout({ children, activePage, title }) {
             <IconMenu />
           </button>
 
-          <div className="lg:hidden flex items-center gap-2">
+          <button onClick={() => navigate("landing")} className="lg:hidden flex items-center gap-2">
             <div className="w-6 h-6 rounded-md bg-primary flex items-center justify-center text-white">
               <LogoLeaf />
             </div>
             <span className="text-sm font-semibold">Setu</span>
-          </div>
+          </button>
 
           <div className="flex-1 hidden lg:block">{title && <h1 className="text-base font-semibold text-foreground">{title}</h1>}</div>
 
@@ -253,7 +256,9 @@ export default function DashboardLayout({ children, activePage, title }) {
             <button onClick={() => setDarkMode(!darkMode)} className="p-2 rounded-lg text-muted-foreground hover:bg-secondary transition-colors">
               {darkMode ? <IconSun /> : <IconMoon />}
             </button>
-            <div className="w-8 h-8 rounded-full bg-primary/15 flex items-center justify-center text-primary text-xs font-semibold">{userInitials}</div>
+            <button onClick={() => setShowEditProfile(true)} className="w-8 h-8 rounded-full bg-primary/15 flex items-center justify-center text-primary text-xs font-semibold overflow-hidden">
+              {user?.avatarDataUrl ? <img src={user.avatarDataUrl} alt="" className="w-full h-full object-cover" /> : userInitials}
+            </button>
           </div>
         </header>
 
@@ -275,6 +280,8 @@ export default function DashboardLayout({ children, activePage, title }) {
           );
         })}
       </nav>
+
+      {showEditProfile && <EditProfileModal onClose={() => setShowEditProfile(false)} />}
     </div>
   );
 }

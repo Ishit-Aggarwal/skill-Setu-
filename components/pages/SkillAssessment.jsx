@@ -1,245 +1,70 @@
 "use client";
 
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useState } from "react";
 import DashboardLayout from "../DashboardLayout";
+import TestCard from "../skilltests/TestCard";
+import MyTests from "../skilltests/MyTests";
 import { useAuth } from "../../lib/auth";
-import { useNav } from "../../lib/nav";
-import { QUESTION_BANK, SKILL_DOMAINS } from "../../lib/questionBank";
+import { SKILL_DOMAINS } from "../../lib/questionBank";
 import {
   listSkillTests,
   listSkillTestsByOwner,
   createSkillTest,
+  listRegistrationsForStudent,
   getAttemptsForStudent,
-  recordAssessmentResult,
-  registerForSkillTest,
-  isRegisteredForSkillTest,
+  getRegistration,
+  checkAndRecordMissedTests,
 } from "../../lib/store";
-import { formatDate } from "../../lib/match";
 
-const modeColor = {
-  Online: "text-emerald-700 bg-emerald-50 dark:bg-emerald-950/30 dark:text-emerald-300",
-  Offline: "text-amber-700 bg-amber-50 dark:bg-amber-950/30 dark:text-amber-400",
-};
-
-function ProgressBar({ value }) {
-  return (
-    <div className="w-full h-1.5 bg-muted rounded-full overflow-hidden">
-      <div className="h-full bg-primary rounded-full transition-all duration-500 ease-out" style={{ width: `${value}%` }} />
-    </div>
-  );
-}
-
-function TestRunner({ test, onFinish, onCancel }) {
-  const questions = QUESTION_BANK[test.domain] || [];
-  const [currentQ, setCurrentQ] = useState(0);
-  const [selected, setSelected] = useState(null);
-  const [answers, setAnswers] = useState(Array(questions.length).fill(null));
-  const [revealed, setRevealed] = useState(false);
-  const [finished, setFinished] = useState(false);
-
-  if (questions.length === 0) {
-    return (
-      <div className="max-w-xl mx-auto py-10 text-center text-sm text-muted-foreground">
-        This test doesn't have an online question set configured.
-        <button onClick={onCancel} className="block mx-auto mt-4 text-primary hover:underline">← Back to Skill Tests</button>
-      </div>
-    );
-  }
-
-  const q = questions[currentQ];
-
-  function handleSelect(idx) {
-    if (revealed) return;
-    setSelected(idx);
-  }
-
-  function handleNext() {
-    const updated = [...answers];
-    updated[currentQ] = selected;
-    setAnswers(updated);
-    if (!revealed) {
-      setRevealed(true);
-      return;
-    }
-    if (currentQ < questions.length - 1) {
-      setCurrentQ(currentQ + 1);
-      setSelected(null);
-      setRevealed(false);
-    } else {
-      setFinished(true);
-    }
-  }
-
-  if (finished) {
-    const score = answers.filter((a, i) => a === questions[i].correct).length;
-    const pct = Math.round((score / questions.length) * 100);
-    return (
-      <div className="max-w-xl mx-auto py-8 text-center animate-fade-slide">
-        <div className="w-20 h-20 rounded-full bg-primary/10 flex items-center justify-center mx-auto mb-6">
-          <span className="text-3xl">🎉</span>
-        </div>
-        <h2 className="text-2xl font-semibold text-foreground mb-2">Test Complete!</h2>
-        <p className="text-muted-foreground mb-8">{test.title} · {test.hostName}</p>
-        <div className="bg-card border border-border rounded-2xl p-6 mb-6">
-          <div className="text-5xl font-bold text-primary mb-2">{pct}%</div>
-          <div className="text-muted-foreground text-sm mb-4">{score} of {questions.length} correct</div>
-          <ProgressBar value={pct} />
-        </div>
-        <button onClick={() => onFinish(pct)} className="w-full bg-primary hover:bg-accent text-white py-3 rounded-xl font-medium text-sm transition-all duration-150">
-          Save Result to My Skill Profile
-        </button>
-      </div>
-    );
-  }
-
-  return (
-    <div className="max-w-2xl mx-auto py-4 animate-fade-slide">
-      <div className="mb-6">
-        <div className="flex items-center justify-between mb-2">
-          <span className="text-sm text-muted-foreground">Question {currentQ + 1} of {questions.length}</span>
-          <span className="text-xs font-medium px-2.5 py-1 rounded-full bg-primary/10 text-primary">{test.domain}</span>
-        </div>
-        <ProgressBar value={((currentQ + (revealed ? 1 : 0)) / questions.length) * 100} />
-      </div>
-
-      <div className="bg-card border border-border rounded-2xl p-6 lg:p-8 mb-5">
-        <p className="text-base lg:text-lg font-medium text-foreground leading-relaxed mb-7">{q.question}</p>
-
-        <div className="space-y-3">
-          {q.options.map((opt, idx) => {
-            let cls = "border-border bg-secondary/50 hover:bg-secondary hover:border-border";
-            if (selected === idx) {
-              cls = revealed
-                ? idx === q.correct
-                  ? "border-green-500 bg-green-50 dark:bg-green-950/30"
-                  : "border-red-400 bg-red-50 dark:bg-red-950/30"
-                : "border-primary bg-primary/8";
-            } else if (revealed && idx === q.correct) {
-              cls = "border-green-500 bg-green-50 dark:bg-green-950/30";
-            }
-            return (
-              <button key={idx} onClick={() => handleSelect(idx)} disabled={revealed} className={`w-full text-left px-4 py-3.5 rounded-xl border text-sm text-foreground transition-all duration-150 ${cls}`}>
-                <div className="flex items-start gap-3">
-                  <span className={`flex-shrink-0 w-6 h-6 rounded-full border flex items-center justify-center text-xs font-semibold mt-0.5 transition-all ${selected === idx ? "border-primary bg-primary text-white" : "border-muted-foreground text-muted-foreground"}`}>
-                    {String.fromCharCode(65 + idx)}
-                  </span>
-                  <span className="leading-relaxed">{opt}</span>
-                </div>
-              </button>
-            );
-          })}
-        </div>
-
-        {revealed && (
-          <div className="mt-5 p-4 bg-olive-50 dark:bg-olive-900/20 border border-olive-200 dark:border-olive-800/30 rounded-xl">
-            <div className="text-xs font-semibold text-primary mb-1">{selected === q.correct ? "✓ Correct!" : "✗ Incorrect"}</div>
-            <p className="text-xs text-foreground/80 leading-relaxed">
-              The correct answer is <strong>{String.fromCharCode(65 + q.correct)}: {q.options[q.correct]}</strong>.
-            </p>
-          </div>
-        )}
-      </div>
-
-      <div className="flex items-center justify-between">
-        <button onClick={onCancel} className="px-5 py-2.5 rounded-xl border border-border text-sm font-medium text-muted-foreground hover:text-foreground hover:bg-secondary transition-all duration-150">
-          Exit Test
-        </button>
-        <button onClick={handleNext} disabled={selected === null} className="px-5 py-2.5 rounded-xl bg-primary hover:bg-accent disabled:opacity-30 disabled:cursor-not-allowed text-white text-sm font-medium transition-all duration-150 hover:shadow-md">
-          {!revealed ? "Submit" : currentQ === questions.length - 1 ? "Finish →" : "Next →"}
-        </button>
-      </div>
-    </div>
-  );
-}
-
-function StudentCatalog({ user }) {
-  const navigate = useNav();
+function StudentView({ user }) {
+  const [tab, setTab] = useState("browse");
   const [tests, setTests] = useState([]);
+  const [registrations, setRegistrations] = useState([]);
   const [attempts, setAttempts] = useState([]);
-  const [registeredIds, setRegisteredIds] = useState(new Set());
-  const [activeTest, setActiveTest] = useState(null);
 
   function refresh() {
-    const t = listSkillTests();
-    setTests(t);
+    checkAndRecordMissedTests(user.id);
+    setTests(listSkillTests());
+    setRegistrations(listRegistrationsForStudent(user.id));
     setAttempts(getAttemptsForStudent(user.id));
-    setRegisteredIds(new Set(t.filter((x) => isRegisteredForSkillTest(x.id, user.id)).map((x) => x.id)));
   }
 
   useEffect(() => { refresh(); }, [user]);
 
-  function lastScoreFor(testId) {
-    const mine = attempts.filter((a) => a.testId === testId).sort((a, b) => new Date(b.completedAt) - new Date(a.completedAt));
-    return mine[0]?.score ?? null;
-  }
-
-  function handleFinish(score) {
-    recordAssessmentResult(user.id, activeTest.id, activeTest.domain, score);
-    setActiveTest(null);
-    refresh();
-  }
-
-  function handleRegister(test) {
-    registerForSkillTest(test.id, user.id);
-    refresh();
-  }
-
-  if (activeTest) {
-    return <TestRunner test={activeTest} onFinish={handleFinish} onCancel={() => setActiveTest(null)} />;
-  }
-
   return (
     <div className="animate-fade-slide space-y-5">
-      <div className="flex items-center justify-between">
-        <p className="text-sm text-muted-foreground">Tests hosted by industry partners and academic institutions. Online tests score instantly into your skill profile; offline tests are in-person and just need registration.</p>
-        <button onClick={() => navigate("student-dashboard")} className="text-sm text-primary font-medium hover:underline flex-shrink-0 ml-4">View my scores →</button>
+      <div className="flex bg-secondary rounded-xl p-1 w-full sm:w-auto sm:inline-flex">
+        {[
+          { key: "browse", label: "Browse Tests" },
+          { key: "mine", label: "My Tests" },
+        ].map((t) => (
+          <button key={t.key} onClick={() => setTab(t.key)} className={`flex-1 sm:flex-none px-4 py-2 rounded-lg text-sm font-medium transition-all duration-150 ${tab === t.key ? "bg-card text-foreground shadow-sm" : "text-muted-foreground hover:text-foreground"}`}>
+            {t.label}
+          </button>
+        ))}
       </div>
 
-      <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-4">
-        {tests.map((test) => {
-          const score = lastScoreFor(test.id);
-          const isRegistered = registeredIds.has(test.id);
-          return (
-            <div key={test.id} className="bg-card border border-border rounded-2xl p-5 flex flex-col hover:shadow-sm transition-shadow">
-              <div className="flex items-center gap-1.5 flex-wrap mb-3">
-                <span className={`text-[10px] font-medium px-2 py-0.5 rounded-full ${modeColor[test.mode]}`}>{test.mode}</span>
-                <span className="text-[10px] bg-secondary text-secondary-foreground px-2 py-0.5 rounded-full">{test.domain}</span>
-              </div>
-              <div className="text-sm font-semibold text-foreground mb-0.5">{test.title}</div>
-              <div className="text-xs text-muted-foreground mb-3">Hosted by {test.hostName}</div>
-              <p className="text-xs text-muted-foreground leading-relaxed mb-4 flex-1">{test.description}</p>
+      {tab === "browse" && (
+        <>
+          <p className="text-sm text-muted-foreground">
+            Tests hosted by industry partners and academic institutions. Register first — online tests unlock a proctored test room at the scheduled time, offline tests confirm your reporting details.
+          </p>
+          <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-4">
+            {tests.map((test) => (
+              <TestCard
+                key={test.id}
+                test={test}
+                user={user}
+                registration={getRegistration(test.id, user.id)}
+                attempt={attempts.find((a) => a.testId === test.id)}
+                onRefresh={refresh}
+              />
+            ))}
+          </div>
+        </>
+      )}
 
-              <div className="text-xs text-muted-foreground mb-4 space-y-1">
-                <div>⏱ {test.duration}</div>
-                {test.mode === "Offline" && (
-                  <>
-                    <div>📅 {test.scheduledAt ? formatDate(test.scheduledAt) : "Date to be announced"}</div>
-                    <div>📍 {test.venue || "Venue to be announced"}</div>
-                  </>
-                )}
-              </div>
-
-              {score != null && test.mode === "Online" && (
-                <div className="mb-3 text-xs font-semibold text-primary">Last score: {score}%</div>
-              )}
-
-              {test.mode === "Online" ? (
-                <button onClick={() => setActiveTest(test)} className="mt-auto w-full py-2.5 rounded-xl text-sm font-medium bg-primary hover:bg-accent text-white transition-all duration-150">
-                  {score != null ? "Retake Test" : "Take Test"}
-                </button>
-              ) : (
-                <button
-                  onClick={() => handleRegister(test)}
-                  disabled={isRegistered}
-                  className={`mt-auto w-full py-2.5 rounded-xl text-sm font-medium transition-all duration-150 ${isRegistered ? "bg-primary/10 text-primary cursor-default" : "bg-primary hover:bg-accent text-white"}`}
-                >
-                  {isRegistered ? "✓ Registered" : "Register"}
-                </button>
-              )}
-            </div>
-          );
-        })}
-      </div>
+      {tab === "mine" && <MyTests registrations={registrations} tests={tests} attempts={attempts} />}
     </div>
   );
 }
@@ -247,7 +72,22 @@ function StudentCatalog({ user }) {
 function HostView({ user }) {
   const [tests, setTests] = useState([]);
   const [showModal, setShowModal] = useState(false);
-  const [form, setForm] = useState({ title: "", domain: SKILL_DOMAINS[0], mode: "Online", duration: "15 mins", description: "", scheduledAt: "", venue: "" });
+  const [form, setForm] = useState({
+    title: "",
+    domain: SKILL_DOMAINS[0],
+    mode: "Online",
+    duration: "15 mins",
+    price: "0",
+    description: "",
+    prerequisites: "",
+    certification: "",
+    rules: "",
+    scheduledAt: "",
+    scheduledTime: "10:00",
+    venue: "",
+    reportingTime: "",
+    documentsRequired: "",
+  });
 
   function refresh() {
     setTests(listSkillTestsByOwner(user.id));
@@ -260,14 +100,21 @@ function HostView({ user }) {
     const hostName = user.companyName || user.institution || user.name;
     createSkillTest(user.id, hostName, {
       title: form.title,
-      domain: form.domain,
+      domain: form.mode === "Online" ? form.domain : form.domain || "General",
       mode: form.mode,
       duration: form.duration,
+      price: Number(form.price) || 0,
       description: form.description,
-      scheduledAt: form.mode === "Offline" ? form.scheduledAt : undefined,
+      prerequisites: form.prerequisites,
+      certification: form.certification,
+      rules: form.rules.split("\n").map((r) => r.trim()).filter(Boolean),
+      scheduledAt: form.scheduledAt || undefined,
+      scheduledTime: form.mode === "Online" ? form.scheduledTime : undefined,
       venue: form.mode === "Offline" ? form.venue : undefined,
+      reportingTime: form.mode === "Offline" ? form.reportingTime : undefined,
+      documentsRequired: form.mode === "Offline" ? form.documentsRequired.split(",").map((d) => d.trim()).filter(Boolean) : undefined,
     });
-    setForm({ title: "", domain: SKILL_DOMAINS[0], mode: "Online", duration: "15 mins", description: "", scheduledAt: "", venue: "" });
+    setForm({ title: "", domain: SKILL_DOMAINS[0], mode: "Online", duration: "15 mins", price: "0", description: "", prerequisites: "", certification: "", rules: "", scheduledAt: "", scheduledTime: "10:00", venue: "", reportingTime: "", documentsRequired: "" });
     setShowModal(false);
     refresh();
   }
@@ -295,8 +142,9 @@ function HostView({ user }) {
           {tests.map((test) => (
             <div key={test.id} className="bg-card border border-border rounded-2xl p-5">
               <div className="flex items-center gap-1.5 flex-wrap mb-3">
-                <span className={`text-[10px] font-medium px-2 py-0.5 rounded-full ${modeColor[test.mode]}`}>{test.mode}</span>
+                <span className="text-[10px] font-medium px-2 py-0.5 rounded-full bg-secondary text-secondary-foreground">{test.mode}</span>
                 <span className="text-[10px] bg-secondary text-secondary-foreground px-2 py-0.5 rounded-full">{test.domain}</span>
+                <span className="text-[10px] font-semibold text-primary bg-primary/8 px-2 py-0.5 rounded-full ml-auto">{test.price > 0 ? `₹${test.price}` : "Free"}</span>
               </div>
               <div className="text-sm font-semibold text-foreground mb-1">{test.title}</div>
               <p className="text-xs text-muted-foreground leading-relaxed">{test.description}</p>
@@ -331,14 +179,34 @@ function HostView({ user }) {
                 </div>
               </div>
 
+              <div>
+                <label className="block text-xs font-semibold text-muted-foreground uppercase tracking-wider mb-1.5">Price (₹, 0 for free)</label>
+                <input type="number" min="0" value={form.price} onChange={(e) => setForm((f) => ({ ...f, price: e.target.value }))}
+                  className="w-full bg-background border border-border rounded-xl px-3 py-3 text-sm focus:outline-none focus:ring-2 focus:ring-primary/30" />
+              </div>
+
               {form.mode === "Online" ? (
-                <div>
-                  <label className="block text-xs font-semibold text-muted-foreground uppercase tracking-wider mb-1.5">Skill Domain</label>
-                  <select value={form.domain} onChange={(e) => setForm((f) => ({ ...f, domain: e.target.value }))} className="w-full bg-background border border-border rounded-xl px-3 py-3 text-sm focus:outline-none focus:ring-2 focus:ring-primary/30">
-                    {SKILL_DOMAINS.map((d) => <option key={d}>{d}</option>)}
-                  </select>
-                  <p className="text-xs text-muted-foreground mt-1">Students take a ready-made short quiz for this domain.</p>
-                </div>
+                <>
+                  <div>
+                    <label className="block text-xs font-semibold text-muted-foreground uppercase tracking-wider mb-1.5">Skill Domain</label>
+                    <select value={form.domain} onChange={(e) => setForm((f) => ({ ...f, domain: e.target.value }))} className="w-full bg-background border border-border rounded-xl px-3 py-3 text-sm focus:outline-none focus:ring-2 focus:ring-primary/30">
+                      {SKILL_DOMAINS.map((d) => <option key={d}>{d}</option>)}
+                    </select>
+                    <p className="text-xs text-muted-foreground mt-1">Students take a ready-made short quiz for this domain.</p>
+                  </div>
+                  <div className="grid grid-cols-2 gap-3">
+                    <div>
+                      <label className="block text-xs font-semibold text-muted-foreground uppercase tracking-wider mb-1.5">Test Date</label>
+                      <input required type="date" value={form.scheduledAt} onChange={(e) => setForm((f) => ({ ...f, scheduledAt: e.target.value }))}
+                        className="w-full bg-background border border-border rounded-xl px-3 py-3 text-sm focus:outline-none focus:ring-2 focus:ring-primary/30" />
+                    </div>
+                    <div>
+                      <label className="block text-xs font-semibold text-muted-foreground uppercase tracking-wider mb-1.5">Test Time</label>
+                      <input required type="time" value={form.scheduledTime} onChange={(e) => setForm((f) => ({ ...f, scheduledTime: e.target.value }))}
+                        className="w-full bg-background border border-border rounded-xl px-3 py-3 text-sm focus:outline-none focus:ring-2 focus:ring-primary/30" />
+                    </div>
+                  </div>
+                </>
               ) : (
                 <>
                   <div>
@@ -349,21 +217,46 @@ function HostView({ user }) {
                   <div className="grid grid-cols-2 gap-3">
                     <div>
                       <label className="block text-xs font-semibold text-muted-foreground uppercase tracking-wider mb-1.5">Date</label>
-                      <input type="date" value={form.scheduledAt} onChange={(e) => setForm((f) => ({ ...f, scheduledAt: e.target.value }))}
+                      <input required type="date" value={form.scheduledAt} onChange={(e) => setForm((f) => ({ ...f, scheduledAt: e.target.value }))}
                         className="w-full bg-background border border-border rounded-xl px-3 py-3 text-sm focus:outline-none focus:ring-2 focus:ring-primary/30" />
                     </div>
                     <div>
-                      <label className="block text-xs font-semibold text-muted-foreground uppercase tracking-wider mb-1.5">Venue</label>
-                      <input value={form.venue} onChange={(e) => setForm((f) => ({ ...f, venue: e.target.value }))} placeholder="Campus / office address"
+                      <label className="block text-xs font-semibold text-muted-foreground uppercase tracking-wider mb-1.5">Reporting Time</label>
+                      <input value={form.reportingTime} onChange={(e) => setForm((f) => ({ ...f, reportingTime: e.target.value }))} placeholder="9:30 AM"
                         className="w-full bg-background border border-border rounded-xl px-3 py-3 text-sm focus:outline-none focus:ring-2 focus:ring-primary/30" />
                     </div>
+                  </div>
+                  <div>
+                    <label className="block text-xs font-semibold text-muted-foreground uppercase tracking-wider mb-1.5">Venue</label>
+                    <input value={form.venue} onChange={(e) => setForm((f) => ({ ...f, venue: e.target.value }))} placeholder="Campus / office address"
+                      className="w-full bg-background border border-border rounded-xl px-4 py-3 text-sm focus:outline-none focus:ring-2 focus:ring-primary/30 focus:border-primary transition-all" />
+                  </div>
+                  <div>
+                    <label className="block text-xs font-semibold text-muted-foreground uppercase tracking-wider mb-1.5">Documents Required (comma separated)</label>
+                    <input value={form.documentsRequired} onChange={(e) => setForm((f) => ({ ...f, documentsRequired: e.target.value }))} placeholder="Photo ID, Printed resume"
+                      className="w-full bg-background border border-border rounded-xl px-4 py-3 text-sm focus:outline-none focus:ring-2 focus:ring-primary/30 focus:border-primary transition-all" />
                   </div>
                 </>
               )}
 
               <div>
+                <label className="block text-xs font-semibold text-muted-foreground uppercase tracking-wider mb-1.5">Prerequisites</label>
+                <input value={form.prerequisites} onChange={(e) => setForm((f) => ({ ...f, prerequisites: e.target.value }))} placeholder="What should candidates know beforehand?"
+                  className="w-full bg-background border border-border rounded-xl px-4 py-3 text-sm focus:outline-none focus:ring-2 focus:ring-primary/30 focus:border-primary transition-all" />
+              </div>
+              <div>
+                <label className="block text-xs font-semibold text-muted-foreground uppercase tracking-wider mb-1.5">Certification Awarded</label>
+                <input value={form.certification} onChange={(e) => setForm((f) => ({ ...f, certification: e.target.value }))} placeholder="e.g. Zoho Programming Fundamentals Certificate"
+                  className="w-full bg-background border border-border rounded-xl px-4 py-3 text-sm focus:outline-none focus:ring-2 focus:ring-primary/30 focus:border-primary transition-all" />
+              </div>
+              <div>
+                <label className="block text-xs font-semibold text-muted-foreground uppercase tracking-wider mb-1.5">Rules (one per line)</label>
+                <textarea value={form.rules} onChange={(e) => setForm((f) => ({ ...f, rules: e.target.value }))} rows={3} placeholder={"Keep your camera on\nNo external notes"}
+                  className="w-full bg-background border border-border rounded-xl px-4 py-3 text-sm focus:outline-none focus:ring-2 focus:ring-primary/30 focus:border-primary transition-all resize-none" />
+              </div>
+              <div>
                 <label className="block text-xs font-semibold text-muted-foreground uppercase tracking-wider mb-1.5">Description</label>
-                <textarea value={form.description} onChange={(e) => setForm((f) => ({ ...f, description: e.target.value }))} rows={3} placeholder="What does this test evaluate?"
+                <textarea value={form.description} onChange={(e) => setForm((f) => ({ ...f, description: e.target.value }))} rows={2} placeholder="What does this test evaluate?"
                   className="w-full bg-background border border-border rounded-xl px-4 py-3 text-sm focus:outline-none focus:ring-2 focus:ring-primary/30 focus:border-primary transition-all resize-none" />
               </div>
 
@@ -385,7 +278,7 @@ export default function SkillAssessment() {
 
   return (
     <DashboardLayout activePage="skill-assessment" title="Skill Tests">
-      {isHost ? <HostView user={user} /> : <StudentCatalog user={user} />}
+      {isHost ? <HostView user={user} /> : <StudentView user={user} />}
     </DashboardLayout>
   );
 }

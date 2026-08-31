@@ -3,6 +3,7 @@
 import { useEffect, useMemo, useState } from "react";
 import { RadarChart, Radar, PolarGrid, PolarAngleAxis, PolarRadiusAxis, ResponsiveContainer, Tooltip } from "recharts";
 import DashboardLayout from "../DashboardLayout";
+import ApplyConfirmModal from "../ApplyConfirmModal";
 import { useAuth } from "../../lib/auth";
 import { useNav } from "../../lib/nav";
 import { getAssessment, getPortfolio, listInternships, listApplicationsForStudent, applyToInternship } from "../../lib/store";
@@ -90,9 +91,16 @@ export default function StudentDashboard() {
     return Math.min(100, pct);
   }, [assessment, portfolio, applications]);
 
+  const [applyTarget, setApplyTarget] = useState(null);
+
   function handleApply(internship) {
-    applyToInternship(internship, user, internship.match);
-    setAppliedIds((prev) => new Set([...prev, internship.id]));
+    setApplyTarget(internship);
+  }
+
+  function confirmApply(note) {
+    applyToInternship(applyTarget, user, applyTarget.match, note);
+    setAppliedIds((prev) => new Set([...prev, applyTarget.id]));
+    setApplyTarget(null);
   }
 
   if (!ready) {
@@ -115,12 +123,13 @@ export default function StudentDashboard() {
   const firstName = user.name?.split(" ")[0] || "there";
 
   return (
+    <>
     <DashboardLayout activePage="student-dashboard" title="Dashboard">
       <div className="space-y-6 animate-fade-slide">
         <div className="flex items-start justify-between gap-4">
           <div>
             <h2 className="text-xl font-semibold text-foreground">Good to see you, {firstName} 👋</h2>
-            <p className="text-muted-foreground text-sm mt-0.5">{user.course || "Student"} · {user.institution || "Your Institution"}</p>
+            <p className="text-muted-foreground text-sm mt-0.5">{[user.course, user.year].filter(Boolean).join(" · ") || "Student"} · {user.institution || "Your Institution"}</p>
           </div>
           <button onClick={() => navigate("skill-assessment")} className="hidden sm:flex items-center gap-2 bg-primary hover:bg-accent text-white text-sm font-medium px-4 py-2.5 rounded-xl transition-all duration-150 hover:shadow-md">
             {assessment ? "Browse Skill Tests" : "Take a Skill Test"}
@@ -272,5 +281,7 @@ export default function StudentDashboard() {
         </div>
       </div>
     </DashboardLayout>
+    {applyTarget && <ApplyConfirmModal internship={applyTarget} user={user} onConfirm={confirmApply} onClose={() => setApplyTarget(null)} />}
+    </>
   );
 }
