@@ -78,6 +78,7 @@ export default function AyushBridgeAuth({
   // OTP Step State
   const [step, setStep] = useState("form"); // 'form' | 'otp'
   const [otpInput, setOtpInput] = useState(["", "", "", "", "", ""]);
+  const [devOtpHint, setDevOtpHint] = useState(null);
   const [otpTimer, setOtpTimer] = useState(60);
 
   useEffect(() => {
@@ -246,15 +247,10 @@ export default function AyushBridgeAuth({
     // Validate Role-specific fields
     if (selectedRole === "student") {
       const name = (formData.fullName || "").trim();
-      const sId = (formData.studentId || "").trim();
       const clg = (formData.college || "").trim();
 
       if (!name || name.length < 3 || !/^[a-zA-Z\s.']{3,60}$/.test(name)) {
         setError("Please enter a valid Full Name (letters, spaces, and periods only, min. 3 characters).");
-        return;
-      }
-      if (!sId || sId.length < 4 || !/^[a-zA-Z0-9\/-]{4,25}$/.test(sId) || isRepetitiveGibberish(sId)) {
-        setError("Please enter a valid Student / Roll Number (e.g. AYU-2024-8821, min. 4 characters).");
         return;
       }
       if (!clg || clg.length < 4 || isRepetitiveGibberish(clg)) {
@@ -348,12 +344,14 @@ export default function AyushBridgeAuth({
         });
         const data = await res.json();
         if (res.ok && data.success) {
+          // Keep input strictly empty for manual typing
+          setOtpInput(["", "", "", "", "", ""]);
           if (data.devOtp) {
-            showToast(`Dev Sandbox Mode: Verification code is ${data.devOtp}`);
-            setOtpInput(data.devOtp.split(""));
+            setDevOtpHint(data.devOtp);
+            showToast(`Dev Sandbox Mode: Code generated (${data.devOtp})`);
           } else {
+            setDevOtpHint(null);
             showToast(`Verification code sent to ${targetEmail} ✓`);
-            setOtpInput(["", "", "", "", "", ""]);
           }
           setOtpTimer(60);
           setStep("otp");
@@ -831,33 +829,18 @@ export default function AyushBridgeAuth({
                       style={{ width: "100%", padding: "9px 12px", borderRadius: 9, border: `1px solid ${T.border}`, background: T.bgSurface, color: T.ink, fontFamily: "var(--ui)", fontSize: 13, boxSizing: "border-box" }}
                     />
                   </div>
-                  <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 10 }}>
-                    <div>
-                      <label style={{ display: "block", fontFamily: "var(--ui)", fontSize: 12, fontWeight: 600, color: T.ink, marginBottom: 4 }}>
-                        Student / Roll Number <span style={{ color: T.terra }}>*</span>
-                      </label>
-                      <input
-                        type="text"
-                        required
-                        placeholder="e.g. AYU-2024-8821"
-                        value={formData.studentId}
-                        onChange={(e) => handleInputChange("studentId", e.target.value)}
-                        style={{ width: "100%", padding: "9px 12px", borderRadius: 9, border: `1px solid ${T.border}`, background: T.bgSurface, color: T.ink, fontFamily: "var(--ui)", fontSize: 13, boxSizing: "border-box" }}
-                      />
-                    </div>
-                    <div>
-                      <label style={{ display: "block", fontFamily: "var(--ui)", fontSize: 12, fontWeight: 600, color: T.ink, marginBottom: 4 }}>
-                        Institution / College Name <span style={{ color: T.terra }}>*</span>
-                      </label>
-                      <input
-                        type="text"
-                        required
-                        placeholder="e.g. AIIA New Delhi"
-                        value={formData.college}
-                        onChange={(e) => handleInputChange("college", e.target.value)}
-                        style={{ width: "100%", padding: "9px 12px", borderRadius: 9, border: `1px solid ${T.border}`, background: T.bgSurface, color: T.ink, fontFamily: "var(--ui)", fontSize: 13, boxSizing: "border-box" }}
-                      />
-                    </div>
+                  <div>
+                    <label style={{ display: "block", fontFamily: "var(--ui)", fontSize: 12, fontWeight: 600, color: T.ink, marginBottom: 4 }}>
+                      Institution / College Name <span style={{ color: T.terra }}>*</span>
+                    </label>
+                    <input
+                      type="text"
+                      required
+                      placeholder="e.g. All India Institute of Ayurveda (AIIA), New Delhi"
+                      value={formData.college}
+                      onChange={(e) => handleInputChange("college", e.target.value)}
+                      style={{ width: "100%", padding: "9px 12px", borderRadius: 9, border: `1px solid ${T.border}`, background: T.bgSurface, color: T.ink, fontFamily: "var(--ui)", fontSize: 13, boxSizing: "border-box" }}
+                    />
                   </div>
                   <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 10 }}>
                     <div>
@@ -1244,17 +1227,24 @@ export default function AyushBridgeAuth({
               fontFamily: "var(--ui)",
               color: T.inkSoft,
             }}>
-              <div>We sent a 6-digit one-time password to:</div>
+              <div>We sent a 6-digit one-time verification code to:</div>
               <div style={{ fontWeight: 700, color: T.teal, marginTop: 2 }}>{formData.email}</div>
+              {devOtpHint && (
+                <div style={{ marginTop: 8, padding: "4px 8px", background: `${T.teal}15`, borderRadius: 6, fontSize: 12, color: T.teal, fontWeight: 600 }}>
+                  🛠️ Dev Sandbox Mode: Verification Code is <strong>{devOtpHint}</strong> (Please type this code manually below)
+                </div>
+              )}
             </div>
 
-            {/* 6 Digits Boxes */}
+            {/* 6 Digits Boxes - 100% Manual Typing */}
             <div style={{ display: "flex", justifyContent: "center", gap: 10, marginBottom: 20 }}>
               {otpInput.map((digit, index) => (
                 <input
                   key={index}
                   id={`ay-otp-box-${index}`}
                   type="text"
+                  inputMode="numeric"
+                  autoComplete="off"
                   maxLength={1}
                   value={digit}
                   onChange={(e) => handleOtpDigitChange(index, e.target.value)}
@@ -1329,11 +1319,12 @@ export default function AyushBridgeAuth({
                     const data = await res.json();
                     if (res.ok && data.success) {
                       setOtpTimer(60);
+                      setOtpInput(["", "", "", "", "", ""]);
                       if (data.devOtp) {
-                        showToast(`Dev Sandbox Mode: New code is ${data.devOtp}`);
-                        setOtpInput(data.devOtp.split(""));
+                        setDevOtpHint(data.devOtp);
+                        showToast(`Dev Sandbox Mode: New code generated (${data.devOtp})`);
                       } else {
-                        setOtpInput(["", "", "", "", "", ""]);
+                        setDevOtpHint(null);
                         showToast(`New verification code sent to ${formData.email} ✓`);
                       }
                     } else {

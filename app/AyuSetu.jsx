@@ -1747,8 +1747,8 @@ const ROLE_ACCOUNTS = {
    ============================================================ */
 
 const ThemeContext = createContext({
-  T: THEMES.dark,
-  themeMode: "dark",
+  T: THEMES.light,
+  themeMode: "light",
   setThemeMode: () => {},
 });
 
@@ -3742,7 +3742,24 @@ function StudentPortfolioView({
    ============================================================ */
 
 export default function AyushBridge() {
-  const [themeMode, setThemeMode] = useState("dark"); // 'dark' | 'light'
+  const [themeMode, setThemeMode] = useState(() => {
+    if (typeof window !== "undefined") {
+      try {
+        const saved = localStorage.getItem("ayush_theme");
+        if (saved === "dark" || saved === "light") return saved;
+      } catch (e) {}
+    }
+    return "light"; // Default initial load state is Light Mode
+  });
+
+  useEffect(() => {
+    if (typeof window !== "undefined") {
+      try {
+        localStorage.setItem("ayush_theme", themeMode);
+      } catch (e) {}
+    }
+  }, [themeMode]);
+
   const [role, setRole] = useState(null); // null = landing, 'student' | 'academician' | 'industry' | 'institution'
   const [tab, setTab] = useState("overview");
   const [isTabLoading, setIsTabLoading] = useState(false);
@@ -4776,22 +4793,23 @@ export default function AyushBridge() {
           </div>
 
           {role === "student" || (user && (user.isMasterDemo || user.role === role)) ? (
-            <nav style={{ display: "flex", gap: 24, overflowX: "auto", paddingBottom: 2 }}>
+            <nav style={{ display: "flex", gap: "8px 22px", flexWrap: "wrap", alignItems: "center", paddingBottom: 4 }}>
               {TABS.map(([id, label]) => (
                 <button
                   key={id}
+                  type="button"
                   onClick={() => changeTab(id)}
                   style={{
                     background: "none",
                     border: "none",
                     cursor: "pointer",
-                    padding: "0 0 12px",
+                    padding: "6px 0 10px",
                     whiteSpace: "nowrap",
                     fontFamily: "var(--ui)",
                     fontSize: 14,
-                    fontWeight: tab === id ? 650 : 500,
+                    fontWeight: tab === id ? 700 : 500,
                     color: tab === id ? T.ink : T.muted,
-                    borderBottom: `2px solid ${tab === id ? T.terra : "transparent"}`,
+                    borderBottom: `2.5px solid ${tab === id ? T.terra : "transparent"}`,
                     marginBottom: -1,
                     transition: "all .15s ease",
                   }}
@@ -7585,68 +7603,124 @@ export default function AyushBridge() {
           </>
         )}
 
-        {role === "institution" && tab === "placement" && (
-          <>
-            <H size={28}>Placement Telemetry</H>
-            <Muted style={{ marginTop: 4, marginBottom: 20 }}>
-              Live candidate pipeline across all partner AYUSH organizations.
-            </Muted>
+        {role === "institution" && tab === "placement" && viewingApplicant ? (
+          <StudentPortfolioView
+            user={{
+              name: viewingApplicant.name,
+              studentId: viewingApplicant.studentId,
+              college: viewingApplicant.college,
+              institution: viewingApplicant.college,
+              email: viewingApplicant.email || `${viewingApplicant.name.toLowerCase().replace(/\s+/g, ".")}@ayushbridge.edu.in`,
+              bio: viewingApplicant.bio || `Verified AYUSH scholar enrolled in ${viewingApplicant.stream || "Ayurveda"}.`,
+              specializations: viewingApplicant.specializations || [viewingApplicant.role, viewingApplicant.stream || "Ayurveda"],
+              year: viewingApplicant.year || "4th Professional Year",
+              avatar: viewingApplicant.avatar || null,
+              links: viewingApplicant.links || {
+                linkedin: `https://linkedin.com/in/${viewingApplicant.name.toLowerCase().replace(/\s+/g, "-")}`,
+                researchGate: `https://researchgate.net/profile/${viewingApplicant.name.replace(/\s+/g, "-")}`,
+                website: "https://ayushbridge.gov.in",
+              },
+            }}
+            profile={viewingApplicant.profile || SAMPLE_PROFILE}
+            certifications={viewingApplicant.certifications || SAMPLE_CERTS}
+            experiences={viewingApplicant.experiences || SAMPLE_EXPERIENCES}
+            vaultDocs={viewingApplicant.vaultDocs || SAMPLE_VAULT_DOCS}
+            isEditable={false}
+            onBack={() => setViewingApplicant(null)}
+            setViewingVaultDoc={setViewingVaultDoc}
+            T={T}
+            themeMode={themeMode}
+            showToast={showToast}
+          />
+        ) : (
+          role === "institution" && tab === "placement" && (
+            <>
+              <H size={28}>Placement Telemetry</H>
+              <Muted style={{ marginTop: 4, marginBottom: 20 }}>
+                Live candidate pipeline across all partner AYUSH organizations. Click any student name below to inspect their full verified portfolio.
+              </Muted>
 
-            <div style={{ display: "flex", gap: 14, flexWrap: "wrap", marginBottom: 20 }}>
-              <KPI value="184" label="Placed" sub="30% of assessed students" icon="🎉" />
-              <KPI value="₹4.20 LPA" label="Median Package" icon="💵" />
-              <KPI value="24" label="Recruiting Partners" sub="6 joined this session" icon="🤝" />
-              <KPI value="21 Days" label="Median Time to Offer" icon="⚡" />
-            </div>
-
-            <Card style={{ padding: 0, overflow: "hidden" }}>
-              <div style={{ overflowX: "auto" }}>
-                <table style={{ width: "100%", borderCollapse: "collapse", fontFamily: "var(--ui)", fontSize: 13.5, minWidth: 740 }}>
-                  <thead>
-                    <tr style={{ background: T.bgSurface }}>
-                      {["Student", "Student ID", "Stream", "Opportunity", "Readiness Match", "Status"].map((h) => (
-                        <th key={h} style={{ textAlign: "left", padding: "13px 18px", fontSize: 12, letterSpacing: ".06em", textTransform: "uppercase", color: T.muted, fontWeight: 650 }}>
-                          {h}
-                        </th>
-                      ))}
-                    </tr>
-                  </thead>
-                  <tbody>
-                    {APPLICANTS.map((r) => (
-                      <tr key={r.name} style={{ borderTop: `1px solid ${T.border}` }}>
-                        <td style={{ padding: "14px 18px", color: T.ink, fontWeight: 600 }}>{r.name}</td>
-                        <td style={{ padding: "14px 18px" }}>
-                          <span
-                            style={{
-                              fontFamily: "var(--ui)",
-                              fontSize: 12,
-                              fontWeight: 650,
-                              color: T.teal,
-                              background: T.bgSurface,
-                              border: `1px solid ${T.border}`,
-                              padding: "3px 8px",
-                              borderRadius: 6,
-                              letterSpacing: "0.02em",
-                            }}
-                          >
-                            {r.studentId}
-                          </span>
-                        </td>
-                        <td style={{ padding: "14px 18px", color: T.muted }}>{r.stream}</td>
-                        <td style={{ padding: "14px 18px", color: T.inkSoft }}>{r.role}</td>
-                        <td style={{ padding: "14px 18px", color: r.match >= 80 ? T.sage : T.terra, fontWeight: 650 }}>
-                          {r.match}%
-                        </td>
-                        <td style={{ padding: "14px 18px" }}>
-                          <Chip tone={r.status === "Selected" ? "good" : "neutral"}>{r.status}</Chip>
-                        </td>
-                      </tr>
-                    ))}
-                  </tbody>
-                </table>
+              <div style={{ display: "flex", gap: 14, flexWrap: "wrap", marginBottom: 20 }}>
+                <KPI value="184" label="Placed" sub="30% of assessed students" icon="🎉" />
+                <KPI value="₹4.20 LPA" label="Median Package" icon="💵" />
+                <KPI value="24" label="Recruiting Partners" sub="6 joined this session" icon="🤝" />
+                <KPI value="21 Days" label="Median Time to Offer" icon="⚡" />
               </div>
-            </Card>
-          </>
+
+              <Card style={{ padding: 0, overflow: "hidden" }}>
+                <div style={{ overflowX: "auto" }}>
+                  <table style={{ width: "100%", borderCollapse: "collapse", fontFamily: "var(--ui)", fontSize: 13.5, minWidth: 740 }}>
+                    <thead>
+                      <tr style={{ background: T.bgSurface }}>
+                        {["Student", "Student ID", "Stream", "Opportunity", "Readiness Match", "Status"].map((h) => (
+                          <th key={h} style={{ textAlign: "left", padding: "13px 18px", fontSize: 12, letterSpacing: ".06em", textTransform: "uppercase", color: T.muted, fontWeight: 650 }}>
+                            {h}
+                          </th>
+                        ))}
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {APPLICANTS.map((r) => (
+                        <tr key={r.name} style={{ borderTop: `1px solid ${T.border}` }}>
+                          <td style={{ padding: "14px 18px", color: T.ink, fontWeight: 600 }}>
+                            <button
+                              type="button"
+                              onClick={() => setViewingApplicant(r)}
+                              title={`Inspect ${r.name}'s verified portfolio`}
+                              style={{
+                                background: "none",
+                                border: "none",
+                                padding: 0,
+                                fontFamily: "var(--ui)",
+                                fontSize: 13.5,
+                                fontWeight: 700,
+                                color: T.teal,
+                                cursor: "pointer",
+                                textAlign: "left",
+                                display: "inline-flex",
+                                alignItems: "center",
+                                gap: 6,
+                                textDecoration: "underline",
+                                textUnderlineOffset: 3,
+                              }}
+                            >
+                              <span>{r.name}</span>
+                              <span style={{ fontSize: 11, opacity: 0.75 }}>↗</span>
+                            </button>
+                          </td>
+                          <td style={{ padding: "14px 18px" }}>
+                            <span
+                              style={{
+                                fontFamily: "var(--ui)",
+                                fontSize: 12,
+                                fontWeight: 650,
+                                color: T.teal,
+                                background: T.bgSurface,
+                                border: `1px solid ${T.border}`,
+                                padding: "3px 8px",
+                                borderRadius: 6,
+                                letterSpacing: "0.02em",
+                              }}
+                            >
+                              {r.studentId}
+                            </span>
+                          </td>
+                          <td style={{ padding: "14px 18px", color: T.muted }}>{r.stream}</td>
+                          <td style={{ padding: "14px 18px", color: T.inkSoft }}>{r.role}</td>
+                          <td style={{ padding: "14px 18px", color: r.match >= 80 ? T.sage : T.terra, fontWeight: 650 }}>
+                            {r.match}%
+                          </td>
+                          <td style={{ padding: "14px 18px" }}>
+                            <Chip tone={r.status === "Selected" ? "good" : "neutral"}>{r.status}</Chip>
+                          </td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                </div>
+              </Card>
+            </>
+          )
         )}
 
         {role === "institution" && tab === "post_program" && (
