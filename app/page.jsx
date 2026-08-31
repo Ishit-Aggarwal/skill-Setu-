@@ -43,7 +43,7 @@ const stats = [
 
 const steps = [
   { num: "01", title: "Create Your Profile", desc: "Students complete a skill-mapped profile; industries post roles; academicians register programs." },
-  { num: "02", title: "AI Skill Matching", desc: "Our engine maps competencies to opportunities using industry-validated frameworks and assessments." },
+  { num: "02", title: "Skill Matching", desc: "Scores from skill tests are matched against each opportunity's required skills to surface the most relevant fits first." },
   { num: "03", title: "Connect & Collaborate", desc: "Apply, shortlist, and track placements — with real-time analytics for every stakeholder." },
 ];
 
@@ -71,7 +71,7 @@ export default function LandingPage() {
 
   return (
     <div className="min-h-screen bg-background">
-      <nav className="sticky top-0 z-50 bg-background/90 backdrop-blur border-b border-border">
+      <nav className="sticky top-0 z-50 bg-background border-b border-border">
         <div className="max-w-6xl mx-auto px-5 py-3.5 flex items-center justify-between">
           <div className="flex items-center gap-2.5">
             <div className="w-8 h-8 rounded-lg bg-primary flex items-center justify-center text-white font-bold text-sm">S</div>
@@ -100,8 +100,8 @@ export default function LandingPage() {
       <section className="relative min-h-[92vh] flex items-center overflow-hidden">
         <div className="absolute inset-0">
           <img
-            src="https://images.unsplash.com/photo-1523580494863-6f3031224c94?w=1600&h=900&fit=crop&auto=format"
-            alt="Students in academic setting"
+            src="https://images.unsplash.com/photo-1659292862395-2ded345088df?w=1600&h=900&fit=crop&auto=format"
+            alt="Indian Institute of Advanced Study, Shimla"
             className="w-full h-full object-cover"
           />
           <div className="absolute inset-0 bg-gradient-to-br from-olive-900/85 via-olive-800/70 to-olive-700/50" />
@@ -121,7 +121,7 @@ export default function LandingPage() {
             </h1>
 
             <p className="text-lg sm:text-xl text-white/70 mb-10 max-w-xl leading-relaxed">
-              Intelligent skill mapping, internships, and placements — connecting students, industries, and academic institutions across every sector under one platform.
+              Skill mapping, internships, and placements — connecting students, industries, and academic institutions across every sector under one platform.
             </p>
 
             <div className="flex flex-col sm:flex-row flex-wrap gap-3">
@@ -160,13 +160,13 @@ export default function LandingPage() {
         <div className="text-center mb-12">
           <div className="text-xs font-semibold text-primary uppercase tracking-widest mb-3">Who Is This For?</div>
           <h2 className="text-3xl font-semibold text-foreground mb-3">One Platform, Four Roles</h2>
-          <p className="text-muted-foreground max-w-xl mx-auto">Every stakeholder in the academia-industry ecosystem has a dedicated experience.</p>
+          <p className="text-muted-foreground max-w-xl mx-auto">One account, one purpose-built workspace — pick the role that matches what you're here to do.</p>
         </div>
 
         <div className="grid md:grid-cols-2 lg:grid-cols-4 gap-6">
           {[
-            { role: "student", emoji: "🎓", title: "Students", subtitle: "Engineering · Management · Design · Sciences · Arts", features: ["AI-powered skill gap analysis", "Curated internship matches", "Portfolio & certification tracker"], cta: "Sign Up as Student" },
-            { role: "industry", emoji: "🏢", title: "Industries", subtitle: "IT · Manufacturing · Finance · Consulting · Design", features: ["Post jobs & internships", "AI-matched candidate shortlisting", "Applicant pipeline tracking"], cta: "Partner as Industry", featured: true },
+            { role: "student", emoji: "🎓", title: "Students", subtitle: "Engineering · Management · Design · Sciences · Arts", features: ["Skill tests & gap analysis", "Curated internship matches", "Portfolio & certification tracker"], cta: "Sign Up as Student" },
+            { role: "industry", emoji: "🏢", title: "Industries", subtitle: "IT · Manufacturing · Finance · Consulting · Design", features: ["Post jobs & internships", "Skill-matched candidate shortlisting", "Applicant pipeline tracking"], cta: "Partner as Industry", featured: true },
             { role: "academician", emoji: "📚", title: "Academicians", subtitle: "Faculty · Researchers · Program Leads", features: ["Host & join FDP programs", "Research collaboration hub", "Track student placements"], cta: "Join as Academician" },
             { role: "institution", emoji: "🏫", title: "Institutions", subtitle: "Deans · Placement Cells · Admins", features: ["Placement funnel analytics", "Cohort skill-gap breakdowns", "Curriculum alignment insights"], cta: "Register Institution" },
           ].map((card) => (

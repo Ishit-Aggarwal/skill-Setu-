@@ -12,25 +12,25 @@ const roleConfig = {
   student: {
     label: "Student",
     desc: "Engineering / Management / Design / Sciences",
-    image: "https://images.unsplash.com/photo-1523580494863-6f3031224c94?w=800&h=1100&fit=crop&auto=format",
+    image: "https://images.unsplash.com/photo-1686624386665-4cd01b96d0f6?w=800&h=1100&fit=crop&auto=format",
     tagline: "Map your skills. Find your internship.",
   },
   industry: {
     label: "Industry",
     desc: "IT · Manufacturing · Finance · Consulting",
-    image: "https://images.unsplash.com/photo-1497366216548-37526070297c?w=800&h=1100&fit=crop&auto=format",
+    image: "https://images.unsplash.com/photo-1577962917302-cd874c4e31d2?w=800&h=1100&fit=crop&auto=format",
     tagline: "Hire talent matched to your needs.",
   },
   academician: {
     label: "Academician",
     desc: "Faculty · Researchers · Program Leads",
-    image: "https://images.unsplash.com/photo-1524178232363-1fb2b075b655?w=800&h=1100&fit=crop&auto=format",
+    image: "https://images.unsplash.com/photo-1573894998033-c0cef4ed722b?w=800&h=1100&fit=crop&auto=format",
     tagline: "Drive research and student excellence.",
   },
   institution: {
     label: "Institution",
     desc: "Deans · Placement Cells · Admins",
-    image: "https://images.unsplash.com/photo-1562774053-701939374585?w=800&h=1100&fit=crop&auto=format",
+    image: "https://images.unsplash.com/photo-1680084521816-cc1ad0433ceb?w=800&h=1100&fit=crop&auto=format",
     tagline: "Track placement outcomes at scale.",
   },
 };
