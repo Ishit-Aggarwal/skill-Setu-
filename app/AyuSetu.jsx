@@ -903,32 +903,509 @@ const INDUSTRY_DEMAND_TREND_BY_RANGE = {
 };
 
 const APPLICANTS = [
-  { studentId: "AYB-2026-0142", name: "Ishit Aggarwal", college: "All India Institute of Ayurveda, New Delhi", role: "Clinical Research Intern", stream: "Ayurveda", match: 89, status: "Selected" },
-  { studentId: "AYB-2026-0218", name: "Manvi Rawat", college: "National Institute of Ayurveda, Jaipur", role: "Regulatory Compliance Trainee", stream: "Ayurveda", match: 82, status: "Shortlisted" },
-  { studentId: "AYB-2026-0304", name: "Naitik Sharma", college: "AIIA, New Delhi", role: "Quality Control Lab Trainee", stream: "Ayurveda", match: 78, status: "Applied" },
-  { studentId: "AYB-2026-0419", name: "Shreya Paul", college: "National Institute of Homoeopathy, Kolkata", role: "Clinical Research Intern", stream: "Homoeopathy", match: 74, status: "Shortlisted" },
-  { studentId: "AYB-2026-0520", name: "Viyona Menon", college: "Amrita School of Ayurveda", role: "Therapeutic Wellness Consultant", stream: "Ayurveda", match: 92, status: "Selected" },
-  { studentId: "AYB-2026-0633", name: "Shaurya Dwivedi", college: "BHU Faculty of Ayurveda, Varanasi", role: "Tele-AYUSH Implementation", stream: "Ayurveda", match: 71, status: "Applied" },
-  { studentId: "AYB-2026-0785", name: "Devika Pillai", college: "Govt Yoga & Naturopathy College, Chennai", role: "Corporate Wellness Associate", stream: "Yoga & Naturopathy", match: 88, status: "Selected" },
+  {
+    studentId: "AYB-2026-0142",
+    name: "Ishit Aggarwal",
+    college: "All India Institute of Ayurveda, New Delhi",
+    role: "Clinical Research Intern",
+    stream: "Ayurveda",
+    match: 89,
+    status: "Selected",
+    email: "ishit.aggarwal@aiia.gov.in",
+    year: "4th Professional Year (BAMS)",
+    bio: "Final-year BAMS student researcher at AIIA focusing on botanical pharmacognosy, quality standardization, and double-blind clinical trial protocol design.",
+    specializations: ["Clinical Research", "Herbal Formulation", "Pharmacognosy", "GCP Compliance"],
+    profile: {
+      wellness_therapy: 55,
+      herbal_formulation: 85,
+      quality_testing: 78,
+      clinical_doc: 88,
+      regulatory_gmp: 72,
+      clinical_research: 92,
+      health_data: 80,
+      digital_telehealth: 65,
+      lifestyle_counsel: 75,
+      yoga_therapy: 40,
+    },
+    certifications: [
+      {
+        id: "c1",
+        title: "CCRAS Good Clinical Practice (GCP) for AYUSH Trials",
+        issuer: "Central Council for Research in Ayurvedic Sciences",
+        issueDate: "Aug 2025",
+        docName: "GCP-CCRAS-8821.pdf",
+        verified: true,
+        boostSkill: "clinical_research",
+        boostAmount: 15,
+        credentialUrl: "https://ccras.nic.in/gcp-cert/8821",
+      },
+      {
+        id: "c2",
+        title: "ISO/IEC 17025 Herbal Quality Control & Standardization",
+        issuer: "NABL & National Institute of Ayurveda",
+        issueDate: "Nov 2025",
+        docName: "NABL-NIA-9912.pdf",
+        verified: true,
+        boostSkill: "quality_testing",
+        boostAmount: 10,
+        credentialUrl: "https://nabl-india.org",
+      },
+    ],
+    experiences: [
+      {
+        id: "e1",
+        role: "Ayurvedic Clinical Trial Observer",
+        org: "AIIA Hospital & Clinical Research Wing",
+        period: "Jul 2025 – Dec 2025",
+        description: "Assisted lead investigators in documenting 40+ patient consent forms, pulse diagnostics, and outcome telemetry.",
+      },
+      {
+        id: "e2",
+        role: "Botanical Formulation Lab Intern",
+        org: "Dabur Research Foundation",
+        period: "Jan 2025 – Jun 2025",
+        description: "Standardized decoction extraction yields and validated shelf-life stability curves for aqueous formulations.",
+      },
+    ],
+    vaultDocs: [
+      { id: "vd1", name: "AIIA_Academic_Transcript_Year4.pdf", size: "2.4 MB", type: "Academic Transcript", date: "Jan 2026" },
+      { id: "vd2", name: "CCRAS_GCP_Clinical_Certificate.pdf", size: "1.1 MB", type: "Clinical Credential", date: "Aug 2025" },
+    ],
+    links: {
+      linkedin: "https://linkedin.com/in/ishit-aggarwal-ayush",
+      researchGate: "https://researchgate.net/profile/Ishit-Aggarwal",
+      website: "https://ayushbridge.gov.in",
+    },
+  },
+  {
+    studentId: "AYB-2026-0218",
+    name: "Manvi Rawat",
+    college: "National Institute of Ayurveda, Jaipur",
+    role: "Regulatory Compliance Trainee",
+    stream: "Ayurveda",
+    match: 82,
+    status: "Shortlisted",
+    email: "manvi.rawat@nia.edu.in",
+    year: "4th Professional Year (BAMS)",
+    bio: "Specializing in Ayurvedic Pharmacopoeia of India (API) standards, regulatory submissions, and AYUSH GMP documentation.",
+    specializations: ["Regulatory GMP", "Quality Testing", "API Standards", "Formulation QC"],
+    profile: {
+      wellness_therapy: 40,
+      herbal_formulation: 75,
+      quality_testing: 82,
+      clinical_doc: 78,
+      regulatory_gmp: 88,
+      clinical_research: 70,
+      health_data: 65,
+      digital_telehealth: 50,
+      lifestyle_counsel: 60,
+      yoga_therapy: 30,
+    },
+    certifications: [
+      {
+        id: "c1",
+        title: "Certificate in AYUSH Drug Regulatory Affairs & GMP",
+        issuer: "National Institute of Ayurveda, Jaipur",
+        issueDate: "Sep 2025",
+        docName: "NIA-DRA-2025.pdf",
+        verified: true,
+        boostSkill: "regulatory_gmp",
+        boostAmount: 12,
+        credentialUrl: "https://nia.nic.in",
+      },
+    ],
+    experiences: [
+      {
+        id: "e1",
+        role: "Quality Assurance & Documentation Intern",
+        org: "NIA Pharmacy & Testing Lab",
+        period: "Aug 2025 – Nov 2025",
+        description: "Monitored batch manufacturing records (BMR) and validated stability compliance for classical churnas.",
+      },
+    ],
+    vaultDocs: [
+      { id: "vd1", name: "NIA_Regulatory_Affairs_Course.pdf", size: "1.8 MB", type: "Certificate", date: "Sep 2025" },
+    ],
+    links: {
+      linkedin: "https://linkedin.com/in/manvi-rawat",
+      researchGate: "https://researchgate.net/profile/Manvi-Rawat",
+    },
+  },
+  {
+    studentId: "AYB-2026-0304",
+    name: "Naitik Sharma",
+    college: "All India Institute of Ayurveda, New Delhi",
+    role: "Quality Control Lab Trainee",
+    stream: "Ayurveda",
+    match: 78,
+    status: "Applied",
+    email: "naitik.sharma@aiia.gov.in",
+    year: "3rd Professional Year (BAMS)",
+    bio: "Passionate about chromatographic testing (HPTLC, GC-MS) of medicinal plants and raw botanical material validation.",
+    specializations: ["Quality Testing", "HPTLC Phytochemistry", "Herbal Formulation"],
+    profile: {
+      wellness_therapy: 35,
+      herbal_formulation: 80,
+      quality_testing: 86,
+      clinical_doc: 65,
+      regulatory_gmp: 70,
+      clinical_research: 60,
+      health_data: 55,
+      digital_telehealth: 40,
+      lifestyle_counsel: 50,
+      yoga_therapy: 25,
+    },
+    certifications: [
+      {
+        id: "c1",
+        title: "HPTLC Fingerprinting of Botanicals",
+        issuer: "Anchrom & AIIA New Delhi",
+        issueDate: "Oct 2025",
+        docName: "HPTLC-QC-2025.pdf",
+        verified: true,
+        boostSkill: "quality_testing",
+        boostAmount: 10,
+        credentialUrl: "https://aiia.gov.in",
+      },
+    ],
+    experiences: [
+      {
+        id: "e1",
+        role: "Phytochemistry Lab Assistant",
+        org: "AIIA Dravyaguna Testing Facility",
+        period: "Jun 2025 – Present",
+        description: "Conducted moisture content, ash value, and heavy metal assays on raw commercial raw materials.",
+      },
+    ],
+    vaultDocs: [
+      { id: "vd1", name: "HPTLC_Standardization_Lab_Report.pdf", size: "3.2 MB", type: "Lab Report", date: "Oct 2025" },
+    ],
+    links: {
+      linkedin: "https://linkedin.com/in/naitik-sharma",
+    },
+  },
+  {
+    studentId: "AYB-2026-0419",
+    name: "Shreya Paul",
+    college: "National Institute of Homoeopathy, Kolkata",
+    role: "Clinical Research Intern",
+    stream: "Homoeopathy",
+    match: 74,
+    status: "Shortlisted",
+    email: "shreya.paul@nih.nic.in",
+    year: "4th Professional Year (BHMS)",
+    bio: "BHMS scholar with strong expertise in clinical case documentation, double-blind drug provings, and epidemiology data analysis.",
+    specializations: ["Clinical Research", "Clinical Documentation", "Health Data Analytics"],
+    profile: {
+      wellness_therapy: 50,
+      herbal_formulation: 50,
+      quality_testing: 60,
+      clinical_doc: 85,
+      regulatory_gmp: 60,
+      clinical_research: 82,
+      health_data: 78,
+      digital_telehealth: 70,
+      lifestyle_counsel: 72,
+      yoga_therapy: 35,
+    },
+    certifications: [
+      {
+        id: "c1",
+        title: "Biostatistics and Clinical Epidemiology",
+        issuer: "CCRH & NIH Kolkata",
+        issueDate: "Jul 2025",
+        docName: "CCRH-BIO-2025.pdf",
+        verified: true,
+        boostSkill: "health_data",
+        boostAmount: 10,
+        credentialUrl: "https://nih.nic.in",
+      },
+    ],
+    experiences: [
+      {
+        id: "e1",
+        role: "Clinical Outpatient Intern",
+        org: "NIH Kolkata Hospital Wing",
+        period: "May 2025 – Nov 2025",
+        description: "Assisted in maintaining digital case summaries for chronic dermatological and respiratory patients.",
+      },
+    ],
+    vaultDocs: [
+      { id: "vd1", name: "NIH_Clinical_Logbook.pdf", size: "2.1 MB", type: "Clinical Logbook", date: "Nov 2025" },
+    ],
+    links: {
+      linkedin: "https://linkedin.com/in/shreya-paul",
+    },
+  },
+  {
+    studentId: "AYB-2026-0520",
+    name: "Viyona Menon",
+    college: "Amrita School of Ayurveda, Kollam",
+    role: "Therapeutic Wellness Consultant",
+    stream: "Ayurveda",
+    match: 92,
+    status: "Selected",
+    email: "viyona.menon@amrita.edu",
+    year: "Graduate Resident (BAMS)",
+    bio: "Specialized in classical Panchakarma therapies, therapeutic nutrition, and personalized lifestyle counseling for integrative wellness retreats.",
+    specializations: ["Wellness Therapy", "Lifestyle Counseling", "Panchakarma", "Yoga Therapy"],
+    profile: {
+      wellness_therapy: 95,
+      herbal_formulation: 65,
+      quality_testing: 55,
+      clinical_doc: 78,
+      regulatory_gmp: 50,
+      clinical_research: 68,
+      health_data: 60,
+      digital_telehealth: 72,
+      lifestyle_counsel: 94,
+      yoga_therapy: 88,
+    },
+    certifications: [
+      {
+        id: "c1",
+        title: "Advanced Therapeutic Panchakarma Protocols",
+        issuer: "National AYUSH Skills Mission & Amrita",
+        issueDate: "Jun 2025",
+        docName: "Panchakarma-Cert-2025.pdf",
+        verified: true,
+        boostSkill: "wellness_therapy",
+        boostAmount: 15,
+        credentialUrl: "https://ayush.gov.in",
+      },
+      {
+        id: "c2",
+        title: "Ayurvedic Dietetics & Lifestyle Counseling",
+        issuer: "Arya Vaidya Sala Kottakkal",
+        issueDate: "Dec 2025",
+        docName: "AVS-Dietetics.pdf",
+        verified: true,
+        boostSkill: "lifestyle_counsel",
+        boostAmount: 10,
+        credentialUrl: "https://aryavaidyasala.com",
+      },
+    ],
+    experiences: [
+      {
+        id: "e1",
+        role: "Senior Panchakarma Resident Trainee",
+        org: "Amrita Ayurvedic Hospital",
+        period: "Jan 2025 – Dec 2025",
+        description: "Administered 120+ customized therapy sessions including Shirodhara, Abhyanga, and specialized diet counseling.",
+      },
+    ],
+    vaultDocs: [
+      { id: "vd1", name: "Amrita_Ayurveda_Degree_Transcript.pdf", size: "2.8 MB", type: "Transcript", date: "Jan 2026" },
+      { id: "vd2", name: "Panchakarma_Excellence_Award.pdf", size: "1.4 MB", type: "Award", date: "Dec 2025" },
+    ],
+    links: {
+      linkedin: "https://linkedin.com/in/viyona-menon",
+      researchGate: "https://researchgate.net/profile/Viyona-Menon",
+    },
+  },
+  {
+    studentId: "AYB-2026-0633",
+    name: "Shaurya Dwivedi",
+    college: "BHU Faculty of Ayurveda, Varanasi",
+    role: "Tele-AYUSH Implementation",
+    stream: "Ayurveda",
+    match: 71,
+    status: "Applied",
+    email: "shaurya.dwivedi@bhu.ac.in",
+    year: "4th Professional Year (BAMS)",
+    bio: "Pioneering digital telemedicine integration, e-Sanjeevani AYUSH workflows, and remote lifestyle counseling across rural healthcare centers.",
+    specializations: ["Digital Telehealth", "Health Data", "Clinical Documentation", "Lifestyle Counseling"],
+    profile: {
+      wellness_therapy: 50,
+      herbal_formulation: 55,
+      quality_testing: 45,
+      clinical_doc: 75,
+      regulatory_gmp: 50,
+      clinical_research: 65,
+      health_data: 82,
+      digital_telehealth: 90,
+      lifestyle_counsel: 80,
+      yoga_therapy: 45,
+    },
+    certifications: [
+      {
+        id: "c1",
+        title: "National Digital AYUSH Telehealth Practitioner",
+        issuer: "Ministry of Health & Family Welfare / MoA",
+        issueDate: "Aug 2025",
+        docName: "TeleAYUSH-2025.pdf",
+        verified: true,
+        boostSkill: "digital_telehealth",
+        boostAmount: 12,
+        credentialUrl: "https://esanjeevani.in",
+      },
+    ],
+    experiences: [
+      {
+        id: "e1",
+        role: "Tele-Consultation Coordinator",
+        org: "BHU Sir Sunderlal Hospital AYUSH Wing",
+        period: "May 2025 – Oct 2025",
+        description: "Triaged 500+ remote video consultations and recorded digital electronic health records (EHR).",
+      },
+    ],
+    vaultDocs: [
+      { id: "vd1", name: "BHU_Telemedicine_Fellowship.pdf", size: "1.7 MB", type: "Certificate", date: "Aug 2025" },
+    ],
+    links: {
+      linkedin: "https://linkedin.com/in/shaurya-dwivedi",
+    },
+  },
+  {
+    studentId: "AYB-2026-0785",
+    name: "Devika Pillai",
+    college: "Govt Yoga & Naturopathy College, Chennai",
+    role: "Corporate Wellness Associate",
+    stream: "Yoga & Naturopathy",
+    match: 88,
+    status: "Selected",
+    email: "devika.pillai@gync.edu.in",
+    year: "BNYS Intern",
+    bio: "BNYS graduate focused on corporate ergonomic wellness, stress mitigation through therapeutic yoga, and holistic nutrition counseling.",
+    specializations: ["Yoga Therapy", "Lifestyle Counseling", "Wellness Therapy", "Ergonomics"],
+    profile: {
+      wellness_therapy: 82,
+      herbal_formulation: 40,
+      quality_testing: 35,
+      clinical_doc: 70,
+      regulatory_gmp: 40,
+      clinical_research: 60,
+      health_data: 65,
+      digital_telehealth: 75,
+      lifestyle_counsel: 92,
+      yoga_therapy: 95,
+    },
+    certifications: [
+      {
+        id: "c1",
+        title: "Certified Yoga Protocol Instructor (YCB Level 3)",
+        issuer: "Yoga Certification Board, Ministry of Ayush",
+        issueDate: "May 2025",
+        docName: "YCB-Level3-Devika.pdf",
+        verified: true,
+        boostSkill: "yoga_therapy",
+        boostAmount: 15,
+        credentialUrl: "https://yogacertificationboard.nic.in",
+      },
+    ],
+    experiences: [
+      {
+        id: "e1",
+        role: "Corporate Wellness Facilitator",
+        org: "Chennai Holistic Health Institute",
+        period: "Jun 2025 – Present",
+        description: "Conducted mindfulness and musculoskeletal rehabilitation workshops for corporate IT clients.",
+      },
+    ],
+    vaultDocs: [
+      { id: "vd1", name: "YCB_Level3_Yoga_Master_Credential.pdf", size: "2.3 MB", type: "Certificate", date: "May 2025" },
+    ],
+    links: {
+      linkedin: "https://linkedin.com/in/devika-pillai",
+      researchGate: "https://researchgate.net/profile/Devika-Pillai",
+    },
+  },
 ];
 
 const SAMPLE_PROFILE = {
-  wellness_therapy: 45,
-  herbal_formulation: 68,
-  quality_testing: 45,
-  clinical_doc: 70,
-  regulatory_gmp: 40,
-  clinical_research: 70,
-  health_data: 65,
-  digital_telehealth: 45,
-  lifestyle_counsel: 90,
-  yoga_therapy: 25,
+  wellness_therapy: 55,
+  herbal_formulation: 85,
+  quality_testing: 78,
+  clinical_doc: 88,
+  regulatory_gmp: 72,
+  clinical_research: 92,
+  health_data: 80,
+  digital_telehealth: 65,
+  lifestyle_counsel: 75,
+  yoga_therapy: 40,
 };
+
+const SAMPLE_STUDENT_USER = {
+  uid: "sample-student-ayush-demo",
+  email: "sample.student@aiia.gov.in",
+  name: "Ishit Aggarwal",
+  studentId: "AYB-2026-0142",
+  role: "student",
+  roleLabel: "Student & Intern",
+  institution: "All India Institute of Ayurveda, New Delhi",
+  year: "4th Professional Year (BAMS)",
+  bio: "AYUSH student researcher passionate about evidence-based botanical drug development, clinical trial protocol design, and modernizing traditional health data workflows.",
+  specializations: ["Clinical Research", "Herbal Formulation", "Herb Quality Testing", "Digital Tele-AYUSH"],
+  links: {
+    linkedin: "https://linkedin.com/in/ishit-aggarwal-ayush",
+    researchGate: "https://researchgate.net/profile/Ishit-Aggarwal",
+    website: "https://ayushbridge.gov.in",
+  },
+};
+
+const SAMPLE_CERTS = [
+  {
+    id: "sc1",
+    title: "Good Clinical Practice (GCP) in Traditional Medicine Trials",
+    issuer: "Central Council for Research in Ayurvedic Sciences (CCRAS)",
+    issueDate: "July 2026",
+    credentialUrl: "https://ccras.nic.in/verify/AY-GCP-8842",
+    verified: true,
+    boostSkill: "clinical_research",
+    boostAmount: 15,
+    docName: "CCRAS_GCP_Certificate.pdf",
+  },
+  {
+    id: "sc2",
+    title: "AYUSH Industry Standards & GMP Quality Norms",
+    issuer: "Himalaya Wellness Academy",
+    issueDate: "May 2026",
+    credentialUrl: "https://himalayawellness.in/verify/HW-GMP-1092",
+    verified: true,
+    boostSkill: "regulatory_gmp",
+    boostAmount: 12,
+    docName: "Himalaya_GMP_Norms.pdf",
+  },
+  {
+    id: "sc3",
+    title: "Condition-Specific Yoga Therapy Protocol Design",
+    issuer: "Kaivalyadhama Health & Yoga Institute",
+    issueDate: "March 2026",
+    credentialUrl: "https://kdham.com/cert/YOGA-TH-541",
+    verified: true,
+    boostSkill: "yoga_therapy",
+    boostAmount: 10,
+    docName: "Yoga_Therapy_Cert.pdf",
+  },
+];
+
+const SAMPLE_EXPERIENCES = [
+  {
+    id: "se1",
+    role: "Clinical Trainee — Panchakarma & OPD",
+    org: "All India Institute of Ayurveda Hospital, New Delhi",
+    period: "Jan 2026 – Present (6 mos)",
+    description: "Documented 140+ outpatient clinical case sheets, supervised therapeutic oil treatments, and tracked outcome markers.",
+  },
+  {
+    id: "se2",
+    role: "Botanical Quality Control Lab Intern",
+    org: "Dabur Research Foundation, Ghaziabad",
+    period: "Oct 2025 – Dec 2025 (3 mos)",
+    description: "Assisted in purity testing of raw medicinal herbs, chromatographic identification, and microbial limit testing.",
+  },
+];
+
+const SAMPLE_VAULT_DOCS = [
+  { id: "sd1", name: "BAMS_University_Marksheet.pdf", type: "Academic Transcript", size: "1.8 MB", date: "Aug 2026" },
+  { id: "sd2", name: "Hospital_Clinical_Logbook_AIIA.pdf", type: "Clinical Logbook", size: "3.4 MB", date: "Jul 2026" },
+  { id: "sd3", name: "CCRAS_Research_Protocol_Draft.pdf", type: "Research Preprint", size: "840 KB", date: "May 2026" },
+];
 
 /* ---------------- Matching Engine (with Certification Boosts) ---------------- */
 
 function scoreAgainst(profile, requires, certs = []) {
-  const keys = Object.keys(requires);
+  const keys = Object.keys(requires || {});
   if (!keys.length) return { pct: 0, gaps: [], met: [] };
   let sum = 0;
   const gaps = [], met = [];
@@ -957,6 +1434,240 @@ function scoreAgainst(profile, requires, certs = []) {
   gaps.sort((a, b) => b.short - a.short);
   return { pct: Math.round((sum / keys.length) * 100), gaps, met };
 }
+
+/**
+ * Unified assessment scoring function for both real and demo assessments.
+ * Computes per-skill scores, live radar points vs industry benchmarks,
+ * role readiness percentages, and skill gaps to bridge.
+ */
+export function calculateAssessmentResults(answers, certs = []) {
+  const p = {};
+  QUESTIONS.forEach((q, i) => {
+    if (answers && typeof answers[i] === "number") {
+      p[q.skill] = answers[i];
+    } else if (answers && typeof answers[q.skill] === "number") {
+      p[q.skill] = answers[q.skill];
+    } else {
+      p[q.skill] = 20;
+    }
+  });
+
+  const radar = SKILLS.map((s) => ({
+    skill: s.short,
+    you: p[s.id] ?? 20,
+    benchmark: COHORT.find((c) => c.skill === s.short)?.industry || 75,
+  }));
+
+  const roles = ROLES.map((r) => ({
+    ...r,
+    ...scoreAgainst(p, r.requires, certs),
+  })).sort((a, b) => b.pct - a.pct);
+
+  const gaps = [];
+  OPPORTUNITIES.forEach((o) => {
+    Object.entries(o.requires || {}).forEach(([k, need]) => {
+      const short = need - (p[k] ?? 20);
+      if (short > 0) {
+        const existing = gaps.find((g) => g.skill === k);
+        if (!existing) {
+          gaps.push({ skill: k, short, score: p[k] ?? 20, need });
+        } else {
+          existing.short = Math.max(existing.short, short);
+        }
+      }
+    });
+  });
+  gaps.sort((a, b) => b.short - a.short);
+
+  return { profile: p, radarData: radar, rankedRoles: roles, topGaps: gaps };
+}
+
+/**
+ * Generates dynamic notifications using real assessment math calculations.
+ */
+export function generateDynamicNotifications(calc, certs = [], currentNotifs = {}) {
+  const topRole = calc?.rankedRoles?.[0] || ROLES[0];
+  const topGap = calc?.topGaps?.[0] || { skill: "quality_testing", short: 14 };
+  const gapName = skillLabel(topGap.skill);
+  const qualCount = calc?.rankedRoles?.filter((r) => r.pct >= 75)?.length || 3;
+
+  return {
+    ...currentNotifs,
+    student: [
+      {
+        id: "ns1",
+        icon: "🎯",
+        title: `Role Readiness Match: ${topRole.pct || 88}%`,
+        desc: `Your calibrated 10-Q assessment computed ${topRole.pct || 88}% readiness for ${topRole.title}.`,
+        time: "Just now",
+        unread: true,
+      },
+      {
+        id: "ns2",
+        icon: "⚠️",
+        title: `Skill Gap Alert: ${gapName}`,
+        desc: `Competency gap of ${topGap.short || 15} pts in ${gapName} vs industry benchmark. Sponsored bridge module available.`,
+        time: "Just now",
+        unread: true,
+      },
+      {
+        id: "ns3",
+        icon: "🌿",
+        title: "Assessment Milestone Achieved",
+        desc: `${qualCount} accredited AYUSH career pathways meet or exceed the 75% hiring benchmark.`,
+        time: "10m ago",
+        unread: false,
+      },
+      {
+        id: "ns4",
+        icon: "📜",
+        title: "Credential Multipliers Active",
+        desc: `${certs.filter((c) => c.verified).length} verified credentials applied as direct competency boosts.`,
+        time: "1h ago",
+        unread: false,
+      },
+    ],
+    institution: [
+      {
+        id: "nin1",
+        icon: "📊",
+        title: "Placement Milestone Achieved",
+        desc: `${topRole.pct || 82}% median role match computed from validated student cohort assessments.`,
+        time: "Just now",
+        unread: true,
+      },
+      {
+        id: "nin2",
+        icon: "⚠️",
+        title: `Curriculum Skill Gap Alert`,
+        desc: `${gapName} testing proficiency across active cohort lags industry benchmark by ${topGap.short || 14}%.`,
+        time: "Just now",
+        unread: true,
+      },
+      {
+        id: "nin3",
+        icon: "🎓",
+        title: "Student Registrations",
+        desc: "74 verified student candidates indexed in institutional placement telemetry.",
+        time: "1d ago",
+        unread: false,
+      },
+      {
+        id: "nin4",
+        icon: "🤝",
+        title: "Sponsor Request Active",
+        desc: `Sponsored industry certification module available to bridge ${gapName} curriculum gaps.`,
+        time: "2d ago",
+        unread: false,
+      },
+    ],
+    industry: [
+      {
+        id: "ni1",
+        icon: "👥",
+        title: "New Candidate Matches",
+        desc: `Candidates available with top readiness index up to ${topRole.pct || 92}% for ${topRole.title}.`,
+        time: "Just now",
+        unread: true,
+      },
+      {
+        id: "ni2",
+        icon: "🎯",
+        title: "Assessment Score Verified",
+        desc: `Candidate benchmark tests calibrated against NCISM & NCH curriculum rubrics.`,
+        time: "1h ago",
+        unread: true,
+      },
+      {
+        id: "ni3",
+        icon: "📌",
+        title: "Opening Published Live",
+        desc: "Your posting 'Herbal Quality Control Trainee' is receiving verified candidate matches.",
+        time: "1d ago",
+        unread: false,
+      },
+      {
+        id: "ni4",
+        icon: "🏛️",
+        title: "Campus Cohort Available",
+        desc: "AIIA 2026 Final Year BAMS cohort results are now indexed in Talent Pool.",
+        time: "2d ago",
+        unread: false,
+      },
+    ],
+    academician: currentNotifs.academician || [
+      { id: "na1", icon: "🔬", title: "New Mentorship Request", desc: "Naitik Sharma requested guidance on Quality Control lab testing internship.", time: "1h ago", unread: true },
+      { id: "na2", icon: "📅", title: "Upcoming Session Tomorrow", desc: "Scheduled 1-on-1 trial protocol review with Viyona Menon at 3:30 PM.", time: "4h ago", unread: true },
+      { id: "na3", icon: "📑", title: "CCRAS Grant Cycle Open", desc: "Call for collaborative AYUSH industry research proposals closes Oct 15.", time: "1d ago", unread: false },
+    ],
+    visitor: currentNotifs.visitor || [
+      { id: "nv1", icon: "🌿", title: "National AYUSH Portal Active", desc: "Welcome to AyushBridge — connect with India's top herbal & healthcare industries.", time: "Just now", unread: true },
+    ],
+  };
+}
+
+const INITIAL_PRE_ASSESSMENT_NOTIFICATIONS = {
+  student: [
+    {
+      id: "ns_init1",
+      icon: "📝",
+      title: "Take 10-Q Skill Assessment",
+      desc: "Calibrate your AYUSH competency matrix, calculate role readiness matches, and discover sponsored gap-closing programs.",
+      time: "Pending",
+      unread: true,
+    },
+    {
+      id: "ns_init2",
+      icon: "🌿",
+      title: "National AYUSH Network Active",
+      desc: "Connect with accredited herbal manufacturers, clinical research organizations, and institutional placement drives.",
+      time: "Today",
+      unread: false,
+    },
+  ],
+  institution: [
+    {
+      id: "nin_init1",
+      icon: "🏛️",
+      title: "Institutional Telemetry Active",
+      desc: "Awaiting cohort assessment submissions to compute departmental placement readiness indexes.",
+      time: "AY 2026-27",
+      unread: true,
+    },
+    {
+      id: "nin_init2",
+      icon: "🎓",
+      title: "Campus Cohort Tracking",
+      desc: "1,420 students registered across 5 AYUSH teaching departments at AIIA.",
+      time: "1d ago",
+      unread: false,
+    },
+  ],
+  industry: [
+    {
+      id: "ni_init1",
+      icon: "🌿",
+      title: "Recruiter Portal Connected",
+      desc: "Explore verified candidates from AIIA, NIA, BHU, and NIH once assessment benchmarks are evaluated.",
+      time: "Today",
+      unread: false,
+    },
+    {
+      id: "ni_init2",
+      icon: "👥",
+      title: "Talent Pool Active",
+      desc: "Review candidate credential vaults and publish sponsored training modules.",
+      time: "Today",
+      unread: false,
+    },
+  ],
+  academician: [
+    { id: "na1", icon: "🔬", title: "Faculty & Research Hub", desc: "Access CCRAS grants, faculty sabbaticals, and student mentorship.", time: "Today", unread: true },
+  ],
+  visitor: [
+    { id: "nv1", icon: "🌿", title: "National AYUSH Portal Active", desc: "Welcome to AyushBridge — connecting students with leading herbal industries.", time: "Just now", unread: true },
+  ],
+};
 
 /* ---------------- Verified Multi-Role Persona Profiles ---------------- */
 
@@ -2460,6 +3171,573 @@ function LockedPortalGate({ targetRole, setAuthModalRole, setIsAuthModalOpen, se
 }
 
 /* ============================================================
+   REUSABLE STUDENT PROFILE & PORTFOLIO COMPONENT
+   Supports both Editable (Student own view) and View-Only
+   (Recruiter candidate inspection & Sample sandbox view)
+   ============================================================ */
+
+function StudentPortfolioView({
+  user,
+  profile,
+  certifications = [],
+  experiences = [],
+  vaultDocs = [],
+  isEditable = true,
+  isSampleBanner = false,
+  onBack,
+  onTakeAssessment,
+  photoInputRef,
+  vaultInputRef,
+  setUser,
+  setCertifications,
+  setExperiences,
+  setVaultDocs,
+  setIsEditProfileOpen,
+  setEditingCert,
+  setIsAddCertOpen,
+  setEditingExp,
+  setIsAddExpOpen,
+  setViewingVaultDoc,
+  setIsAuthModalOpen,
+  T,
+  themeMode,
+  showToast = () => {},
+}) {
+  const displayUser = user || {
+    name: "Guest Student",
+    studentId: "AYB-2026-0142",
+    institution: "All India Institute of Ayurveda",
+    year: "4th Professional Year",
+    email: "student@aiia.gov.in",
+    bio: "AYUSH student researcher passionate about botanical drug discovery and clinical health systems.",
+    specializations: ["Clinical Research", "Herbal Formulation"],
+    links: {
+      linkedin: "https://linkedin.com",
+      researchGate: "https://researchgate.net",
+      website: "https://ayushbridge.gov.in",
+    },
+  };
+
+  return (
+    <div>
+      {/* Optional Top Back / Breadcrumb Button for Recruiter or Sample view */}
+      {onBack && (
+        <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 16 }}>
+          <button
+            type="button"
+            onClick={onBack}
+            style={{
+              background: T.bgSurface,
+              border: `1px solid ${T.border}`,
+              color: T.teal,
+              padding: "8px 16px",
+              borderRadius: 10,
+              fontFamily: "var(--ui)",
+              fontSize: 13,
+              fontWeight: 700,
+              cursor: "pointer",
+              display: "inline-flex",
+              alignItems: "center",
+              gap: 8,
+              transition: "all .15s ease",
+            }}
+          >
+            <span>←</span>
+            <span>{isSampleBanner ? "Return to My Workspace" : "Back to Candidates List"}</span>
+          </button>
+
+          {!isEditable && !isSampleBanner && (
+            <Chip tone="accent">Recruiter View · Read-Only Candidate Portfolio</Chip>
+          )}
+        </div>
+      )}
+
+      {/* Sample Banner if viewing demo sandbox profile */}
+      {isSampleBanner && (
+        <div
+          style={{
+            background: `${T.teal}15`,
+            border: `1.5px solid ${T.teal}50`,
+            borderRadius: 14,
+            padding: "14px 18px",
+            marginBottom: 20,
+            display: "flex",
+            alignItems: "center",
+            justifyContent: "space-between",
+            flexWrap: "wrap",
+            gap: 12,
+          }}
+        >
+          <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
+            <span style={{ fontSize: 24 }}>🌿</span>
+            <div>
+              <div style={{ fontFamily: "var(--ui)", fontSize: 13.5, fontWeight: 750, color: T.teal }}>
+                Reference Sample Profile & Benchmark Sandbox
+              </div>
+              <div style={{ fontFamily: "var(--ui)", fontSize: 12, color: T.muted, marginTop: 2 }}>
+                Model AYUSH student portfolio illustrating calibrated skill radar, certifications, and clinical logbooks. (Isolated from your real account data)
+              </div>
+            </div>
+          </div>
+          {onBack && (
+            <Btn small variant="ghost" onClick={onBack}>
+              Exit Sandbox ✕
+            </Btn>
+          )}
+        </div>
+      )}
+
+      {/* Student Header Card */}
+      <Card style={{ marginBottom: 20, padding: 26 }}>
+        <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", flexWrap: "wrap", gap: 20 }}>
+          <div style={{ display: "flex", gap: 18, alignItems: "center", flexWrap: "wrap" }}>
+            <div style={{ position: "relative" }}>
+              <UserAvatar size={74} userObj={displayUser} />
+              {isEditable && photoInputRef && (
+                <button
+                  type="button"
+                  onClick={() => photoInputRef.current?.click()}
+                  title="Upload custom photo"
+                  style={{
+                    position: "absolute",
+                    bottom: -4,
+                    right: -4,
+                    background: T.teal,
+                    color: themeMode === "dark" ? "#07120E" : "#FFFFFF",
+                    border: `2px solid ${T.bgCard}`,
+                    borderRadius: 999,
+                    width: 26,
+                    height: 26,
+                    display: "flex",
+                    alignItems: "center",
+                    justifyContent: "center",
+                    cursor: "pointer",
+                    fontSize: 12,
+                  }}
+                >
+                  📷
+                </button>
+              )}
+            </div>
+
+            <div>
+              <div style={{ display: "flex", alignItems: "center", gap: 10, flexWrap: "wrap" }}>
+                <H size={24}>{displayUser.name}</H>
+                <Chip tone="good">Verified AYUSH Profile ✓</Chip>
+                <span
+                  style={{
+                    background: T.bgSurface,
+                    border: `1px solid ${T.border}`,
+                    color: T.teal,
+                    padding: "3px 9px",
+                    borderRadius: 7,
+                    fontSize: 12,
+                    fontFamily: "var(--ui)",
+                    fontWeight: 700,
+                    letterSpacing: "0.03em",
+                    display: "inline-flex",
+                    alignItems: "center",
+                    gap: 4,
+                  }}
+                >
+                  <span>🆔</span>
+                  <span>{displayUser.studentId || "AYB-2026-0142"}</span>
+                </span>
+              </div>
+              <Muted style={{ fontSize: 13.5, marginTop: 2 }}>
+                {displayUser.institution || displayUser.college || "All India Institute of Ayurveda"} · {displayUser.year || "4th Professional Year"}
+              </Muted>
+              <div style={{ display: "flex", alignItems: "center", gap: 12, marginTop: 4 }}>
+                <span style={{ fontSize: 13, color: T.teal, fontWeight: 550 }}>
+                  {displayUser.email || "student@aiia.gov.in"}
+                </span>
+                {isEditable && (
+                  <>
+                    <button
+                      type="button"
+                      onClick={() => photoInputRef?.current?.click()}
+                      style={{
+                        background: "none",
+                        border: "none",
+                        color: T.muted,
+                        fontSize: 12,
+                        cursor: "pointer",
+                        textDecoration: "underline",
+                        padding: 0,
+                      }}
+                    >
+                      Upload photo
+                    </button>
+                    {user?.avatar && (
+                      <button
+                        type="button"
+                        onClick={() => {
+                          setUser?.((prev) => ({ ...prev, avatar: null }));
+                          showToast?.("Reset to placeholder avatar");
+                        }}
+                        style={{
+                          background: "none",
+                          border: "none",
+                          color: T.terra,
+                          fontSize: 12,
+                          cursor: "pointer",
+                          padding: 0,
+                        }}
+                      >
+                        Remove photo
+                      </button>
+                    )}
+                  </>
+                )}
+              </div>
+            </div>
+          </div>
+
+          <div style={{ display: "flex", gap: 10, flexWrap: "wrap" }}>
+            <Btn
+              small
+              variant="ghost"
+              onClick={() => {
+                if (typeof window !== "undefined") {
+                  navigator.clipboard?.writeText(window.location.href);
+                  showToast?.("Digital Portfolio share link copied to clipboard! 📋");
+                }
+              }}
+            >
+              Share Profile Link 🔗
+            </Btn>
+            <Btn
+              small
+              variant="ghost"
+              onClick={() => {
+                if (typeof window !== "undefined") window.print();
+              }}
+            >
+              Download Resume PDF 📥
+            </Btn>
+            {isEditable && setIsEditProfileOpen && (
+              <Btn small onClick={() => setIsEditProfileOpen(true)}>
+                Edit Profile
+              </Btn>
+            )}
+          </div>
+        </div>
+
+        {/* Bio */}
+        <div style={{ marginTop: 16, paddingTop: 16, borderTop: `1px solid ${T.border}` }}>
+          <div style={{ fontFamily: "var(--ui)", fontSize: 12.5, fontWeight: 600, color: T.muted, textTransform: "uppercase", letterSpacing: ".1em", marginBottom: 6 }}>
+            About & Research Focus
+          </div>
+          <p style={{ fontFamily: "var(--ui)", fontSize: 14, color: T.ink, lineHeight: 1.6, margin: 0 }}>
+            {displayUser.bio || "AYUSH student researcher passionate about botanical drug discovery and clinical health systems."}
+          </p>
+        </div>
+
+        {/* Specialization Tags & Links */}
+        <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginTop: 16, flexWrap: "wrap", gap: 12 }}>
+          <div style={{ display: "flex", gap: 6, flexWrap: "wrap", alignItems: "center" }}>
+            <span style={{ fontFamily: "var(--ui)", fontSize: 12, color: T.muted, fontWeight: 550 }}>Specializations:</span>
+            {(displayUser.specializations || ["Clinical Research", "Herbal Formulation"]).map((sp) => (
+              <Chip key={sp} tone="accent">{sp}</Chip>
+            ))}
+          </div>
+
+          <div style={{ display: "flex", gap: 12, alignItems: "center" }}>
+            {displayUser.links?.linkedin && (
+              <a href={displayUser.links.linkedin} target="_blank" rel="noreferrer" style={{ color: T.teal, fontSize: 13, textDecoration: "none", fontWeight: 550 }}>
+                LinkedIn ↗
+              </a>
+            )}
+            {displayUser.links?.researchGate && (
+              <a href={displayUser.links.researchGate} target="_blank" rel="noreferrer" style={{ color: T.teal, fontSize: 13, textDecoration: "none", fontWeight: 550 }}>
+                ResearchGate ↗
+              </a>
+            )}
+          </div>
+        </div>
+      </Card>
+
+      <div className="ay-2col" style={{ display: "grid", gap: 16 }}>
+        {/* Left Column: Verified Skills Matrix & Experience */}
+        <div style={{ display: "flex", flexDirection: "column", gap: 16 }}>
+          <Card>
+            <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
+              <Eyebrow>Verified AYUSH Skills Matrix</Eyebrow>
+              <Chip tone="good">Automated Scoring</Chip>
+            </div>
+            {!profile ? (
+              <div style={{ marginTop: 12 }}>
+                <Muted>Complete the 10-question assessment to calibrate verified competency scores.</Muted>
+                {isEditable && onTakeAssessment && (
+                  <div style={{ marginTop: 12 }}>
+                    <Btn small onClick={onTakeAssessment}>Take Skill Assessment</Btn>
+                  </div>
+                )}
+              </div>
+            ) : (
+              <div style={{ marginTop: 14, display: "flex", flexDirection: "column", gap: 12 }}>
+                {SKILLS.map((s) => {
+                  const bonus = certifications
+                    .filter((c) => c.boostSkill === s.id && c.verified)
+                    .reduce((sum, c) => sum + (c.boostAmount || 8), 0);
+                  const rawScore = profile[s.id] ?? 20;
+                  const finalScore = Math.min(100, rawScore + bonus);
+                  return (
+                    <div key={s.id}>
+                      <div style={{ display: "flex", justifyContent: "space-between", fontFamily: "var(--ui)", fontSize: 13, color: T.ink, marginBottom: 4 }}>
+                        <span style={{ fontWeight: 550 }}>{s.label}</span>
+                        <span style={{ color: bonus > 0 ? T.sage : T.muted, fontWeight: bonus > 0 ? 650 : 500 }}>
+                          {finalScore} / 100 {bonus > 0 && `(+${bonus} cert boost)`}
+                        </span>
+                      </div>
+                      <div style={{ height: 6, background: T.bgSurface, borderRadius: 999, overflow: "hidden" }}>
+                        <div style={{ width: `${finalScore}%`, height: "100%", background: T.sage, borderRadius: 999 }} />
+                      </div>
+                    </div>
+                  );
+                })}
+              </div>
+            )}
+          </Card>
+
+          {/* Clinical & Internship History */}
+          <Card>
+            <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
+              <Eyebrow>Clinical Rotations & Internship Experience</Eyebrow>
+              {isEditable && setIsAddExpOpen && (
+                <Btn small variant="ghost" onClick={() => { setEditingExp?.(null); setIsAddExpOpen(true); }}>
+                  + Add Experience
+                </Btn>
+              )}
+            </div>
+            <div style={{ marginTop: 14, display: "flex", flexDirection: "column", gap: 14 }}>
+              {experiences.length === 0 ? (
+                <Muted style={{ fontStyle: "italic" }}>No clinical experience added yet.</Muted>
+              ) : (
+                experiences.map((exp) => (
+                  <div key={exp.id} style={{ paddingBottom: 12, borderBottom: `1px solid ${T.border}` }}>
+                    <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start" }}>
+                      <div>
+                        <div style={{ fontFamily: "var(--ui)", fontSize: 15, fontWeight: 600, color: T.ink }}>
+                          {exp.role}
+                        </div>
+                        <Muted style={{ fontSize: 13, color: T.teal, marginTop: 1 }}>{exp.org}</Muted>
+                        <Muted style={{ fontSize: 12, color: T.muted, marginTop: 1 }}>{exp.period}</Muted>
+                      </div>
+                      {isEditable && (
+                        <div style={{ display: "flex", gap: 6 }}>
+                          <button
+                            type="button"
+                            onClick={() => { setEditingExp?.(exp); setIsAddExpOpen?.(true); }}
+                            style={{ background: "none", border: "none", color: T.muted, cursor: "pointer", fontSize: 12 }}
+                          >
+                            Edit
+                          </button>
+                          <button
+                            type="button"
+                            onClick={() => {
+                              setExperiences?.((prev) => prev.filter((x) => x.id !== exp.id));
+                              showToast?.("Experience removed");
+                            }}
+                            style={{ background: "none", border: "none", color: T.terra, cursor: "pointer", fontSize: 12 }}
+                          >
+                            Delete
+                          </button>
+                        </div>
+                      )}
+                    </div>
+                    <p style={{ fontFamily: "var(--ui)", fontSize: 13, color: T.inkSoft, marginTop: 6, lineHeight: 1.5, margin: "6px 0 0" }}>
+                      {exp.description}
+                    </p>
+                  </div>
+                ))
+              )}
+            </div>
+          </Card>
+        </div>
+
+        {/* Right Column: Certifications & Digital Document Vault */}
+        <div style={{ display: "flex", flexDirection: "column", gap: 16 }}>
+          <Card>
+            <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
+              <Eyebrow>Certifications & Credentials</Eyebrow>
+              {isEditable && setIsAddCertOpen && (
+                <Btn small onClick={() => { setEditingCert?.(null); setIsAddCertOpen(true); }}>
+                  + Add Certification
+                </Btn>
+              )}
+            </div>
+            <Muted style={{ fontSize: 13, marginTop: 4, marginBottom: 14 }}>
+              Verified certificates directly boost matched skill proficiency and role readiness index.
+            </Muted>
+
+            <div style={{ display: "flex", flexDirection: "column", gap: 12 }}>
+              {certifications.length === 0 ? (
+                <Muted style={{ fontStyle: "italic" }}>No credentials uploaded yet.</Muted>
+              ) : (
+                certifications.map((c) => (
+                  <div
+                    key={c.id}
+                    style={{
+                      background: T.bgSurface,
+                      border: `1px solid ${T.border}`,
+                      borderRadius: 12,
+                      padding: 14,
+                    }}
+                  >
+                    <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", gap: 10 }}>
+                      <div>
+                        <div style={{ fontFamily: "var(--ui)", fontSize: 14.5, fontWeight: 650, color: T.ink }}>
+                          {c.title}
+                        </div>
+                        <div style={{ fontFamily: "var(--ui)", fontSize: 12.5, color: T.teal, marginTop: 2, fontWeight: 550 }}>
+                          {c.issuer}
+                        </div>
+                        <div style={{ fontFamily: "var(--ui)", fontSize: 11.5, color: T.muted, marginTop: 2 }}>
+                          Issued {c.issueDate} {c.docName && `· ${c.docName}`}
+                        </div>
+                      </div>
+                      <Chip tone={c.verified ? "good" : "neutral"}>
+                        {c.verified ? "Verified ✓" : "Pending"}
+                      </Chip>
+                    </div>
+
+                    <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginTop: 10, paddingTop: 8, borderTop: `1px solid ${T.border}30` }}>
+                      <div style={{ display: "flex", gap: 6, alignItems: "center" }}>
+                        {c.boostSkill && (
+                          <span style={{ fontSize: 11.5, fontFamily: "var(--ui)", color: T.sage, fontWeight: 600 }}>
+                            +{c.boostAmount || 10} pts in {skillShort(c.boostSkill)}
+                          </span>
+                        )}
+                      </div>
+                      <div style={{ display: "flex", gap: 8, alignItems: "center" }}>
+                        {c.credentialUrl && (
+                          <a href={c.credentialUrl} target="_blank" rel="noreferrer" style={{ fontSize: 12, color: T.teal, textDecoration: "none", fontWeight: 550 }}>
+                            Verify ↗
+                          </a>
+                        )}
+                        {isEditable && (
+                          <>
+                            <button
+                              type="button"
+                              onClick={() => { setEditingCert?.(c); setIsAddCertOpen?.(true); }}
+                              style={{ background: "none", border: "none", color: T.muted, cursor: "pointer", fontSize: 12 }}
+                            >
+                              Edit
+                            </button>
+                            <button
+                              type="button"
+                              onClick={() => {
+                                setCertifications?.((prev) => prev.filter((x) => x.id !== c.id));
+                                showToast?.("Certification deleted");
+                              }}
+                              style={{ background: "none", border: "none", color: T.terra, cursor: "pointer", fontSize: 12 }}
+                            >
+                              Delete
+                            </button>
+                          </>
+                        )}
+                      </div>
+                    </div>
+                  </div>
+                ))
+              )}
+            </div>
+          </Card>
+
+          {/* Digital Credential Vault with File Viewing */}
+          <Card>
+            <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
+              <Eyebrow>Digital Credential Vault</Eyebrow>
+              {isEditable && vaultInputRef && (
+                <Btn small variant="ghost" onClick={() => vaultInputRef.current?.click()}>
+                  + Upload Document
+                </Btn>
+              )}
+            </div>
+            <Muted style={{ fontSize: 13, marginTop: 4, marginBottom: 14 }}>
+              Signed university transcripts, clinical logbooks, and research preprints verified on-chain.
+            </Muted>
+
+            <div style={{ display: "flex", flexDirection: "column", gap: 10 }}>
+              {vaultDocs.length === 0 ? (
+                <Muted style={{ fontStyle: "italic" }}>No vault documents uploaded.</Muted>
+              ) : (
+                vaultDocs.map((doc) => (
+                  <div
+                    key={doc.id}
+                    style={{
+                      background: T.bgSurface,
+                      border: `1px solid ${T.border}`,
+                      borderRadius: 10,
+                      padding: "10px 14px",
+                      display: "flex",
+                      justifyContent: "space-between",
+                      alignItems: "center",
+                      gap: 10,
+                    }}
+                  >
+                    <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
+                      <span style={{ fontSize: 20 }}>📄</span>
+                      <div>
+                        <div style={{ fontFamily: "var(--ui)", fontSize: 13.5, fontWeight: 600, color: T.ink }}>
+                          {doc.name}
+                        </div>
+                        <div style={{ fontFamily: "var(--ui)", fontSize: 11.5, color: T.muted, marginTop: 1 }}>
+                          {doc.type} · {doc.size} · Uploaded {doc.date}
+                        </div>
+                      </div>
+                    </div>
+
+                    <div style={{ display: "flex", gap: 8, alignItems: "center" }}>
+                      <button
+                        type="button"
+                        onClick={() => setViewingVaultDoc?.(doc)}
+                        style={{
+                          background: "none",
+                          border: "none",
+                          color: T.teal,
+                          cursor: "pointer",
+                          fontSize: 12.5,
+                          fontWeight: 650,
+                          textDecoration: "underline",
+                          padding: "2px 4px",
+                        }}
+                      >
+                        View
+                      </button>
+                      {isEditable && (
+                        <button
+                          type="button"
+                          onClick={() => {
+                            setVaultDocs?.((prev) => prev.filter((x) => x.id !== doc.id));
+                            showToast?.(`Removed "${doc.name}" from vault`);
+                          }}
+                          style={{
+                            background: "none",
+                            border: "none",
+                            color: T.terra,
+                            cursor: "pointer",
+                            fontSize: 12,
+                            padding: "2px 4px",
+                          }}
+                        >
+                          Delete
+                        </button>
+                      )}
+                    </div>
+                  </div>
+                ))
+              )}
+            </div>
+          </Card>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+/* ============================================================
    MAIN AYUSHBRIDGE COMPONENT
    ============================================================ */
 
@@ -2491,6 +3769,8 @@ export default function AyushBridge() {
   const [programsSubTab, setProgramsSubTab] = useState("browse"); // 'browse' | 'enrolled'
   const [appSubTab, setAppSubTab] = useState("applied"); // 'applied' | 'saved'
   const [applicantSearch, setApplicantSearch] = useState("");
+  const [viewingApplicant, setViewingApplicant] = useState(null);
+  const [assessmentCompleted, setAssessmentCompleted] = useState(false);
   const [isAuthModalOpen, setIsAuthModalOpen] = useState(false);
   const [isEditProfileOpen, setIsEditProfileOpen] = useState(false);
   const [isAddCertOpen, setIsAddCertOpen] = useState(false);
@@ -2598,37 +3878,7 @@ export default function AyushBridge() {
 
   // Role-Specific Notifications State & Dropdown
   const [isNotifOpen, setIsNotifOpen] = useState(false);
-  const [roleNotifications, setRoleNotifications] = useState({
-    student: [
-      { id: "ns1", icon: "🎓", title: "Mentorship Accepted", desc: "Dr. A. Nair accepted your Clinical Research protocol guidance request.", time: "2h ago", unread: true },
-      { id: "ns2", icon: "⭐", title: "Application Shortlisted!", desc: "Himalaya Wellness shortlisted your profile for Regulatory Compliance Trainee.", time: "1d ago", unread: true },
-      { id: "ns3", icon: "🌿", title: "New Matching Internship", desc: "CCRAS Trial Associate posted with 89% match to your verified skills.", time: "2d ago", unread: false },
-      { id: "ns4", icon: "📜", title: "Credential Verified", desc: "CCRAS GCP Certificate verified: +15% boost added to Clinical Research.", time: "3d ago", unread: false },
-    ],
-    industry: [
-      { id: "ni1", icon: "👥", title: "New Candidate Applied", desc: "Ishit Aggarwal (Match: 88%) applied for Quality Control Trainee.", time: "30m ago", unread: true },
-      { id: "ni2", icon: "🎯", title: "Assessment Score Verified", desc: "Candidate AYB-2026-0218 completed Pharmacognosy Bench Test (92%).", time: "3h ago", unread: true },
-      { id: "ni3", icon: "📌", title: "Opening Published Live", desc: "Your posting 'Herbal Quality Control Trainee' is receiving student matches.", time: "1d ago", unread: false },
-      { id: "ni4", icon: "🏛️", title: "Campus Cohort Available", desc: "AIIA 2026 Final Year BAMS cohort results are now indexed in Talent Pool.", time: "2d ago", unread: false },
-    ],
-    academician: [
-      { id: "na1", icon: "🔬", title: "New Mentorship Request", desc: "Naitik Sharma requested guidance on Quality Control lab testing internship.", time: "1h ago", unread: true },
-      { id: "na2", icon: "📅", title: "Upcoming Session Tomorrow", desc: "Scheduled 1-on-1 trial protocol review with Viyona Menon at 3:30 PM.", time: "4h ago", unread: true },
-      { id: "na3", icon: "📑", title: "CCRAS Grant Cycle Open", desc: "Call for collaborative AYUSH industry research proposals closes Oct 15.", time: "1d ago", unread: false },
-      { id: "na4", icon: "🏛️", title: "Institutional Sabbatical Approved", desc: "Dabur R&D 6-month industry sabbatical proposal confirmed by Dean.", time: "3d ago", unread: false },
-    ],
-    institution: [
-      { id: "nin1", icon: "📊", title: "Placement Milestone Achieved", desc: "82% of AIIA 2026 cohort successfully matched to verified AYUSH roles.", time: "2h ago", unread: true },
-      { id: "nin2", icon: "⚠️", title: "Curriculum Skill Gap Alert", desc: "Pharmacognosy testing lab proficiency lags industry target by 14%.", time: "5h ago", unread: true },
-      { id: "nin3", icon: "🎓", title: "New Student Registrations", desc: "18 new students registered and verified via Institutional Apex Code.", time: "1d ago", unread: false },
-      { id: "nin4", icon: "🤝", title: "MoU Partner Request", desc: "Himalaya Wellness proposed sponsored certification module for campus.", time: "2d ago", unread: false },
-    ],
-    visitor: [
-      { id: "nv1", icon: "🌿", title: "National AYUSH Portal Active", desc: "Welcome to AyushBridge — connect with India's top herbal & healthcare industries.", time: "Just now", unread: true },
-      { id: "nv2", icon: "📜", title: "Ministry of Ayush Integration", desc: "NCISM & NCH accredited student assessment engine live for AY 2026-27.", time: "1d ago", unread: false },
-      { id: "nv3", icon: "🔬", title: "CCRAS Research Grants", desc: "Explore multi-stakeholder clinical and pharmacognosy research opportunities.", time: "2d ago", unread: false },
-    ],
-  });
+  const [roleNotifications, setRoleNotifications] = useState(INITIAL_PRE_ASSESSMENT_NOTIFICATIONS);
 
   // Sector Filter Dragging Refs
   const sectorScrollRef = useRef(null);
@@ -2843,14 +4093,13 @@ export default function AyushBridge() {
     if (qIdx < QUESTIONS.length - 1) {
       setQIdx(qIdx + 1);
     } else {
-      const p = {};
-      QUESTIONS.forEach((q, i) => {
-        p[q.skill] = next[i] ?? 20;
-      });
-      setProfile(p);
+      const calc = calculateAssessmentResults(next, certifications);
+      setProfile(calc.profile);
+      setAssessmentCompleted(true);
+      setRoleNotifications((prev) => generateDynamicNotifications(calc, certifications, prev));
       if (!user) {
         setIsAuthModalOpen(true);
-        showToast("Assessment complete! Sign in with Google to permanently link & verify your scores.");
+        showToast("Assessment complete! Sign in to permanently link & verify your scores.");
       } else {
         showToast("Assessment complete! Verified skill scores & readiness updated.");
       }
@@ -3044,8 +4293,8 @@ export default function AyushBridge() {
                   <Btn onClick={() => { setRole("student"); setTab("assessment"); }}>
                     Take AYUSH Skill Assessment →
                   </Btn>
-                  <Btn variant="ghost" onClick={() => { setRole("student"); setProfile(SAMPLE_PROFILE); setTab("overview"); }}>
-                    Open Sample Student Profile
+                  <Btn variant="ghost" onClick={() => { setRole("student"); changeTab("demo-profile"); }}>
+                    Open Sample Student Profile 👁️
                   </Btn>
                 </div>
 
@@ -3396,6 +4645,7 @@ export default function AyushBridge() {
       ["programs", "Industry Learning Programs"],
       ["applications", "My Applications"],
       ["portfolio", "Profile & Portfolio"],
+      ["demo-profile", "Sample Profile (Sandbox)"],
     ],
     academician: [
       ["overview", "Faculty & Research Hub"],
@@ -3588,7 +4838,7 @@ export default function AyushBridge() {
               </Muted>
               <div style={{ display: "flex", gap: 10, flexWrap: "wrap" }}>
                 <Btn onClick={() => changeTab("assessment")}>Start 10-Question Assessment →</Btn>
-                <Btn variant="ghost" onClick={() => { setProfile(SAMPLE_PROFILE); showToast("Sample profile loaded!"); }}>Load Sample AYUSH Profile</Btn>
+                <Btn variant="ghost" onClick={() => changeTab("demo-profile")}>Preview Sample AYUSH Profile 👁️</Btn>
               </div>
             </Card>
           ) : (
@@ -5110,410 +6360,59 @@ export default function AyushBridge() {
               <div style={{ fontSize: 40, marginBottom: 12 }}>🔒</div>
               <H size={24}>Sign in to View Your Digital Portfolio</H>
               <Muted style={{ marginTop: 8, marginBottom: 24, lineHeight: 1.6 }}>
-                Your verified AYUSH skill matrix, institutional credentials, uploaded certificates, and digital resume are securely synchronized with your Google account.
+                Your verified AYUSH skill matrix, institutional credentials, uploaded certificates, and digital resume are securely synchronized with your account.
               </Muted>
               <div style={{ display: "flex", justifyContent: "center" }}>
                 <Btn onClick={() => setIsAuthModalOpen(true)}>
-                  Sign in with Google to Access Profile →
+                  Sign In to Access Profile →
                 </Btn>
               </div>
             </Card>
           ) : (
-            <>
-              {/* Student Header Card with Upload Photo Feature */}
-            <Card style={{ marginBottom: 20, padding: 26 }}>
-              <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", flexWrap: "wrap", gap: 20 }}>
-                <div style={{ display: "flex", gap: 18, alignItems: "center", flexWrap: "wrap" }}>
-                  <div style={{ position: "relative" }}>
-                    <UserAvatar size={74} />
-                    <button
-                      onClick={() => photoInputRef.current?.click()}
-                      title="Upload custom photo"
-                      style={{
-                        position: "absolute",
-                        bottom: -4,
-                        right: -4,
-                        background: T.teal,
-                        color: themeMode === "dark" ? "#07120E" : "#FFFFFF",
-                        border: `2px solid ${T.bgCard}`,
-                        borderRadius: 999,
-                        width: 26,
-                        height: 26,
-                        display: "flex",
-                        alignItems: "center",
-                        justifyContent: "center",
-                        cursor: "pointer",
-                        fontSize: 12,
-                      }}
-                    >
-                      📷
-                    </button>
-                  </div>
-
-                  <div>
-                    <div style={{ display: "flex", alignItems: "center", gap: 10, flexWrap: "wrap" }}>
-                      <H size={24}>{user ? user.name : "Guest Student"}</H>
-                      <Chip tone="good">Verified AYUSH Profile ✓</Chip>
-                      <span
-                        style={{
-                          background: T.bgSurface,
-                          border: `1px solid ${T.border}`,
-                          color: T.teal,
-                          padding: "3px 9px",
-                          borderRadius: 7,
-                          fontSize: 12,
-                          fontFamily: "var(--ui)",
-                          fontWeight: 700,
-                          letterSpacing: "0.03em",
-                          display: "inline-flex",
-                          alignItems: "center",
-                          gap: 4,
-                        }}
-                      >
-                        <span>🆔</span>
-                        <span>{user?.studentId || "AYB-2026-0142"}</span>
-                      </span>
-                    </div>
-                    <Muted style={{ fontSize: 13.5, marginTop: 2 }}>
-                      {user?.institution || "All India Institute of Ayurveda"} · {user?.year || "4th Professional Year"}
-                    </Muted>
-                    <div style={{ display: "flex", alignItems: "center", gap: 12, marginTop: 4 }}>
-                      <span style={{ fontSize: 13, color: T.teal, fontWeight: 550 }}>
-                        {user?.email || "student@aiia.gov.in"}
-                      </span>
-                      <button
-                        onClick={() => photoInputRef.current?.click()}
-                        style={{
-                          background: "none",
-                          border: "none",
-                          color: T.muted,
-                          fontSize: 12,
-                          cursor: "pointer",
-                          textDecoration: "underline",
-                          padding: 0,
-                        }}
-                      >
-                        Upload photo
-                      </button>
-                      {user?.avatar && (
-                        <button
-                          onClick={() => {
-                            setUser((prev) => ({ ...prev, avatar: null }));
-                            showToast("Reset to placeholder avatar");
-                          }}
-                          style={{
-                            background: "none",
-                            border: "none",
-                            color: T.terra,
-                            fontSize: 12,
-                            cursor: "pointer",
-                            padding: 0,
-                          }}
-                        >
-                          Remove photo
-                        </button>
-                      )}
-                    </div>
-                  </div>
-                </div>
-
-                <div style={{ display: "flex", gap: 10, flexWrap: "wrap" }}>
-                  <Btn
-                    small
-                    variant="ghost"
-                    onClick={() => {
-                      navigator.clipboard?.writeText(window.location.href);
-                      showToast("Digital Portfolio share link copied to clipboard! 📋");
-                    }}
-                  >
-                    Share Profile Link 🔗
-                  </Btn>
-                  <Btn
-                    small
-                    variant="ghost"
-                    onClick={() => window.print()}
-                  >
-                    Download Resume PDF 📥
-                  </Btn>
-                  <Btn small onClick={() => setIsEditProfileOpen(true)}>Edit Profile</Btn>
-                </div>
-              </div>
-
-              {/* Bio */}
-              <div style={{ marginTop: 16, paddingTop: 16, borderTop: `1px solid ${T.border}` }}>
-                <div style={{ fontFamily: "var(--ui)", fontSize: 12.5, fontWeight: 600, color: T.muted, textTransform: "uppercase", letterSpacing: ".1em", marginBottom: 6 }}>
-                  About & Research Focus
-                </div>
-                <p style={{ fontFamily: "var(--ui)", fontSize: 14, color: T.ink, lineHeight: 1.6, margin: 0 }}>
-                  {user?.bio || "AYUSH student researcher passionate about botanical drug discovery and clinical health systems."}
-                </p>
-              </div>
-
-              {/* Specialization Tags & Links */}
-              <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginTop: 16, flexWrap: "wrap", gap: 12 }}>
-                <div style={{ display: "flex", gap: 6, flexWrap: "wrap", alignItems: "center" }}>
-                  <span style={{ fontFamily: "var(--ui)", fontSize: 12, color: T.muted, fontWeight: 550 }}>Specializations:</span>
-                  {(user?.specializations || ["Clinical Research", "Herbal Formulation"]).map((sp) => (
-                    <Chip key={sp} tone="accent">{sp}</Chip>
-                  ))}
-                </div>
-
-                <div style={{ display: "flex", gap: 12, alignItems: "center" }}>
-                  {user?.links?.linkedin && (
-                    <a href={user.links.linkedin} target="_blank" rel="noreferrer" style={{ color: T.teal, fontSize: 13, textDecoration: "none", fontWeight: 550 }}>
-                      LinkedIn ↗
-                    </a>
-                  )}
-                  {user?.links?.researchGate && (
-                    <a href={user.links.researchGate} target="_blank" rel="noreferrer" style={{ color: T.teal, fontSize: 13, textDecoration: "none", fontWeight: 550 }}>
-                      ResearchGate ↗
-                    </a>
-                  )}
-                </div>
-              </div>
-            </Card>
-
-            <div className="ay-2col" style={{ display: "grid", gap: 16 }}>
-              
-              {/* Left Column: Verified Skills Matrix & Experience */}
-              <div style={{ display: "flex", flexDirection: "column", gap: 16 }}>
-                <Card>
-                  <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
-                    <Eyebrow>Verified AYUSH Skills Matrix</Eyebrow>
-                    <Chip tone="good">Automated Scoring</Chip>
-                  </div>
-                  {!profile ? (
-                    <div style={{ marginTop: 12 }}>
-                      <Muted>Complete the 10-question assessment to calibrate verified competency scores.</Muted>
-                      <div style={{ marginTop: 12 }}>
-                        <Btn small onClick={() => changeTab("assessment")}>Take Skill Assessment</Btn>
-                      </div>
-                    </div>
-                  ) : (
-                    <div style={{ marginTop: 14, display: "flex", flexDirection: "column", gap: 12 }}>
-                      {SKILLS.map((s) => {
-                        const bonus = certifications.filter((c) => c.boostSkill === s.id && c.verified).reduce((sum, c) => sum + (c.boostAmount || 8), 0);
-                        const rawScore = profile[s.id] ?? 20;
-                        const finalScore = Math.min(100, rawScore + bonus);
-                        return (
-                          <div key={s.id}>
-                            <div style={{ display: "flex", justifyContent: "space-between", fontFamily: "var(--ui)", fontSize: 13, color: T.ink, marginBottom: 4 }}>
-                              <span style={{ fontWeight: 550 }}>{s.label}</span>
-                              <span style={{ color: bonus > 0 ? T.sage : T.muted, fontWeight: bonus > 0 ? 650 : 500 }}>
-                                {finalScore} / 100 {bonus > 0 && `(+${bonus} cert boost)`}
-                              </span>
-                            </div>
-                            <div style={{ height: 6, background: T.bgSurface, borderRadius: 999, overflow: "hidden" }}>
-                              <div style={{ width: `${finalScore}%`, height: "100%", background: T.sage, borderRadius: 999 }} />
-                            </div>
-                          </div>
-                        );
-                      })}
-                    </div>
-                  )}
-                </Card>
-
-                {/* Clinical & Internship History */}
-                <Card>
-                  <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
-                    <Eyebrow>Clinical Rotations & Internship Experience</Eyebrow>
-                    <Btn small variant="ghost" onClick={() => { setEditingExp(null); setIsAddExpOpen(true); }}>+ Add Experience</Btn>
-                  </div>
-                  <div style={{ marginTop: 14, display: "flex", flexDirection: "column", gap: 14 }}>
-                    {experiences.map((exp) => (
-                      <div key={exp.id} style={{ paddingBottom: 12, borderBottom: `1px solid ${T.border}` }}>
-                        <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start" }}>
-                          <div>
-                            <div style={{ fontFamily: "var(--ui)", fontSize: 15, fontWeight: 600, color: T.ink }}>
-                              {exp.role}
-                            </div>
-                            <Muted style={{ fontSize: 13, color: T.teal, marginTop: 1 }}>{exp.org}</Muted>
-                            <Muted style={{ fontSize: 12, color: T.muted, marginTop: 1 }}>{exp.period}</Muted>
-                          </div>
-                          <div style={{ display: "flex", gap: 6 }}>
-                            <button
-                              onClick={() => { setEditingExp(exp); setIsAddExpOpen(true); }}
-                              style={{ background: "none", border: "none", color: T.muted, cursor: "pointer", fontSize: 12 }}
-                            >
-                              Edit
-                            </button>
-                            <button
-                              onClick={() => {
-                                setExperiences(experiences.filter((x) => x.id !== exp.id));
-                                showToast("Experience removed");
-                              }}
-                              style={{ background: "none", border: "none", color: T.terra, cursor: "pointer", fontSize: 12 }}
-                            >
-                              Delete
-                            </button>
-                          </div>
-                        </div>
-                        <p style={{ fontFamily: "var(--ui)", fontSize: 13, color: T.inkSoft, marginTop: 6, lineHeight: 1.5, margin: "6px 0 0" }}>
-                          {exp.description}
-                        </p>
-                      </div>
-                    ))}
-                  </div>
-                </Card>
-              </div>
-
-              {/* Right Column: Certifications & Real Document Vault */}
-              <div style={{ display: "flex", flexDirection: "column", gap: 16 }}>
-                <Card>
-                  <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
-                    <Eyebrow>Certifications & Credentials</Eyebrow>
-                    <Btn small onClick={() => { setEditingCert(null); setIsAddCertOpen(true); }}>+ Add Certification</Btn>
-                  </div>
-                  <Muted style={{ fontSize: 13, marginTop: 4, marginBottom: 14 }}>
-                    Verified certificates directly boost your matched skill proficiency and role readiness.
-                  </Muted>
-
-                  <div style={{ display: "flex", flexDirection: "column", gap: 12 }}>
-                    {certifications.map((c) => (
-                      <div
-                        key={c.id}
-                        style={{
-                          background: T.bgSurface,
-                          border: `1px solid ${T.border}`,
-                          borderRadius: 12,
-                          padding: 14,
-                        }}
-                      >
-                        <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", gap: 10 }}>
-                          <div>
-                            <div style={{ fontFamily: "var(--ui)", fontSize: 14.5, fontWeight: 650, color: T.ink }}>
-                              {c.title}
-                            </div>
-                            <div style={{ fontFamily: "var(--ui)", fontSize: 12.5, color: T.teal, marginTop: 2, fontWeight: 550 }}>
-                              {c.issuer}
-                            </div>
-                            <div style={{ fontFamily: "var(--ui)", fontSize: 11.5, color: T.muted, marginTop: 2 }}>
-                              Issued {c.issueDate} {c.docName && `· ${c.docName}`}
-                            </div>
-                          </div>
-                          <Chip tone={c.verified ? "good" : "neutral"}>
-                            {c.verified ? "Verified ✓" : "Pending"}
-                          </Chip>
-                        </div>
-
-                        <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginTop: 10, paddingTop: 8, borderTop: `1px solid ${T.border}30` }}>
-                          <div style={{ display: "flex", gap: 6, alignItems: "center" }}>
-                            {c.boostSkill && (
-                              <span style={{ fontSize: 11.5, fontFamily: "var(--ui)", color: T.sage, fontWeight: 600 }}>
-                                +{c.boostAmount || 10} pts in {skillShort(c.boostSkill)}
-                              </span>
-                            )}
-                          </div>
-                          <div style={{ display: "flex", gap: 8, alignItems: "center" }}>
-                            {c.credentialUrl && (
-                              <a href={c.credentialUrl} target="_blank" rel="noreferrer" style={{ fontSize: 12, color: T.teal, textDecoration: "none", fontWeight: 550 }}>
-                                Verify ↗
-                              </a>
-                            )}
-                            <button
-                              onClick={() => { setEditingCert(c); setIsAddCertOpen(true); }}
-                              style={{ background: "none", border: "none", color: T.muted, cursor: "pointer", fontSize: 12 }}
-                            >
-                              Edit
-                            </button>
-                            <button
-                              onClick={() => {
-                                setCertifications(certifications.filter((x) => x.id !== c.id));
-                                showToast("Certification deleted");
-                              }}
-                              style={{ background: "none", border: "none", color: T.terra, cursor: "pointer", fontSize: 12 }}
-                            >
-                              Delete
-                            </button>
-                          </div>
-                        </div>
-                      </div>
-                    ))}
-                  </div>
-                </Card>
-
-                {/* Digital Credential Vault with Functional File Upload */}
-                <Card>
-                  <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
-                    <Eyebrow>Digital Credential Vault</Eyebrow>
-                    <Btn small variant="ghost" onClick={() => vaultInputRef.current?.click()}>
-                      + Upload Document
-                    </Btn>
-                  </div>
-                  <Muted style={{ fontSize: 13, marginTop: 4, marginBottom: 14 }}>
-                    Store signed university transcripts, thesis preprints, and hospital rotation logbooks securely.
-                  </Muted>
-
-                  <div style={{ display: "flex", flexDirection: "column", gap: 10 }}>
-                    {vaultDocs.map((doc) => (
-                      <div
-                        key={doc.id}
-                        style={{
-                          background: T.bgSurface,
-                          border: `1px solid ${T.border}`,
-                          borderRadius: 10,
-                          padding: "10px 14px",
-                          display: "flex",
-                          justifyContent: "space-between",
-                          alignItems: "center",
-                          gap: 10,
-                        }}
-                      >
-                        <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
-                          <span style={{ fontSize: 20 }}>📄</span>
-                          <div>
-                            <div style={{ fontFamily: "var(--ui)", fontSize: 13.5, fontWeight: 600, color: T.ink }}>
-                              {doc.name}
-                            </div>
-                            <div style={{ fontFamily: "var(--ui)", fontSize: 11.5, color: T.muted, marginTop: 1 }}>
-                              {doc.type} · {doc.size} · Uploaded {doc.date}
-                            </div>
-                          </div>
-                        </div>
-
-                        <div style={{ display: "flex", gap: 8, alignItems: "center" }}>
-                          <button
-                            type="button"
-                            onClick={() => setViewingVaultDoc(doc)}
-                            style={{
-                              background: "none",
-                              border: "none",
-                              color: T.teal,
-                              cursor: "pointer",
-                              fontSize: 12.5,
-                              fontWeight: 650,
-                              textDecoration: "underline",
-                              padding: "2px 4px",
-                            }}
-                          >
-                            View
-                          </button>
-                          <button
-                            type="button"
-                            onClick={() => {
-                              setVaultDocs((prev) => prev.filter((x) => x.id !== doc.id));
-                              showToast(`Removed "${doc.name}" from vault`);
-                            }}
-                            style={{
-                              background: "none",
-                              border: "none",
-                              color: T.terra,
-                              cursor: "pointer",
-                              fontSize: 12,
-                              padding: "2px 4px",
-                            }}
-                          >
-                            Delete
-                          </button>
-                        </div>
-                      </div>
-                    ))}
-                  </div>
-                </Card>
-              </div>
-            </div>
-          </>
+            <StudentPortfolioView
+              user={user}
+              profile={profile}
+              certifications={certifications}
+              experiences={experiences}
+              vaultDocs={vaultDocs}
+              isEditable={true}
+              onTakeAssessment={() => changeTab("assessment")}
+              photoInputRef={photoInputRef}
+              vaultInputRef={vaultInputRef}
+              setUser={setUser}
+              setCertifications={setCertifications}
+              setExperiences={setExperiences}
+              setVaultDocs={setVaultDocs}
+              setIsEditProfileOpen={setIsEditProfileOpen}
+              setEditingCert={setEditingCert}
+              setIsAddCertOpen={setIsAddCertOpen}
+              setEditingExp={setEditingExp}
+              setIsAddExpOpen={setIsAddExpOpen}
+              setViewingVaultDoc={setViewingVaultDoc}
+              setIsAuthModalOpen={setIsAuthModalOpen}
+              T={T}
+              themeMode={themeMode}
+              showToast={showToast}
+            />
           )
+        )}
+
+        {/* --- DEMO / SAMPLE STUDENT PROFILE TAB (SANDBOX) --- */}
+        {tab === "demo-profile" && (
+          <StudentPortfolioView
+            user={SAMPLE_STUDENT_USER}
+            profile={SAMPLE_PROFILE}
+            certifications={SAMPLE_CERTS}
+            experiences={SAMPLE_EXPERIENCES}
+            vaultDocs={SAMPLE_VAULT_DOCS}
+            isEditable={false}
+            isSampleBanner={true}
+            onBack={() => changeTab("overview")}
+            setViewingVaultDoc={setViewingVaultDoc}
+            T={T}
+            themeMode={themeMode}
+            showToast={showToast}
+          />
         )}
 
         {/* ================= ACADEMICIAN ================= */}
@@ -6404,125 +7303,181 @@ export default function AyushBridge() {
           </div>
         )}
 
-        {role === "industry" && tab === "applicants" && (
-          <>
-            <H size={28}>Ranked AYUSH Applicants</H>
-            <Muted style={{ marginTop: 4, marginBottom: 18 }}>
-              Ranked by verified hands-on competency scores. Portfolios and project summaries open upon application.
-            </Muted>
+        {role === "industry" && tab === "applicants" && viewingApplicant ? (
+          <StudentPortfolioView
+            user={{
+              name: viewingApplicant.name,
+              studentId: viewingApplicant.studentId,
+              college: viewingApplicant.college,
+              institution: viewingApplicant.college,
+              email: viewingApplicant.email || `${viewingApplicant.name.toLowerCase().replace(/\s+/g, ".")}@ayushbridge.edu.in`,
+              bio: viewingApplicant.bio || `Verified AYUSH scholar enrolled in ${viewingApplicant.stream || "Ayurveda"}.`,
+              specializations: viewingApplicant.specializations || [viewingApplicant.role, viewingApplicant.stream || "Ayurveda"],
+              year: viewingApplicant.year || "4th Professional Year",
+              avatar: viewingApplicant.avatar || null,
+              links: viewingApplicant.links || {
+                linkedin: `https://linkedin.com/in/${viewingApplicant.name.toLowerCase().replace(/\s+/g, "-")}`,
+                researchGate: `https://researchgate.net/profile/${viewingApplicant.name.replace(/\s+/g, "-")}`,
+                website: "https://ayushbridge.gov.in",
+              },
+            }}
+            profile={viewingApplicant.profile || SAMPLE_PROFILE}
+            certifications={viewingApplicant.certifications || SAMPLE_CERTS}
+            experiences={viewingApplicant.experiences || SAMPLE_EXPERIENCES}
+            vaultDocs={viewingApplicant.vaultDocs || SAMPLE_VAULT_DOCS}
+            isEditable={false}
+            onBack={() => setViewingApplicant(null)}
+            setViewingVaultDoc={setViewingVaultDoc}
+            T={T}
+            themeMode={themeMode}
+            showToast={showToast}
+          />
+        ) : (
+          role === "industry" && tab === "applicants" && (
+            <>
+              <H size={28}>Ranked AYUSH Applicants</H>
+              <Muted style={{ marginTop: 4, marginBottom: 18 }}>
+                Ranked by verified hands-on competency scores. Click any candidate name below to inspect their full verified portfolio, certifications, and clinical logbooks.
+              </Muted>
 
-            {/* Candidate Search Bar */}
-            <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", flexWrap: "wrap", gap: 12, marginBottom: 16 }}>
-              <div style={{ position: "relative", width: "100%", maxWidth: 440 }}>
-                <span style={{ position: "absolute", left: 12, top: "50%", transform: "translateY(-50%)", color: T.muted, fontSize: 14 }}>
-                  🔍
-                </span>
-                <input
-                  type="text"
-                  value={applicantSearch}
-                  onChange={(e) => setApplicantSearch(e.target.value)}
-                  placeholder="Search by candidate name, student ID, stream, or role..."
-                  style={{
-                    width: "100%",
-                    padding: "9px 14px 9px 36px",
-                    borderRadius: 10,
-                    border: `1px solid ${T.border}`,
-                    background: T.bgSurface,
-                    color: T.ink,
-                    fontFamily: "var(--ui)",
-                    fontSize: 13.5,
-                    outline: "none",
-                  }}
-                />
-                {applicantSearch && (
-                  <button
-                    onClick={() => setApplicantSearch("")}
+              {/* Candidate Search Bar */}
+              <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", flexWrap: "wrap", gap: 12, marginBottom: 16 }}>
+                <div style={{ position: "relative", width: "100%", maxWidth: 440 }}>
+                  <span style={{ position: "absolute", left: 12, top: "50%", transform: "translateY(-50%)", color: T.muted, fontSize: 14 }}>
+                    🔍
+                  </span>
+                  <input
+                    type="text"
+                    value={applicantSearch}
+                    onChange={(e) => setApplicantSearch(e.target.value)}
+                    placeholder="Search by candidate name, student ID, stream, or role..."
                     style={{
-                      position: "absolute",
-                      right: 10,
-                      top: "50%",
-                      transform: "translateY(-50%)",
-                      background: "none",
-                      border: "none",
-                      color: T.muted,
-                      cursor: "pointer",
-                      fontSize: 13,
-                      padding: 4,
+                      width: "100%",
+                      padding: "9px 14px 9px 36px",
+                      borderRadius: 10,
+                      border: `1px solid ${T.border}`,
+                      background: T.bgSurface,
+                      color: T.ink,
+                      fontFamily: "var(--ui)",
+                      fontSize: 13.5,
+                      outline: "none",
                     }}
-                  >
-                    ✕
-                  </button>
-                )}
+                  />
+                  {applicantSearch && (
+                    <button
+                      onClick={() => setApplicantSearch("")}
+                      style={{
+                        position: "absolute",
+                        right: 10,
+                        top: "50%",
+                        transform: "translateY(-50%)",
+                        background: "none",
+                        border: "none",
+                        color: T.muted,
+                        cursor: "pointer",
+                        fontSize: 13,
+                        padding: 4,
+                      }}
+                    >
+                      ✕
+                    </button>
+                  )}
+                </div>
+
+                <span style={{ fontSize: 13, color: T.muted, fontFamily: "var(--ui)" }}>
+                  Showing <strong style={{ color: T.ink }}>{filteredApplicants.length}</strong> of {APPLICANTS.length} verified candidates
+                </span>
               </div>
 
-              <span style={{ fontSize: 13, color: T.muted, fontFamily: "var(--ui)" }}>
-                Showing <strong style={{ color: T.ink }}>{filteredApplicants.length}</strong> of {APPLICANTS.length} verified candidates
-              </span>
-            </div>
-
-            <Card style={{ padding: 0, overflow: "hidden" }}>
-              <div style={{ overflowX: "auto" }}>
-                <table style={{ width: "100%", borderCollapse: "collapse", fontFamily: "var(--ui)", fontSize: 13.5, minWidth: 740 }}>
-                  <thead>
-                    <tr style={{ background: T.bgSurface }}>
-                      {["Candidate", "Student ID", "College & Stream", "Applied For", "Readiness Match", "Status"].map((h) => (
-                        <th key={h} style={{ textAlign: "left", padding: "13px 18px", fontSize: 12, letterSpacing: ".06em", textTransform: "uppercase", color: T.muted, fontWeight: 650 }}>
-                          {h}
-                        </th>
-                      ))}
-                    </tr>
-                  </thead>
-                  <tbody>
-                    {filteredApplicants.length === 0 ? (
-                      <tr>
-                        <td colSpan={6} style={{ padding: "32px 18px", textAlign: "center", color: T.muted, fontStyle: "italic" }}>
-                          No candidates found matching "{applicantSearch}". Try clearing or broadening your search.
-                        </td>
+              <Card style={{ padding: 0, overflow: "hidden" }}>
+                <div style={{ overflowX: "auto" }}>
+                  <table style={{ width: "100%", borderCollapse: "collapse", fontFamily: "var(--ui)", fontSize: 13.5, minWidth: 740 }}>
+                    <thead>
+                      <tr style={{ background: T.bgSurface }}>
+                        {["Candidate", "Student ID", "College & Stream", "Applied For", "Readiness Match", "Status"].map((h) => (
+                          <th key={h} style={{ textAlign: "left", padding: "13px 18px", fontSize: 12, letterSpacing: ".06em", textTransform: "uppercase", color: T.muted, fontWeight: 650 }}>
+                            {h}
+                          </th>
+                        ))}
                       </tr>
-                    ) : (
-                      filteredApplicants.map((a) => (
-                        <tr key={a.name} style={{ borderTop: `1px solid ${T.border}` }}>
-                          <td style={{ padding: "14px 18px", color: T.ink, fontWeight: 600 }}>{a.name}</td>
-                          <td style={{ padding: "14px 18px", whiteSpace: "nowrap", minWidth: 140 }}>
-                            <span
-                              style={{
-                                fontFamily: "var(--ui)",
-                                fontSize: 12,
-                                fontWeight: 650,
-                                color: T.teal,
-                                background: T.bgSurface,
-                                border: `1px solid ${T.border}`,
-                                padding: "4px 9px",
-                                borderRadius: 6,
-                                letterSpacing: "0.03em",
-                                whiteSpace: "nowrap",
-                                display: "inline-block",
-                              }}
-                            >
-                              {a.studentId}
-                            </span>
-                          </td>
-                          <td style={{ padding: "14px 18px", color: T.muted }}>{a.college}</td>
-                          <td style={{ padding: "14px 18px", color: T.inkSoft }}>{a.role}</td>
-                          <td style={{ padding: "14px 18px" }}>
-                            <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
-                              <div style={{ width: 50, height: 6, background: T.bgSurface, borderRadius: 999, overflow: "hidden" }}>
-                                <div style={{ width: `${a.match}%`, height: "100%", background: a.match >= 80 ? T.sage : T.terra }} />
-                              </div>
-                              <span style={{ color: a.match >= 80 ? T.sage : T.terra, fontWeight: 650 }}>{a.match}%</span>
-                            </div>
-                          </td>
-                          <td style={{ padding: "14px 18px" }}>
-                            <Chip tone={a.status === "Selected" ? "good" : "neutral"}>{a.status}</Chip>
+                    </thead>
+                    <tbody>
+                      {filteredApplicants.length === 0 ? (
+                        <tr>
+                          <td colSpan={6} style={{ padding: "32px 18px", textAlign: "center", color: T.muted, fontStyle: "italic" }}>
+                            No candidates found matching "{applicantSearch}". Try clearing or broadening your search.
                           </td>
                         </tr>
-                      ))
-                    )}
-                  </tbody>
-                </table>
-              </div>
-            </Card>
-          </>
+                      ) : (
+                        filteredApplicants.map((a) => (
+                          <tr key={a.name} style={{ borderTop: `1px solid ${T.border}` }}>
+                            <td style={{ padding: "14px 18px", color: T.ink, fontWeight: 600 }}>
+                              <button
+                                type="button"
+                                onClick={() => setViewingApplicant(a)}
+                                title={`Inspect ${a.name}'s verified portfolio`}
+                                style={{
+                                  background: "none",
+                                  border: "none",
+                                  padding: 0,
+                                  fontFamily: "var(--ui)",
+                                  fontSize: 13.5,
+                                  fontWeight: 700,
+                                  color: T.teal,
+                                  cursor: "pointer",
+                                  textAlign: "left",
+                                  display: "inline-flex",
+                                  alignItems: "center",
+                                  gap: 6,
+                                  textDecoration: "underline",
+                                  textUnderlineOffset: 3,
+                                }}
+                              >
+                                <span>{a.name}</span>
+                                <span style={{ fontSize: 11, opacity: 0.75 }}>↗</span>
+                              </button>
+                            </td>
+                            <td style={{ padding: "14px 18px", whiteSpace: "nowrap", minWidth: 140 }}>
+                              <span
+                                style={{
+                                  fontFamily: "var(--ui)",
+                                  fontSize: 12,
+                                  fontWeight: 650,
+                                  color: T.teal,
+                                  background: T.bgSurface,
+                                  border: `1px solid ${T.border}`,
+                                  padding: "4px 9px",
+                                  borderRadius: 6,
+                                  letterSpacing: "0.03em",
+                                  whiteSpace: "nowrap",
+                                  display: "inline-block",
+                                }}
+                              >
+                                {a.studentId}
+                              </span>
+                            </td>
+                            <td style={{ padding: "14px 18px", color: T.muted }}>{a.college}</td>
+                            <td style={{ padding: "14px 18px", color: T.inkSoft }}>{a.role}</td>
+                            <td style={{ padding: "14px 18px" }}>
+                              <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
+                                <div style={{ width: 50, height: 6, background: T.bgSurface, borderRadius: 999, overflow: "hidden" }}>
+                                  <div style={{ width: `${a.match}%`, height: "100%", background: a.match >= 80 ? T.sage : T.terra }} />
+                                </div>
+                                <span style={{ color: a.match >= 80 ? T.sage : T.terra, fontWeight: 650 }}>{a.match}%</span>
+                              </div>
+                            </td>
+                            <td style={{ padding: "14px 18px" }}>
+                              <Chip tone={a.status === "Selected" ? "good" : "neutral"}>{a.status}</Chip>
+                            </td>
+                          </tr>
+                        ))
+                      )}
+                    </tbody>
+                  </table>
+                </div>
+              </Card>
+            </>
+          )
         )}
 
         {/* ================= INSTITUTION ================= */}

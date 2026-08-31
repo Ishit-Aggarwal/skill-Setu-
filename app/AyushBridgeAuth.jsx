@@ -232,15 +232,57 @@ export default function AyushBridgeAuth({
       return;
     }
 
+    // Helper to check for repetitive gibberish (e.g., 'xjxj', 'aaaa')
+    const isRepetitiveGibberish = (str) => {
+      const s = str.trim().toLowerCase();
+      if (s.length < 3) return true;
+      // All same character e.g. 'aaaa'
+      if (/^(.)\1+$/.test(s)) return true;
+      // 2-char repetition e.g. 'xjxj', 'nxnx'
+      if (s.length >= 4 && s.slice(0, 2) === s.slice(2, 4) && s.length % 2 === 0) return true;
+      return false;
+    };
+
     // Validate Role-specific fields
     if (selectedRole === "student") {
-      if (!formData.fullName || !formData.studentId || !formData.college) {
-        setError("Please complete all student fields: Full Name, Student / Roll Number, and Institution Name.");
+      const name = (formData.fullName || "").trim();
+      const sId = (formData.studentId || "").trim();
+      const clg = (formData.college || "").trim();
+
+      if (!name || name.length < 3 || !/^[a-zA-Z\s.']{3,60}$/.test(name)) {
+        setError("Please enter a valid Full Name (letters, spaces, and periods only, min. 3 characters).");
         return;
       }
+      if (!sId || sId.length < 4 || !/^[a-zA-Z0-9\/-]{4,25}$/.test(sId) || isRepetitiveGibberish(sId)) {
+        setError("Please enter a valid Student / Roll Number (e.g. AYU-2024-8821, min. 4 characters).");
+        return;
+      }
+      if (!clg || clg.length < 4 || isRepetitiveGibberish(clg)) {
+        setError("Please enter a valid Institution / College Name (min. 4 characters).");
+        return;
+      }
+      if (formData.age) {
+        const ageNum = parseInt(formData.age, 10);
+        if (isNaN(ageNum) || ageNum < 17 || ageNum > 60) {
+          setError("Please enter a valid student age between 17 and 60.");
+          return;
+        }
+      }
     } else if (selectedRole === "academician") {
-      if (!formData.fullName || !formData.employeeId || !formData.institution || !formData.teacherCode) {
-        setError("Please complete all faculty fields: Full Name, Faculty / Employee ID, Institution, and Teacher Code.");
+      const name = (formData.fullName || "").trim();
+      const empId = (formData.employeeId || "").trim();
+      const inst = (formData.institution || "").trim();
+
+      if (!name || name.length < 3 || !/^[a-zA-Z\s.']{3,60}$/.test(name)) {
+        setError("Please enter a valid Full Name (letters and spaces only, min. 3 characters).");
+        return;
+      }
+      if (!empId || empId.length < 3 || isRepetitiveGibberish(empId)) {
+        setError("Please enter a valid Faculty / Employee ID (e.g. AIIA-EMP-4091).");
+        return;
+      }
+      if (!inst || inst.length < 4 || isRepetitiveGibberish(inst)) {
+        setError("Please enter a valid Institution Name.");
         return;
       }
       const codeCheck = validateTeacherCode(formData.teacherCode);
@@ -249,8 +291,20 @@ export default function AyushBridgeAuth({
         return;
       }
     } else if (selectedRole === "industry") {
-      if (!formData.fullName || !formData.companyName || !formData.workEmailDomain || !formData.companyCode) {
-        setError("Please complete all industry fields: Full Name, Company / Organization Name, Work Email Domain, and Company Code.");
+      const name = (formData.fullName || "").trim();
+      const comp = (formData.companyName || "").trim();
+      const domain = (formData.workEmailDomain || "").trim();
+
+      if (!name || name.length < 3 || !/^[a-zA-Z\s.']{3,60}$/.test(name)) {
+        setError("Please enter a valid Full Name (letters and spaces only).");
+        return;
+      }
+      if (!comp || comp.length < 3 || isRepetitiveGibberish(comp)) {
+        setError("Please enter a valid Company / Organization Name.");
+        return;
+      }
+      if (!domain || domain.length < 3) {
+        setError("Please enter a valid Work Email Domain (e.g. @aryavaidyasala.com).");
         return;
       }
       const codeCheck = validateCompanyCode(formData.companyCode);
@@ -259,8 +313,20 @@ export default function AyushBridgeAuth({
         return;
       }
     } else if (selectedRole === "institution") {
-      if (!formData.instituteName || !formData.deanName || !formData.instituteId || !formData.instituteCode) {
-        setError("Please complete all institution fields: Administrator Name, Institution Name, Institution / AISHE ID, and Institute Code.");
+      const dean = (formData.deanName || "").trim();
+      const inst = (formData.instituteName || "").trim();
+      const instId = (formData.instituteId || "").trim();
+
+      if (!dean || dean.length < 3 || !/^[a-zA-Z\s.']{3,60}$/.test(dean)) {
+        setError("Please enter a valid Administrator / Dean Name.");
+        return;
+      }
+      if (!inst || inst.length < 4 || isRepetitiveGibberish(inst)) {
+        setError("Please enter a valid Institution Name.");
+        return;
+      }
+      if (!instId || instId.length < 3 || isRepetitiveGibberish(instId)) {
+        setError("Please enter a valid Institution / AISHE ID (e.g. AISHE-U-0412).");
         return;
       }
       const codeCheck = validateInstituteCode(formData.instituteCode);
@@ -282,10 +348,15 @@ export default function AyushBridgeAuth({
         });
         const data = await res.json();
         if (res.ok && data.success) {
-          showToast(`Verification code sent to ${targetEmail} ✓`);
+          if (data.devOtp) {
+            showToast(`Dev Sandbox Mode: Verification code is ${data.devOtp}`);
+            setOtpInput(data.devOtp.split(""));
+          } else {
+            showToast(`Verification code sent to ${targetEmail} ✓`);
+            setOtpInput(["", "", "", "", "", ""]);
+          }
           setOtpTimer(60);
           setStep("otp");
-          setOtpInput(["", "", "", "", "", ""]);
           return true;
         } else {
           setError(data.error || "Failed to send verification code. Please verify email settings.");
@@ -1258,8 +1329,13 @@ export default function AyushBridgeAuth({
                     const data = await res.json();
                     if (res.ok && data.success) {
                       setOtpTimer(60);
-                      setOtpInput(["", "", "", "", "", ""]);
-                      showToast(`New verification code sent to ${formData.email} ✓`);
+                      if (data.devOtp) {
+                        showToast(`Dev Sandbox Mode: New code is ${data.devOtp}`);
+                        setOtpInput(data.devOtp.split(""));
+                      } else {
+                        setOtpInput(["", "", "", "", "", ""]);
+                        showToast(`New verification code sent to ${formData.email} ✓`);
+                      }
                     } else {
                       setError(data.error || "Failed to resend verification code.");
                     }
