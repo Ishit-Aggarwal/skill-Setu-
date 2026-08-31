@@ -1,10 +1,5 @@
 import nodemailer from "nodemailer";
-
-// In-memory temporary store for OTPs across requests
-// Structure: global.otpStore[normalizedEmail] = { otp: "123456", expiresAt: 1700000000000 }
-if (!global.otpStore) {
-  global.otpStore = {};
-}
+import { createOtpToken } from "../../lib/otp";
 
 export default async function handler(req, res) {
   if (req.method !== "POST") {
@@ -13,7 +8,6 @@ export default async function handler(req, res) {
 
   const { email } = req.body || {};
 
-  // Validate email format
   const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
   if (!email || typeof email !== "string" || !emailRegex.test(email.trim())) {
     return res.status(400).json({
@@ -24,25 +18,19 @@ export default async function handler(req, res) {
 
   const normalizedEmail = email.trim().toLowerCase();
 
-  // Generate random 6-digit OTP
   const otp = Math.floor(100000 + Math.random() * 900000).toString();
-
-  // 5-minute expiry timestamp
-  const expiresAt = Date.now() + 5 * 60 * 1000;
-  global.otpStore[normalizedEmail] = {
-    otp,
-    expiresAt,
-  };
+  const token = createOtpToken(normalizedEmail, otp);
 
   const emailUser = process.env.EMAIL_USER;
   const emailPass = process.env.EMAIL_PASS;
 
   if (!emailUser || !emailPass) {
-    console.warn("Notice: EMAIL_USER or EMAIL_PASS not set in .env.local. Running in local OTP verification mode for Hackathon / Sandbox.");
+    console.warn("Notice: EMAIL_USER or EMAIL_PASS not set. Running in local dev mode (no email sent).");
     return res.status(200).json({
       success: true,
       message: `Verification code generated for ${normalizedEmail} (Development Mode)`,
       devOtp: otp,
+      token,
       isDevFallback: true,
     });
   }
@@ -86,6 +74,7 @@ export default async function handler(req, res) {
     return res.status(200).json({
       success: true,
       message: `OTP sent successfully to ${normalizedEmail}`,
+      token,
     });
   } catch (error) {
     console.error("Nodemailer sendMail failed:", error);

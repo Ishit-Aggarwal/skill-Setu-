@@ -6,6 +6,7 @@ import { useAuth } from "../../lib/auth";
 import { useTheme } from "../../lib/theme";
 import { PAGE_PATHS, roleHomePage } from "../../lib/nav";
 import { validateTeacherCode, validateCompanyCode, validateInstituteCode } from "../../lib/registry";
+import DemoModeMenu from "../../components/DemoModeMenu";
 
 const roleConfig = {
   student: {
@@ -71,7 +72,7 @@ function LoginPageInner() {
   });
   const [codeValidation, setCodeValidation] = useState({ valid: false, message: "" });
   const [otpDigits, setOtpDigits] = useState(["", "", "", "", "", ""]);
-  const [devOtpHint, setDevOtpHint] = useState(null);
+  const [otpToken, setOtpToken] = useState(null);
   const [otpTimer, setOtpTimer] = useState(0);
 
   useEffect(() => {
@@ -132,6 +133,24 @@ function LoginPageInner() {
     return null;
   }
 
+  function buildProfile() {
+    return {
+      name: form.name,
+      email: form.email,
+      password: form.password,
+      role,
+      institution: form.institution || form.instituteName,
+      course: form.course,
+      companyName: form.companyName,
+      workEmailDomain: form.workEmailDomain,
+      employeeId: form.employeeId,
+      department: form.department,
+      instituteName: form.instituteName,
+      instituteId: form.instituteId,
+      verifiedCode: form.teacherCode || form.companyCode || form.instituteCode || null,
+    };
+  }
+
   async function handleSignupSubmit(e) {
     e.preventDefault();
     const validationError = validateSignupForm();
@@ -141,8 +160,16 @@ function LoginPageInner() {
     setError(null);
     try {
       const data = await sendSignupOtp(form.email);
+      if (data.isDevFallback) {
+        // No email service is configured, so there's nothing to verify a
+        // code against by hand — complete registration right away using
+        // the code the server generated for us.
+        const created = await completeSignup(buildProfile(), data.devOtp, data.token);
+        router.push(PAGE_PATHS[roleHomePage(created.role)]);
+        return;
+      }
       setOtpDigits(["", "", "", "", "", ""]);
-      setDevOtpHint(data.devOtp || null);
+      setOtpToken(data.token);
       setOtpTimer(60);
       setStep("otp");
     } catch (err) {
@@ -158,7 +185,7 @@ function LoginPageInner() {
     try {
       const data = await sendSignupOtp(form.email);
       setOtpDigits(["", "", "", "", "", ""]);
-      setDevOtpHint(data.devOtp || null);
+      setOtpToken(data.token);
       setOtpTimer(60);
     } catch (err) {
       setError(err.message);
@@ -185,22 +212,7 @@ function LoginPageInner() {
     setLoading(true);
     setError(null);
     try {
-      const profile = {
-        name: form.name,
-        email: form.email,
-        password: form.password,
-        role,
-        institution: form.institution || form.instituteName,
-        course: form.course,
-        companyName: form.companyName,
-        workEmailDomain: form.workEmailDomain,
-        employeeId: form.employeeId,
-        department: form.department,
-        instituteName: form.instituteName,
-        instituteId: form.instituteId,
-        verifiedCode: form.teacherCode || form.companyCode || form.instituteCode || null,
-      };
-      const created = await completeSignup(profile, otp);
+      const created = await completeSignup(buildProfile(), otp, otpToken);
       router.push(PAGE_PATHS[roleHomePage(created.role)]);
     } catch (err) {
       setError(err.message);
@@ -253,17 +265,22 @@ function LoginPageInner() {
           </p>
 
           {step === "form" && (
-            <div className="flex bg-secondary rounded-xl p-1 mb-7">
-              {["login", "signup"].map((m) => (
-                <button
-                  key={m}
-                  onClick={() => { setMode(m); setError(null); }}
-                  className={`flex-1 py-2 rounded-lg text-sm font-medium transition-all duration-150 ${mode === m ? "bg-card text-foreground shadow-sm" : "text-muted-foreground hover:text-foreground"}`}
-                >
-                  {m === "login" ? "Sign In" : "Sign Up"}
-                </button>
-              ))}
-            </div>
+            <>
+              <div className="flex bg-secondary rounded-xl p-1 mb-2">
+                {["login", "signup"].map((m) => (
+                  <button
+                    key={m}
+                    onClick={() => { setMode(m); setError(null); }}
+                    className={`flex-1 py-2 rounded-lg text-sm font-medium transition-all duration-150 ${mode === m ? "bg-card text-foreground shadow-sm" : "text-muted-foreground hover:text-foreground"}`}
+                  >
+                    {m === "login" ? "Sign In" : "Sign Up"}
+                  </button>
+                ))}
+              </div>
+              <div className="flex justify-end mb-5">
+                <DemoModeMenu />
+              </div>
+            </>
           )}
 
           {error && (
@@ -414,11 +431,6 @@ function LoginPageInner() {
               <div className="bg-secondary rounded-xl p-4 mb-6 text-sm text-muted-foreground">
                 <div>We sent a 6-digit one-time verification code to:</div>
                 <div className="font-semibold text-primary mt-1">{form.email}</div>
-                {devOtpHint && (
-                  <div className="mt-2 rounded-lg bg-primary/10 px-3 py-2 text-xs font-medium text-primary">
-                    🛠️ Dev Sandbox Mode — your code is <strong>{devOtpHint}</strong> (no email was actually sent).
-                  </div>
-                )}
               </div>
 
               <div className="flex justify-center gap-2.5 mb-6">

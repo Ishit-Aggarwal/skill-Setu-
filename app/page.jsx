@@ -5,6 +5,7 @@ import { useRouter } from "next/navigation";
 import { useAuth } from "../lib/auth";
 import { useTheme } from "../lib/theme";
 import { roleHomePage, PAGE_PATHS } from "../lib/nav";
+import DemoModeMenu from "../components/DemoModeMenu";
 
 function IconArrowRight() {
   return (
@@ -83,9 +84,12 @@ export default function LandingPage() {
             <button onClick={() => setDarkMode(!darkMode)} className="p-2 rounded-lg text-muted-foreground hover:bg-secondary transition-colors">
               {darkMode ? <IconSun /> : <IconMoon />}
             </button>
-            <button onClick={() => router.push("/login")} className="text-sm font-medium text-muted-foreground hover:text-foreground transition-colors px-3 py-1.5">
-              Sign In
-            </button>
+            <div className="flex flex-col items-end">
+              <button onClick={() => router.push("/login")} className="text-sm font-medium text-muted-foreground hover:text-foreground transition-colors px-3 py-1.5">
+                Sign In
+              </button>
+              <DemoModeMenu className="mr-1" />
+            </div>
             <button onClick={() => goToLogin("student")} className="text-sm font-medium bg-primary hover:bg-accent text-white px-4 py-2 rounded-xl transition-all duration-150 hover:shadow-md">
               Get Started
             </button>
@@ -168,7 +172,7 @@ export default function LandingPage() {
           ].map((card) => (
             <div
               key={card.role}
-              className={`rounded-2xl p-7 border transition-all duration-200 hover:shadow-lg group ${
+              className={`flex flex-col rounded-2xl p-7 border transition-all duration-200 hover:shadow-lg group ${
                 card.featured ? "bg-primary text-white border-transparent shadow-md" : "bg-card text-foreground border-border hover:-translate-y-1"
               }`}
             >
@@ -185,8 +189,8 @@ export default function LandingPage() {
               </ul>
               <button
                 onClick={() => goToLogin(card.role)}
-                className={`w-full py-3 rounded-xl text-sm font-medium transition-all duration-150 hover:scale-105 ${
-                  card.featured ? "bg-white text-primary hover:bg-olive-50" : "bg-primary/10 text-primary hover:bg-primary hover:text-white"
+                className={`mt-auto w-full py-3 rounded-xl text-sm font-medium transition-all duration-150 hover:scale-105 border ${
+                  card.featured ? "bg-white text-primary border-transparent hover:bg-olive-50" : "bg-primary/10 text-primary border-primary/20 hover:bg-primary hover:text-white hover:border-transparent"
                 }`}
               >
                 {card.cta}
@@ -238,17 +242,27 @@ export default function LandingPage() {
         </div>
       </section>
 
-      <section className="mx-5 lg:max-w-6xl lg:mx-auto mb-16 bg-primary rounded-2xl p-10 text-center relative overflow-hidden">
-        <div className="absolute inset-0 opacity-10">
-          <div className="absolute -top-8 -right-8 w-48 h-48 rounded-full bg-white" />
-          <div className="absolute -bottom-12 -left-8 w-64 h-64 rounded-full bg-white" />
-        </div>
-        <div className="relative z-10">
-          <h2 className="text-2xl sm:text-3xl font-semibold text-white mb-3">Ready to bridge the gap?</h2>
-          <p className="text-white/70 mb-7 max-w-lg mx-auto">Join thousands of students, institutions, and industry leaders already on the platform.</p>
-          <button onClick={() => goToLogin("student")} className="bg-white text-primary hover:bg-olive-50 px-8 py-3.5 rounded-xl font-medium transition-all duration-150 hover:scale-105 hover:shadow-lg">
-            Create Free Account
-          </button>
+      <section className="bg-secondary/50 border-y border-border py-20">
+        <div className="max-w-3xl mx-auto px-5">
+          <div className="text-center mb-12">
+            <div className="text-xs font-semibold text-primary uppercase tracking-widest mb-3">FAQ</div>
+            <h2 className="text-3xl font-semibold text-foreground mb-3">Common Questions</h2>
+          </div>
+
+          <div className="space-y-4">
+            {[
+              { q: "Is Setu free to use?", a: "Yes. Creating an account and using every feature — skill tests, internship listings, portfolios, analytics — is free." },
+              { q: "Which industries does it support?", a: "All of them. Setu isn't locked to one sector — IT, manufacturing, finance, design, and more all post and browse opportunities on the same platform." },
+              { q: "How do industry, academician, and institution accounts get verified?", a: "Signup for those roles asks for a short partner verification code, similar to how many campus placement portals confirm an organisation before granting posting access." },
+              { q: "Is my data safe?", a: "Your account and activity are stored locally in your browser rather than a shared server — see the Privacy Policy for the full picture." },
+              { q: "What's Demo Mode?", a: "A one-click way to explore a fully populated Student, Industry, Academician, or Institution dashboard without creating an account first." },
+            ].map((item) => (
+              <div key={item.q} className="bg-card border border-border rounded-2xl p-5">
+                <div className="text-sm font-semibold text-foreground mb-1.5">{item.q}</div>
+                <div className="text-sm text-muted-foreground leading-relaxed">{item.a}</div>
+              </div>
+            ))}
+          </div>
         </div>
       </section>
 
@@ -265,10 +279,10 @@ export default function LandingPage() {
               </p>
             </div>
             <div className="flex flex-wrap gap-x-8 gap-y-2 text-sm text-muted-foreground">
-              <button className="hover:text-foreground transition-colors">About</button>
-              <button className="hover:text-foreground transition-colors">Privacy Policy</button>
-              <button className="hover:text-foreground transition-colors">Terms of Use</button>
-              <button className="hover:text-foreground transition-colors">Contact</button>
+              <button onClick={() => router.push("/about")} className="hover:text-foreground transition-colors">About</button>
+              <button onClick={() => router.push("/privacy")} className="hover:text-foreground transition-colors">Privacy Policy</button>
+              <button onClick={() => router.push("/terms")} className="hover:text-foreground transition-colors">Terms of Use</button>
+              <button onClick={() => router.push("/contact")} className="hover:text-foreground transition-colors">Contact</button>
             </div>
           </div>
           <div className="mt-8 pt-6 border-t border-border text-xs text-muted-foreground text-center">

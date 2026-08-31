@@ -1,7 +1,7 @@
 "use client";
 
 import { createContext, useContext, useEffect, useState } from "react";
-import { all, findOne, insert } from "./store";
+import { findOne, insert, update, getDemoUser } from "./store";
 import { hashPassword } from "./hash";
 
 const AuthContext = createContext(null);
@@ -51,12 +51,12 @@ export function AuthProvider({ children }) {
     return data;
   }
 
-  async function completeSignup(profile, otp) {
+  async function completeSignup(profile, otp, token) {
     const normalized = profile.email.trim().toLowerCase();
     const res = await fetch("/api/verify-otp", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ email: normalized, otp }),
+      body: JSON.stringify({ email: normalized, otp, token }),
     });
     const data = await res.json();
     if (!res.ok || !data.success) throw new Error(data.error || "Invalid verification code.");
@@ -74,11 +74,15 @@ export function AuthProvider({ children }) {
     return record;
   }
 
+  function loginAsDemo(role) {
+    const demoUser = getDemoUser(role);
+    persistSession(demoUser);
+    return demoUser;
+  }
+
   function updateProfile(patch) {
     if (!user) return;
-    const merged = { ...user, ...patch };
-    const arr = all("users").map((u) => (u.id === user.id ? merged : u));
-    window.localStorage.setItem("ayusetu:v2:users", JSON.stringify(arr));
+    const merged = update("users", user.id, patch);
     setUser(merged);
   }
 
@@ -87,7 +91,7 @@ export function AuthProvider({ children }) {
   }
 
   return (
-    <AuthContext.Provider value={{ user, loading, login, logout, sendSignupOtp, completeSignup, updateProfile }}>
+    <AuthContext.Provider value={{ user, loading, login, logout, sendSignupOtp, completeSignup, loginAsDemo, updateProfile }}>
       {children}
     </AuthContext.Provider>
   );
