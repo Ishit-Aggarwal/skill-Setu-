@@ -272,7 +272,7 @@ export default function LandingPage() {
               { q: "Is Setu free to use?", a: "Yes. Creating an account and using every feature — skill tests, internship listings, portfolios, analytics — is free." },
               { q: "Which industries does it support?", a: "All of them. Setu isn't locked to one sector — IT, manufacturing, finance, design, and more all post and browse opportunities on the same platform." },
               { q: "How do industry, academician, and institution accounts get verified?", a: "Signup for those roles asks for a short partner verification code, similar to how many campus placement portals confirm an organisation before granting posting access." },
-              { q: "Is my data safe?", a: "Your account and activity are stored locally in your browser rather than a shared server — see the Privacy Policy for the full picture." },
+              { q: "Is my data safe?", a: "Your account and activity are stored server-side in our Convex database (with your device's local storage as an offline fallback) — see the Privacy Policy for the full picture, including how passwords and OTPs are handled." },
               { q: "What's Demo Mode?", a: "A one-click way to explore a fully populated Student, Industry, Academician, or Institution dashboard without creating an account first." },
             ].map((item) => (
               <div key={item.q} className="bg-card border border-border rounded-2xl p-5">

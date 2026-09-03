@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useMemo, useState } from "react";
+import { useSearchParams } from "next/navigation";
 import DashboardLayout from "../DashboardLayout";
 import { useAuth } from "../../lib/auth";
 import { useNav } from "../../lib/nav";
@@ -40,10 +41,19 @@ const statusColor = {
   "Not started": "text-muted-foreground bg-muted",
 };
 
+const VALID_TABS = ["fdp", "collabs", "students"];
+
 export default function AcademicianDashboard() {
   const { user } = useAuth();
   const navigate = useNav();
-  const [activeTab, setActiveTab] = useState("fdp");
+  const searchParams = useSearchParams();
+  const requestedTab = searchParams.get("tab");
+  const [activeTab, setActiveTab] = useState(VALID_TABS.includes(requestedTab) ? requestedTab : "fdp");
+
+  useEffect(() => {
+    if (VALID_TABS.includes(requestedTab)) setActiveTab(requestedTab);
+  }, [requestedTab]);
+
   const [programs, setPrograms] = useState([]);
   const [respondedCollabs, setRespondedCollabs] = useState({});
   const [students, setStudents] = useState([]);

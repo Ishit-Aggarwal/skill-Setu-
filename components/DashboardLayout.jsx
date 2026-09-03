@@ -121,8 +121,8 @@ const NAV = {
   ],
   academician: [
     { label: "Dashboard", page: "academician-dashboard", icon: <IconGrid /> },
-    { label: "Programs (FDPs)", page: "academician-dashboard", icon: <IconBookOpen /> },
-    { label: "Research Collabs", page: "academician-dashboard", icon: <IconFlask /> },
+    { label: "Programs (FDPs)", page: "academician-dashboard", query: { tab: "fdp" }, icon: <IconBookOpen /> },
+    { label: "Research Collabs", page: "academician-dashboard", query: { tab: "collabs" }, icon: <IconFlask /> },
     { label: "Skill Tests", page: "skill-assessment", icon: <IconTarget /> },
     { label: "Analytics", page: "analytics", icon: <IconBarChart /> },
   ],
@@ -190,7 +190,7 @@ export default function DashboardLayout({ children, activePage, title }) {
                 <button
                   key={item.label}
                   onClick={() => {
-                    navigate(item.page);
+                    navigate(item.page, item.query);
                     setSidebarOpen(false);
                   }}
                   className={`w-full flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm font-medium transition-all duration-150 ${
@@ -271,7 +271,7 @@ export default function DashboardLayout({ children, activePage, title }) {
           return (
             <button
               key={item.label}
-              onClick={() => navigate(item.page)}
+              onClick={() => navigate(item.page, item.query)}
               className={`flex flex-col items-center gap-1 px-3 py-1.5 rounded-lg transition-all duration-150 ${isActive ? "text-primary" : "text-muted-foreground"}`}
             >
               {item.icon}
