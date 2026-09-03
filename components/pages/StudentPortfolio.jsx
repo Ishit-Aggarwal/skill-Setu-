@@ -7,16 +7,16 @@ import { getAssessment, getPortfolio, savePortfolio, listApplicationsForStudent 
 
 const levelColor = {
   Advanced: "bg-primary/10 text-primary border-primary/20",
-  Proficient: "bg-blue-50 text-blue-700 border-blue-200 dark:bg-blue-950/20 dark:text-blue-300 dark:border-blue-800",
-  Intermediate: "bg-amber-50 text-amber-700 border-amber-200 dark:bg-amber-950/20 dark:text-amber-300 dark:border-amber-800",
+  Proficient: "bg-blue-50 text-blue-700 border-blue-200",
+  Intermediate: "bg-amber-50 text-amber-700 border-amber-200",
 };
 
 const typeColor = {
-  Education: "bg-blue-50 text-blue-700 dark:bg-blue-950/30 dark:text-blue-300",
-  Internship: "bg-emerald-50 text-emerald-700 dark:bg-emerald-950/30 dark:text-emerald-400",
-  Research: "bg-purple-50 text-purple-700 dark:bg-purple-950/30 dark:text-purple-300",
-  Publication: "bg-amber-50 text-amber-700 dark:bg-amber-950/30 dark:text-amber-400",
-  Achievement: "bg-olive-100 text-olive-700 dark:bg-olive-900/30 dark:text-olive-300",
+  Education: "bg-blue-50 text-blue-700",
+  Internship: "bg-emerald-50 text-emerald-700",
+  Research: "bg-purple-50 text-purple-700",
+  Publication: "bg-amber-50 text-amber-700",
+  Achievement: "bg-olive-100 text-olive-700",
 };
 
 const typeIcon = { Education: "🎓", Internship: "💼", Research: "🔬", Publication: "📄", Achievement: "🏆" };
@@ -144,7 +144,7 @@ export default function StudentPortfolio() {
                   <p className="text-sm text-muted-foreground">{[user.course, user.year].filter(Boolean).join(" · ") || "Student"} · {user.institution}</p>
                 </div>
               </div>
-              <button onClick={handleDownload} className={`flex items-center gap-2 text-sm font-medium px-4 py-2.5 rounded-xl transition-all duration-200 flex-shrink-0 ${downloaded ? "bg-green-50 text-green-600 dark:bg-green-950/30" : "bg-primary hover:bg-accent text-white hover:shadow-md"}`}>
+              <button onClick={handleDownload} className={`flex items-center gap-2 text-sm font-medium px-4 py-2.5 rounded-xl transition-all duration-200 flex-shrink-0 ${downloaded ? "bg-green-50 text-green-600" : "bg-primary hover:bg-accent text-white hover:shadow-md"}`}>
                 {downloaded ? "Preparing PDF…" : "Download Resume"}
               </button>
             </div>
@@ -320,7 +320,7 @@ export default function StudentPortfolio() {
         {activeSection === "documents" && (
           <div className="space-y-3 animate-fade-slide">
             {docError && (
-              <div className="flex items-start gap-2 rounded-xl border border-red-200 bg-red-50 px-3.5 py-2.5 text-xs text-red-700 dark:border-red-900/40 dark:bg-red-950/30 dark:text-red-300">
+              <div className="flex items-start gap-2 rounded-xl border border-red-200 bg-red-50 px-3.5 py-2.5 text-xs text-red-700">
                 <span>⚠️</span><span>{docError}</span>
               </div>
             )}

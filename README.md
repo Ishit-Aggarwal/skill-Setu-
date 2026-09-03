@@ -19,13 +19,9 @@ Smart India Hackathon · Problem Statement SIH26044
 ## How it's built
 
 - **Next.js 14** (App Router) + **Tailwind CSS** for the UI.
-- **Local, browser-persisted data layer** (`lib/store.js`) standing in for a database — every "collection" (users, internships, applications, skill tests, portfolios, programs) is a JSON array in `localStorage`. No external service required to run or deploy.
+- **Convex** for server-side accounts and data — users, internships, applications, skill tests, portfolios, and programs are stored in a shared cloud database, enabling sign-in from any device. Falls back to a browser-local `localStorage` store (`lib/store.js`) if `NEXT_PUBLIC_CONVEX_URL` isn't configured.
 - **Real OTP-verified signup** via `pages/api/send-otp.js` / `pages/api/verify-otp.js` (Nodemailer). Without email credentials configured, verification codes are shown directly in the UI (dev mode) instead of being emailed.
 - Role-based signup is gated by verification codes for industry/academician/institution accounts (`lib/registry.js`) — a small stand-in for a real organisation-verification workflow.
-
-### Note on data persistence
-
-Because there's no live database wired up, all data (accounts, postings, applications, skill test results) lives in the browser's `localStorage`. It's fully functional for demoing every flow, but data is per-browser rather than shared across devices. To upgrade to a real shared backend, swap the functions in `lib/store.js` for calls to Firebase/Firestore, Supabase, or any REST API — the rest of the app only depends on that module's function signatures.
 
 ## Run Locally
 
@@ -36,6 +32,8 @@ npm run dev
 
 Open [http://localhost:3000](http://localhost:3000)
 
+For accounts to work across devices, run `npx convex dev` in a separate terminal — it provisions a Convex deployment and writes `NEXT_PUBLIC_CONVEX_URL` into `.env.local` automatically. Without it, accounts fall back to the current browser's `localStorage`.
+
 To send real OTP emails, add Gmail SMTP credentials to `.env.local`:
 
 ```
@@ -43,7 +41,7 @@ EMAIL_USER=your-email@gmail.com
 EMAIL_PASS=your-16-character-app-password
 ```
 
-(Generate an App Password at https://myaccount.google.com/apppasswords.) Leave both blank to use dev mode, where the code is shown directly in the UI.
+(Generate an App Password at https://myaccount.google.com/apppasswords.) Set `OTP_DEV_MODE=true` instead to skip email entirely — the code is shown directly in the UI.
 
 ## Build for Production
 

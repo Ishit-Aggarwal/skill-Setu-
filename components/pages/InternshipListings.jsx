@@ -22,9 +22,9 @@ const domainFilters = ["All", ...INTERNSHIP_DOMAINS];
 const typeFilters = ["All", "Remote", "Hybrid", "Onsite"];
 
 const typeColor = {
-  Remote: "text-emerald-700 bg-emerald-50 dark:bg-emerald-950/30 dark:text-emerald-300",
-  Hybrid: "text-blue-700 bg-blue-50 dark:bg-blue-950/30 dark:text-blue-300",
-  Onsite: "text-amber-700 bg-amber-50 dark:bg-amber-950/30 dark:text-amber-400",
+  Remote: "text-emerald-700 bg-emerald-50",
+  Hybrid: "text-blue-700 bg-blue-50",
+  Onsite: "text-amber-700 bg-amber-50",
 };
 
 function StudentView({ user }) {
@@ -142,7 +142,7 @@ function StudentView({ user }) {
                 <div className="flex items-center gap-1.5 flex-wrap mb-3">
                   <span className={`text-[10px] font-medium px-2 py-0.5 rounded-full ${typeColor[intern.type] || "bg-muted text-muted-foreground"}`}>{intern.type}</span>
                   <span className="text-[10px] bg-secondary text-secondary-foreground px-2 py-0.5 rounded-full">{intern.domain}</span>
-                  {intern.hot && <span className="text-[10px] font-semibold text-orange-600 bg-orange-50 dark:bg-orange-950/30 dark:text-orange-400 px-2 py-0.5 rounded-full">🔥 Hot</span>}
+                  {intern.hot && <span className="text-[10px] font-semibold text-orange-600 bg-orange-50 px-2 py-0.5 rounded-full">🔥 Hot</span>}
                 </div>
 
                 <div className="flex flex-wrap gap-1 mb-3">
@@ -252,7 +252,7 @@ function IndustryView({ user }) {
             <div key={p.id} className="bg-card border border-border rounded-2xl p-5 hover:shadow-sm transition-shadow flex flex-col">
               <div className="flex items-start justify-between mb-2">
                 <div className="text-sm font-semibold text-foreground">{p.title}</div>
-                <span className={`text-[10px] font-medium px-2 py-0.5 rounded-full flex-shrink-0 ${p.status === "Open" ? "text-green-600 bg-green-50 dark:bg-green-950/30" : "text-muted-foreground bg-muted"}`}>{p.status}</span>
+                <span className={`text-[10px] font-medium px-2 py-0.5 rounded-full flex-shrink-0 ${p.status === "Open" ? "text-green-600 bg-green-50" : "text-muted-foreground bg-muted"}`}>{p.status}</span>
               </div>
               <div className="text-xs text-muted-foreground mb-3">{p.location} · {p.type} · {p.duration}</div>
               <div className="flex flex-wrap gap-1 mb-4">

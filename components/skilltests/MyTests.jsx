@@ -3,10 +3,10 @@
 import { getRegistrationStatus, formatScheduled } from "../../lib/testStatus";
 
 const statusBadge = {
-  upcoming: "text-blue-600 bg-blue-50 dark:bg-blue-950/30 dark:text-blue-300",
+  upcoming: "text-blue-600 bg-blue-50",
   available: "text-primary bg-primary/10",
-  completed: "text-green-600 bg-green-50 dark:bg-green-950/30 dark:text-green-400",
-  missed: "text-red-600 bg-red-50 dark:bg-red-950/30 dark:text-red-400",
+  completed: "text-green-600 bg-green-50",
+  missed: "text-red-600 bg-red-50",
 };
 
 const statusLabel = {

@@ -12,7 +12,7 @@ export default function ContactPage() {
       <p>
         <a
           className="inline-flex items-center gap-2 mt-2 text-sm font-medium text-primary hover:underline"
-          href="https://github.com/Ishit-Aggarwal/Ayush-portal/issues"
+          href="https://github.com/Ishit-Aggarwal/skill-Setu-/issues"
           target="_blank"
           rel="noreferrer"
         >

@@ -1,5 +1,4 @@
 import "./globals.css";
-import { ThemeProvider } from "../lib/theme";
 import { AuthProvider } from "../lib/auth";
 import ConvexClientProvider from "./ConvexClientProvider";
 
@@ -14,9 +13,7 @@ export default function RootLayout({ children }) {
     <html lang="en">
       <body className="bg-background text-foreground font-sans">
         <ConvexClientProvider>
-          <ThemeProvider>
-            <AuthProvider>{children}</AuthProvider>
-          </ThemeProvider>
+          <AuthProvider>{children}</AuthProvider>
         </ConvexClientProvider>
       </body>
     </html>

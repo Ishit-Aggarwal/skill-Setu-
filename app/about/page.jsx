@@ -26,12 +26,12 @@ export default function AboutPage() {
       </p>
       <h2>How it's built</h2>
       <p>
-        Setu is a Next.js application. To make every flow immediately usable without any backend setup,
-        data is currently persisted in your browser rather than a shared cloud database — see the{" "}
-        <a className="underline hover:text-foreground" href="https://github.com/Ishit-Aggarwal/Ayush-portal" target="_blank" rel="noreferrer">
-          project README
+        Setu is a Next.js application backed by Convex for server-side accounts and data, with a
+        browser-local fallback when no Convex database is configured — see the{" "}
+        <a className="underline hover:text-foreground" href="https://github.com/Ishit-Aggarwal/skill-Setu-" target="_blank" rel="noreferrer">
+          project repository
         </a>{" "}
-        for details on how that can be swapped for a real backend.
+        for the full source.
       </p>
     </StaticPageLayout>
   );

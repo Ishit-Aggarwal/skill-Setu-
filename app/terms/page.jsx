@@ -17,9 +17,9 @@ export default function TermsPage() {
       </p>
       <h2>No warranty</h2>
       <p>
-        The platform is provided as-is, without warranty of any kind. Since all data lives in your
-        browser's local storage rather than a managed backend (see the Privacy Policy), don't rely on it
-        for anything you can't afford to lose.
+        The platform is provided as-is, without warranty of any kind. Data is stored server-side in Convex
+        when configured, with browser local storage as an offline fallback (see the Privacy Policy) — either
+        way, don't rely on this hackathon demo for anything you can't afford to lose.
       </p>
       <h2>Acceptable use</h2>
       <p>

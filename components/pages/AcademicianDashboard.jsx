@@ -18,26 +18,26 @@ import {
 } from "../../lib/store";
 
 const collabTypeColor = {
-  Industry: "text-blue-600 bg-blue-50 dark:bg-blue-950/30 dark:text-blue-300",
-  Academic: "text-purple-600 bg-purple-50 dark:bg-purple-950/30 dark:text-purple-300",
-  Govt: "text-olive-700 bg-olive-100 dark:bg-olive-900/30 dark:text-olive-300",
+  Industry: "text-blue-600 bg-blue-50",
+  Academic: "text-purple-600 bg-purple-50",
+  Govt: "text-olive-700 bg-olive-100",
 };
 
 const collabStatusColor = {
-  Active: "text-green-600 bg-green-50 dark:bg-green-950/30 dark:text-green-400",
-  "Pending Review": "text-amber-600 bg-amber-50 dark:bg-amber-950/30 dark:text-amber-400",
+  Active: "text-green-600 bg-green-50",
+  "Pending Review": "text-amber-600 bg-amber-50",
 };
 
 const modeColor = {
-  Hybrid: "text-blue-600 bg-blue-50 dark:bg-blue-950/30 dark:text-blue-300",
-  Online: "text-emerald-600 bg-emerald-50 dark:bg-emerald-950/30 dark:text-emerald-400",
-  Onsite: "text-amber-600 bg-amber-50 dark:bg-amber-950/30 dark:text-amber-400",
+  Hybrid: "text-blue-600 bg-blue-50",
+  Online: "text-emerald-600 bg-emerald-50",
+  Onsite: "text-amber-600 bg-amber-50",
 };
 
 const statusColor = {
-  Placed: "text-green-600 bg-green-50 dark:bg-green-950/30 dark:text-green-400",
-  "In Progress": "text-blue-600 bg-blue-50 dark:bg-blue-950/30 dark:text-blue-300",
-  Searching: "text-amber-600 bg-amber-50 dark:bg-amber-950/30 dark:text-amber-400",
+  Placed: "text-green-600 bg-green-50",
+  "In Progress": "text-blue-600 bg-blue-50",
+  Searching: "text-amber-600 bg-amber-50",
   "Not started": "text-muted-foreground bg-muted",
 };
 
@@ -164,7 +164,7 @@ export default function AcademicianDashboard() {
                     </div>
                     <div className="flex items-center gap-2 flex-shrink-0">
                       <span className={`text-xs font-medium px-2 py-0.5 rounded-full ${modeColor[fdp.mode] || "bg-muted text-muted-foreground"}`}>{fdp.mode}</span>
-                      <span className={`text-xs font-medium px-2 py-0.5 rounded-full ${status === "Almost Full" ? "text-red-600 bg-red-50 dark:bg-red-950/30 dark:text-red-400" : "text-green-600 bg-green-50 dark:bg-green-950/30 dark:text-green-400"}`}>{status}</span>
+                      <span className={`text-xs font-medium px-2 py-0.5 rounded-full ${status === "Almost Full" ? "text-red-600 bg-red-50" : "text-green-600 bg-green-50"}`}>{status}</span>
                     </div>
                   </div>
 
@@ -216,7 +216,7 @@ export default function AcademicianDashboard() {
                     <button className="text-sm py-2.5 px-4 rounded-xl bg-secondary text-muted-foreground hover:text-foreground font-medium transition-colors">View Project Workspace →</button>
                   )}
                   {response && (
-                    <div className={`text-sm py-2 text-center rounded-xl font-medium ${response === "Accepted" ? "text-green-600 bg-green-50 dark:bg-green-950/30" : "text-muted-foreground bg-muted"}`}>
+                    <div className={`text-sm py-2 text-center rounded-xl font-medium ${response === "Accepted" ? "text-green-600 bg-green-50" : "text-muted-foreground bg-muted"}`}>
                       {response === "Accepted" ? "✓ Collaboration accepted" : "Request declined"}
                     </div>
                   )}

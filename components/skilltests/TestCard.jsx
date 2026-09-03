@@ -6,15 +6,15 @@ import { getRegistrationStatus, formatScheduled } from "../../lib/testStatus";
 import { registerForSkillTest, selfReportOfflineAttendance } from "../../lib/store";
 
 const modeColor = {
-  Online: "text-emerald-700 bg-emerald-50 dark:bg-emerald-950/30 dark:text-emerald-300",
-  Offline: "text-amber-700 bg-amber-50 dark:bg-amber-950/30 dark:text-amber-400",
+  Online: "text-emerald-700 bg-emerald-50",
+  Offline: "text-amber-700 bg-amber-50",
 };
 
 const statusBadge = {
-  upcoming: "text-blue-600 bg-blue-50 dark:bg-blue-950/30 dark:text-blue-300",
+  upcoming: "text-blue-600 bg-blue-50",
   available: "text-primary bg-primary/10",
-  completed: "text-green-600 bg-green-50 dark:bg-green-950/30 dark:text-green-400",
-  missed: "text-red-600 bg-red-50 dark:bg-red-950/30 dark:text-red-400",
+  completed: "text-green-600 bg-green-50",
+  missed: "text-red-600 bg-red-50",
 };
 
 const statusLabel = {
@@ -84,13 +84,13 @@ export default function TestCard({ test, user, registration, attempt, onRefresh 
       )}
 
       {registration && status === "completed" && (
-        <div className="mt-auto text-center text-xs font-semibold text-green-600 dark:text-green-400 bg-green-50 dark:bg-green-950/30 rounded-xl py-2.5">
+        <div className="mt-auto text-center text-xs font-semibold text-green-600 bg-green-50 rounded-xl py-2.5">
           {attempt?.score != null ? `Completed · ${attempt.score}%` : "Attended (self-reported)"}
         </div>
       )}
 
       {registration && status === "missed" && (
-        <div className="mt-auto text-center text-xs font-semibold text-red-600 dark:text-red-400 bg-red-50 dark:bg-red-950/30 rounded-xl py-2.5">
+        <div className="mt-auto text-center text-xs font-semibold text-red-600 bg-red-50 rounded-xl py-2.5">
           Missed · 0%
         </div>
       )}

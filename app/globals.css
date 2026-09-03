@@ -37,36 +37,6 @@
   --accent-foreground-rgb: 255 255 255;
 }
 
-.dark {
-  --background: #181a14;
-  --foreground: #f0f0eb;
-  --card: #20231c;
-  --card-foreground: #f0f0eb;
-  --primary: #8fa440;
-  --primary-foreground: #ffffff;
-  --secondary: #292c22;
-  --secondary-foreground: #c5c5bc;
-  --muted: #242820;
-  --muted-foreground: #88887f;
-  --border: #31352a;
-  --accent: #9cb048;
-  --accent-foreground: #ffffff;
-
-  --background-rgb: 24 26 20;
-  --foreground-rgb: 240 240 235;
-  --card-rgb: 32 35 28;
-  --card-foreground-rgb: 240 240 235;
-  --primary-rgb: 143 164 64;
-  --primary-foreground-rgb: 255 255 255;
-  --secondary-rgb: 41 44 34;
-  --secondary-foreground-rgb: 197 197 188;
-  --muted-rgb: 36 40 32;
-  --muted-foreground-rgb: 136 136 127;
-  --border-rgb: 49 53 42;
-  --accent-rgb: 156 176 72;
-  --accent-foreground-rgb: 255 255 255;
-}
-
 html,
 body,
 #__next {

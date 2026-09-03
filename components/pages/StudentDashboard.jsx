@@ -26,8 +26,8 @@ function ProfileCompletionBar({ percent }) {
 }
 
 const priorityColor = {
-  High: "text-red-600 bg-red-50 dark:bg-red-950/30 dark:text-red-400",
-  Medium: "text-amber-600 bg-amber-50 dark:bg-amber-950/30 dark:text-amber-400",
+  High: "text-red-600 bg-red-50",
+  Medium: "text-amber-600 bg-amber-50",
   Low: "text-muted-foreground bg-muted",
 };
 
@@ -146,7 +146,7 @@ export default function StudentDashboard() {
             <div key={tile.label} className="bg-card border border-border rounded-2xl p-4 hover:shadow-sm transition-shadow">
               <div className="text-xs text-muted-foreground mb-1">{tile.label}</div>
               <div className="text-2xl font-bold text-foreground mb-1">{tile.value}</div>
-              <div className={`text-xs font-medium ${tile.up ? "text-olive-600 dark:text-olive-400" : "text-muted-foreground"}`}>{tile.sub}</div>
+              <div className={`text-xs font-medium ${tile.up ? "text-olive-600" : "text-muted-foreground"}`}>{tile.sub}</div>
             </div>
           ))}
         </div>
@@ -272,7 +272,7 @@ export default function StudentDashboard() {
                   <div className="text-sm text-foreground truncate">{dl.title} · {dl.company}</div>
                   <div className="text-xs text-muted-foreground">{formatDate(dl.deadline)}</div>
                 </div>
-                <div className={`text-xs font-medium px-2 py-0.5 rounded-full flex-shrink-0 ${dl.days <= 8 ? "text-red-600 bg-red-50 dark:bg-red-950/30 dark:text-red-400" : "text-muted-foreground bg-muted"}`}>
+                <div className={`text-xs font-medium px-2 py-0.5 rounded-full flex-shrink-0 ${dl.days <= 8 ? "text-red-600 bg-red-50" : "text-muted-foreground bg-muted"}`}>
                   {dl.days <= 8 ? "Urgent" : "Upcoming"}
                 </div>
               </div>

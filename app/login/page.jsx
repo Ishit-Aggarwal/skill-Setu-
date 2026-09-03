@@ -3,7 +3,6 @@
 import { Suspense, useEffect, useState } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import { useAuth } from "../../lib/auth";
-import { useTheme } from "../../lib/theme";
 import { PAGE_PATHS, roleHomePage } from "../../lib/nav";
 import { validateTeacherCode, validateCompanyCode, validateInstituteCode } from "../../lib/registry";
 import DemoModeMenu from "../../components/DemoModeMenu";
@@ -43,7 +42,6 @@ function LoginPageInner() {
   const router = useRouter();
   const params = useSearchParams();
   const { user, loading: authLoading, login, sendSignupOtp, completeSignup } = useAuth();
-  const { darkMode, setDarkMode } = useTheme();
 
   const [role, setRole] = useState(params.get("role") || "student");
   const [mode, setMode] = useState(params.get("mode") === "signup" ? "signup" : "login");
@@ -264,13 +262,6 @@ function LoginPageInner() {
 
           <div className="flex items-center justify-between mb-2">
             <h1 className="text-2xl font-semibold text-foreground">{mode === "login" ? "Welcome back" : step === "otp" ? "Verify your email" : "Create account"}</h1>
-            <button onClick={() => setDarkMode(!darkMode)} className="p-2 rounded-lg text-muted-foreground hover:bg-secondary transition-colors">
-              {darkMode ? (
-                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><circle cx="12" cy="12" r="5" /><line x1="12" y1="1" x2="12" y2="3" /><line x1="12" y1="21" x2="12" y2="23" /><line x1="4.22" y1="4.22" x2="5.64" y2="5.64" /><line x1="18.36" y1="18.36" x2="19.78" y2="19.78" /><line x1="1" y1="12" x2="3" y2="12" /><line x1="21" y1="12" x2="23" y2="12" /><line x1="4.22" y1="19.78" x2="5.64" y2="18.36" /><line x1="18.36" y1="5.64" x2="19.78" y2="4.22" /></svg>
-              ) : (
-                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z" /></svg>
-              )}
-            </button>
           </div>
           <p className="text-muted-foreground text-sm mb-7">
             {mode === "login" ? "Sign in to access your dashboard." : step === "otp" ? `Enter the 6-digit code sent to ${form.email}` : "Join the cross-industry skill & placement network."}
@@ -296,7 +287,7 @@ function LoginPageInner() {
           )}
 
           {error && (
-            <div className="mb-4 flex items-start gap-2 rounded-xl border border-red-200 bg-red-50 px-3.5 py-2.5 text-xs text-red-700 dark:border-red-900/40 dark:bg-red-950/30 dark:text-red-300">
+            <div className="mb-4 flex items-start gap-2 rounded-xl border border-red-200 bg-red-50 px-3.5 py-2.5 text-xs text-red-700">
               <span>⚠️</span>
               <span>{error}</span>
             </div>

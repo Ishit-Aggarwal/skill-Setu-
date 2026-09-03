@@ -80,7 +80,7 @@ export default function EditProfileModal({ onClose }) {
         <h3 className="font-semibold text-foreground text-lg mb-5">Edit Profile</h3>
 
         {error && (
-          <div className="mb-4 flex items-start gap-2 rounded-xl border border-red-200 bg-red-50 px-3.5 py-2.5 text-xs text-red-700 dark:border-red-900/40 dark:bg-red-950/30 dark:text-red-300">
+          <div className="mb-4 flex items-start gap-2 rounded-xl border border-red-200 bg-red-50 px-3.5 py-2.5 text-xs text-red-700">
             <span>⚠️</span><span>{error}</span>
           </div>
         )}

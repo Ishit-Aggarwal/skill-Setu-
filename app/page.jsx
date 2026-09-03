@@ -1,8 +1,8 @@
 "use client";
 
+import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { useAuth } from "../lib/auth";
-import { useTheme } from "../lib/theme";
 import { roleHomePage, PAGE_PATHS } from "../lib/nav";
 import DemoModeMenu from "../components/DemoModeMenu";
 import RoleSwitcher from "../components/RoleSwitcher";
@@ -15,24 +15,48 @@ function IconArrowRight() {
     </svg>
   );
 }
-function IconSun() {
+function IconChevronLeft() {
   return (
-    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-      <circle cx="12" cy="12" r="5" />
-      <line x1="12" y1="1" x2="12" y2="3" /><line x1="12" y1="21" x2="12" y2="23" />
-      <line x1="4.22" y1="4.22" x2="5.64" y2="5.64" /><line x1="18.36" y1="18.36" x2="19.78" y2="19.78" />
-      <line x1="1" y1="12" x2="3" y2="12" /><line x1="21" y1="12" x2="23" y2="12" />
-      <line x1="4.22" y1="19.78" x2="5.64" y2="18.36" /><line x1="18.36" y1="5.64" x2="19.78" y2="4.22" />
+    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+      <polyline points="15 18 9 12 15 6" />
     </svg>
   );
 }
-function IconMoon() {
+function IconChevronRight() {
   return (
-    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-      <path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z" />
+    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+      <polyline points="9 18 15 12 9 6" />
     </svg>
   );
 }
+
+const highlights = [
+  {
+    emoji: "🎯",
+    title: "Skill Mapping & Gap Analysis",
+    desc: "Every student gets a live skill radar built from their test scores, with gap nudges that point straight at what to work on next.",
+  },
+  {
+    emoji: "📋",
+    title: "Live Applicant Pipeline",
+    desc: "Industry partners track every candidate through Applied → Shortlisted → Interview → Hired, with skill-match scores surfaced at every stage.",
+  },
+  {
+    emoji: "🎓",
+    title: "FDPs & Research Collaboration",
+    desc: "Academicians host Faculty Development Programs and respond to industry & academic research collaboration requests, all from one hub.",
+  },
+  {
+    emoji: "📊",
+    title: "Placement Analytics",
+    desc: "Institutions get a real-time placement funnel and cohort skill-gap breakdown, computed live from activity across the platform.",
+  },
+  {
+    emoji: "🔐",
+    title: "Verified Accounts, Any Device",
+    desc: "Real email-OTP verification and a shared cloud database mean one account works the same whether you sign in from a laptop or a phone.",
+  },
+];
 
 const stats = [
   { value: "18,400+", label: "Students Enrolled" },
@@ -58,7 +82,6 @@ const sectors = [
 
 export default function LandingPage() {
   const { user, logout } = useAuth();
-  const { darkMode, setDarkMode } = useTheme();
   const router = useRouter();
 
   function handleSignOut() {
@@ -69,6 +92,10 @@ export default function LandingPage() {
   function goToLogin(role) {
     router.push(`/login?role=${role}&mode=signup`);
   }
+
+  const [slide, setSlide] = useState(0);
+  const nextSlide = () => setSlide((s) => (s + 1) % highlights.length);
+  const prevSlide = () => setSlide((s) => (s - 1 + highlights.length) % highlights.length);
 
   return (
     <div className="min-h-screen bg-background">
@@ -82,17 +109,15 @@ export default function LandingPage() {
             </div>
           </div>
           <div className="flex items-center gap-2">
-            <button onClick={() => setDarkMode(!darkMode)} className="p-2 rounded-lg text-muted-foreground hover:bg-secondary transition-colors">
-              {darkMode ? <IconSun /> : <IconMoon />}
-            </button>
             {user ? (
               <>
                 <RoleSwitcher />
-                <button onClick={handleSignOut} className="text-sm font-medium text-muted-foreground hover:text-foreground transition-colors px-3 py-1.5">
+                <button onClick={handleSignOut} className="hidden sm:inline text-sm font-medium text-muted-foreground hover:text-foreground transition-colors px-3 py-1.5">
                   Sign out
                 </button>
-                <button onClick={() => router.push(PAGE_PATHS[roleHomePage(user.role)])} className="text-sm font-medium bg-primary hover:bg-accent text-white px-4 py-2 rounded-xl transition-all duration-150 hover:shadow-md">
-                  Go to Dashboard →
+                <button onClick={() => router.push(PAGE_PATHS[roleHomePage(user.role)])} className="text-sm font-medium bg-primary hover:bg-accent text-white px-3 py-2 sm:px-4 rounded-xl transition-all duration-150 hover:shadow-md whitespace-nowrap">
+                  <span className="sm:hidden">Dashboard →</span>
+                  <span className="hidden sm:inline">Go to Dashboard →</span>
                 </button>
               </>
             ) : (
@@ -238,6 +263,48 @@ export default function LandingPage() {
               </div>
             ))}
           </div>
+        </div>
+      </section>
+
+      <section className="max-w-4xl mx-auto px-5 py-16">
+        <div className="text-center mb-10">
+          <div className="text-xs font-semibold text-primary uppercase tracking-widest mb-3">Highlights</div>
+          <h2 className="text-3xl font-semibold text-foreground mb-3">What Makes Setu Work</h2>
+          <p className="text-muted-foreground max-w-lg mx-auto">A closer look at what each role actually gets on the platform.</p>
+        </div>
+
+        <div className="relative bg-card border border-border rounded-2xl p-8 sm:p-12 text-center min-h-[260px] flex flex-col items-center justify-center overflow-hidden">
+          <button
+            onClick={prevSlide}
+            aria-label="Previous highlight"
+            className="absolute left-3 sm:left-5 top-1/2 -translate-y-1/2 w-9 h-9 rounded-full bg-secondary hover:bg-muted text-foreground flex items-center justify-center transition-colors"
+          >
+            <IconChevronLeft />
+          </button>
+          <button
+            onClick={nextSlide}
+            aria-label="Next highlight"
+            className="absolute right-3 sm:right-5 top-1/2 -translate-y-1/2 w-9 h-9 rounded-full bg-secondary hover:bg-muted text-foreground flex items-center justify-center transition-colors"
+          >
+            <IconChevronRight />
+          </button>
+
+          <div key={slide} className="animate-fade-slide max-w-md mx-auto px-8">
+            <div className="text-4xl mb-4">{highlights[slide].emoji}</div>
+            <h3 className="text-xl font-semibold text-foreground mb-3">{highlights[slide].title}</h3>
+            <p className="text-sm text-muted-foreground leading-relaxed">{highlights[slide].desc}</p>
+          </div>
+        </div>
+
+        <div className="flex items-center justify-center gap-2 mt-6">
+          {highlights.map((h, i) => (
+            <button
+              key={h.title}
+              onClick={() => setSlide(i)}
+              aria-label={`Go to highlight ${i + 1}`}
+              className={`h-2 rounded-full transition-all duration-200 ${i === slide ? "w-6 bg-primary" : "w-2 bg-muted hover:bg-border"}`}
+            />
+          ))}
         </div>
       </section>
 

@@ -15,16 +15,16 @@ const statusCols = ["Applied", "Shortlisted", "Interview", "Hired"];
 
 const statusStyle = {
   Applied: "bg-secondary/70",
-  Shortlisted: "bg-blue-50 dark:bg-blue-950/20",
-  Interview: "bg-amber-50 dark:bg-amber-950/20",
-  Hired: "bg-green-50 dark:bg-green-950/20",
+  Shortlisted: "bg-blue-50",
+  Interview: "bg-amber-50",
+  Hired: "bg-green-50",
 };
 
 const statusBadge = {
   Applied: "bg-secondary text-muted-foreground",
-  Shortlisted: "bg-blue-100 text-blue-700 dark:bg-blue-900/30 dark:text-blue-300",
-  Interview: "bg-amber-100 text-amber-700 dark:bg-amber-900/30 dark:text-amber-400",
-  Hired: "bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-400",
+  Shortlisted: "bg-blue-100 text-blue-700",
+  Interview: "bg-amber-100 text-amber-700",
+  Hired: "bg-green-100 text-green-700",
 };
 
 function initials(name) {
@@ -140,7 +140,7 @@ export default function IndustryDashboard() {
                         <div className="text-sm font-semibold text-foreground">{job.title}</div>
                         <div className="text-xs text-muted-foreground mt-0.5">{job.location} · {job.type}</div>
                       </div>
-                      {urgent && <span className="text-[10px] font-medium text-red-600 bg-red-50 dark:bg-red-950/30 px-1.5 py-0.5 rounded-full flex-shrink-0">Closing soon</span>}
+                      {urgent && <span className="text-[10px] font-medium text-red-600 bg-red-50 px-1.5 py-0.5 rounded-full flex-shrink-0">Closing soon</span>}
                     </div>
                     <div className="flex items-center justify-between text-xs text-muted-foreground">
                       <span>{apps} applicant{apps === 1 ? "" : "s"}</span>

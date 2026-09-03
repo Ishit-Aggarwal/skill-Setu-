@@ -2,7 +2,6 @@
 
 import { useState } from "react";
 import { useAuth } from "../lib/auth";
-import { useTheme } from "../lib/theme";
 import { useNav } from "../lib/nav";
 import EditProfileModal from "./EditProfileModal";
 
@@ -71,24 +70,6 @@ function IconFlask() {
     </svg>
   );
 }
-function IconSun() {
-  return (
-    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-      <circle cx="12" cy="12" r="5" />
-      <line x1="12" y1="1" x2="12" y2="3" /><line x1="12" y1="21" x2="12" y2="23" />
-      <line x1="4.22" y1="4.22" x2="5.64" y2="5.64" /><line x1="18.36" y1="18.36" x2="19.78" y2="19.78" />
-      <line x1="1" y1="12" x2="3" y2="12" /><line x1="21" y1="12" x2="23" y2="12" />
-      <line x1="4.22" y1="19.78" x2="5.64" y2="18.36" /><line x1="18.36" y1="5.64" x2="19.78" y2="4.22" />
-    </svg>
-  );
-}
-function IconMoon() {
-  return (
-    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-      <path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z" />
-    </svg>
-  );
-}
 function IconMenu() {
   return (
     <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
@@ -143,7 +124,6 @@ export default function DashboardLayout({ children, activePage, title }) {
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const [showEditProfile, setShowEditProfile] = useState(false);
   const { user, logout } = useAuth();
-  const { darkMode, setDarkMode } = useTheme();
   const navigate = useNav();
 
   const role = user?.role || "student";
@@ -206,13 +186,6 @@ export default function DashboardLayout({ children, activePage, title }) {
           </nav>
 
           <div className="px-3 py-4 border-t border-border space-y-2">
-            <button
-              onClick={() => setDarkMode(!darkMode)}
-              className="w-full flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm font-medium text-muted-foreground hover:bg-secondary hover:text-foreground transition-all duration-150"
-            >
-              {darkMode ? <IconSun /> : <IconMoon />}
-              {darkMode ? "Light Mode" : "Dark Mode"}
-            </button>
             <button onClick={() => setShowEditProfile(true)} className="w-full flex items-center gap-2.5 px-3 py-2 rounded-xl hover:bg-secondary transition-colors text-left">
               <div className="w-8 h-8 rounded-full bg-primary/15 flex items-center justify-center text-primary text-xs font-semibold flex-shrink-0 overflow-hidden">
                 {user?.avatarDataUrl ? <img src={user.avatarDataUrl} alt="" className="w-full h-full object-cover" /> : userInitials}
@@ -253,9 +226,6 @@ export default function DashboardLayout({ children, activePage, title }) {
           <div className="flex-1 hidden lg:block">{title && <h1 className="text-base font-semibold text-foreground">{title}</h1>}</div>
 
           <div className="ml-auto flex items-center gap-2">
-            <button onClick={() => setDarkMode(!darkMode)} className="p-2 rounded-lg text-muted-foreground hover:bg-secondary transition-colors">
-              {darkMode ? <IconSun /> : <IconMoon />}
-            </button>
             <button onClick={() => setShowEditProfile(true)} className="w-8 h-8 rounded-full bg-primary/15 flex items-center justify-center text-primary text-xs font-semibold overflow-hidden">
               {user?.avatarDataUrl ? <img src={user.avatarDataUrl} alt="" className="w-full h-full object-cover" /> : userInitials}
             </button>
