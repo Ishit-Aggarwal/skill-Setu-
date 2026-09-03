@@ -2,6 +2,7 @@
 
 import { useEffect, useMemo, useState } from "react";
 import DashboardLayout from "../DashboardLayout";
+import CandidateProfileModal from "../CandidateProfileModal";
 import { useAuth } from "../../lib/auth";
 import {
   listInternshipsByOwner,
@@ -44,6 +45,7 @@ export default function IndustryDashboard() {
   const [applications, setApplications] = useState([]);
   const [showPostJob, setShowPostJob] = useState(false);
   const [movingId, setMovingId] = useState(null);
+  const [selectedApplicant, setSelectedApplicant] = useState(null);
   const [form, setForm] = useState({ title: "", location: "", stipend: "", duration: "", tags: "" });
 
   function refresh() {
@@ -173,15 +175,23 @@ export default function IndustryDashboard() {
                             {initials(applicant.studentName)}
                           </div>
                           <div className="min-w-0">
-                            <div className="text-xs font-semibold text-foreground truncate">{applicant.studentName}</div>
+                            <button onClick={() => setSelectedApplicant(applicant)} className="text-xs font-semibold text-foreground hover:text-primary hover:underline truncate block text-left">
+                              {applicant.studentName}
+                            </button>
                             <div className="text-[10px] text-muted-foreground truncate">{applicant.studentCourse || applicant.internshipTitle}</div>
                           </div>
                         </div>
                         <div className="text-[10px] text-muted-foreground mb-2 truncate">{applicant.studentInstitution}</div>
-                        <div className="flex items-center justify-between">
+                        <div className="flex items-center justify-between mb-1">
                           <span className="text-[10px] font-semibold text-primary">{applicant.match}% match</span>
                           <span className="text-[10px] text-muted-foreground">{formatDate(applicant.appliedAt)}</span>
                         </div>
+                        {applicant.interviewMode && (
+                          <div className="text-[10px] text-muted-foreground mb-1">
+                            🎙 {applicant.interviewMode} interview
+                            {applicant.interviewAt && ` · ${new Date(applicant.interviewAt).toLocaleString("en-IN", { day: "numeric", month: "short", hour: "numeric", minute: "2-digit" })}`}
+                          </div>
+                        )}
 
                         <div className="mt-2 flex gap-1">
                           {status !== "Applied" && (
@@ -245,6 +255,14 @@ export default function IndustryDashboard() {
             </form>
           </div>
         </div>
+      )}
+
+      {selectedApplicant && (
+        <CandidateProfileModal
+          application={selectedApplicant}
+          onClose={() => setSelectedApplicant(null)}
+          onUpdated={refresh}
+        />
       )}
     </DashboardLayout>
   );

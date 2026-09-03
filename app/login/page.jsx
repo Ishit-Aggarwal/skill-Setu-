@@ -241,7 +241,7 @@ function LoginPageInner() {
         <div className="absolute inset-0 flex flex-col justify-between p-10">
           <button onClick={() => router.push("/")} className="flex items-center gap-2 text-white/90 hover:text-white transition-colors">
             <div className="w-8 h-8 rounded-lg bg-white/20 flex items-center justify-center text-white text-sm font-bold">S</div>
-            <span className="font-semibold">Setu</span>
+            <span className="font-semibold">Skill Setu</span>
           </button>
           <div>
             <div className="inline-block bg-white/10 border border-white/20 rounded-full px-3 py-1 text-xs text-white/80 mb-4">Smart India Hackathon · SIH26044</div>

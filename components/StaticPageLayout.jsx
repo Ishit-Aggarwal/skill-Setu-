@@ -11,7 +11,7 @@ export default function StaticPageLayout({ title, children }) {
         <div className="max-w-3xl mx-auto px-5 py-3.5 flex items-center justify-between">
           <button onClick={() => router.push("/")} className="flex items-center gap-2.5">
             <div className="w-8 h-8 rounded-lg bg-primary flex items-center justify-center text-white font-bold text-sm">S</div>
-            <span className="text-sm font-semibold text-foreground">Setu</span>
+            <span className="text-sm font-semibold text-foreground">Skill Setu</span>
           </button>
           <button onClick={() => router.push("/")} className="text-sm font-medium text-muted-foreground hover:text-foreground transition-colors">
             ← Back to home
@@ -28,7 +28,7 @@ export default function StaticPageLayout({ title, children }) {
 
       <footer className="border-t border-border bg-card">
         <div className="max-w-3xl mx-auto px-5 py-8 text-xs text-muted-foreground text-center">
-          © 2026 Setu. Built for Smart India Hackathon · Problem Statement SIH26044.
+          © 2026 Skill Setu. Built for Smart India Hackathon · Problem Statement SIH26044.
         </div>
       </footer>
     </div>

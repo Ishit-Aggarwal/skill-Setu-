@@ -98,6 +98,7 @@ const NAV = {
     { label: "Dashboard", page: "industry-dashboard", icon: <IconGrid /> },
     { label: "Postings", page: "internship-listings", icon: <IconBriefcase /> },
     { label: "Skill Tests", page: "skill-assessment", icon: <IconTarget /> },
+    { label: "Company Profile", page: "company-profile", icon: <IconUser /> },
     { label: "Analytics", page: "analytics", icon: <IconBarChart /> },
   ],
   academician: [
@@ -158,7 +159,7 @@ export default function DashboardLayout({ children, activePage, title }) {
               <LogoLeaf />
             </div>
             <div>
-              <div className="text-sm font-semibold text-foreground leading-tight">Setu</div>
+              <div className="text-sm font-semibold text-foreground leading-tight">Skill Setu</div>
               <div className="text-xs text-muted-foreground">Academia × Industry</div>
             </div>
           </button>
@@ -220,7 +221,7 @@ export default function DashboardLayout({ children, activePage, title }) {
             <div className="w-6 h-6 rounded-md bg-primary flex items-center justify-center text-white">
               <LogoLeaf />
             </div>
-            <span className="text-sm font-semibold">Setu</span>
+            <span className="text-sm font-semibold">Skill Setu</span>
           </button>
 
           <div className="flex-1 hidden lg:block">{title && <h1 className="text-base font-semibold text-foreground">{title}</h1>}</div>

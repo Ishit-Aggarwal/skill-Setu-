@@ -104,7 +104,7 @@ export default function LandingPage() {
           <div className="flex items-center gap-2.5">
             <div className="w-8 h-8 rounded-lg bg-primary flex items-center justify-center text-white font-bold text-sm">S</div>
             <div>
-              <span className="text-sm font-semibold text-foreground">Setu</span>
+              <span className="text-sm font-semibold text-foreground">Skill Setu</span>
               <span className="hidden sm:inline text-xs text-muted-foreground ml-2">Academia–Industry Portal</span>
             </div>
           </div>
@@ -269,7 +269,7 @@ export default function LandingPage() {
       <section className="max-w-4xl mx-auto px-5 py-16">
         <div className="text-center mb-10">
           <div className="text-xs font-semibold text-primary uppercase tracking-widest mb-3">Highlights</div>
-          <h2 className="text-3xl font-semibold text-foreground mb-3">What Makes Setu Work</h2>
+          <h2 className="text-3xl font-semibold text-foreground mb-3">What Makes Skill Setu Work</h2>
           <p className="text-muted-foreground max-w-lg mx-auto">A closer look at what each role actually gets on the platform.</p>
         </div>
 
@@ -336,8 +336,8 @@ export default function LandingPage() {
 
           <div className="space-y-4">
             {[
-              { q: "Is Setu free to use?", a: "Yes. Creating an account and using every feature — skill tests, internship listings, portfolios, analytics — is free." },
-              { q: "Which industries does it support?", a: "All of them. Setu isn't locked to one sector — IT, manufacturing, finance, design, and more all post and browse opportunities on the same platform." },
+              { q: "Is Skill Setu free to use?", a: "Yes. Creating an account and using every feature — skill tests, internship listings, portfolios, analytics — is free." },
+              { q: "Which industries does it support?", a: "All of them. Skill Setu isn't locked to one sector — IT, manufacturing, finance, design, and more all post and browse opportunities on the same platform." },
               { q: "How do industry, academician, and institution accounts get verified?", a: "Signup for those roles asks for a short partner verification code, similar to how many campus placement portals confirm an organisation before granting posting access." },
               { q: "Is my data safe?", a: "Your account and activity are stored server-side in our Convex database (with your device's local storage as an offline fallback) — see the Privacy Policy for the full picture, including how passwords and OTPs are handled." },
               { q: "What's Demo Mode?", a: "A one-click way to explore a fully populated Student, Industry, Academician, or Institution dashboard without creating an account first." },
@@ -357,7 +357,7 @@ export default function LandingPage() {
             <div>
               <div className="flex items-center gap-2 mb-2">
                 <div className="w-7 h-7 rounded-lg bg-primary flex items-center justify-center text-white text-xs font-bold">S</div>
-                <span className="font-semibold text-foreground">Setu</span>
+                <span className="font-semibold text-foreground">Skill Setu</span>
               </div>
               <p className="text-xs text-muted-foreground max-w-xs leading-relaxed">
                 A skill-mapping, internship, and placement platform bridging academia and industry across every sector.
@@ -371,7 +371,7 @@ export default function LandingPage() {
             </div>
           </div>
           <div className="mt-8 pt-6 border-t border-border text-xs text-muted-foreground text-center">
-            © 2026 Setu. Built for Smart India Hackathon · Problem Statement SIH26044.
+            © 2026 Skill Setu. Built for Smart India Hackathon · Problem Statement SIH26044.
           </div>
         </div>
       </footer>

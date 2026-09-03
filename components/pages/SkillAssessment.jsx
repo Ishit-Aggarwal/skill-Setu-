@@ -10,6 +10,8 @@ import {
   listSkillTests,
   listSkillTestsByOwner,
   createSkillTest,
+  setSkillTestMeetingLink,
+  startSkillTest,
   listRegistrationsForStudent,
   getAttemptsForStudent,
   getRegistration,
@@ -69,25 +71,31 @@ function StudentView({ user }) {
   );
 }
 
+const EMPTY_TEST_FORM = {
+  title: "",
+  domain: SKILL_DOMAINS[0],
+  mode: "Online",
+  duration: "15 mins",
+  price: "0",
+  description: "",
+  prerequisites: "",
+  certification: "",
+  rules: "",
+  scheduledAt: "",
+  scheduledTime: "10:00",
+  venue: "",
+  reportingTime: "",
+  documentsRequired: "",
+  meetingLink: "",
+};
+
 function HostView({ user }) {
   const [tests, setTests] = useState([]);
   const [showModal, setShowModal] = useState(false);
-  const [form, setForm] = useState({
-    title: "",
-    domain: SKILL_DOMAINS[0],
-    mode: "Online",
-    duration: "15 mins",
-    price: "0",
-    description: "",
-    prerequisites: "",
-    certification: "",
-    rules: "",
-    scheduledAt: "",
-    scheduledTime: "10:00",
-    venue: "",
-    reportingTime: "",
-    documentsRequired: "",
-  });
+  const [form, setForm] = useState(EMPTY_TEST_FORM);
+  const [formError, setFormError] = useState(null);
+  const [linkDrafts, setLinkDrafts] = useState({});
+  const [linkErrors, setLinkErrors] = useState({});
 
   function refresh() {
     setTests(listSkillTestsByOwner(user.id));
@@ -97,6 +105,16 @@ function HostView({ user }) {
 
   function handleCreate(e) {
     e.preventDefault();
+    setFormError(null);
+
+    if (form.mode === "Online" && form.meetingLink.trim()) {
+      const scheduled = form.scheduledAt ? new Date(`${form.scheduledAt}T${form.scheduledTime || "00:00"}`).getTime() : null;
+      if (scheduled && scheduled - Date.now() < 24 * 60 * 60 * 1000) {
+        setFormError("The meeting link must be set at least 24 hours before the test's scheduled start time. Leave it blank and add it later if the test is sooner than that.");
+        return;
+      }
+    }
+
     const hostName = user.companyName || user.institution || user.name;
     createSkillTest(user.id, hostName, {
       title: form.title,
@@ -113,9 +131,25 @@ function HostView({ user }) {
       venue: form.mode === "Offline" ? form.venue : undefined,
       reportingTime: form.mode === "Offline" ? form.reportingTime : undefined,
       documentsRequired: form.mode === "Offline" ? form.documentsRequired.split(",").map((d) => d.trim()).filter(Boolean) : undefined,
+      meetingLink: form.mode === "Online" ? form.meetingLink.trim() || undefined : undefined,
     });
-    setForm({ title: "", domain: SKILL_DOMAINS[0], mode: "Online", duration: "15 mins", price: "0", description: "", prerequisites: "", certification: "", rules: "", scheduledAt: "", scheduledTime: "10:00", venue: "", reportingTime: "", documentsRequired: "" });
+    setForm(EMPTY_TEST_FORM);
     setShowModal(false);
+    refresh();
+  }
+
+  function saveLink(testId) {
+    try {
+      setSkillTestMeetingLink(testId, (linkDrafts[testId] || "").trim());
+      setLinkErrors((e) => ({ ...e, [testId]: null }));
+      refresh();
+    } catch (err) {
+      setLinkErrors((e) => ({ ...e, [testId]: err.message }));
+    }
+  }
+
+  function handleStart(testId) {
+    startSkillTest(testId);
     refresh();
   }
 
@@ -140,14 +174,46 @@ function HostView({ user }) {
       ) : (
         <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-4">
           {tests.map((test) => (
-            <div key={test.id} className="bg-card border border-border rounded-2xl p-5">
+            <div key={test.id} className="bg-card border border-border rounded-2xl p-5 flex flex-col">
               <div className="flex items-center gap-1.5 flex-wrap mb-3">
                 <span className="text-[10px] font-medium px-2 py-0.5 rounded-full bg-secondary text-secondary-foreground">{test.mode}</span>
                 <span className="text-[10px] bg-secondary text-secondary-foreground px-2 py-0.5 rounded-full">{test.domain}</span>
+                {test.status === "In Progress" && <span className="text-[10px] font-medium px-2 py-0.5 rounded-full bg-primary/10 text-primary">In Progress</span>}
                 <span className="text-[10px] font-semibold text-primary bg-primary/8 px-2 py-0.5 rounded-full ml-auto">{test.price > 0 ? `₹${test.price}` : "Free"}</span>
               </div>
               <div className="text-sm font-semibold text-foreground mb-1">{test.title}</div>
-              <p className="text-xs text-muted-foreground leading-relaxed">{test.description}</p>
+              <p className="text-xs text-muted-foreground leading-relaxed mb-3">{test.description}</p>
+
+              {test.mode === "Online" && (
+                <div className="mb-3">
+                  <label className="block text-[10px] font-semibold text-muted-foreground uppercase tracking-wider mb-1">Meeting Link</label>
+                  {test.meetingLink && linkDrafts[test.id] === undefined ? (
+                    <div className="flex items-center gap-2">
+                      <a href={test.meetingLink} target="_blank" rel="noreferrer" className="text-xs text-primary hover:underline truncate flex-1">{test.meetingLink}</a>
+                      <button onClick={() => setLinkDrafts((d) => ({ ...d, [test.id]: test.meetingLink }))} className="text-[10px] text-muted-foreground hover:text-foreground flex-shrink-0">Edit</button>
+                    </div>
+                  ) : (
+                    <div className="flex items-center gap-2">
+                      <input
+                        value={linkDrafts[test.id] ?? ""}
+                        onChange={(e) => setLinkDrafts((d) => ({ ...d, [test.id]: e.target.value }))}
+                        placeholder="https://meet.google.com/…"
+                        className="flex-1 min-w-0 bg-background border border-border rounded-lg px-2.5 py-1.5 text-xs focus:outline-none focus:ring-2 focus:ring-primary/30"
+                      />
+                      <button onClick={() => saveLink(test.id)} className="text-[10px] font-medium text-primary hover:underline flex-shrink-0">Save</button>
+                    </div>
+                  )}
+                  {linkErrors[test.id] && <p className="text-[10px] text-red-600 mt-1">{linkErrors[test.id]}</p>}
+                </div>
+              )}
+
+              <button
+                onClick={() => handleStart(test.id)}
+                disabled={test.status === "In Progress"}
+                className="mt-auto w-full text-xs font-medium py-2 rounded-xl bg-primary/10 text-primary hover:bg-primary hover:text-white disabled:opacity-50 disabled:hover:bg-primary/10 disabled:hover:text-primary transition-all duration-150"
+              >
+                {test.status === "In Progress" ? "Test Started" : "Start Test"}
+              </button>
             </div>
           ))}
         </div>
@@ -206,6 +272,12 @@ function HostView({ user }) {
                         className="w-full bg-background border border-border rounded-xl px-3 py-3 text-sm focus:outline-none focus:ring-2 focus:ring-primary/30" />
                     </div>
                   </div>
+                  <div>
+                    <label className="block text-xs font-semibold text-muted-foreground uppercase tracking-wider mb-1.5">Meeting Link <span className="text-muted-foreground font-normal normal-case">(optional — add now or later)</span></label>
+                    <input value={form.meetingLink} onChange={(e) => setForm((f) => ({ ...f, meetingLink: e.target.value }))} placeholder="https://meet.google.com/…"
+                      className="w-full bg-background border border-border rounded-xl px-4 py-3 text-sm focus:outline-none focus:ring-2 focus:ring-primary/30 focus:border-primary transition-all" />
+                    <p className="text-xs text-muted-foreground mt-1">Must be set at least 24 hours before the scheduled start.</p>
+                  </div>
                 </>
               ) : (
                 <>
@@ -260,8 +332,15 @@ function HostView({ user }) {
                   className="w-full bg-background border border-border rounded-xl px-4 py-3 text-sm focus:outline-none focus:ring-2 focus:ring-primary/30 focus:border-primary transition-all resize-none" />
               </div>
 
+              {formError && (
+                <div className="flex items-start gap-2 rounded-xl border border-red-200 bg-red-50 px-3.5 py-2.5 text-xs text-red-700">
+                  <span>⚠️</span>
+                  <span>{formError}</span>
+                </div>
+              )}
+
               <div className="flex gap-3 pt-2">
-                <button type="button" onClick={() => setShowModal(false)} className="flex-1 py-3 rounded-xl border border-border text-sm text-muted-foreground hover:bg-secondary transition-colors">Cancel</button>
+                <button type="button" onClick={() => { setShowModal(false); setFormError(null); }} className="flex-1 py-3 rounded-xl border border-border text-sm text-muted-foreground hover:bg-secondary transition-colors">Cancel</button>
                 <button type="submit" className="flex-1 py-3 rounded-xl bg-primary hover:bg-accent text-white text-sm font-medium transition-all duration-150">Publish Test</button>
               </div>
             </form>

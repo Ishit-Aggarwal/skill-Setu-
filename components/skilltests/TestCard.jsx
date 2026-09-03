@@ -2,7 +2,7 @@
 
 import { useState } from "react";
 import RegisterModal from "./RegisterModal";
-import { getRegistrationStatus, formatScheduled } from "../../lib/testStatus";
+import { getRegistrationStatus, formatScheduled, isLinkRevealWindow } from "../../lib/testStatus";
 import { registerForSkillTest, selfReportOfflineAttendance } from "../../lib/store";
 
 const modeColor = {
@@ -62,7 +62,14 @@ export default function TestCard({ test, user, registration, attempt, onRefresh 
         <div>⏱ {test.duration}</div>
         <div>📅 {formatScheduled(test)}</div>
         {test.mode === "Offline" && test.venue && <div>📍 {test.venue}</div>}
-        {test.mode === "Online" && <div>🔗 Meeting link will appear here 1 day before the test.</div>}
+        {test.mode === "Online" && !isLinkRevealWindow(test) && <div>🔗 Meeting link will appear here 1 day before the test.</div>}
+        {test.mode === "Online" && isLinkRevealWindow(test) && (
+          test.meetingLink ? (
+            <div>🔗 <a href={test.meetingLink} target="_blank" rel="noreferrer" className="text-primary hover:underline font-medium">Join meeting</a></div>
+          ) : (
+            <div>🔗 Meeting link not published yet — check back soon.</div>
+          )
+        )}
       </div>
 
       {!registration && (

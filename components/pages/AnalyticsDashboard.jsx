@@ -1,27 +1,21 @@
 "use client";
 
 import { useEffect, useMemo, useState } from "react";
-import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, PieChart, Pie, Cell, Legend } from "recharts";
+import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, Legend } from "recharts";
 import DashboardLayout from "../DashboardLayout";
 import { all, listInternships, listApplications, listUsersByRole } from "../../lib/store";
 
 const PIE_COLORS = ["#6B7C3C", "#8A9A4A", "#A8B860", "#3C5A8A", "#5A3C8A"];
 const STATUS_COLORS = { Applied: "#8A9A4A", Shortlisted: "#3C5A8A", Interview: "#B8860B", Hired: "#6B7C3C" };
+const STAGE_ORDER = ["Applied", "Shortlisted", "Interview", "Hired"];
 
-function CustomTooltip({ active, payload, label }) {
-  if (!active || !payload?.length) return null;
-  return (
-    <div className="bg-card border border-border rounded-xl px-3 py-2.5 shadow-md text-xs">
-      <div className="font-semibold text-foreground mb-1">{label}</div>
-      {payload.map((p) => (
-        <div key={p.name} className="flex items-center gap-1.5" style={{ color: p.color }}>
-          <span className="w-2 h-2 rounded-full inline-block flex-shrink-0" style={{ background: p.color }} />
-          <span className="text-muted-foreground">{p.name}:</span>
-          <span className="font-medium text-foreground">{p.value}</span>
-        </div>
-      ))}
-    </div>
-  );
+function daysBetween(aIso, bIso) {
+  return (new Date(bIso).getTime() - new Date(aIso).getTime()) / 86400000;
+}
+
+/** Look up when an application's statusHistory first reached a given stage. */
+function stageTimestamp(app, stage) {
+  return app.statusHistory?.find((h) => h.status === stage)?.at || null;
 }
 
 export default function AnalyticsDashboard({ activePage = "analytics", title = "Analytics Dashboard" }) {
@@ -37,8 +31,19 @@ export default function AnalyticsDashboard({ activePage = "analytics", title = "
     setAssessments(all("assessments"));
   }, []);
 
+  const timeToHire = useMemo(() => {
+    const days = applications
+      .filter((a) => a.status === "Hired")
+      .map((a) => {
+        const applied = stageTimestamp(a, "Applied") || a.appliedAt;
+        const hired = stageTimestamp(a, "Hired");
+        return applied && hired ? daysBetween(applied, hired) : null;
+      })
+      .filter((d) => d != null);
+    return days.length ? Math.round(days.reduce((s, d) => s + d, 0) / days.length) : null;
+  }, [applications]);
+
   const kpis = useMemo(() => {
-    const companies = new Set(internships.filter((i) => i.ownerId !== "seed").map((i) => i.company));
     const hired = applications.filter((a) => a.status === "Hired").length;
     const placementRate = applications.length ? Math.round((hired / applications.length) * 100) : 0;
     return [
@@ -46,13 +51,37 @@ export default function AnalyticsDashboard({ activePage = "analytics", title = "
       { label: "Internships Posted", value: String(internships.filter((i) => i.ownerId !== "seed").length) },
       { label: "Total Applications", value: String(applications.length) },
       { label: "Placement Rate", value: `${placementRate}%` },
+      { label: "Avg. Time to Hire", value: timeToHire != null ? `${timeToHire}d` : "—" },
     ];
-  }, [students, internships, applications]);
+  }, [students, internships, applications, timeToHire]);
 
-  const statusBreakdown = useMemo(() => {
-    const counts = { Applied: 0, Shortlisted: 0, Interview: 0, Hired: 0 };
-    applications.forEach((a) => { if (counts[a.status] != null) counts[a.status]++; });
-    return Object.entries(counts).map(([name, value]) => ({ name, value }));
+  // A funnel counts every application that REACHED a stage or further, not just
+  // ones currently sitting there — Hired implies it already passed through
+  // Shortlisted and Interview too.
+  const funnel = useMemo(() => {
+    return STAGE_ORDER.map((stage, i) => {
+      const count = applications.filter((a) => STAGE_ORDER.indexOf(a.status) >= i).length;
+      return { stage, count };
+    });
+  }, [applications]);
+
+  const stageDurations = useMemo(() => {
+    const pairs = [
+      ["Applied", "Shortlisted"],
+      ["Shortlisted", "Interview"],
+      ["Interview", "Hired"],
+    ];
+    return pairs.map(([from, to]) => {
+      const diffs = applications
+        .map((a) => {
+          const fromAt = from === "Applied" ? stageTimestamp(a, "Applied") || a.appliedAt : stageTimestamp(a, from);
+          const toAt = stageTimestamp(a, to);
+          return fromAt && toAt ? daysBetween(fromAt, toAt) : null;
+        })
+        .filter((d) => d != null);
+      const avg = diffs.length ? Math.round((diffs.reduce((s, d) => s + d, 0) / diffs.length) * 10) / 10 : null;
+      return { label: `${from} → ${to}`, avgDays: avg, sampleSize: diffs.length };
+    });
   }, [applications]);
 
   const domainAverages = useMemo(() => {
@@ -70,12 +99,30 @@ export default function AnalyticsDashboard({ activePage = "analytics", title = "
       .slice(0, 6);
   }, [assessments]);
 
-  const domainDistribution = useMemo(() => {
-    const counts = {};
-    internships.forEach((i) => { counts[i.domain] = (counts[i.domain] || 0) + 1; });
-    const total = internships.length || 1;
-    return Object.entries(counts).map(([name, value]) => ({ name, value: Math.round((value / total) * 100) }));
-  }, [internships]);
+  // Demand (applications) vs. supply (postings) per domain — surfaces where
+  // competition is fiercest (high demand share, low supply share) rather than
+  // just how postings happen to be distributed.
+  const domainComparison = useMemo(() => {
+    const postingCounts = {};
+    internships.forEach((i) => { postingCounts[i.domain] = (postingCounts[i.domain] || 0) + 1; });
+    const appCounts = {};
+    applications.forEach((a) => {
+      const posting = internships.find((i) => i.id === a.internshipId);
+      const domain = posting?.domain || "Other";
+      appCounts[domain] = (appCounts[domain] || 0) + 1;
+    });
+    const totalPostings = internships.length || 1;
+    const totalApps = applications.length || 1;
+    const domains = new Set([...Object.keys(postingCounts), ...Object.keys(appCounts)]);
+    return [...domains]
+      .map((domain) => ({
+        domain,
+        supply: Math.round(((postingCounts[domain] || 0) / totalPostings) * 100),
+        demand: Math.round(((appCounts[domain] || 0) / totalApps) * 100),
+      }))
+      .sort((a, b) => b.demand - a.demand)
+      .slice(0, 8);
+  }, [internships, applications]);
 
   const topCompanies = useMemo(() => {
     const counts = {};
@@ -87,15 +134,24 @@ export default function AnalyticsDashboard({ activePage = "analytics", title = "
     const groups = {};
     students.forEach((s) => {
       const key = s.course || "Unspecified";
-      if (!groups[key]) groups[key] = { students: 0, placed: 0 };
+      if (!groups[key]) groups[key] = { students: 0, placedIds: new Set() };
       groups[key].students++;
     });
+    // Count distinct placed STUDENTS, not hired APPLICATIONS — one student can be
+    // hired for more than one posting, which must not inflate the placement rate
+    // past the actual number of students in that course.
     applications.filter((a) => a.status === "Hired").forEach((a) => {
       const student = students.find((s) => s.id === a.studentId);
-      const key = student?.course || "Unspecified";
-      if (groups[key]) groups[key].placed++;
+      if (!student) return; // no matching registered student — nothing to attribute this to
+      const key = student.course || "Unspecified";
+      groups[key].placedIds.add(a.studentId);
     });
-    return Object.entries(groups).map(([dept, v]) => ({ dept, ...v, rate: v.students ? Math.round((v.placed / v.students) * 100) : 0 }));
+    return Object.entries(groups).map(([dept, v]) => ({
+      dept,
+      students: v.students,
+      placed: v.placedIds.size,
+      rate: v.students ? Math.round((v.placedIds.size / v.students) * 100) : 0,
+    }));
   }, [students, applications]);
 
   const maxHired = topCompanies[0]?.hired || 1;
@@ -108,7 +164,7 @@ export default function AnalyticsDashboard({ activePage = "analytics", title = "
           <p className="text-sm text-muted-foreground mt-0.5">Live insights computed from activity on this platform</p>
         </div>
 
-        <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
+        <div className="grid grid-cols-2 lg:grid-cols-5 gap-4">
           {kpis.map((kpi) => (
             <div key={kpi.label} className="bg-card border border-border rounded-2xl p-4 hover:shadow-sm transition-shadow">
               <div className="text-xs text-muted-foreground mb-1">{kpi.label}</div>
@@ -119,46 +175,71 @@ export default function AnalyticsDashboard({ activePage = "analytics", title = "
 
         <div className="grid lg:grid-cols-3 gap-5">
           <div className="lg:col-span-2 bg-card border border-border rounded-2xl p-5">
-            <h3 className="font-semibold text-foreground text-sm mb-1">Applicant Pipeline</h3>
-            <p className="text-xs text-muted-foreground mb-5">Applications by current stage, across all postings</p>
-            <ResponsiveContainer width="100%" height={220}>
-              <BarChart data={statusBreakdown} margin={{ top: 5, right: 5, bottom: 0, left: -10 }}>
-                <CartesianGrid strokeDasharray="3 3" stroke="var(--border)" />
-                <XAxis dataKey="name" tick={{ fontSize: 11, fill: "var(--muted-foreground)" }} axisLine={false} tickLine={false} />
-                <YAxis tick={{ fontSize: 11, fill: "var(--muted-foreground)" }} axisLine={false} tickLine={false} allowDecimals={false} />
-                <Tooltip content={<CustomTooltip />} />
-                <Bar dataKey="value" radius={6} name="applications">
-                  {statusBreakdown.map((entry, i) => <Cell key={i} fill={STATUS_COLORS[entry.name]} />)}
-                </Bar>
-              </BarChart>
-            </ResponsiveContainer>
-          </div>
-
-          <div className="bg-card border border-border rounded-2xl p-5">
-            <h3 className="font-semibold text-foreground text-sm mb-1">Postings by Domain</h3>
-            <p className="text-xs text-muted-foreground mb-4">Share of listed opportunities</p>
-            {domainDistribution.length === 0 ? (
-              <p className="text-sm text-muted-foreground py-8 text-center">No postings yet.</p>
+            <h3 className="font-semibold text-foreground text-sm mb-1">Hiring Funnel</h3>
+            <p className="text-xs text-muted-foreground mb-5">Applications that reached each stage, with conversion from the one before</p>
+            {funnel[0].count === 0 ? (
+              <p className="text-sm text-muted-foreground py-8 text-center">No applications yet.</p>
             ) : (
-              <>
-                <ResponsiveContainer width="100%" height={180}>
-                  <PieChart>
-                    <Pie data={domainDistribution} cx="50%" cy="50%" innerRadius={48} outerRadius={72} paddingAngle={3} dataKey="value">
-                      {domainDistribution.map((_, index) => <Cell key={`cell-${index}`} fill={PIE_COLORS[index % PIE_COLORS.length]} />)}
-                    </Pie>
-                    <Tooltip contentStyle={{ background: "var(--card)", border: "1px solid var(--border)", borderRadius: 10, fontSize: 12 }} formatter={(value) => [`${value}%`, ""]} />
-                  </PieChart>
-                </ResponsiveContainer>
-                <div className="space-y-1.5 mt-1">
-                  {domainDistribution.map((d, i) => (
-                    <div key={d.name} className="flex items-center gap-2 text-xs">
-                      <span className="w-2 h-2 rounded-full flex-shrink-0" style={{ background: PIE_COLORS[i % PIE_COLORS.length] }} />
-                      <span className="text-muted-foreground flex-1">{d.name}</span>
-                      <span className="font-semibold text-foreground">{d.value}%</span>
+              <div className="space-y-3">
+                {funnel.map((f, i) => {
+                  const widthPct = Math.max((f.count / funnel[0].count) * 100, f.count > 0 ? 6 : 0);
+                  const conversion = i > 0 && funnel[i - 1].count ? Math.round((f.count / funnel[i - 1].count) * 100) : null;
+                  return (
+                    <div key={f.stage}>
+                      <div className="flex items-center justify-between text-xs mb-1">
+                        <span className="font-medium text-foreground">{f.stage}</span>
+                        <span className="text-muted-foreground">
+                          {f.count}
+                          {conversion != null && <span className="ml-1.5">· {conversion}% from {funnel[i - 1].stage}</span>}
+                        </span>
+                      </div>
+                      <div className="h-7 bg-muted rounded-lg overflow-hidden">
+                        <div
+                          className="h-full rounded-lg flex items-center justify-end pr-2 text-[10px] font-semibold text-white transition-all duration-700"
+                          style={{ width: `${widthPct}%`, backgroundColor: STATUS_COLORS[f.stage] }}
+                        >
+                          {f.count > 0 && f.count}
+                        </div>
+                      </div>
+                    </div>
+                  );
+                })}
+                <div className="grid grid-cols-3 gap-2 pt-3 mt-1 border-t border-border">
+                  {stageDurations.map((s) => (
+                    <div key={s.label} className="text-center">
+                      <div className="text-[10px] text-muted-foreground mb-0.5">{s.label}</div>
+                      <div className="text-sm font-semibold text-foreground">{s.avgDays != null ? `${s.avgDays}d avg` : "—"}</div>
                     </div>
                   ))}
                 </div>
-              </>
+              </div>
+            )}
+          </div>
+
+          <div className="bg-card border border-border rounded-2xl p-5">
+            <h3 className="font-semibold text-foreground text-sm mb-1">Demand vs. Supply by Domain</h3>
+            <p className="text-xs text-muted-foreground mb-4">Share of applications vs. share of postings</p>
+            {domainComparison.length === 0 ? (
+              <p className="text-sm text-muted-foreground py-8 text-center">No activity yet.</p>
+            ) : (
+              <div className="space-y-3">
+                {domainComparison.map((d) => (
+                  <div key={d.domain}>
+                    <div className="flex items-center justify-between text-xs mb-1 gap-2">
+                      <span className="font-medium text-foreground truncate">{d.domain}</span>
+                      <span className="text-muted-foreground flex-shrink-0">{d.demand}% demand · {d.supply}% supply</span>
+                    </div>
+                    <div className="relative h-2 bg-muted rounded-full overflow-hidden">
+                      <div className="absolute inset-y-0 left-0 bg-primary/70 rounded-full transition-all duration-700" style={{ width: `${d.demand}%` }} />
+                      <div className="absolute left-0 h-1 top-1/2 -translate-y-1/2 bg-foreground/50 rounded-full transition-all duration-700" style={{ width: `${d.supply}%` }} />
+                    </div>
+                  </div>
+                ))}
+                <div className="flex items-center gap-4 text-[10px] text-muted-foreground pt-2">
+                  <span className="flex items-center gap-1"><span className="w-2 h-2 rounded-full bg-primary/70 inline-block" /> Demand (applications)</span>
+                  <span className="flex items-center gap-1"><span className="w-2 h-1.5 rounded-full bg-foreground/50 inline-block" /> Supply (postings)</span>
+                </div>
+              </div>
             )}
           </div>
         </div>

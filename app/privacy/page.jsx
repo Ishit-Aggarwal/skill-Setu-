@@ -6,7 +6,7 @@ export default function PrivacyPage() {
   return (
     <StaticPageLayout title="Privacy Policy">
       <p>
-        Setu is a hackathon project (Smart India Hackathon, Problem Statement SIH26044), and this page is
+        Skill Setu is a hackathon project (Smart India Hackathon, Problem Statement SIH26044), and this page is
         here to be genuinely accurate about how your data is handled — not boilerplate legal text.
       </p>
       <h2>Where your data lives</h2>

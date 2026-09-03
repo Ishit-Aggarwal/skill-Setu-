@@ -1,13 +1,13 @@
-# Setu — Academia–Industry Collaboration Portal
+# Skill Setu — Academia–Industry Collaboration Portal
 
 **Skill Mapping, Internships & Placements**
 Smart India Hackathon · Problem Statement SIH26044
 
 ---
 
-## What is Setu?
+## What is Skill Setu?
 
-**Setu** ("bridge") is a unified platform connecting **students**, **academicians**, **industry partners**, and **institutions** across every sector — not just one industry. It covers the full lifecycle described in the problem statement: skill assessment, skill mapping, internship & job discovery, industry learning programs, and placement analytics.
+**Skill Setu** ("bridge") is a unified platform connecting **students**, **academicians**, **industry partners**, and **institutions** across every sector — not just one industry. It covers the full lifecycle described in the problem statement: skill assessment, skill mapping, internship & job discovery, industry learning programs, and placement analytics.
 
 ## Four Dedicated Workspaces
 

@@ -6,7 +6,7 @@ export default function ContactPage() {
   return (
     <StaticPageLayout title="Contact">
       <p>
-        Setu is built and maintained on GitHub. That's the best place to report a bug, suggest a feature,
+        Skill Setu is built and maintained on GitHub. That's the best place to report a bug, suggest a feature,
         or ask a question about the project.
       </p>
       <p>

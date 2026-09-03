@@ -6,7 +6,7 @@ export default function TermsPage() {
   return (
     <StaticPageLayout title="Terms of Use">
       <p>
-        Setu was built as a submission for Smart India Hackathon (Problem Statement SIH26044). It's a
+        Skill Setu was built as a submission for Smart India Hackathon (Problem Statement SIH26044). It's a
         working demonstration of an academia–industry collaboration platform, not a production service
         with a support team or uptime guarantees.
       </p>

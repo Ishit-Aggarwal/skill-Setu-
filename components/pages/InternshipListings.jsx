@@ -13,11 +13,16 @@ import {
   applyToInternship,
   createInternship,
   getAssessment,
+  recordInternshipView,
   update,
 } from "../../lib/store";
 import { computeMatch, formatDate } from "../../lib/match";
 
-const INTERNSHIP_DOMAINS = ["IT", "Manufacturing", "Finance", "Marketing", "Design", "Operations", "Consulting"];
+const INTERNSHIP_DOMAINS = [
+  "IT", "Manufacturing", "Finance", "Marketing", "Design", "Operations", "Consulting",
+  "Healthcare", "Data Science & AI", "Sales", "Human Resources", "Legal", "Research",
+  "Civil & Core Engineering", "Education", "Media & Communications", "Supply Chain & Logistics",
+];
 const domainFilters = ["All", ...INTERNSHIP_DOMAINS];
 const typeFilters = ["All", "Remote", "Hybrid", "Onsite"];
 
@@ -58,6 +63,12 @@ function StudentView({ user }) {
       })
       .sort((a, b) => (sortBy === "match" ? b.match - a.match : new Date(a.deadline) - new Date(b.deadline)));
   }, [internships, assessment, search, domain, type, sortBy]);
+
+  // Views feed the recruiter's "views vs. applications" performance panel —
+  // recorded once per posting per browser session, not on every re-render.
+  useEffect(() => {
+    filtered.forEach((i) => recordInternshipView(i.id));
+  }, [filtered]);
 
   function handleApply(intern) {
     setApplyTarget(intern);
@@ -258,9 +269,13 @@ function IndustryView({ user }) {
               <div className="flex flex-wrap gap-1 mb-4">
                 {(p.tags || []).slice(0, 3).map((t) => <span key={t} className="text-[10px] bg-primary/8 text-primary px-2 py-0.5 rounded-full">{t}</span>)}
               </div>
-              <div className="flex items-center justify-between text-xs text-muted-foreground mb-4">
+              <div className="flex items-center justify-between text-xs text-muted-foreground mb-1">
                 <span>{applicantCount(p.id)} applicant{applicantCount(p.id) === 1 ? "" : "s"}</span>
                 <span>Due {formatDate(p.deadline)}</span>
+              </div>
+              <div className="text-[10px] text-muted-foreground mb-4">
+                👁 {p.views || 0} view{p.views === 1 ? "" : "s"}
+                {p.views > 0 && ` · ${Math.round((applicantCount(p.id) / p.views) * 100)}% applied`}
               </div>
               <button onClick={() => toggleStatus(p.id, p.status)} className="mt-auto text-xs font-medium py-2 rounded-xl bg-secondary text-muted-foreground hover:text-foreground transition-colors">
                 {p.status === "Open" ? "Close posting" : "Reopen posting"}

@@ -3,7 +3,7 @@ import { AuthProvider } from "../lib/auth";
 import ConvexClientProvider from "./ConvexClientProvider";
 
 export const metadata = {
-  title: "Setu — Academia-Industry Collaboration Portal",
+  title: "Skill Setu — Academia-Industry Collaboration Portal",
   description:
     "Skill mapping, internships, and placements — a unified platform connecting students, academicians, and industry across every sector.",
 };

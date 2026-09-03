@@ -4,9 +4,9 @@ import StaticPageLayout from "../../components/StaticPageLayout";
 
 export default function AboutPage() {
   return (
-    <StaticPageLayout title="About Setu">
+    <StaticPageLayout title="About Skill Setu">
       <p>
-        Setu ("bridge") is a unified platform connecting students, academicians, industry partners, and
+        Skill Setu ("bridge") is a unified platform connecting students, academicians, industry partners, and
         institutions across every sector — built for Smart India Hackathon, Problem Statement SIH26044:
         "Portal for Academia–Industry Collaboration for Skill Mapping, Internships and Placement."
       </p>
@@ -14,7 +14,7 @@ export default function AboutPage() {
         The gap between what students learn and what industry needs is real. Students often don't know
         which skills matter for the roles they want; industries struggle to find candidates who are
         actually ready; and academicians have limited visibility into industry opportunities that could
-        shape their teaching and research. Setu is a single place where all four groups meet.
+        shape their teaching and research. Skill Setu is a single place where all four groups meet.
       </p>
       <h2>What you can do here</h2>
       <p>
@@ -26,7 +26,7 @@ export default function AboutPage() {
       </p>
       <h2>How it's built</h2>
       <p>
-        Setu is a Next.js application backed by Convex for server-side accounts and data, with a
+        Skill Setu is a Next.js application backed by Convex for server-side accounts and data, with a
         browser-local fallback when no Convex database is configured — see the{" "}
         <a className="underline hover:text-foreground" href="https://github.com/Ishit-Aggarwal/skill-Setu-" target="_blank" rel="noreferrer">
           project repository

@@ -5,7 +5,7 @@ function otpEmailHtml(otp) {
   return `
         <div style="font-family: Arial, sans-serif; max-width: 560px; margin: 0 auto; padding: 24px; background: #FAF7F2; border: 1px solid #DFD6C6; border-radius: 12px;">
           <div style="text-align: center; margin-bottom: 20px;">
-            <h2 style="color: #1B4B43; margin: 0;">🌉 Setu</h2>
+            <h2 style="color: #1B4B43; margin: 0;">🌉 Skill Setu</h2>
             <p style="color: #61706B; font-size: 13px; margin: 4px 0 0;">Academia–Industry Collaboration Portal</p>
           </div>
           <div style="background: #FFFFFF; padding: 24px; border-radius: 10px; border: 1px solid #EDE4D6; text-align: center;">
@@ -75,8 +75,8 @@ export default async function handler(req, res) {
   try {
     await sendMail({
       to: normalizedEmail,
-      subject: `${otp} is your Setu Verification Code`,
-      text: `Your Setu verification code is ${otp}. It is valid for 5 minutes. Do not share this code with anyone.`,
+      subject: `${otp} is your Skill Setu Verification Code`,
+      text: `Your Skill Setu verification code is ${otp}. It is valid for 5 minutes. Do not share this code with anyone.`,
       html: otpEmailHtml(otp),
     });
 

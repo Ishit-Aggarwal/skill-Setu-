@@ -18,7 +18,17 @@ export default defineSchema({
     workEmailDomain: v.optional(v.string()),
     phone: v.optional(v.string()),
     avatar: v.optional(v.string()),
+    avatarDataUrl: v.optional(v.string()),
     employeeId: v.optional(v.string()),
+    // Industry/company profile (editable by the company itself).
+    companyDomain: v.optional(v.string()),
+    companyDescription: v.optional(v.string()),
+    companyWebsite: v.optional(v.string()),
+    hqLocation: v.optional(v.string()),
+    companySize: v.optional(v.string()),
+    contactPersonName: v.optional(v.string()),
+    linkedIn: v.optional(v.string()),
+    logoDataUrl: v.optional(v.string()),
     verifiedCode: v.optional(v.union(v.string(), v.null())),
     // Set only after the signup OTP has been verified server-side.
     emailVerified: v.optional(v.boolean()),
@@ -42,6 +52,7 @@ export default defineSchema({
     description: v.string(),
     color: v.optional(v.string()),
     hot: v.optional(v.boolean()),
+    views: v.optional(v.number()),
     ownerId: v.string(),
     status: v.string(), // "Open" | "Closed"
     postedAt: v.string(),
@@ -63,6 +74,11 @@ export default defineSchema({
     match: v.number(),
     status: v.string(), // "Applied" | "Shortlisted" | "Interview" | "Hired" | "Rejected"
     appliedAt: v.string(),
+    statusHistory: v.optional(v.array(v.any())),
+    // Recruiter-only fields — never surfaced to the candidate.
+    interviewMode: v.optional(v.string()), // "Physical" | "Online"
+    interviewAt: v.optional(v.string()),
+    recruiterNotes: v.optional(v.string()),
   })
     .index("by_internship", ["internshipId"])
     .index("by_student", ["studentId"]),
@@ -104,6 +120,8 @@ export default defineSchema({
     certification: v.optional(v.string()),
     rules: v.optional(v.array(v.string())),
     documentsRequired: v.optional(v.array(v.string())),
+    meetingLink: v.optional(v.string()),
+    startedAt: v.optional(v.string()),
     ownerId: v.string(),
     status: v.string(),
     postedAt: v.string(),
