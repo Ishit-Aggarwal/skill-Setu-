@@ -97,6 +97,7 @@ const NAV = {
   industry: [
     { label: "Dashboard", page: "industry-dashboard", icon: <IconGrid /> },
     { label: "Postings", page: "internship-listings", icon: <IconBriefcase /> },
+    { label: "Talent Pool", page: "talent-pool", icon: <IconUsers /> },
     { label: "Skill Tests", page: "skill-assessment", icon: <IconTarget /> },
     { label: "Company Profile", page: "company-profile", icon: <IconUser /> },
     { label: "Analytics", page: "analytics", icon: <IconBarChart /> },
@@ -105,12 +106,13 @@ const NAV = {
     { label: "Dashboard", page: "academician-dashboard", icon: <IconGrid /> },
     { label: "Programs (FDPs)", page: "academician-dashboard", query: { tab: "fdp" }, icon: <IconBookOpen /> },
     { label: "Research Collabs", page: "academician-dashboard", query: { tab: "collabs" }, icon: <IconFlask /> },
+    { label: "Industry Alignment", page: "academician-dashboard", query: { tab: "alignment" }, icon: <IconBarChart /> },
     { label: "Skill Tests", page: "skill-assessment", icon: <IconTarget /> },
     { label: "Analytics", page: "analytics", icon: <IconBarChart /> },
   ],
   institution: [
-    { label: "Placement Analytics", page: "institution-dashboard", icon: <IconGrid /> },
-    { label: "Platform Analytics", page: "analytics", icon: <IconBarChart /> },
+    { label: "Dashboard", page: "institution-dashboard", icon: <IconGrid /> },
+    { label: "Placement Analytics", page: "analytics", icon: <IconBarChart /> },
   ],
 };
 

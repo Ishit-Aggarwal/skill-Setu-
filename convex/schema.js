@@ -14,11 +14,12 @@ export default defineSchema({
     department: v.optional(v.string()),
     course: v.optional(v.string()),
     year: v.optional(v.string()),
+    openToOpportunities: v.optional(v.boolean()),
     companyName: v.optional(v.string()),
     workEmailDomain: v.optional(v.string()),
     phone: v.optional(v.string()),
     avatar: v.optional(v.string()),
-    avatarDataUrl: v.optional(v.string()),
+    avatarDataUrl: v.optional(v.union(v.string(), v.null())),
     employeeId: v.optional(v.string()),
     // Industry/company profile (editable by the company itself).
     companyDomain: v.optional(v.string()),
@@ -28,7 +29,7 @@ export default defineSchema({
     companySize: v.optional(v.string()),
     contactPersonName: v.optional(v.string()),
     linkedIn: v.optional(v.string()),
-    logoDataUrl: v.optional(v.string()),
+    logoDataUrl: v.optional(v.union(v.string(), v.null())),
     verifiedCode: v.optional(v.union(v.string(), v.null())),
     // Set only after the signup OTP has been verified server-side.
     emailVerified: v.optional(v.boolean()),

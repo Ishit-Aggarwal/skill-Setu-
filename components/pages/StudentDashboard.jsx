@@ -7,6 +7,7 @@ import ApplyConfirmModal from "../ApplyConfirmModal";
 import { useAuth } from "../../lib/auth";
 import { useNav } from "../../lib/nav";
 import { getAssessment, getPortfolio, listInternships, listApplicationsForStudent, applyToInternship } from "../../lib/store";
+import TalentPoolToggle from "../TalentPoolToggle";
 import { computeMatch, daysUntil, formatDate } from "../../lib/match";
 import { SKILL_DOMAINS } from "../../lib/questionBank";
 
@@ -135,6 +136,8 @@ export default function StudentDashboard() {
             {assessment ? "Browse Skill Tests" : "Take a Skill Test"}
           </button>
         </div>
+
+        <TalentPoolToggle />
 
         <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
           {[

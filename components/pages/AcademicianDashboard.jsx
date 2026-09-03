@@ -15,6 +15,7 @@ import {
   listUsersByRole,
   listApplicationsForStudent,
   getAssessment,
+  listInternships,
 } from "../../lib/store";
 
 const collabTypeColor = {
@@ -41,7 +42,7 @@ const statusColor = {
   "Not started": "text-muted-foreground bg-muted",
 };
 
-const VALID_TABS = ["fdp", "collabs", "students"];
+const VALID_TABS = ["fdp", "collabs", "students", "alignment"];
 
 export default function AcademicianDashboard() {
   const { user } = useAuth();
@@ -59,6 +60,7 @@ export default function AcademicianDashboard() {
   const [students, setStudents] = useState([]);
   const [showHost, setShowHost] = useState(false);
   const [form, setForm] = useState({ title: "", dates: "", seats: "30", mode: "Hybrid" });
+  const [alignment, setAlignment] = useState({ demand: [], weakDomains: [] });
 
   function refresh() {
     setPrograms(listPrograms());
@@ -80,6 +82,32 @@ export default function AcademicianDashboard() {
       })
       .sort((a, b) => (b.institution === user.institution) - (a.institution === user.institution));
     setStudents(rows);
+
+    // Curriculum-industry alignment: real skill demand from live postings vs.
+    // where this academician's own cohort is actually weakest. Faculty-facing
+    // tools like this are rare across comparable platforms — most only serve
+    // students and employers — so this is deliberately built from scratch
+    // rather than adapted from an existing feature.
+    const tagCounts = {};
+    listInternships().forEach((i) => (i.tags || []).forEach((t) => { tagCounts[t] = (tagCounts[t] || 0) + 1; }));
+    const demand = Object.entries(tagCounts).sort((a, b) => b[1] - a[1]).slice(0, 8).map(([skill, count]) => ({ skill, count }));
+
+    const myStudents = studentUsers.filter((s) => s.institution === user.institution);
+    const domainTotals = {};
+    myStudents.forEach((s) => {
+      const a = getAssessment(s.id);
+      Object.entries(a?.domainScores || {}).forEach(([domain, score]) => {
+        if (!domainTotals[domain]) domainTotals[domain] = { sum: 0, count: 0 };
+        domainTotals[domain].sum += score;
+        domainTotals[domain].count += 1;
+      });
+    });
+    const weakDomains = Object.entries(domainTotals)
+      .map(([domain, { sum, count }]) => ({ domain, avg: Math.round(sum / count) }))
+      .sort((a, b) => a.avg - b.avg)
+      .slice(0, 4);
+
+    setAlignment({ demand, weakDomains });
   }
 
   useEffect(() => { refresh(); }, [user]);
@@ -139,6 +167,7 @@ export default function AcademicianDashboard() {
             { key: "fdp", label: "FDP Programs" },
             { key: "collabs", label: "Research Collabs" },
             { key: "students", label: "Student Progress" },
+            { key: "alignment", label: "Industry Alignment" },
           ].map((tab) => (
             <button key={tab.key} onClick={() => setActiveTab(tab.key)} className={`flex-1 sm:flex-none px-4 py-2 rounded-lg text-sm font-medium transition-all duration-150 ${activeTab === tab.key ? "bg-card text-foreground shadow-sm" : "text-muted-foreground hover:text-foreground"}`}>
               {tab.label}
@@ -276,6 +305,53 @@ export default function AcademicianDashboard() {
                 </div>
               </div>
             )}
+          </div>
+        )}
+
+        {activeTab === "alignment" && (
+          <div className="animate-fade-slide space-y-5">
+            <p className="text-sm text-muted-foreground">What industry is actually hiring for vs. where your own students are weakest — a curriculum signal most placement platforms don't surface for faculty at all.</p>
+            <div className="grid md:grid-cols-2 gap-5">
+              <div className="bg-card border border-border rounded-2xl p-5">
+                <h3 className="font-semibold text-foreground text-sm mb-1">In-Demand Skills</h3>
+                <p className="text-xs text-muted-foreground mb-4">Most requested tags across live internship postings, platform-wide</p>
+                {alignment.demand.length === 0 ? (
+                  <p className="text-sm text-muted-foreground py-6 text-center">No postings yet.</p>
+                ) : (
+                  <div className="space-y-2">
+                    {alignment.demand.map((d) => (
+                      <div key={d.skill} className="flex items-center gap-3">
+                        <span className="text-xs text-foreground w-32 truncate flex-shrink-0">{d.skill}</span>
+                        <div className="flex-1 h-2 bg-muted rounded-full overflow-hidden">
+                          <div className="h-full bg-primary rounded-full" style={{ width: `${(d.count / alignment.demand[0].count) * 100}%` }} />
+                        </div>
+                        <span className="text-xs font-semibold text-muted-foreground w-6 text-right flex-shrink-0">{d.count}</span>
+                      </div>
+                    ))}
+                  </div>
+                )}
+              </div>
+
+              <div className="bg-card border border-border rounded-2xl p-5">
+                <h3 className="font-semibold text-foreground text-sm mb-1">Your Students' Weakest Areas</h3>
+                <p className="text-xs text-muted-foreground mb-4">Lowest average skill-test scores among students at {user.institution || "your institution"}</p>
+                {alignment.weakDomains.length === 0 ? (
+                  <p className="text-sm text-muted-foreground py-6 text-center">No completed assessments yet.</p>
+                ) : (
+                  <div className="space-y-2">
+                    {alignment.weakDomains.map((d) => (
+                      <div key={d.domain} className="flex items-center gap-3">
+                        <span className="text-xs text-foreground w-32 truncate flex-shrink-0">{d.domain}</span>
+                        <div className="flex-1 h-2 bg-muted rounded-full overflow-hidden">
+                          <div className={`h-full rounded-full ${d.avg < 55 ? "bg-red-500" : d.avg < 75 ? "bg-amber-500" : "bg-primary"}`} style={{ width: `${d.avg}%` }} />
+                        </div>
+                        <span className="text-xs font-semibold text-muted-foreground w-8 text-right flex-shrink-0">{d.avg}%</span>
+                      </div>
+                    ))}
+                  </div>
+                )}
+              </div>
+            </div>
           </div>
         )}
       </div>

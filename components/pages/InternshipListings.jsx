@@ -13,10 +13,11 @@ import {
   applyToInternship,
   createInternship,
   getAssessment,
+  getPortfolio,
   recordInternshipView,
   update,
 } from "../../lib/store";
-import { computeMatch, formatDate } from "../../lib/match";
+import { computeMatch, computeSkillGap, formatDate } from "../../lib/match";
 
 const INTERNSHIP_DOMAINS = [
   "IT", "Manufacturing", "Finance", "Marketing", "Design", "Operations", "Consulting",
@@ -35,6 +36,7 @@ const typeColor = {
 function StudentView({ user }) {
   const [internships, setInternships] = useState([]);
   const [assessment, setAssessment] = useState(null);
+  const [portfolio, setPortfolio] = useState(null);
   const [appliedIds, setAppliedIds] = useState(new Set());
   const [search, setSearch] = useState("");
   const [domain, setDomain] = useState("All");
@@ -46,6 +48,7 @@ function StudentView({ user }) {
   function refresh() {
     setInternships(listInternships());
     setAssessment(getAssessment(user.id));
+    setPortfolio(getPortfolio(user.id));
     setAppliedIds(new Set(listApplicationsForStudent(user.id).map((a) => a.internshipId)));
   }
 
@@ -131,6 +134,7 @@ function StudentView({ user }) {
           {filtered.map((intern) => {
             const isApplied = appliedIds.has(intern.id);
             const isSaved = saved.includes(intern.id);
+            const gap = computeSkillGap(intern, portfolio);
             return (
               <div key={intern.id} className="bg-card border border-border rounded-2xl p-5 hover:shadow-md hover:-translate-y-0.5 transition-all duration-200 flex flex-col">
                 <div className="flex items-start justify-between mb-3">
@@ -176,6 +180,9 @@ function StudentView({ user }) {
                   <div className="h-1.5 bg-muted rounded-full overflow-hidden">
                     <div className="h-full bg-primary rounded-full" style={{ width: `${intern.match}%` }} />
                   </div>
+                  {gap.missing.length > 0 && (
+                    <div className="text-[10px] text-amber-600 mt-1.5">You're missing: {gap.missing.join(", ")}</div>
+                  )}
                 </div>
 
                 <button

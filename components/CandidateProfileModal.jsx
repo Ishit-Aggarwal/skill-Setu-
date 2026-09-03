@@ -9,13 +9,16 @@ function initials(name) {
 }
 
 /**
- * Read-only candidate profile for a recruiter, opened from an applicant
- * pipeline card. Everything about the STUDENT (bio, skills, certifications,
- * timeline, documents, contact info, test scores) is display-only — a company
- * can never edit it. The only editable fields here (interview mode, private
- * notes) live on the application record itself, not the student's profile.
+ * Read-only candidate profile for a recruiter — opened either from an
+ * applicant pipeline card (a real `application`, with an id) or from Talent
+ * Pool search (a plain student record with no application behind it yet).
+ * Everything about the STUDENT (bio, skills, certifications, timeline,
+ * documents, contact info, test scores) is display-only — a company can never
+ * edit it. The interview-mode/notes editor only appears when there's a real
+ * application record to attach it to.
  */
 export default function CandidateProfileModal({ application, onClose, onUpdated }) {
+  const hasApplication = Boolean(application.id);
   const [interviewMode, setInterviewMode] = useState(application.interviewMode || "");
   const [interviewAt, setInterviewAt] = useState(application.interviewAt || "");
   const [notes, setNotes] = useState(application.recruiterNotes || "");
@@ -61,8 +64,8 @@ export default function CandidateProfileModal({ application, onClose, onUpdated 
         <div className="p-5 space-y-5">
           <div className="flex flex-wrap gap-2 text-xs">
             <span className="px-2.5 py-1 rounded-full bg-secondary text-secondary-foreground">{application.studentInstitution || "Institution unknown"}</span>
-            <span className="px-2.5 py-1 rounded-full bg-primary/10 text-primary font-medium">{application.match}% match</span>
-            <span className="px-2.5 py-1 rounded-full bg-secondary text-secondary-foreground">Applied {formatDate(application.appliedAt)}</span>
+            {application.match != null && <span className="px-2.5 py-1 rounded-full bg-primary/10 text-primary font-medium">{application.match}% match</span>}
+            {hasApplication && <span className="px-2.5 py-1 rounded-full bg-secondary text-secondary-foreground">Applied {formatDate(application.appliedAt)}</span>}
           </div>
 
           <div>
@@ -144,6 +147,7 @@ export default function CandidateProfileModal({ application, onClose, onUpdated 
             )}
           </div>
 
+          {hasApplication && (
           <div className="border-t border-border pt-4">
             <div className="text-xs font-semibold text-primary uppercase tracking-wider mb-2">Recruiter-only</div>
 
@@ -181,6 +185,7 @@ export default function CandidateProfileModal({ application, onClose, onUpdated 
               {saved ? "Saved ✓" : "Save"}
             </button>
           </div>
+          )}
         </div>
       </div>
     </div>

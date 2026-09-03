@@ -46,6 +46,12 @@ export default function IndustryDashboard() {
   const [showPostJob, setShowPostJob] = useState(false);
   const [movingId, setMovingId] = useState(null);
   const [selectedApplicant, setSelectedApplicant] = useState(null);
+  const [compareIds, setCompareIds] = useState([]);
+  const [showCompare, setShowCompare] = useState(false);
+
+  function toggleCompare(id) {
+    setCompareIds((prev) => (prev.includes(id) ? prev.filter((x) => x !== id) : prev.length < 4 ? [...prev, id] : prev));
+  }
   const [form, setForm] = useState({ title: "", location: "", stipend: "", duration: "", tags: "" });
 
   function refresh() {
@@ -169,8 +175,15 @@ export default function IndustryDashboard() {
 
                   <div className="space-y-2">
                     {cols.map((applicant) => (
-                      <div key={applicant.id} className={`bg-card border border-border rounded-xl p-3 hover:shadow-sm transition-all duration-150 ${movingId === applicant.id ? "opacity-40 scale-95" : ""}`}>
+                      <div key={applicant.id} className={`bg-card border rounded-xl p-3 hover:shadow-sm transition-all duration-150 ${compareIds.includes(applicant.id) ? "border-primary" : "border-border"} ${movingId === applicant.id ? "opacity-40 scale-95" : ""}`}>
                         <div className="flex items-center gap-2 mb-2">
+                          <input
+                            type="checkbox"
+                            checked={compareIds.includes(applicant.id)}
+                            onChange={() => toggleCompare(applicant.id)}
+                            className="w-3.5 h-3.5 flex-shrink-0 accent-primary"
+                            aria-label={`Select ${applicant.studentName} to compare`}
+                          />
                           <div className="w-7 h-7 rounded-full flex-shrink-0 flex items-center justify-center text-white text-[10px] font-bold" style={{ backgroundColor: colorFor(applicant.studentName) }}>
                             {initials(applicant.studentName)}
                           </div>
@@ -216,6 +229,53 @@ export default function IndustryDashboard() {
           </div>
         </div>
       </div>
+
+      {compareIds.length >= 2 && (
+        <div className="fixed bottom-6 left-1/2 -translate-x-1/2 z-40 bg-card border border-border shadow-xl rounded-2xl px-5 py-3 flex items-center gap-4 animate-fade-slide">
+          <span className="text-sm text-foreground font-medium">{compareIds.length} candidates selected</span>
+          <button onClick={() => setShowCompare(true)} className="text-sm font-medium bg-primary hover:bg-accent text-white px-4 py-2 rounded-xl transition-colors">Compare</button>
+          <button onClick={() => setCompareIds([])} className="text-xs text-muted-foreground hover:text-foreground">Clear</button>
+        </div>
+      )}
+
+      {showCompare && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
+          <div className="absolute inset-0 bg-black/40 backdrop-blur-sm" onClick={() => setShowCompare(false)} />
+          <div className="relative z-10 bg-card border border-border rounded-2xl w-full max-w-3xl shadow-xl animate-fade-slide max-h-[85vh] overflow-y-auto">
+            <div className="sticky top-0 bg-card border-b border-border p-5 flex items-center justify-between z-10">
+              <h3 className="font-semibold text-foreground text-lg">Compare Candidates</h3>
+              <button onClick={() => setShowCompare(false)} className="text-muted-foreground hover:text-foreground text-xl leading-none">×</button>
+            </div>
+            <div className="p-5 overflow-x-auto">
+              <table className="w-full text-sm border-collapse min-w-[500px]">
+                <tbody>
+                  {[
+                    { label: "", render: (a) => (
+                      <div className="flex flex-col items-center gap-2">
+                        <div className="w-10 h-10 rounded-full flex items-center justify-center text-white text-xs font-bold" style={{ backgroundColor: colorFor(a.studentName) }}>{initials(a.studentName)}</div>
+                        <span className="font-semibold text-foreground text-center">{a.studentName}</span>
+                      </div>
+                    )},
+                    { label: "Institution", render: (a) => a.studentInstitution || "—" },
+                    { label: "Course", render: (a) => a.studentCourse || "—" },
+                    { label: "Skill Match", render: (a) => <span className="font-semibold text-primary">{a.match}%</span> },
+                    { label: "Status", render: (a) => a.status },
+                    { label: "Interview Mode", render: (a) => a.interviewMode || "Not set" },
+                    { label: "Applied", render: (a) => formatDate(a.appliedAt) },
+                  ].map((row, i) => (
+                    <tr key={i} className="border-b border-border last:border-0">
+                      {row.label && <td className="py-3 pr-4 text-xs font-semibold text-muted-foreground uppercase tracking-wider align-top whitespace-nowrap">{row.label}</td>}
+                      {applications.filter((a) => compareIds.includes(a.id)).map((a) => (
+                        <td key={a.id} className={`py-3 px-3 text-center ${!row.label ? "align-bottom" : ""}`}>{row.render(a)}</td>
+                      ))}
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          </div>
+        </div>
+      )}
 
       {showPostJob && (
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
