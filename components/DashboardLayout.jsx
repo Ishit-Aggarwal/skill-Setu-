@@ -77,14 +77,6 @@ function IconMenu() {
     </svg>
   );
 }
-function LogoLeaf() {
-  return (
-    <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-      <path d="M11 20A7 7 0 0 1 9.8 6.1C15.5 5 17 4.48 19 2c1 2 2 4.18 2 8 0 5.5-4.78 10-10 10z" />
-      <path d="M2 21c0-3 1.85-5.36 5.08-6C9.5 14.52 12 13 13 12" />
-    </svg>
-  );
-}
 
 const NAV = {
   student: [
@@ -156,14 +148,9 @@ export default function DashboardLayout({ children, activePage, title }) {
       >
         {mobile && <div className="absolute inset-0 bg-black/40" onClick={() => setSidebarOpen(false)} />}
         <div className={mobile ? "relative z-10 flex flex-col w-64 min-h-screen bg-card border-r border-border" : "flex flex-col w-60 min-h-screen"}>
-          <button onClick={() => navigate("landing")} className="flex items-center gap-2.5 px-5 py-5 border-b border-border text-left hover:bg-secondary/50 transition-colors">
-            <div className="w-8 h-8 rounded-lg bg-primary flex items-center justify-center text-white flex-shrink-0">
-              <LogoLeaf />
-            </div>
-            <div>
-              <div className="text-sm font-semibold text-foreground leading-tight">Skill Setu</div>
-              <div className="text-xs text-muted-foreground">Academia × Industry</div>
-            </div>
+          <button onClick={() => navigate("landing")} className="flex flex-col items-start gap-1 px-5 py-4 border-b border-border text-left hover:bg-secondary/50 transition-colors">
+            <img src="/logo.png" alt="Skill Setu" className="h-8 w-auto object-contain" />
+            <div className="text-xs text-muted-foreground">Academia × Industry</div>
           </button>
 
           <nav className="flex-1 px-3 py-4 space-y-0.5">
@@ -219,11 +206,8 @@ export default function DashboardLayout({ children, activePage, title }) {
             <IconMenu />
           </button>
 
-          <button onClick={() => navigate("landing")} className="lg:hidden flex items-center gap-2">
-            <div className="w-6 h-6 rounded-md bg-primary flex items-center justify-center text-white">
-              <LogoLeaf />
-            </div>
-            <span className="text-sm font-semibold">Skill Setu</span>
+          <button onClick={() => navigate("landing")} className="lg:hidden flex items-center">
+            <img src="/logo.png" alt="Skill Setu" className="h-6 w-auto object-contain" />
           </button>
 
           <div className="flex-1 hidden lg:block">{title && <h1 className="text-base font-semibold text-foreground">{title}</h1>}</div>

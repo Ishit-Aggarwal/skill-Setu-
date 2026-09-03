@@ -9,9 +9,8 @@ export default function StaticPageLayout({ title, children }) {
     <div className="min-h-screen bg-background">
       <nav className="sticky top-0 z-50 bg-background/90 backdrop-blur border-b border-border">
         <div className="max-w-3xl mx-auto px-5 py-3.5 flex items-center justify-between">
-          <button onClick={() => router.push("/")} className="flex items-center gap-2.5">
-            <div className="w-8 h-8 rounded-lg bg-primary flex items-center justify-center text-white font-bold text-sm">S</div>
-            <span className="text-sm font-semibold text-foreground">Skill Setu</span>
+          <button onClick={() => router.push("/")} className="flex items-center">
+            <img src="/logo.png" alt="Skill Setu" className="h-7 w-auto object-contain" />
           </button>
           <button onClick={() => router.push("/")} className="text-sm font-medium text-muted-foreground hover:text-foreground transition-colors">
             ← Back to home

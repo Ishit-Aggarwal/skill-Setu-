@@ -239,9 +239,10 @@ function LoginPageInner() {
         <img key={role} src={selected.image} alt={selected.label} className="absolute inset-0 w-full h-full object-cover transition-opacity duration-300" />
         <div className="absolute inset-0 bg-gradient-to-br from-olive-900/80 to-olive-700/60" />
         <div className="absolute inset-0 flex flex-col justify-between p-10">
-          <button onClick={() => router.push("/")} className="flex items-center gap-2 text-white/90 hover:text-white transition-colors">
-            <div className="w-8 h-8 rounded-lg bg-white/20 flex items-center justify-center text-white text-sm font-bold">S</div>
-            <span className="font-semibold">Skill Setu</span>
+          <button onClick={() => router.push("/")} className="flex items-center transition-opacity hover:opacity-90">
+            <div className="bg-white rounded-lg px-2.5 py-1.5">
+              <img src="/logo.png" alt="Skill Setu" className="h-6 w-auto object-contain" />
+            </div>
           </button>
           <div>
             <div className="inline-block bg-white/10 border border-white/20 rounded-full px-3 py-1 text-xs text-white/80 mb-4">Smart India Hackathon · SIH26044</div>

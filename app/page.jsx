@@ -101,12 +101,9 @@ export default function LandingPage() {
     <div className="min-h-screen bg-background">
       <nav className="sticky top-0 z-50 bg-background border-b border-border">
         <div className="max-w-6xl mx-auto px-5 py-3.5 flex items-center justify-between">
-          <div className="flex items-center gap-2.5">
-            <div className="w-8 h-8 rounded-lg bg-primary flex items-center justify-center text-white font-bold text-sm">S</div>
-            <div>
-              <span className="text-sm font-semibold text-foreground">Skill Setu</span>
-              <span className="hidden sm:inline text-xs text-muted-foreground ml-2">Academia–Industry Portal</span>
-            </div>
+          <div className="flex items-center gap-2.5 min-w-0">
+            <img src="/logo.png" alt="Skill Setu" className="h-8 w-auto object-contain flex-shrink-0" />
+            <span className="hidden sm:inline text-xs text-muted-foreground truncate">Academia–Industry Portal</span>
           </div>
           <div className="flex items-center gap-2">
             {user ? (
@@ -355,9 +352,8 @@ export default function LandingPage() {
         <div className="max-w-6xl mx-auto px-5 py-10">
           <div className="flex flex-col md:flex-row items-start md:items-center justify-between gap-6">
             <div>
-              <div className="flex items-center gap-2 mb-2">
-                <div className="w-7 h-7 rounded-lg bg-primary flex items-center justify-center text-white text-xs font-bold">S</div>
-                <span className="font-semibold text-foreground">Skill Setu</span>
+              <div className="flex items-center mb-2">
+                <img src="/logo.png" alt="Skill Setu" className="h-7 w-auto object-contain" />
               </div>
               <p className="text-xs text-muted-foreground max-w-xs leading-relaxed">
                 A skill-mapping, internship, and placement platform bridging academia and industry across every sector.
