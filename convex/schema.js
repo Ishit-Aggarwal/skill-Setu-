@@ -18,6 +18,11 @@ export default defineSchema({
     workEmailDomain: v.optional(v.string()),
     phone: v.optional(v.string()),
     avatar: v.optional(v.string()),
+    employeeId: v.optional(v.string()),
+    verifiedCode: v.optional(v.union(v.string(), v.null())),
+    // Set only after the signup OTP has been verified server-side.
+    emailVerified: v.optional(v.boolean()),
+    verifiedAt: v.optional(v.string()),
     createdAt: v.optional(v.string()),
   })
     .index("by_email", ["email"])

@@ -74,6 +74,7 @@ function LoginPageInner() {
   const [codeValidation, setCodeValidation] = useState({ valid: false, message: "" });
   const [otpDigits, setOtpDigits] = useState(["", "", "", "", "", ""]);
   const [otpToken, setOtpToken] = useState(null);
+  const [devOtp, setDevOtp] = useState(null);
   const [otpTimer, setOtpTimer] = useState(0);
 
   useEffect(() => {
@@ -175,16 +176,11 @@ function LoginPageInner() {
     setError(null);
     try {
       const data = await sendSignupOtp(form.email);
-      if (data.isDevFallback) {
-        // No email service is configured, so there's nothing to verify a
-        // code against by hand — complete registration right away using
-        // the code the server generated for us.
-        const created = await completeSignup(buildProfile(), data.devOtp, data.token);
-        router.push(PAGE_PATHS[roleHomePage(created.role)]);
-        return;
-      }
+      // Always go through the verification step. The account is not created
+      // and no session is established until the emailed code is confirmed.
       setOtpDigits(["", "", "", "", "", ""]);
       setOtpToken(data.token);
+      setDevOtp(data.devMode ? data.devOtp : null);
       setOtpTimer(60);
       setStep("otp");
     } catch (err) {
@@ -201,6 +197,7 @@ function LoginPageInner() {
       const data = await sendSignupOtp(form.email);
       setOtpDigits(["", "", "", "", "", ""]);
       setOtpToken(data.token);
+      setDevOtp(data.devMode ? data.devOtp : null);
       setOtpTimer(60);
     } catch (err) {
       setError(err.message);
@@ -457,6 +454,13 @@ function LoginPageInner() {
                 <div>We sent a 6-digit one-time verification code to:</div>
                 <div className="font-semibold text-primary mt-1">{form.email}</div>
               </div>
+
+              {devOtp && (
+                <div className="bg-amber-50 border border-amber-300 text-amber-900 rounded-xl p-3 mb-6 text-sm">
+                  <span className="font-semibold">Development mode</span> — no email was sent. Your code is{" "}
+                  <span className="font-mono font-bold tracking-widest">{devOtp}</span>. Enter it below to continue.
+                </div>
+              )}
 
               <div className="flex justify-center gap-2.5 mb-6">
                 {otpDigits.map((digit, i) => (
