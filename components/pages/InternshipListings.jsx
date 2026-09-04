@@ -6,7 +6,7 @@ import ApplyConfirmModal from "../ApplyConfirmModal";
 import { useAuth } from "../../lib/auth";
 import { useNav } from "../../lib/nav";
 import { Badge, Button, Card, EmptyState, Field, FilterPills, Flash, Modal, PageHeader, ProgressBar, SearchInput, Select, StatGrid, TextArea, TextInput, useFlash } from "../ui/Kit";
-import { ALL_DOMAINS, DEPARTMENTS, DOMAIN_GROUPS, domainColor } from "../../lib/domains";
+import { ALL_DOMAINS, DEPARTMENTS, DOMAIN_GROUPS, SECTOR_CLUSTERS, canonicalDomain, domainColor } from "../../lib/domains";
 import { subscribeToMutations } from "../../lib/sync";
 import {
   applyToInternship,
@@ -32,11 +32,166 @@ import { checkEligibility, computeMatch, computeSkillGap, daysUntil, formatDate 
 const typeFilters = ["All", "Remote", "Hybrid", "Onsite"];
 const STAGE_ORDER = PIPELINE_STAGES;
 
+/* ---------- Listing filter vocabulary ----------
+   Stipend and duration are stored as the human strings an employer typed
+   ("₹35,000/mo", "6 months"), so filtering parses them rather than assuming a
+   numeric column exists. Anything unparseable is kept rather than dropped —
+   a filter should never silently hide a posting because its stipend was
+   written as "Negotiable". */
+
+/* Minimum thresholds rather than closed ranges: a candidate filtering for
+   "₹35,000+" expects a ₹35,000 role to appear, which an exclusive upper bound
+   on the band below would have hidden. */
+const STIPEND_BANDS = [
+  { key: "any", label: "Any stipend", test: () => true },
+  { key: "gte15", label: "₹15,000+", test: (v) => v != null && v >= 15000 },
+  { key: "gte25", label: "₹25,000+", test: (v) => v != null && v >= 25000 },
+  { key: "gte35", label: "₹35,000+", test: (v) => v != null && v >= 35000 },
+];
+
+const DURATION_BANDS = [
+  { key: "any", label: "Any duration", test: () => true },
+  { key: "lte3", label: "Up to 3 months", test: (m) => m != null && m <= 3 },
+  { key: "4-6", label: "4 – 6 months", test: (m) => m != null && m > 3 && m <= 6 },
+  { key: "gt6", label: "More than 6 months", test: (m) => m != null && m > 6 },
+];
+
+const POSTED_WINDOWS = [
+  { key: "any", label: "Any time", days: null },
+  { key: "1", label: "Last 24 hours", days: 1 },
+  { key: "7", label: "Last week", days: 7 },
+  { key: "30", label: "Last month", days: 30 },
+];
+
+function parseStipend(value) {
+  const digits = String(value || "").replace(/[^0-9]/g, "");
+  return digits ? Number(digits) : null;
+}
+
+function parseDurationMonths(value) {
+  const text = String(value || "").toLowerCase();
+  const n = parseFloat(text);
+  if (Number.isNaN(n)) return null;
+  if (text.includes("week")) return n / 4.345;
+  if (text.includes("year")) return n * 12;
+  return n;
+}
+
+function bandOf(bands, key) {
+  return bands.find((b) => b.key === key) || bands[0];
+}
+
 const typeTone = {
   Remote: "green",
   Hybrid: "blue",
   Onsite: "amber",
 };
+
+/**
+ * Sector picker.
+ *
+ * Was a single flat row of every sector in use — around two dozen pills, of
+ * which eleven were AYUSH sub-sectors, so the densest control on the page also
+ * implied AYUSH was the platform's main subject. Now five equal clusters that
+ * expand on demand, each showing how many live roles sit inside it, plus a
+ * type-ahead for going straight to a sub-sector without opening its cluster.
+ */
+function SectorFilter({ clusters, value, onChange, query, onQuery }) {
+  const [openCluster, setOpenCluster] = useState(null);
+
+  const q = query.trim().toLowerCase();
+  const matches = q
+    ? clusters.flatMap((c) => c.items.filter((i) => i.domain.toLowerCase().includes(q)))
+    : [];
+
+  return (
+    <div className="space-y-2">
+      <div className="flex flex-wrap items-center gap-1.5">
+        <span className="text-xs text-muted-foreground font-medium mr-1">Sector:</span>
+        <button
+          onClick={() => { onChange("All"); setOpenCluster(null); }}
+          aria-pressed={value === "All"}
+          className={`text-xs px-3 py-1.5 rounded-full border font-medium transition-all duration-150 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary ${
+            value === "All" ? "bg-primary text-white border-transparent shadow-sm" : "bg-card border-border text-muted-foreground hover:border-primary/40"
+          }`}
+        >
+          All sectors
+        </button>
+
+        {clusters.map((cluster) => {
+          const holdsValue = cluster.items.some((i) => i.domain === value);
+          const expanded = openCluster === cluster.id;
+          return (
+            <button
+              key={cluster.id}
+              onClick={() => setOpenCluster(expanded ? null : cluster.id)}
+              aria-expanded={expanded}
+              className={`text-xs px-3 py-1.5 rounded-full border font-medium transition-all duration-150 inline-flex items-center gap-1.5 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary ${
+                holdsValue
+                  ? "bg-primary/10 border-primary text-primary"
+                  : expanded
+                  ? "bg-secondary border-primary/40 text-foreground"
+                  : "bg-card border-border text-muted-foreground hover:border-primary/40"
+              }`}
+            >
+              {cluster.label}
+              <span className="text-[10px] opacity-70">{cluster.count}</span>
+              <span aria-hidden="true" className="text-[9px]">{expanded ? "▲" : "▼"}</span>
+            </button>
+          );
+        })}
+
+        <input
+          type="search"
+          value={query}
+          onChange={(e) => onQuery(e.target.value)}
+          placeholder="Find a sector…"
+          aria-label="Search sectors"
+          className="text-xs px-3 py-1.5 rounded-full border border-border bg-card text-foreground placeholder:text-muted-foreground w-36 focus:outline-none focus:border-primary/60 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary"
+        />
+      </div>
+
+      {q && (
+        <div className="flex flex-wrap gap-1.5 pl-1">
+          {matches.length === 0 ? (
+            <span className="text-xs text-muted-foreground">No sector matches “{query}”.</span>
+          ) : (
+            matches.map((item) => (
+              <button
+                key={item.domain}
+                onClick={() => { onChange(item.domain); onQuery(""); setOpenCluster(null); }}
+                className={`text-xs px-2.5 py-1 rounded-full border transition-colors focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary ${
+                  value === item.domain ? "bg-primary text-white border-transparent" : "bg-card border-border text-muted-foreground hover:border-primary/40"
+                }`}
+              >
+                {item.domain} <span className="opacity-60">{item.count}</span>
+              </button>
+            ))
+          )}
+        </div>
+      )}
+
+      {!q && openCluster && (
+        <div className="flex flex-wrap gap-1.5 pl-1 pt-1 border-l-2 border-primary/30 ml-1">
+          {clusters
+            .find((c) => c.id === openCluster)
+            .items.map((item) => (
+              <button
+                key={item.domain}
+                onClick={() => onChange(value === item.domain ? "All" : item.domain)}
+                aria-pressed={value === item.domain}
+                className={`text-xs px-2.5 py-1 rounded-full border transition-colors focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary ${
+                  value === item.domain ? "bg-primary text-white border-transparent" : "bg-card border-border text-muted-foreground hover:border-primary/40"
+                }`}
+              >
+                {item.domain} <span className="opacity-60">{item.count}</span>
+              </button>
+            ))}
+        </div>
+      )}
+    </div>
+  );
+}
 
 function StudentView({ user }) {
   const navigate = useNav();
@@ -49,6 +204,11 @@ function StudentView({ user }) {
   const [type, setType] = useState("All");
   const [sortBy, setSortBy] = useState("match");
   const [eligibleOnly, setEligibleOnly] = useState(false);
+  const [location, setLocation] = useState("All");
+  const [stipendBand, setStipendBand] = useState("any");
+  const [durationBand, setDurationBand] = useState("any");
+  const [postedWithin, setPostedWithin] = useState("any");
+  const [sectorQuery, setSectorQuery] = useState("");
   // Bookmarks are persisted, not component state — a saved role has to survive
   // a reload and show up on the dashboard, otherwise the star does nothing.
   const [savedIds, setSavedIds] = useState(() => new Set());
@@ -98,38 +258,97 @@ function StudentView({ user }) {
 
   const enriched = useMemo(
     () =>
-      internships.map((i) => ({
-        ...i,
-        match: computeMatch(i, assessment),
-        eligibility: checkEligibility(i, user, assessment),
-      })),
+      internships
+        .filter((i) => i.status !== "Closed")
+        .map((i) => ({
+          ...i,
+          // Legacy records carry pre-taxonomy sector names; resolving here means
+          // one sector can never appear as two separate filter pills.
+          domain: canonicalDomain(i.domain),
+          match: computeMatch(i, assessment),
+          eligibility: checkEligibility(i, user, assessment),
+        })),
     [internships, assessment, user]
   );
 
-  const eligibleCount = useMemo(
-    () => enriched.filter((i) => i.status !== "Closed" && i.eligibility.eligible).length,
-    [enriched]
-  );
+  const eligibleCount = useMemo(() => enriched.filter((i) => i.eligibility.eligible).length, [enriched]);
 
   const filtered = useMemo(() => {
     const q = search.toLowerCase();
+    const stipend = bandOf(STIPEND_BANDS, stipendBand);
+    const duration = bandOf(DURATION_BANDS, durationBand);
+    const window = POSTED_WINDOWS.find((w) => w.key === postedWithin) || POSTED_WINDOWS[0];
+    const cutoff = window.days ? Date.now() - window.days * 86400000 : null;
+
     return enriched
       .filter((i) => {
         const matchesSearch =
           !q || i.title.toLowerCase().includes(q) || i.company.toLowerCase().includes(q) || (i.tags || []).some((t) => t.toLowerCase().includes(q));
         const matchesDomain = domain === "All" || i.domain === domain;
         const matchesType = type === "All" || i.type === type;
+        const matchesLocation = location === "All" || i.location === location;
+        const matchesStipend = stipend.test(parseStipend(i.stipend));
+        const matchesDuration = duration.test(parseDurationMonths(i.duration));
+        const matchesPosted = !cutoff || (i.postedAt ? new Date(i.postedAt).getTime() >= cutoff : true);
         const matchesEligibility = !eligibleOnly || i.eligibility.eligible;
-        return matchesSearch && matchesDomain && matchesType && matchesEligibility && i.status !== "Closed";
+        return (
+          matchesSearch && matchesDomain && matchesType && matchesLocation &&
+          matchesStipend && matchesDuration && matchesPosted && matchesEligibility
+        );
       })
       .sort((a, b) => {
         const aNew = recentNewIds.has(a.id);
         const bNew = recentNewIds.has(b.id);
         if (aNew && !bNew) return -1;
         if (!aNew && bNew) return 1;
-        return sortBy === "match" ? b.match - a.match : new Date(a.deadline) - new Date(b.deadline);
+        if (sortBy === "newest") return new Date(b.postedAt || 0) - new Date(a.postedAt || 0);
+        if (sortBy === "deadline") return new Date(a.deadline) - new Date(b.deadline);
+        return b.match - a.match;
       });
-  }, [enriched, search, domain, type, sortBy, eligibleOnly, recentNewIds]);
+  }, [enriched, search, domain, type, location, stipendBand, durationBand, postedWithin, sortBy, eligibleOnly, recentNewIds]);
+
+  /** Live role counts per cluster and per sector, so a filter never offers a
+      choice that would return nothing. Clusters with no live roles are hidden. */
+  const sectorClusters = useMemo(() => {
+    const counts = {};
+    enriched.forEach((i) => { counts[i.domain] = (counts[i.domain] || 0) + 1; });
+    return SECTOR_CLUSTERS.map((cluster) => {
+      const items = cluster.items.filter((d) => counts[d]).map((d) => ({ domain: d, count: counts[d] }));
+      return { ...cluster, items, count: items.reduce((n, i) => n + i.count, 0) };
+    }).filter((cluster) => cluster.count > 0);
+  }, [enriched]);
+
+  const locations = useMemo(
+    () => ["All", ...[...new Set(enriched.map((i) => i.location).filter(Boolean))].sort()],
+    [enriched]
+  );
+
+  /** Every non-default filter, as removable chips — otherwise the only way to
+      see what is currently narrowing the list is to scan each control. */
+  const activeFilters = useMemo(() => {
+    const chips = [];
+    if (domain !== "All") chips.push({ key: "domain", label: domain, clear: () => setDomain("All") });
+    if (type !== "All") chips.push({ key: "type", label: type, clear: () => setType("All") });
+    if (location !== "All") chips.push({ key: "location", label: location, clear: () => setLocation("All") });
+    if (stipendBand !== "any") chips.push({ key: "stipend", label: bandOf(STIPEND_BANDS, stipendBand).label, clear: () => setStipendBand("any") });
+    if (durationBand !== "any") chips.push({ key: "duration", label: bandOf(DURATION_BANDS, durationBand).label, clear: () => setDurationBand("any") });
+    if (postedWithin !== "any") chips.push({ key: "posted", label: POSTED_WINDOWS.find((w) => w.key === postedWithin).label, clear: () => setPostedWithin("any") });
+    if (eligibleOnly) chips.push({ key: "eligible", label: "Eligible roles only", clear: () => setEligibleOnly(false) });
+    if (search.trim()) chips.push({ key: "search", label: `“${search.trim()}”`, clear: () => setSearch("") });
+    return chips;
+  }, [domain, type, location, stipendBand, durationBand, postedWithin, eligibleOnly, search]);
+
+  function clearAllFilters() {
+    setDomain("All");
+    setType("All");
+    setLocation("All");
+    setStipendBand("any");
+    setDurationBand("any");
+    setPostedWithin("any");
+    setEligibleOnly(false);
+    setSearch("");
+    setSectorQuery("");
+  }
 
   // Views feed the recruiter's performance panel — recorded once per posting
   // per browser session, not on every re-render.
@@ -143,15 +362,6 @@ function StudentView({ user }) {
     setApplyTarget(null);
   }
 
-  // Ordered by the canonical taxonomy, but never drops a domain
-  // a posting actually uses.
-  const domainsInUse = useMemo(() => {
-    const used = new Set(internships.map((i) => i.domain).filter(Boolean));
-    const known = ALL_DOMAINS.filter((d) => used.has(d));
-    const extra = [...used].filter((d) => !ALL_DOMAINS.includes(d));
-    return ["All", ...known, ...extra];
-  }, [internships]);
-
   return (
     <div className="animate-fade-slide space-y-5">
       <PageHeader
@@ -163,18 +373,61 @@ function StudentView({ user }) {
       <Flash message={flash} />
 
       <Card className="space-y-3.5">
-        <div className="flex gap-3">
-          <SearchInput value={search} onChange={setSearch} placeholder="Search roles, organisations, skills…" className="flex-1" />
-          <Select value={sortBy} onChange={(e) => setSortBy(e.target.value)} className="w-auto">
+        <div className="flex flex-wrap gap-3">
+          <SearchInput value={search} onChange={setSearch} placeholder="Search roles, organisations, skills…" className="flex-1 min-w-[12rem]" />
+          <Select value={sortBy} onChange={(e) => setSortBy(e.target.value)} className="w-auto" aria-label="Sort roles by">
             <option value="match">Best Match</option>
-            <option value="deadline">Deadline</option>
+            <option value="newest">Newest first</option>
+            <option value="deadline">Deadline soonest</option>
           </Select>
         </div>
 
+        <SectorFilter
+          clusters={sectorClusters}
+          value={domain}
+          onChange={setDomain}
+          query={sectorQuery}
+          onQuery={setSectorQuery}
+        />
+
         <div className="flex flex-wrap gap-x-6 gap-y-2">
-          <FilterPills label="Sector:" options={domainsInUse} value={domain} onChange={setDomain} />
           <FilterPills label="Type:" options={typeFilters} value={type} onChange={setType} />
         </div>
+
+        <div className="grid grid-cols-2 lg:grid-cols-4 gap-2">
+          <Select value={location} onChange={(e) => setLocation(e.target.value)} aria-label="Filter by location" className="text-xs">
+            {locations.map((l) => <option key={l} value={l}>{l === "All" ? "Any location" : l}</option>)}
+          </Select>
+          <Select value={stipendBand} onChange={(e) => setStipendBand(e.target.value)} aria-label="Filter by stipend" className="text-xs">
+            {STIPEND_BANDS.map((b) => <option key={b.key} value={b.key}>{b.label}</option>)}
+          </Select>
+          <Select value={durationBand} onChange={(e) => setDurationBand(e.target.value)} aria-label="Filter by duration" className="text-xs">
+            {DURATION_BANDS.map((b) => <option key={b.key} value={b.key}>{b.label}</option>)}
+          </Select>
+          <Select value={postedWithin} onChange={(e) => setPostedWithin(e.target.value)} aria-label="Filter by when posted" className="text-xs">
+            {POSTED_WINDOWS.map((w) => <option key={w.key} value={w.key}>{w.key === "any" ? "Posted any time" : `Posted: ${w.label.toLowerCase()}`}</option>)}
+          </Select>
+        </div>
+
+        {activeFilters.length > 0 && (
+          <div className="flex flex-wrap items-center gap-1.5 pt-1">
+            <span className="text-xs text-muted-foreground font-medium mr-0.5">Active:</span>
+            {activeFilters.map((chip) => (
+              <button
+                key={chip.key}
+                onClick={chip.clear}
+                className="inline-flex items-center gap-1.5 text-xs px-2.5 py-1 rounded-full bg-primary/10 border border-primary/30 text-primary hover:bg-primary/20 transition-colors focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary"
+              >
+                {chip.label}
+                <span aria-hidden="true">×</span>
+                <span className="sr-only">Remove filter</span>
+              </button>
+            ))}
+            <button onClick={clearAllFilters} className="text-xs text-muted-foreground hover:text-foreground underline ml-1 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary rounded">
+              Clear all
+            </button>
+          </div>
+        )}
 
         <div className="flex flex-wrap items-center justify-between gap-3 pt-1 border-t border-border">
           <label className="flex items-center gap-2 text-xs text-muted-foreground cursor-pointer pt-3">
