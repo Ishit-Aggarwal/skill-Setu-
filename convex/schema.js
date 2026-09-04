@@ -14,7 +14,19 @@ export default defineSchema({
     department: v.optional(v.string()),
     course: v.optional(v.string()),
     year: v.optional(v.string()),
+    batch: v.optional(v.string()),
+    rollNo: v.optional(v.string()),
+    invited: v.optional(v.boolean()),
     openToOpportunities: v.optional(v.boolean()),
+    // Academician profile — research interests are what Research Collabs
+    // matches listings against, so they live on the account itself.
+    designation: v.optional(v.string()),
+    experienceYears: v.optional(v.string()),
+    bio: v.optional(v.string()),
+    subjectsTaught: v.optional(v.array(v.string())),
+    researchInterests: v.optional(v.array(v.string())),
+    orcid: v.optional(v.string()),
+    scholarUrl: v.optional(v.string()),
     companyName: v.optional(v.string()),
     workEmailDomain: v.optional(v.string()),
     phone: v.optional(v.string()),
@@ -24,12 +36,14 @@ export default defineSchema({
     // Industry/company profile (editable by the company itself).
     companyDomain: v.optional(v.string()),
     companyDescription: v.optional(v.string()),
+    whyWorkWithUs: v.optional(v.string()),
     companyWebsite: v.optional(v.string()),
     hqLocation: v.optional(v.string()),
     companySize: v.optional(v.string()),
     contactPersonName: v.optional(v.string()),
     linkedIn: v.optional(v.string()),
     logoDataUrl: v.optional(v.union(v.string(), v.null())),
+    gallery: v.optional(v.array(v.any())),
     verifiedCode: v.optional(v.union(v.string(), v.null())),
     // Set only after the signup OTP has been verified server-side.
     emailVerified: v.optional(v.boolean()),
@@ -54,6 +68,15 @@ export default defineSchema({
     color: v.optional(v.string()),
     hot: v.optional(v.boolean()),
     views: v.optional(v.number()),
+    uniqueViews: v.optional(v.number()),
+    // Minimum qualifications, so applications arrive pre-filtered.
+    minSkillScore: v.optional(v.union(v.number(), v.null())),
+    eligibleDepartments: v.optional(v.array(v.string())),
+    eligibleInstitutions: v.optional(v.array(v.string())),
+    recruiterId: v.optional(v.union(v.string(), v.null())),
+    recruiterName: v.optional(v.union(v.string(), v.null())),
+    manualStatus: v.optional(v.boolean()),
+    closedReason: v.optional(v.union(v.string(), v.null())),
     ownerId: v.string(),
     status: v.string(), // "Open" | "Closed"
     postedAt: v.string(),
@@ -80,6 +103,12 @@ export default defineSchema({
     interviewMode: v.optional(v.string()), // "Physical" | "Online"
     interviewAt: v.optional(v.string()),
     recruiterNotes: v.optional(v.string()),
+    // Post-hire tracking: the pipeline doesn't end at "Hired".
+    offerStage: v.optional(v.string()),
+    offerUpdatedAt: v.optional(v.string()),
+    offerAmount: v.optional(v.string()),
+    offerNotes: v.optional(v.string()),
+    joiningDate: v.optional(v.string()),
   })
     .index("by_internship", ["internshipId"])
     .index("by_student", ["studentId"]),

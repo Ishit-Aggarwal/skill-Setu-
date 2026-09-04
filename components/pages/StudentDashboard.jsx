@@ -8,6 +8,8 @@ import { useAuth } from "../../lib/auth";
 import { useNav } from "../../lib/nav";
 import { getAssessment, getPortfolio, listInternships, listApplicationsForStudent, applyToInternship } from "../../lib/store";
 import TalentPoolToggle from "../TalentPoolToggle";
+import StudentInbox from "../StudentInbox";
+import MentoringPanel from "../MentoringPanel";
 import { computeMatch, daysUntil, formatDate } from "../../lib/match";
 import { SKILL_DOMAINS } from "../../lib/questionBank";
 
@@ -139,6 +141,11 @@ export default function StudentDashboard() {
 
         <TalentPoolToggle />
 
+        <div className="grid lg:grid-cols-2 gap-5">
+          <StudentInbox user={user} />
+          <MentoringPanel user={user} />
+        </div>
+
         <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
           {[
             { label: "Skill Score", value: assessment ? `${Math.round(assessment.overallScore)}/100` : "—", sub: assessment ? "Across skill tests taken" : "Take a skill test", up: !!assessment },
@@ -159,7 +166,9 @@ export default function StudentDashboard() {
             <div className="flex items-center justify-between mb-4">
               <div>
                 <h3 className="font-semibold text-foreground text-sm">Skill Profile</h3>
-                <p className="text-xs text-muted-foreground">{assessment ? "5 skill areas" : "Take a skill test to populate this"}</p>
+                <p className="text-xs text-muted-foreground">
+                  {assessment ? `${Object.keys(assessment.domainScores || {}).length} of ${SKILL_DOMAINS.length} skill areas assessed` : "Take a skill test to populate this"}
+                </p>
               </div>
               <button onClick={() => navigate("skill-assessment")} className="text-xs font-medium text-primary hover:underline">Update →</button>
             </div>
@@ -177,7 +186,11 @@ export default function StudentDashboard() {
           <div className="lg:col-span-2 space-y-4">
             <div className="bg-card border border-border rounded-2xl p-5">
               <h3 className="font-semibold text-foreground text-sm mb-1">Profile Completion</h3>
-              <p className="text-xs text-muted-foreground mb-3">{profileCompletion}% complete — add certifications and apply to opportunities to reach 100%</p>
+              <p className="text-xs text-muted-foreground mb-3">
+                {profileCompletion >= 100
+                  ? "Your profile is complete — recruiters see the full picture."
+                  : `${profileCompletion}% complete — add certifications and apply to opportunities to reach 100%`}
+              </p>
               <ProfileCompletionBar percent={profileCompletion} />
               <div className="flex items-center justify-between mt-3">
                 <span className="text-xs text-muted-foreground">{profileCompletion} / 100</span>

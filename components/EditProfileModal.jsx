@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 import { useAuth } from "../lib/auth";
+import { DEPARTMENTS } from "../lib/domains";
 
 const YEAR_OPTIONS = ["1st Year", "2nd Year", "3rd Year", "4th Year", "5th Year", "Final Year", "Graduated"];
 const MAX_AVATAR_BYTES = 800 * 1024;
@@ -22,9 +23,12 @@ export default function EditProfileModal({ onClose }) {
     institution: user.institution || "",
     course: user.course || "",
     year: user.year || "",
+    batch: user.batch || "",
+    rollNo: user.rollNo || "",
     companyName: user.companyName || "",
     workEmailDomain: user.workEmailDomain || "",
     department: user.department || "",
+    designation: user.designation || "",
     instituteName: user.instituteName || "",
     instituteId: user.instituteId || "",
   });
@@ -56,12 +60,16 @@ export default function EditProfileModal({ onClose }) {
       patch.institution = form.institution;
       patch.course = form.course;
       patch.year = form.year;
+      patch.batch = form.batch;
+      patch.rollNo = form.rollNo;
+      patch.department = form.department;
     } else if (user.role === "industry") {
       patch.companyName = form.companyName;
       patch.workEmailDomain = form.workEmailDomain;
     } else if (user.role === "academician") {
       patch.institution = form.institution;
       patch.department = form.department;
+      patch.designation = form.designation;
     } else if (user.role === "institution") {
       patch.instituteName = form.instituteName;
       patch.instituteId = form.instituteId;
@@ -110,10 +118,17 @@ export default function EditProfileModal({ onClose }) {
                 <label className="block text-xs font-semibold text-muted-foreground uppercase tracking-wider mb-1.5">Institution</label>
                 <input value={form.institution} onChange={(e) => set("institution", e.target.value)} className="w-full bg-background border border-border rounded-xl px-4 py-3 text-sm focus:outline-none focus:ring-2 focus:ring-primary/30" />
               </div>
+              <div>
+                <label className="block text-xs font-semibold text-muted-foreground uppercase tracking-wider mb-1.5">Department</label>
+                <select value={form.department} onChange={(e) => set("department", e.target.value)} className="w-full bg-background border border-border rounded-xl px-4 py-3 text-sm focus:outline-none focus:ring-2 focus:ring-primary/30">
+                  <option value="">Select your department</option>
+                  {[...new Set([...DEPARTMENTS, form.department].filter(Boolean))].map((d) => <option key={d}>{d}</option>)}
+                </select>
+              </div>
               <div className="grid grid-cols-2 gap-3">
                 <div>
                   <label className="block text-xs font-semibold text-muted-foreground uppercase tracking-wider mb-1.5">Course</label>
-                  <input value={form.course} onChange={(e) => set("course", e.target.value)} className="w-full bg-background border border-border rounded-xl px-4 py-3 text-sm focus:outline-none focus:ring-2 focus:ring-primary/30" />
+                  <input value={form.course} onChange={(e) => set("course", e.target.value)} placeholder="BAMS" className="w-full bg-background border border-border rounded-xl px-4 py-3 text-sm focus:outline-none focus:ring-2 focus:ring-primary/30" />
                 </div>
                 <div>
                   <label className="block text-xs font-semibold text-muted-foreground uppercase tracking-wider mb-1.5">Year</label>
@@ -121,6 +136,16 @@ export default function EditProfileModal({ onClose }) {
                     <option value="">Select</option>
                     {YEAR_OPTIONS.map((y) => <option key={y}>{y}</option>)}
                   </select>
+                </div>
+              </div>
+              <div className="grid grid-cols-2 gap-3">
+                <div>
+                  <label className="block text-xs font-semibold text-muted-foreground uppercase tracking-wider mb-1.5">Batch</label>
+                  <input value={form.batch} onChange={(e) => set("batch", e.target.value)} placeholder="2023" className="w-full bg-background border border-border rounded-xl px-4 py-3 text-sm focus:outline-none focus:ring-2 focus:ring-primary/30" />
+                </div>
+                <div>
+                  <label className="block text-xs font-semibold text-muted-foreground uppercase tracking-wider mb-1.5">Roll Number</label>
+                  <input value={form.rollNo} onChange={(e) => set("rollNo", e.target.value)} placeholder="BAMS/2023/017" className="w-full bg-background border border-border rounded-xl px-4 py-3 text-sm focus:outline-none focus:ring-2 focus:ring-primary/30" />
                 </div>
               </div>
             </>
@@ -147,8 +172,18 @@ export default function EditProfileModal({ onClose }) {
               </div>
               <div>
                 <label className="block text-xs font-semibold text-muted-foreground uppercase tracking-wider mb-1.5">Department</label>
-                <input value={form.department} onChange={(e) => set("department", e.target.value)} className="w-full bg-background border border-border rounded-xl px-4 py-3 text-sm focus:outline-none focus:ring-2 focus:ring-primary/30" />
+                <select value={form.department} onChange={(e) => set("department", e.target.value)} className="w-full bg-background border border-border rounded-xl px-4 py-3 text-sm focus:outline-none focus:ring-2 focus:ring-primary/30">
+                  <option value="">Select a department</option>
+                  {[...new Set([...DEPARTMENTS, form.department].filter(Boolean))].map((d) => <option key={d}>{d}</option>)}
+                </select>
               </div>
+              <div>
+                <label className="block text-xs font-semibold text-muted-foreground uppercase tracking-wider mb-1.5">Designation</label>
+                <input value={form.designation} onChange={(e) => set("designation", e.target.value)} placeholder="Associate Professor" className="w-full bg-background border border-border rounded-xl px-4 py-3 text-sm focus:outline-none focus:ring-2 focus:ring-primary/30" />
+              </div>
+              <p className="text-[11px] text-muted-foreground">
+                Research interests, subjects taught and academic profile links live on the full Faculty Profile page.
+              </p>
             </>
           )}
 

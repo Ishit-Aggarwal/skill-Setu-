@@ -5,7 +5,7 @@ import ConvexClientProvider from "./ConvexClientProvider";
 export const metadata = {
   title: "Skill Setu — Academia-Industry Collaboration Portal",
   description:
-    "Skill mapping, internships, and placements — a unified platform connecting students, academicians, and industry across every sector.",
+    "Skill mapping, internships and placements across every sector — connecting students, academicians, institutions and employers, with dedicated depth for the AYUSH ecosystem. Built for problem statement SIH26044.",
 };
 
 export default function RootLayout({ children }) {

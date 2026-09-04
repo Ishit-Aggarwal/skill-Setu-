@@ -1,15 +1,12 @@
 "use client";
 
-import { Suspense } from "react";
 import RequireAuth from "../../../components/RequireAuth";
-import AcademicianDashboard from "../../../components/pages/AcademicianDashboard";
+import AcademicianDashboard from "../../../components/pages/academician/AcademicianDashboard";
 
 export default function Page() {
   return (
     <RequireAuth roles={["academician"]}>
-      <Suspense fallback={null}>
-        <AcademicianDashboard />
-      </Suspense>
+      <AcademicianDashboard />
     </RequireAuth>
   );
 }

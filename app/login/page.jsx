@@ -10,13 +10,13 @@ import DemoModeMenu from "../../components/DemoModeMenu";
 const roleConfig = {
   student: {
     label: "Student",
-    desc: "Engineering / Management / Design / Sciences",
+    desc: "Ayush · Engineering · Management · Design · Sciences",
     image: "https://images.unsplash.com/photo-1686624386665-4cd01b96d0f6?w=800&h=1100&fit=crop&auto=format",
     tagline: "Map your skills. Find your internship.",
   },
   industry: {
     label: "Industry",
-    desc: "IT · Manufacturing · Finance · Consulting",
+    desc: "Ayush & Wellness · IT · Manufacturing · Finance",
     image: "https://images.unsplash.com/photo-1577962917302-cd874c4e31d2?w=800&h=1100&fit=crop&auto=format",
     tagline: "Hire talent matched to your needs.",
   },
@@ -28,7 +28,7 @@ const roleConfig = {
   },
   institution: {
     label: "Institution",
-    desc: "Deans · Placement Cells · Admins",
+    desc: "Placement Cells · Deans · Multi-faculty Institutes",
     image: "https://images.unsplash.com/photo-1680084521816-cc1ad0433ceb?w=800&h=1100&fit=crop&auto=format",
     tagline: "Track placement outcomes at scale.",
   },
@@ -338,13 +338,13 @@ function LoginPageInner() {
                 <>
                   <div>
                     <label className="block text-sm font-medium text-foreground mb-1.5">Institution</label>
-                    <input type="text" value={form.institution} onChange={(e) => setField("institution", e.target.value)} placeholder="IIT Delhi"
+                    <input type="text" value={form.institution} onChange={(e) => setField("institution", e.target.value)} placeholder="Rajasthan Institute of Ayurvedic & Applied Sciences"
                       className="w-full bg-card border border-border rounded-xl px-4 py-3 text-sm text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-primary/30 focus:border-primary transition-all" />
                   </div>
                   <div className="grid grid-cols-2 gap-3">
                     <div>
                       <label className="block text-sm font-medium text-foreground mb-1.5">Course <span className="text-muted-foreground font-normal">(optional)</span></label>
-                      <input type="text" value={form.course} onChange={(e) => setField("course", e.target.value)} placeholder="B.Tech CSE"
+                      <input type="text" value={form.course} onChange={(e) => setField("course", e.target.value)} placeholder="BAMS / B.Tech CSE"
                         className="w-full bg-card border border-border rounded-xl px-4 py-3 text-sm text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-primary/30 focus:border-primary transition-all" />
                     </div>
                     <div>
@@ -363,19 +363,19 @@ function LoginPageInner() {
                 <>
                   <div>
                     <label className="block text-sm font-medium text-foreground mb-1.5">Organisation</label>
-                    <input type="text" value={form.companyName} onChange={(e) => setField("companyName", e.target.value)} placeholder="Tata Consultancy Services"
+                    <input type="text" value={form.companyName} onChange={(e) => setField("companyName", e.target.value)} placeholder="Meridian Software Labs"
                       className="w-full bg-card border border-border rounded-xl px-4 py-3 text-sm text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-primary/30 focus:border-primary transition-all" />
                   </div>
                   <div>
                     <label className="block text-sm font-medium text-foreground mb-1.5">Work Email Domain</label>
-                    <input type="text" value={form.workEmailDomain} onChange={(e) => setField("workEmailDomain", e.target.value)} placeholder="@himalayawellness.com"
+                    <input type="text" value={form.workEmailDomain} onChange={(e) => setField("workEmailDomain", e.target.value)} placeholder="@yourcompany.in"
                       className="w-full bg-card border border-border rounded-xl px-4 py-3 text-sm text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-primary/30 focus:border-primary transition-all" />
                   </div>
                   <div>
                     <label className="block text-sm font-medium text-foreground mb-1.5">Company Partner Code</label>
-                    <input type="text" value={form.companyCode} onChange={(e) => setField("companyCode", e.target.value)} placeholder="TCS-IND-1902"
+                    <input type="text" value={form.companyCode} onChange={(e) => setField("companyCode", e.target.value)} placeholder="MERIDIAN-IND-9912"
                       className={`w-full bg-card border rounded-xl px-4 py-3 text-sm text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-primary/30 transition-all uppercase ${codeValidation.valid ? "border-green-400" : form.companyCode ? "border-red-300" : "border-border"}`} />
-                    <p className="text-xs text-muted-foreground mt-1">{codeValidation.valid ? `✓ Verified: ${codeValidation.data?.company}` : "Sample: TCS-IND-1902, INFY-IND-8821, ZOHO-IND-5502"}</p>
+                    <p className="text-xs text-muted-foreground mt-1">{codeValidation.valid ? `✓ Verified: ${codeValidation.data?.company}` : "Sample: MERIDIAN-IND-9912, HIMADRI-IND-1902, SHAKTI-IND-1140"}</p>
                   </div>
                 </>
               )}
@@ -384,7 +384,7 @@ function LoginPageInner() {
                 <>
                   <div>
                     <label className="block text-sm font-medium text-foreground mb-1.5">Institution</label>
-                    <input type="text" value={form.institution} onChange={(e) => setField("institution", e.target.value)} placeholder="NIT Tiruchirappalli"
+                    <input type="text" value={form.institution} onChange={(e) => setField("institution", e.target.value)} placeholder="Rajasthan Institute of Ayurvedic & Applied Sciences"
                       className="w-full bg-card border border-border rounded-xl px-4 py-3 text-sm text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-primary/30 focus:border-primary transition-all" />
                   </div>
                   <div>
@@ -394,9 +394,9 @@ function LoginPageInner() {
                   </div>
                   <div>
                     <label className="block text-sm font-medium text-foreground mb-1.5">Teacher Code</label>
-                    <input type="text" value={form.teacherCode} onChange={(e) => setField("teacherCode", e.target.value)} placeholder="IITD-FAC-2026"
+                    <input type="text" value={form.teacherCode} onChange={(e) => setField("teacherCode", e.target.value)} placeholder="RIAAS-FAC-2026"
                       className={`w-full bg-card border rounded-xl px-4 py-3 text-sm text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-primary/30 transition-all uppercase ${codeValidation.valid ? "border-green-400" : form.teacherCode ? "border-red-300" : "border-border"}`} />
-                    <p className="text-xs text-muted-foreground mt-1">{codeValidation.valid ? `✓ Verified: ${codeValidation.data?.name}` : "Sample: IITD-FAC-2026, NITT-FAC-1002, BITS-FAC-4091"}</p>
+                    <p className="text-xs text-muted-foreground mt-1">{codeValidation.valid ? `✓ Verified: ${codeValidation.data?.name}` : "Sample: RIAAS-FAC-2026, AIIA-FAC-1002, SIT-FAC-3301"}</p>
                   </div>
                 </>
               )}
@@ -405,19 +405,19 @@ function LoginPageInner() {
                 <>
                   <div>
                     <label className="block text-sm font-medium text-foreground mb-1.5">Institution Name</label>
-                    <input type="text" value={form.instituteName} onChange={(e) => setField("instituteName", e.target.value)} placeholder="National Institute of Technology, Tiruchirappalli"
+                    <input type="text" value={form.instituteName} onChange={(e) => setField("instituteName", e.target.value)} placeholder="Rajasthan Institute of Ayurvedic & Applied Sciences"
                       className="w-full bg-card border border-border rounded-xl px-4 py-3 text-sm text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-primary/30 focus:border-primary transition-all" />
                   </div>
                   <div>
                     <label className="block text-sm font-medium text-foreground mb-1.5">Institution / AISHE ID</label>
-                    <input type="text" value={form.instituteId} onChange={(e) => setField("instituteId", e.target.value)} placeholder="AISHE-U-0412"
+                    <input type="text" value={form.instituteId} onChange={(e) => setField("instituteId", e.target.value)} placeholder="AISHE-U-0417"
                       className="w-full bg-card border border-border rounded-xl px-4 py-3 text-sm text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-primary/30 focus:border-primary transition-all" />
                   </div>
                   <div>
                     <label className="block text-sm font-medium text-foreground mb-1.5">Institute Verification Code</label>
-                    <input type="text" value={form.instituteCode} onChange={(e) => setField("instituteCode", e.target.value)} placeholder="IITD-INST-001"
+                    <input type="text" value={form.instituteCode} onChange={(e) => setField("instituteCode", e.target.value)} placeholder="RIAAS-INST-001"
                       className={`w-full bg-card border rounded-xl px-4 py-3 text-sm text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-primary/30 transition-all uppercase ${codeValidation.valid ? "border-green-400" : form.instituteCode ? "border-red-300" : "border-border"}`} />
-                    <p className="text-xs text-muted-foreground mt-1">{codeValidation.valid ? `✓ Verified: ${codeValidation.data?.institution}` : "Sample: IITD-INST-001, NITT-INST-002, BITS-INST-003"}</p>
+                    <p className="text-xs text-muted-foreground mt-1">{codeValidation.valid ? `✓ Verified: ${codeValidation.data?.institution}` : "Sample: RIAAS-INST-001, AIIA-INST-002, SIT-INST-006"}</p>
                   </div>
                 </>
               )}

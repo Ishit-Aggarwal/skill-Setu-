@@ -5,106 +5,112 @@ import { useAuth } from "../lib/auth";
 import { useNav } from "../lib/nav";
 import EditProfileModal from "./EditProfileModal";
 
-function IconGrid() {
+function Icon({ children }) {
   return (
     <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-      <rect x="3" y="3" width="7" height="7" /><rect x="14" y="3" width="7" height="7" />
-      <rect x="14" y="14" width="7" height="7" /><rect x="3" y="14" width="7" height="7" />
-    </svg>
-  );
-}
-function IconBriefcase() {
-  return (
-    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-      <rect x="2" y="7" width="20" height="14" rx="2" />
-      <path d="M16 7V5a2 2 0 0 0-2-2h-4a2 2 0 0 0-2 2v2" />
-    </svg>
-  );
-}
-function IconBarChart() {
-  return (
-    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-      <line x1="18" y1="20" x2="18" y2="10" /><line x1="12" y1="20" x2="12" y2="4" />
-      <line x1="6" y1="20" x2="6" y2="14" /><line x1="2" y1="20" x2="22" y2="20" />
-    </svg>
-  );
-}
-function IconUser() {
-  return (
-    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-      <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2" />
-      <circle cx="12" cy="7" r="4" />
-    </svg>
-  );
-}
-function IconTarget() {
-  return (
-    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-      <circle cx="12" cy="12" r="10" /><circle cx="12" cy="12" r="6" /><circle cx="12" cy="12" r="2" />
-    </svg>
-  );
-}
-function IconUsers() {
-  return (
-    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-      <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2" />
-      <circle cx="9" cy="7" r="4" />
-      <path d="M23 21v-2a4 4 0 0 1-3-3.87" />
-      <path d="M16 3.13a4 4 0 0 1 0 7.75" />
-    </svg>
-  );
-}
-function IconBookOpen() {
-  return (
-    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-      <path d="M2 3h6a4 4 0 0 1 4 4v14a3 3 0 0 0-3-3H2z" />
-      <path d="M22 3h-6a4 4 0 0 0-4 4v14a3 3 0 0 1 3-3h7z" />
-    </svg>
-  );
-}
-function IconFlask() {
-  return (
-    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-      <path d="M9 3h6" /><path d="M10 9l-4.5 9A1 1 0 0 0 6.5 20h11a1 1 0 0 0 .9-1.45L14 9" />
-      <line x1="10" y1="3" x2="10" y2="9" /><line x1="14" y1="3" x2="14" y2="9" />
-    </svg>
-  );
-}
-function IconMenu() {
-  return (
-    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-      <line x1="3" y1="12" x2="21" y2="12" /><line x1="3" y1="6" x2="21" y2="6" /><line x1="3" y1="18" x2="21" y2="18" />
+      {children}
     </svg>
   );
 }
 
+const IconGrid = () => (
+  <Icon><rect x="3" y="3" width="7" height="7" /><rect x="14" y="3" width="7" height="7" /><rect x="14" y="14" width="7" height="7" /><rect x="3" y="14" width="7" height="7" /></Icon>
+);
+const IconBriefcase = () => (
+  <Icon><rect x="2" y="7" width="20" height="14" rx="2" /><path d="M16 7V5a2 2 0 0 0-2-2h-4a2 2 0 0 0-2 2v2" /></Icon>
+);
+const IconBarChart = () => (
+  <Icon><line x1="18" y1="20" x2="18" y2="10" /><line x1="12" y1="20" x2="12" y2="4" /><line x1="6" y1="20" x2="6" y2="14" /><line x1="2" y1="20" x2="22" y2="20" /></Icon>
+);
+const IconUser = () => (
+  <Icon><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2" /><circle cx="12" cy="7" r="4" /></Icon>
+);
+const IconTarget = () => (
+  <Icon><circle cx="12" cy="12" r="10" /><circle cx="12" cy="12" r="6" /><circle cx="12" cy="12" r="2" /></Icon>
+);
+const IconUsers = () => (
+  <Icon><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2" /><circle cx="9" cy="7" r="4" /><path d="M23 21v-2a4 4 0 0 0-3-3.87" /><path d="M16 3.13a4 4 0 0 1 0 7.75" /></Icon>
+);
+const IconBookOpen = () => (
+  <Icon><path d="M2 3h6a4 4 0 0 1 4 4v14a3 3 0 0 0-3-3H2z" /><path d="M22 3h-6a4 4 0 0 0-4 4v14a3 3 0 0 1 3-3h7z" /></Icon>
+);
+const IconFlask = () => (
+  <Icon><path d="M9 3h6" /><path d="M10 9l-4.5 9A1 1 0 0 0 6.5 20h11a1 1 0 0 0 .9-1.45L14 9" /><line x1="10" y1="3" x2="10" y2="9" /><line x1="14" y1="3" x2="14" y2="9" /></Icon>
+);
+const IconGrid3 = () => (
+  <Icon><rect x="3" y="3" width="18" height="18" rx="2" /><line x1="3" y1="9" x2="21" y2="9" /><line x1="3" y1="15" x2="21" y2="15" /><line x1="9" y1="3" x2="9" y2="21" /></Icon>
+);
+const IconCalendar = () => (
+  <Icon><rect x="3" y="4" width="18" height="18" rx="2" /><line x1="16" y1="2" x2="16" y2="6" /><line x1="8" y1="2" x2="8" y2="6" /><line x1="3" y1="10" x2="21" y2="10" /></Icon>
+);
+const IconHandshake = () => (
+  <Icon><path d="M11 17 8.5 14.5" /><path d="m2 12 4-4 5 5 2-2 5 5 4-4" /><path d="M2 12v4a2 2 0 0 0 2 2h2" /><path d="M22 12v4a2 2 0 0 1-2 2h-2" /></Icon>
+);
+const IconMegaphone = () => (
+  <Icon><path d="m3 11 15-6v14L3 13z" /><path d="M7 12v5a2 2 0 0 0 2 2h1" /><path d="M18 8a3 3 0 0 1 0 6" /></Icon>
+);
+const IconBuilding = () => (
+  <Icon><rect x="4" y="2" width="16" height="20" rx="2" /><line x1="9" y1="7" x2="9" y2="7" /><line x1="15" y1="7" x2="15" y2="7" /><line x1="9" y1="12" x2="9" y2="12" /><line x1="15" y1="12" x2="15" y2="12" /><path d="M10 22v-4h4v4" /></Icon>
+);
+const IconCompass = () => (
+  <Icon><circle cx="12" cy="12" r="10" /><polygon points="16.24 7.76 14.12 14.12 7.76 16.24 9.88 9.88 16.24 7.76" /></Icon>
+);
+const IconCheckCircle = () => (
+  <Icon><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14" /><polyline points="22 4 12 14.01 9 11.01" /></Icon>
+);
+const IconMenu = () => (
+  <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+    <line x1="3" y1="12" x2="21" y2="12" /><line x1="3" y1="6" x2="21" y2="6" /><line x1="3" y1="18" x2="21" y2="18" />
+  </svg>
+);
+
+/**
+ * Every nav item points at its own route. An earlier version pointed several
+ * academician entries at the same page with only a `?tab=` difference, so
+ * "Dashboard" and "Programs (FDPs)" rendered identical content and the active
+ * marker lit up on all of them at once — each destination now has a real,
+ * separately-populated page behind it.
+ */
 const NAV = {
   student: [
-    { label: "Dashboard", page: "student-dashboard", icon: <IconGrid /> },
-    { label: "Skill Tests", page: "skill-assessment", icon: <IconTarget /> },
-    { label: "Internships", page: "internship-listings", icon: <IconBriefcase /> },
-    { label: "My Portfolio", page: "student-portfolio", icon: <IconUser /> },
-    { label: "Analytics", page: "analytics", icon: <IconBarChart /> },
+    { label: "Dashboard", short: "Home", page: "student-dashboard", icon: <IconGrid /> },
+    { label: "Skill Tests", short: "Tests", page: "skill-assessment", icon: <IconTarget /> },
+    { label: "Internships", short: "Jobs", page: "internship-listings", icon: <IconBriefcase /> },
+    { label: "My Portfolio", short: "Profile", page: "student-portfolio", icon: <IconUser /> },
+    { label: "Analytics", short: "Insights", page: "analytics", icon: <IconBarChart /> },
   ],
   industry: [
-    { label: "Dashboard", page: "industry-dashboard", icon: <IconGrid /> },
-    { label: "Postings", page: "internship-listings", icon: <IconBriefcase /> },
-    { label: "Talent Pool", page: "talent-pool", icon: <IconUsers /> },
-    { label: "Skill Tests", page: "skill-assessment", icon: <IconTarget /> },
-    { label: "Company Profile", page: "company-profile", icon: <IconUser /> },
-    { label: "Analytics", page: "analytics", icon: <IconBarChart /> },
+    { label: "Dashboard", short: "Home", page: "industry-dashboard", icon: <IconGrid /> },
+    { label: "Postings", short: "Posts", page: "internship-listings", icon: <IconBriefcase /> },
+    { label: "Talent Pool", short: "Talent", page: "talent-pool", icon: <IconUsers /> },
+    { label: "Offers & Joining", short: "Offers", page: "industry-offers", icon: <IconCheckCircle /> },
+    { label: "Analytics", short: "Insights", page: "analytics", icon: <IconBarChart /> },
+    { label: "Skill Tests", short: "Tests", page: "skill-assessment", icon: <IconTarget /> },
+    { label: "Hiring Team", short: "Team", page: "industry-team", icon: <IconUser /> },
+    { label: "Company Profile", short: "Company", page: "company-profile", icon: <IconBuilding /> },
   ],
   academician: [
-    { label: "Dashboard", page: "academician-dashboard", icon: <IconGrid /> },
-    { label: "Programs (FDPs)", page: "academician-dashboard", query: { tab: "fdp" }, icon: <IconBookOpen /> },
-    { label: "Research Collabs", page: "academician-dashboard", query: { tab: "collabs" }, icon: <IconFlask /> },
-    { label: "Industry Alignment", page: "academician-dashboard", query: { tab: "alignment" }, icon: <IconBarChart /> },
-    { label: "Skill Tests", page: "skill-assessment", icon: <IconTarget /> },
-    { label: "Analytics", page: "analytics", icon: <IconBarChart /> },
+    { label: "Dashboard", short: "Home", page: "academician-dashboard", icon: <IconGrid /> },
+    { label: "My Students", short: "Students", page: "academician-students", icon: <IconUsers /> },
+    { label: "Mentorship", short: "Mentor", page: "academician-mentorship", icon: <IconCalendar /> },
+    { label: "Research Collabs", short: "Research", page: "academician-collabs", icon: <IconFlask /> },
+    { label: "Programs (FDPs)", short: "FDPs", page: "academician-programs", icon: <IconBookOpen /> },
+    { label: "Industry Alignment", short: "Align", page: "academician-alignment", icon: <IconCompass /> },
+    { label: "Analytics", short: "Insights", page: "academician-analytics", icon: <IconBarChart /> },
+    { label: "Skill Tests", short: "Tests", page: "skill-assessment", icon: <IconTarget /> },
+    { label: "Faculty Profile", short: "Profile", page: "academician-profile", icon: <IconUser /> },
   ],
   institution: [
-    { label: "Dashboard", page: "institution-dashboard", icon: <IconGrid /> },
-    { label: "Placement Analytics", page: "analytics", icon: <IconBarChart /> },
+    { label: "Dashboard", short: "Home", page: "institution-dashboard", icon: <IconGrid /> },
+    { label: "Student Roster", short: "Roster", page: "institution-students", icon: <IconUsers /> },
+    { label: "Placement Analytics", short: "Insights", page: "institution-analytics", icon: <IconBarChart /> },
+    { label: "Cohort Skill Gaps", short: "Gaps", page: "institution-skill-gaps", icon: <IconGrid3 /> },
+    { label: "Curriculum Alignment", short: "Curriculum", page: "institution-curriculum", icon: <IconCompass /> },
+    { label: "Placement Drives", short: "Drives", page: "institution-drives", icon: <IconCalendar /> },
+    { label: "MOUs & Partners", short: "MOUs", page: "institution-partnerships", icon: <IconHandshake /> },
+    { label: "Notice Board", short: "Notices", page: "institution-announcements", icon: <IconMegaphone /> },
+    { label: "Team & Activity", short: "Team", page: "institution-team", icon: <IconUser /> },
+    { label: "Institution Profile", short: "Profile", page: "institution-profile", icon: <IconBuilding /> },
   ],
 };
 
@@ -147,10 +153,12 @@ export default function DashboardLayout({ children, activePage, title }) {
         }
       >
         {mobile && <div className="absolute inset-0 bg-black/40" onClick={() => setSidebarOpen(false)} />}
-        <div className={mobile ? "relative z-10 flex flex-col w-64 min-h-screen bg-card border-r border-border" : "flex flex-col w-60 min-h-screen"}>
+        <div className={mobile ? "relative z-10 flex flex-col w-64 min-h-screen bg-card border-r border-border overflow-y-auto" : "flex flex-col w-60 min-h-screen"}>
           <button onClick={() => navigate("landing")} className="flex flex-col items-start gap-1 px-5 py-4 border-b border-border text-left hover:bg-secondary/50 transition-colors">
-            <img src="/logo.png" alt="Skill Setu" className="h-8 w-auto object-contain" />
-            <div className="text-xs text-muted-foreground">Academia × Industry</div>
+            {/* The wordmark is wide (≈3.6:1) — capped by height and allowed to
+                size its own width so it never overflows the 240px rail. */}
+            <img src="/logo.png" alt="Skill Setu" className="h-7 w-auto max-w-[170px] object-contain" />
+            <div className="text-[11px] text-muted-foreground">Ayush Academia × Industry</div>
           </button>
 
           <nav className="flex-1 px-3 py-4 space-y-0.5">
@@ -168,8 +176,8 @@ export default function DashboardLayout({ children, activePage, title }) {
                   }`}
                 >
                   <span className={isActive ? "text-primary" : ""}>{item.icon}</span>
-                  {item.label}
-                  {isActive && <span className="ml-auto w-1.5 h-1.5 rounded-full bg-primary" />}
+                  <span className="truncate">{item.label}</span>
+                  {isActive && <span className="ml-auto w-1.5 h-1.5 rounded-full bg-primary flex-shrink-0" />}
                 </button>
               );
             })}
@@ -200,26 +208,26 @@ export default function DashboardLayout({ children, activePage, title }) {
       <Sidebar />
       {sidebarOpen && <Sidebar mobile />}
 
-      <div className="flex-1 flex flex-col min-h-screen lg:max-h-screen lg:overflow-y-auto">
+      <div className="flex-1 flex flex-col min-h-screen lg:max-h-screen lg:overflow-y-auto min-w-0">
         <header className="sticky top-0 z-40 bg-card/80 backdrop-blur border-b border-border px-4 py-3 flex items-center gap-3 lg:px-6">
-          <button className="lg:hidden p-2 rounded-lg text-muted-foreground hover:bg-secondary transition-colors" onClick={() => setSidebarOpen(true)}>
+          <button className="lg:hidden p-2 rounded-lg text-muted-foreground hover:bg-secondary transition-colors" onClick={() => setSidebarOpen(true)} aria-label="Open menu">
             <IconMenu />
           </button>
 
-          <button onClick={() => navigate("landing")} className="lg:hidden flex items-center">
-            <img src="/logo.png" alt="Skill Setu" className="h-6 w-auto object-contain" />
+          <button onClick={() => navigate("landing")} className="lg:hidden flex items-center min-w-0">
+            <img src="/logo.png" alt="Skill Setu" className="h-6 w-auto max-w-[130px] object-contain" />
           </button>
 
-          <div className="flex-1 hidden lg:block">{title && <h1 className="text-base font-semibold text-foreground">{title}</h1>}</div>
+          <div className="flex-1 hidden lg:block min-w-0">{title && <h1 className="text-base font-semibold text-foreground truncate">{title}</h1>}</div>
 
           <div className="ml-auto flex items-center gap-2">
-            <button onClick={() => setShowEditProfile(true)} className="w-8 h-8 rounded-full bg-primary/15 flex items-center justify-center text-primary text-xs font-semibold overflow-hidden">
+            <button onClick={() => setShowEditProfile(true)} className="w-8 h-8 rounded-full bg-primary/15 flex items-center justify-center text-primary text-xs font-semibold overflow-hidden" aria-label="Edit profile">
               {user?.avatarDataUrl ? <img src={user.avatarDataUrl} alt="" className="w-full h-full object-cover" /> : userInitials}
             </button>
           </div>
         </header>
 
-        <main className="flex-1 p-4 lg:p-6 pb-24 lg:pb-6">{children}</main>
+        <main className="flex-1 p-4 lg:p-6 pb-24 lg:pb-6 min-w-0">{children}</main>
       </div>
 
       <nav className="lg:hidden fixed bottom-0 left-0 right-0 z-40 bg-card border-t border-border px-2 py-2 flex items-center justify-around">
@@ -229,13 +237,21 @@ export default function DashboardLayout({ children, activePage, title }) {
             <button
               key={item.label}
               onClick={() => navigate(item.page, item.query)}
-              className={`flex flex-col items-center gap-1 px-3 py-1.5 rounded-lg transition-all duration-150 ${isActive ? "text-primary" : "text-muted-foreground"}`}
+              className={`flex flex-col items-center gap-1 px-2 py-1.5 rounded-lg transition-all duration-150 ${isActive ? "text-primary" : "text-muted-foreground"}`}
             >
               {item.icon}
-              <span className="text-[10px] font-medium leading-tight">{item.label.split(" ")[0]}</span>
+              <span className="text-[10px] font-medium leading-tight">{item.short || item.label.split(" ")[0]}</span>
             </button>
           );
         })}
+        <button
+          onClick={() => setSidebarOpen(true)}
+          className="flex flex-col items-center gap-1 px-2 py-1.5 rounded-lg text-muted-foreground"
+          aria-label="More"
+        >
+          <IconMenu />
+          <span className="text-[10px] font-medium leading-tight">More</span>
+        </button>
       </nav>
 
       {showEditProfile && <EditProfileModal onClose={() => setShowEditProfile(false)} />}

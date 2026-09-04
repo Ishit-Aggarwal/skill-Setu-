@@ -1,7 +1,7 @@
 "use client";
 
 import RequireAuth from "../../../components/RequireAuth";
-import InstitutionDashboard from "../../../components/pages/InstitutionDashboard";
+import InstitutionDashboard from "../../../components/pages/institution/InstitutionDashboard";
 
 export default function Page() {
   return (

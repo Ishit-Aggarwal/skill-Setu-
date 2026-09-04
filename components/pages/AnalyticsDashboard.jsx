@@ -3,7 +3,9 @@
 import { useEffect, useMemo, useState } from "react";
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, Legend } from "recharts";
 import DashboardLayout from "../DashboardLayout";
-import { all, listInternships, listApplications, listUsersByRole } from "../../lib/store";
+import { useAuth } from "../../lib/auth";
+import { Badge, Card, PageHeader, ProgressBar, Section, StatGrid, Tabs } from "../ui/Kit";
+import { all, listApplications, listInternships, listInternshipsByOwner, listUsersByRole } from "../../lib/store";
 
 const PIE_COLORS = ["#6B7C3C", "#8A9A4A", "#A8B860", "#3C5A8A", "#5A3C8A"];
 const STATUS_COLORS = { Applied: "#8A9A4A", Shortlisted: "#3C5A8A", Interview: "#B8860B", Hired: "#6B7C3C" };
@@ -18,61 +20,88 @@ function stageTimestamp(app, stage) {
   return app.statusHistory?.find((h) => h.status === stage)?.at || null;
 }
 
+function buildFunnel(applications) {
+  return STAGE_ORDER.map((stage, i) => ({
+    stage,
+    count: applications.filter((a) => STAGE_ORDER.indexOf(a.status) >= i).length,
+  }));
+}
+
+function avgTimeToHire(applications) {
+  const days = applications
+    .filter((a) => a.status === "Hired")
+    .map((a) => {
+      const applied = stageTimestamp(a, "Applied") || a.appliedAt;
+      const hired = stageTimestamp(a, "Hired");
+      return applied && hired ? daysBetween(applied, hired) : null;
+    })
+    .filter((d) => d != null);
+  return days.length ? Math.round(days.reduce((s, d) => s + d, 0) / days.length) : null;
+}
+
+/**
+ * Platform-wide market analytics for students, and company-scoped hiring
+ * analytics for industry accounts (with the platform figures kept alongside as
+ * a benchmark). Academician and institution accounts have their own
+ * role-scoped analytics pages and never land here.
+ */
 export default function AnalyticsDashboard({ activePage = "analytics", title = "Analytics Dashboard" }) {
+  const { user } = useAuth();
+  const isIndustry = user?.role === "industry";
+
   const [students, setStudents] = useState([]);
   const [internships, setInternships] = useState([]);
   const [applications, setApplications] = useState([]);
   const [assessments, setAssessments] = useState([]);
+  const [myPostingIds, setMyPostingIds] = useState(new Set());
+  const [scope, setScope] = useState(isIndustry ? "company" : "platform");
 
   useEffect(() => {
     setStudents(listUsersByRole("student"));
     setInternships(listInternships());
     setApplications(listApplications());
     setAssessments(all("assessments"));
-  }, []);
+    if (user?.role === "industry") setMyPostingIds(new Set(listInternshipsByOwner(user.id).map((i) => i.id)));
+  }, [user]);
 
-  const timeToHire = useMemo(() => {
-    const days = applications
-      .filter((a) => a.status === "Hired")
-      .map((a) => {
-        const applied = stageTimestamp(a, "Applied") || a.appliedAt;
-        const hired = stageTimestamp(a, "Hired");
-        return applied && hired ? daysBetween(applied, hired) : null;
-      })
-      .filter((d) => d != null);
-    return days.length ? Math.round(days.reduce((s, d) => s + d, 0) / days.length) : null;
-  }, [applications]);
+  const myApplications = useMemo(
+    () => applications.filter((a) => myPostingIds.has(a.internshipId)),
+    [applications, myPostingIds]
+  );
+
+  const scopedApplications = scope === "company" ? myApplications : applications;
+  const scopedFunnel = useMemo(() => buildFunnel(scopedApplications), [scopedApplications]);
+  const platformFunnel = useMemo(() => buildFunnel(applications), [applications]);
+
+  const timeToHire = useMemo(() => avgTimeToHire(scopedApplications), [scopedApplications]);
+  const platformTimeToHire = useMemo(() => avgTimeToHire(applications), [applications]);
 
   const kpis = useMemo(() => {
-    const hired = applications.filter((a) => a.status === "Hired").length;
-    const placementRate = applications.length ? Math.round((hired / applications.length) * 100) : 0;
+    const hired = scopedApplications.filter((a) => a.status === "Hired").length;
+    const rate = scopedApplications.length ? Math.round((hired / scopedApplications.length) * 100) : 0;
+    if (scope === "company") {
+      const joined = scopedApplications.filter((a) => a.offerStage === "Joined").length;
+      return [
+        { label: "Your postings", value: String(myPostingIds.size), icon: "📋" },
+        { label: "Applications received", value: String(scopedApplications.length), icon: "📥" },
+        { label: "Hires", value: String(hired), icon: "✅", hint: `${rate}% conversion` },
+        { label: "Joined", value: String(joined), icon: "🎉", hint: hired ? `${Math.round((joined / hired) * 100)}% of hires` : "—" },
+        { label: "Avg. time to hire", value: timeToHire != null ? `${timeToHire}d` : "—", icon: "⏱", hint: platformTimeToHire != null ? `Platform ${platformTimeToHire}d` : "" },
+      ];
+    }
     return [
-      { label: "Students", value: String(students.length) },
-      { label: "Internships Posted", value: String(internships.filter((i) => i.ownerId !== "seed").length) },
-      { label: "Total Applications", value: String(applications.length) },
-      { label: "Placement Rate", value: `${placementRate}%` },
-      { label: "Avg. Time to Hire", value: timeToHire != null ? `${timeToHire}d` : "—" },
+      { label: "Students on platform", value: String(students.length), icon: "🎓" },
+      { label: "Live opportunities", value: String(internships.filter((i) => i.status !== "Closed").length), icon: "💼" },
+      { label: "Total applications", value: String(applications.length), icon: "📥" },
+      { label: "Placement rate", value: `${rate}%`, icon: "✅" },
+      { label: "Avg. time to hire", value: timeToHire != null ? `${timeToHire}d` : "—", icon: "⏱" },
     ];
-  }, [students, internships, applications, timeToHire]);
-
-  // A funnel counts every application that REACHED a stage or further, not just
-  // ones currently sitting there — Hired implies it already passed through
-  // Shortlisted and Interview too.
-  const funnel = useMemo(() => {
-    return STAGE_ORDER.map((stage, i) => {
-      const count = applications.filter((a) => STAGE_ORDER.indexOf(a.status) >= i).length;
-      return { stage, count };
-    });
-  }, [applications]);
+  }, [scope, scopedApplications, myPostingIds, students, internships, applications, timeToHire, platformTimeToHire]);
 
   const stageDurations = useMemo(() => {
-    const pairs = [
-      ["Applied", "Shortlisted"],
-      ["Shortlisted", "Interview"],
-      ["Interview", "Hired"],
-    ];
+    const pairs = [["Applied", "Shortlisted"], ["Shortlisted", "Interview"], ["Interview", "Hired"]];
     return pairs.map(([from, to]) => {
-      const diffs = applications
+      const diffs = scopedApplications
         .map((a) => {
           const fromAt = from === "Applied" ? stageTimestamp(a, "Applied") || a.appliedAt : stageTimestamp(a, from);
           const toAt = stageTimestamp(a, to);
@@ -80,9 +109,9 @@ export default function AnalyticsDashboard({ activePage = "analytics", title = "
         })
         .filter((d) => d != null);
       const avg = diffs.length ? Math.round((diffs.reduce((s, d) => s + d, 0) / diffs.length) * 10) / 10 : null;
-      return { label: `${from} → ${to}`, avgDays: avg, sampleSize: diffs.length };
+      return { label: `${from} → ${to}`, avgDays: avg };
     });
-  }, [applications]);
+  }, [scopedApplications]);
 
   const domainAverages = useMemo(() => {
     const totals = {};
@@ -96,12 +125,11 @@ export default function AnalyticsDashboard({ activePage = "analytics", title = "
     return Object.entries(totals)
       .map(([skill, { sum, count }]) => ({ skill, current: Math.round(sum / count), target: 80 }))
       .sort((a, b) => a.current - b.current)
-      .slice(0, 6);
+      .slice(0, 7);
   }, [assessments]);
 
-  // Demand (applications) vs. supply (postings) per domain — surfaces where
-  // competition is fiercest (high demand share, low supply share) rather than
-  // just how postings happen to be distributed.
+  // Demand (applications) vs. supply (postings) per Ayush sector — surfaces
+  // where competition is fiercest rather than just how postings are spread.
   const domainComparison = useMemo(() => {
     const postingCounts = {};
     internships.forEach((i) => { postingCounts[i.domain] = (postingCounts[i.domain] || 0) + 1; });
@@ -130,6 +158,36 @@ export default function AnalyticsDashboard({ activePage = "analytics", title = "
     return Object.entries(counts).map(([name, hired]) => ({ name, hired })).sort((a, b) => b.hired - a.hired).slice(0, 6);
   }, [applications]);
 
+  // Where a company's own applicants come from — far more useful to a
+  // recruiter than a platform-wide leaderboard.
+  const sourceInstitutions = useMemo(() => {
+    const counts = {};
+    myApplications.forEach((a) => {
+      const key = a.studentInstitution || "Unknown";
+      if (!counts[key]) counts[key] = { name: key, applications: 0, hired: 0 };
+      counts[key].applications += 1;
+      if (a.status === "Hired") counts[key].hired += 1;
+    });
+    return Object.values(counts).sort((a, b) => b.applications - a.applications).slice(0, 6);
+  }, [myApplications]);
+
+  const postingPerformance = useMemo(() => {
+    if (!isIndustry) return [];
+    return listInternshipsByOwner(user.id)
+      .map((p) => {
+        const apps = applications.filter((a) => a.internshipId === p.id);
+        return {
+          title: p.title,
+          views: p.views || 0,
+          unique: p.uniqueViews || 0,
+          applications: apps.length,
+          hired: apps.filter((a) => a.status === "Hired").length,
+          rate: p.uniqueViews ? Math.round((apps.length / p.uniqueViews) * 100) : 0,
+        };
+      })
+      .sort((a, b) => b.applications - a.applications);
+  }, [isIndustry, user, applications]);
+
   const courseBreakdown = useMemo(() => {
     const groups = {};
     students.forEach((s) => {
@@ -138,20 +196,17 @@ export default function AnalyticsDashboard({ activePage = "analytics", title = "
       groups[key].students++;
     });
     // Count distinct placed STUDENTS, not hired APPLICATIONS — one student can be
-    // hired for more than one posting, which must not inflate the placement rate
-    // past the actual number of students in that course.
+    // hired for more than one posting, which must not inflate the rate.
     applications.filter((a) => a.status === "Hired").forEach((a) => {
       const student = students.find((s) => s.id === a.studentId);
-      if (!student) return; // no matching registered student — nothing to attribute this to
+      if (!student) return;
       const key = student.course || "Unspecified";
       groups[key].placedIds.add(a.studentId);
     });
-    return Object.entries(groups).map(([dept, v]) => ({
-      dept,
-      students: v.students,
-      placed: v.placedIds.size,
-      rate: v.students ? Math.round((v.placedIds.size / v.students) * 100) : 0,
-    }));
+    return Object.entries(groups)
+      .map(([dept, v]) => ({ dept, students: v.students, placed: v.placedIds.size, rate: v.students ? Math.round((v.placedIds.size / v.students) * 100) : 0 }))
+      .sort((a, b) => b.students - a.students)
+      .slice(0, 10);
   }, [students, applications]);
 
   const maxHired = topCompanies[0]?.hired || 1;
@@ -159,167 +214,239 @@ export default function AnalyticsDashboard({ activePage = "analytics", title = "
   return (
     <DashboardLayout activePage={activePage} title={title}>
       <div className="animate-fade-slide space-y-6">
-        <div>
-          <h2 className="text-xl font-semibold text-foreground">Placement & Skill Analytics</h2>
-          <p className="text-sm text-muted-foreground mt-0.5">Live insights computed from activity on this platform</p>
-        </div>
+        <PageHeader
+          title={scope === "company" ? "Your Hiring Analytics" : "Placement & Skill Analytics"}
+          subtitle={
+            scope === "company"
+              ? `Computed from ${user?.companyName || "your"} postings only, with platform figures shown as a benchmark.`
+              : "Live market insight across every sector on this platform."
+          }
+          actions={
+            isIndustry && (
+              <Tabs
+                tabs={[{ key: "company", label: "My company" }, { key: "platform", label: "Platform benchmark" }]}
+                value={scope}
+                onChange={setScope}
+              />
+            )
+          }
+        />
 
-        <div className="grid grid-cols-2 lg:grid-cols-5 gap-4">
-          {kpis.map((kpi) => (
-            <div key={kpi.label} className="bg-card border border-border rounded-2xl p-4 hover:shadow-sm transition-shadow">
-              <div className="text-xs text-muted-foreground mb-1">{kpi.label}</div>
-              <div className="text-2xl font-bold text-foreground mb-1">{kpi.value}</div>
-            </div>
-          ))}
-        </div>
+        <StatGrid stats={kpis} columns={5} />
 
         <div className="grid lg:grid-cols-3 gap-5">
-          <div className="lg:col-span-2 bg-card border border-border rounded-2xl p-5">
-            <h3 className="font-semibold text-foreground text-sm mb-1">Hiring Funnel</h3>
-            <p className="text-xs text-muted-foreground mb-5">Applications that reached each stage, with conversion from the one before</p>
-            {funnel[0].count === 0 ? (
-              <p className="text-sm text-muted-foreground py-8 text-center">No applications yet.</p>
-            ) : (
-              <div className="space-y-3">
-                {funnel.map((f, i) => {
-                  const widthPct = Math.max((f.count / funnel[0].count) * 100, f.count > 0 ? 6 : 0);
-                  const conversion = i > 0 && funnel[i - 1].count ? Math.round((f.count / funnel[i - 1].count) * 100) : null;
-                  return (
-                    <div key={f.stage}>
-                      <div className="flex items-center justify-between text-xs mb-1">
-                        <span className="font-medium text-foreground">{f.stage}</span>
-                        <span className="text-muted-foreground">
-                          {f.count}
-                          {conversion != null && <span className="ml-1.5">· {conversion}% from {funnel[i - 1].stage}</span>}
-                        </span>
-                      </div>
-                      <div className="h-7 bg-muted rounded-lg overflow-hidden">
-                        <div
-                          className="h-full rounded-lg flex items-center justify-end pr-2 text-[10px] font-semibold text-white transition-all duration-700"
-                          style={{ width: `${widthPct}%`, backgroundColor: STATUS_COLORS[f.stage] }}
-                        >
-                          {f.count > 0 && f.count}
+          <Card className="lg:col-span-2">
+            <Section
+              title={scope === "company" ? "Your hiring funnel" : "Platform hiring funnel"}
+              description="Applications that reached each stage, with conversion from the one before."
+            >
+              {scopedFunnel[0].count === 0 ? (
+                <p className="text-sm text-muted-foreground py-8 text-center">
+                  {scope === "company" ? "No applications to your postings yet." : "No applications yet."}
+                </p>
+              ) : (
+                <div className="space-y-3">
+                  {scopedFunnel.map((f, i) => {
+                    const widthPct = Math.max((f.count / scopedFunnel[0].count) * 100, f.count > 0 ? 6 : 0);
+                    const conversion = i > 0 && scopedFunnel[i - 1].count ? Math.round((f.count / scopedFunnel[i - 1].count) * 100) : null;
+                    const benchmark =
+                      scope === "company" && i > 0 && platformFunnel[i - 1].count
+                        ? Math.round((platformFunnel[i].count / platformFunnel[i - 1].count) * 100)
+                        : null;
+                    return (
+                      <div key={f.stage}>
+                        <div className="flex items-center justify-between text-xs mb-1">
+                          <span className="font-medium text-foreground">{f.stage}</span>
+                          <span className="text-muted-foreground">
+                            {f.count}
+                            {conversion != null && <span className="ml-1.5">· {conversion}% from {scopedFunnel[i - 1].stage}</span>}
+                            {benchmark != null && <span className="ml-1.5 text-[10px]">(platform {benchmark}%)</span>}
+                          </span>
+                        </div>
+                        <div className="h-7 bg-muted rounded-lg overflow-hidden">
+                          <div
+                            className="h-full rounded-lg flex items-center justify-end pr-2 text-[10px] font-semibold text-white transition-all duration-700"
+                            style={{ width: `${widthPct}%`, backgroundColor: STATUS_COLORS[f.stage] }}
+                          >
+                            {f.count > 0 && f.count}
+                          </div>
                         </div>
                       </div>
-                    </div>
-                  );
-                })}
-                <div className="grid grid-cols-3 gap-2 pt-3 mt-1 border-t border-border">
-                  {stageDurations.map((s) => (
-                    <div key={s.label} className="text-center">
-                      <div className="text-[10px] text-muted-foreground mb-0.5">{s.label}</div>
-                      <div className="text-sm font-semibold text-foreground">{s.avgDays != null ? `${s.avgDays}d avg` : "—"}</div>
-                    </div>
-                  ))}
-                </div>
-              </div>
-            )}
-          </div>
-
-          <div className="bg-card border border-border rounded-2xl p-5">
-            <h3 className="font-semibold text-foreground text-sm mb-1">Demand vs. Supply by Domain</h3>
-            <p className="text-xs text-muted-foreground mb-4">Share of applications vs. share of postings</p>
-            {domainComparison.length === 0 ? (
-              <p className="text-sm text-muted-foreground py-8 text-center">No activity yet.</p>
-            ) : (
-              <div className="space-y-3">
-                {domainComparison.map((d) => (
-                  <div key={d.domain}>
-                    <div className="flex items-center justify-between text-xs mb-1 gap-2">
-                      <span className="font-medium text-foreground truncate">{d.domain}</span>
-                      <span className="text-muted-foreground flex-shrink-0">{d.demand}% demand · {d.supply}% supply</span>
-                    </div>
-                    <div className="relative h-2 bg-muted rounded-full overflow-hidden">
-                      <div className="absolute inset-y-0 left-0 bg-primary/70 rounded-full transition-all duration-700" style={{ width: `${d.demand}%` }} />
-                      <div className="absolute left-0 h-1 top-1/2 -translate-y-1/2 bg-foreground/50 rounded-full transition-all duration-700" style={{ width: `${d.supply}%` }} />
-                    </div>
+                    );
+                  })}
+                  <div className="grid grid-cols-3 gap-2 pt-3 mt-1 border-t border-border">
+                    {stageDurations.map((s) => (
+                      <div key={s.label} className="text-center">
+                        <div className="text-[10px] text-muted-foreground mb-0.5">{s.label}</div>
+                        <div className="text-sm font-semibold text-foreground">{s.avgDays != null ? `${s.avgDays}d avg` : "—"}</div>
+                      </div>
+                    ))}
                   </div>
-                ))}
-                <div className="flex items-center gap-4 text-[10px] text-muted-foreground pt-2">
-                  <span className="flex items-center gap-1"><span className="w-2 h-2 rounded-full bg-primary/70 inline-block" /> Demand (applications)</span>
-                  <span className="flex items-center gap-1"><span className="w-2 h-1.5 rounded-full bg-foreground/50 inline-block" /> Supply (postings)</span>
                 </div>
-              </div>
-            )}
-          </div>
-        </div>
+              )}
+            </Section>
+          </Card>
 
-        <div className="grid lg:grid-cols-5 gap-5">
-          <div className="lg:col-span-3 bg-card border border-border rounded-2xl p-5">
-            <h3 className="font-semibold text-foreground text-sm mb-1">Top Skill Gaps</h3>
-            <p className="text-xs text-muted-foreground mb-5">Average scores across all completed assessments vs. an 80% readiness target</p>
-            {domainAverages.length === 0 ? (
-              <p className="text-sm text-muted-foreground py-8 text-center">No skill assessments completed yet.</p>
-            ) : (
-              <ResponsiveContainer width="100%" height={230}>
-                <BarChart data={domainAverages} layout="vertical" margin={{ top: 0, right: 10, bottom: 0, left: 60 }} barCategoryGap="30%">
-                  <CartesianGrid strokeDasharray="3 3" stroke="var(--border)" horizontal={false} />
-                  <XAxis type="number" tick={{ fontSize: 11, fill: "var(--muted-foreground)" }} axisLine={false} tickLine={false} domain={[0, 100]} />
-                  <YAxis dataKey="skill" type="category" tick={{ fontSize: 11, fill: "var(--muted-foreground)" }} axisLine={false} tickLine={false} width={58} />
-                  <Tooltip contentStyle={{ background: "var(--card)", border: "1px solid var(--border)", borderRadius: 10, fontSize: 12, color: "var(--foreground)" }} />
-                  <Bar dataKey="current" fill="var(--primary)" radius={4} name="Current avg" barSize={7} />
-                  <Bar dataKey="target" fill="var(--muted)" radius={4} name="Target" barSize={7} />
-                  <Legend wrapperStyle={{ fontSize: 11, color: "var(--muted-foreground)", paddingTop: 8 }} formatter={(value) => <span style={{ color: "var(--muted-foreground)" }}>{value}</span>} />
-                </BarChart>
-              </ResponsiveContainer>
-            )}
-          </div>
-
-          <div className="lg:col-span-2 bg-card border border-border rounded-2xl p-5">
-            <h3 className="font-semibold text-foreground text-sm mb-4">Top Hiring Partners</h3>
-            {topCompanies.length === 0 ? (
-              <p className="text-sm text-muted-foreground py-8 text-center">No hires recorded yet.</p>
-            ) : (
-              <div className="space-y-3">
-                {topCompanies.map((co, i) => (
-                  <div key={co.name} className="flex items-center gap-3">
-                    <div className="w-5 h-5 rounded flex items-center justify-center text-[10px] font-bold text-muted-foreground flex-shrink-0">{i + 1}</div>
-                    <div className="w-8 h-8 rounded-lg flex items-center justify-center text-white text-[10px] font-bold flex-shrink-0" style={{ backgroundColor: PIE_COLORS[i % PIE_COLORS.length] }}>
-                      {co.name.slice(0, 2).toUpperCase()}
-                    </div>
-                    <div className="flex-1 min-w-0">
-                      <div className="text-xs font-medium text-foreground truncate">{co.name}</div>
-                      <div className="w-full h-1 bg-muted rounded-full mt-1.5 overflow-hidden">
-                        <div className="h-full rounded-full transition-all duration-700" style={{ width: `${(co.hired / maxHired) * 100}%`, backgroundColor: PIE_COLORS[i % PIE_COLORS.length] }} />
+          <Card>
+            <Section title="Demand vs. supply by sector" description="Share of applications vs. share of postings across every sector on the platform.">
+              {domainComparison.length === 0 ? (
+                <p className="text-sm text-muted-foreground py-8 text-center">No activity yet.</p>
+              ) : (
+                <div className="space-y-3">
+                  {domainComparison.map((d) => (
+                    <div key={d.domain}>
+                      <div className="flex items-center justify-between text-xs mb-1 gap-2">
+                        <span className="font-medium text-foreground truncate">{d.domain}</span>
+                        <span className="text-muted-foreground flex-shrink-0 text-[10px]">{d.demand}% / {d.supply}%</span>
+                      </div>
+                      <div className="relative h-2 bg-muted rounded-full overflow-hidden">
+                        <div className="absolute inset-y-0 left-0 bg-primary/70 rounded-full transition-all duration-700" style={{ width: `${d.demand}%` }} />
+                        <div className="absolute left-0 h-1 top-1/2 -translate-y-1/2 bg-foreground/50 rounded-full transition-all duration-700" style={{ width: `${d.supply}%` }} />
                       </div>
                     </div>
-                    <div className="text-xs font-semibold text-foreground flex-shrink-0">{co.hired}</div>
+                  ))}
+                  <div className="flex items-center gap-4 text-[10px] text-muted-foreground pt-2">
+                    <span className="flex items-center gap-1"><span className="w-2 h-2 rounded-full bg-primary/70 inline-block" /> Demand (applications)</span>
+                    <span className="flex items-center gap-1"><span className="w-2 h-1.5 rounded-full bg-foreground/50 inline-block" /> Supply (postings)</span>
                   </div>
-                ))}
-              </div>
-            )}
-          </div>
+                </div>
+              )}
+            </Section>
+          </Card>
         </div>
 
-        <div className="bg-card border border-border rounded-2xl p-5">
-          <h3 className="font-semibold text-foreground text-sm mb-4">Course-wise Placement Summary</h3>
-          {courseBreakdown.length === 0 ? (
-            <p className="text-sm text-muted-foreground py-4 text-center">No students registered yet.</p>
-          ) : (
-            <div className="overflow-x-auto">
-              <table className="w-full text-sm">
-                <thead>
-                  <tr className="border-b border-border">
-                    <th className="text-left text-xs font-semibold text-muted-foreground pb-3">Course</th>
-                    <th className="text-center text-xs font-semibold text-muted-foreground pb-3">Students</th>
-                    <th className="text-center text-xs font-semibold text-muted-foreground pb-3">Placed</th>
-                    <th className="text-center text-xs font-semibold text-muted-foreground pb-3">Rate</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {courseBreakdown.map((row) => (
-                    <tr key={row.dept} className="border-b border-border last:border-0 hover:bg-secondary/20 transition-colors">
-                      <td className="py-3 font-medium text-foreground">{row.dept}</td>
-                      <td className="py-3 text-center text-muted-foreground">{row.students}</td>
-                      <td className="py-3 text-center text-foreground font-medium">{row.placed}</td>
-                      <td className="py-3 text-center"><span className="text-primary font-semibold">{row.rate}%</span></td>
+        {scope === "company" && postingPerformance.length > 0 && (
+          <Card>
+            <Section title="Posting performance" description="Reach and conversion for each of your openings.">
+              <div className="overflow-x-auto">
+                <table className="w-full text-sm">
+                  <thead>
+                    <tr className="border-b border-border">
+                      <th className="text-left text-xs font-semibold text-muted-foreground pb-3">Posting</th>
+                      <th className="text-center text-xs font-semibold text-muted-foreground pb-3">Views</th>
+                      <th className="text-center text-xs font-semibold text-muted-foreground pb-3">Unique</th>
+                      <th className="text-center text-xs font-semibold text-muted-foreground pb-3">Applications</th>
+                      <th className="text-center text-xs font-semibold text-muted-foreground pb-3">Hired</th>
+                      <th className="text-center text-xs font-semibold text-muted-foreground pb-3">View → apply</th>
                     </tr>
-                  ))}
-                </tbody>
-              </table>
-            </div>
-          )}
+                  </thead>
+                  <tbody>
+                    {postingPerformance.map((p) => (
+                      <tr key={p.title} className="border-b border-border last:border-0 hover:bg-secondary/20 transition-colors">
+                        <td className="py-3 font-medium text-foreground">{p.title}</td>
+                        <td className="py-3 text-center text-muted-foreground">{p.views}</td>
+                        <td className="py-3 text-center text-muted-foreground">{p.unique}</td>
+                        <td className="py-3 text-center text-foreground font-medium">{p.applications}</td>
+                        <td className="py-3 text-center text-foreground font-medium">{p.hired}</td>
+                        <td className="py-3 text-center"><span className="text-primary font-semibold">{p.rate}%</span></td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+            </Section>
+          </Card>
+        )}
+
+        <div className="grid lg:grid-cols-5 gap-5">
+          <Card className="lg:col-span-3">
+            <Section title="Skill readiness across the platform" description="Average scores by skill domain against an 80% readiness target.">
+              {domainAverages.length === 0 ? (
+                <p className="text-sm text-muted-foreground py-8 text-center">No skill assessments completed yet.</p>
+              ) : (
+                <ResponsiveContainer width="100%" height={250}>
+                  <BarChart data={domainAverages} layout="vertical" margin={{ top: 0, right: 10, bottom: 0, left: 70 }} barCategoryGap="30%">
+                    <CartesianGrid strokeDasharray="3 3" stroke="var(--border)" horizontal={false} />
+                    <XAxis type="number" tick={{ fontSize: 11, fill: "var(--muted-foreground)" }} axisLine={false} tickLine={false} domain={[0, 100]} />
+                    <YAxis dataKey="skill" type="category" tick={{ fontSize: 10, fill: "var(--muted-foreground)" }} axisLine={false} tickLine={false} width={68} />
+                    <Tooltip contentStyle={{ background: "var(--card)", border: "1px solid var(--border)", borderRadius: 10, fontSize: 12, color: "var(--foreground)" }} />
+                    <Bar dataKey="current" fill="var(--primary)" radius={4} name="Current avg" barSize={7} />
+                    <Bar dataKey="target" fill="var(--muted)" radius={4} name="Target" barSize={7} />
+                    <Legend wrapperStyle={{ fontSize: 11, color: "var(--muted-foreground)", paddingTop: 8 }} formatter={(value) => <span style={{ color: "var(--muted-foreground)" }}>{value}</span>} />
+                  </BarChart>
+                </ResponsiveContainer>
+              )}
+            </Section>
+          </Card>
+
+          <Card className="lg:col-span-2">
+            {scope === "company" ? (
+              <Section title="Where your applicants come from" description="Your own source institutions, ranked.">
+                {sourceInstitutions.length === 0 ? (
+                  <p className="text-sm text-muted-foreground py-8 text-center">No applications yet.</p>
+                ) : (
+                  <div className="space-y-3">
+                    {sourceInstitutions.map((c, i) => (
+                      <div key={c.name}>
+                        <div className="flex items-center justify-between text-xs mb-1 gap-2">
+                          <span className="font-medium text-foreground truncate">{i + 1}. {c.name}</span>
+                          <span className="text-muted-foreground flex-shrink-0">{c.applications}</span>
+                        </div>
+                        <ProgressBar value={c.applications} max={sourceInstitutions[0].applications || 1} tone="bg-primary" />
+                        <div className="text-[10px] text-muted-foreground mt-1">{c.hired} hired from here</div>
+                      </div>
+                    ))}
+                  </div>
+                )}
+              </Section>
+            ) : (
+              <Section title="Most active recruiters" description="Organisations with the most hires on the platform.">
+                {topCompanies.length === 0 ? (
+                  <p className="text-sm text-muted-foreground py-8 text-center">No hires recorded yet.</p>
+                ) : (
+                  <div className="space-y-3">
+                    {topCompanies.map((co, i) => (
+                      <div key={co.name} className="flex items-center gap-3">
+                        <div className="w-5 h-5 rounded flex items-center justify-center text-[10px] font-bold text-muted-foreground flex-shrink-0">{i + 1}</div>
+                        <div className="w-8 h-8 rounded-lg flex items-center justify-center text-white text-[10px] font-bold flex-shrink-0" style={{ backgroundColor: PIE_COLORS[i % PIE_COLORS.length] }}>
+                          {co.name.slice(0, 2).toUpperCase()}
+                        </div>
+                        <div className="flex-1 min-w-0">
+                          <div className="text-xs font-medium text-foreground truncate">{co.name}</div>
+                          <div className="w-full h-1 bg-muted rounded-full mt-1.5 overflow-hidden">
+                            <div className="h-full rounded-full transition-all duration-700" style={{ width: `${(co.hired / maxHired) * 100}%`, backgroundColor: PIE_COLORS[i % PIE_COLORS.length] }} />
+                          </div>
+                        </div>
+                        <div className="text-xs font-semibold text-foreground flex-shrink-0">{co.hired}</div>
+                      </div>
+                    ))}
+                  </div>
+                )}
+              </Section>
+            )}
+          </Card>
         </div>
+
+        <Card>
+          <Section title="Course-wise placement summary" description="Across every institution on the platform.">
+            {courseBreakdown.length === 0 ? (
+              <p className="text-sm text-muted-foreground py-4 text-center">No students registered yet.</p>
+            ) : (
+              <div className="overflow-x-auto">
+                <table className="w-full text-sm">
+                  <thead>
+                    <tr className="border-b border-border">
+                      <th className="text-left text-xs font-semibold text-muted-foreground pb-3">Course</th>
+                      <th className="text-center text-xs font-semibold text-muted-foreground pb-3">Students</th>
+                      <th className="text-center text-xs font-semibold text-muted-foreground pb-3">Placed</th>
+                      <th className="text-center text-xs font-semibold text-muted-foreground pb-3">Rate</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {courseBreakdown.map((row) => (
+                      <tr key={row.dept} className="border-b border-border last:border-0 hover:bg-secondary/20 transition-colors">
+                        <td className="py-3 font-medium text-foreground">{row.dept}</td>
+                        <td className="py-3 text-center text-muted-foreground">{row.students}</td>
+                        <td className="py-3 text-center text-foreground font-medium">{row.placed}</td>
+                        <td className="py-3 text-center"><span className="text-primary font-semibold">{row.rate}%</span></td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+            )}
+          </Section>
+        </Card>
       </div>
     </DashboardLayout>
   );

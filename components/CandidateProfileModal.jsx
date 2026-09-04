@@ -1,7 +1,8 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { findOne, getAssessment, getPortfolio, updateApplicationRecruiterFields } from "../lib/store";
+import { findOne, getAssessment, getPortfolio, listRecruiters, updateApplicationRecruiterFields } from "../lib/store";
+import { useAuth } from "../lib/auth";
 import { formatDate } from "../lib/match";
 
 function initials(name) {
@@ -18,7 +19,15 @@ function initials(name) {
  * application record to attach it to.
  */
 export default function CandidateProfileModal({ application, onClose, onUpdated }) {
+  const { user } = useAuth();
   const hasApplication = Boolean(application.id);
+
+  // Team members can be excluded from other recruiters' private notes, so a
+  // colleague's written assessment doesn't bias an independent review.
+  const myRecruiterRecord = user
+    ? listRecruiters(user.id).find((r) => r.email === user.email) || null
+    : null;
+  const canSeeNotes = !myRecruiterRecord || myRecruiterRecord.notesVisible !== false;
   const [interviewMode, setInterviewMode] = useState(application.interviewMode || "");
   const [interviewAt, setInterviewAt] = useState(application.interviewAt || "");
   const [notes, setNotes] = useState(application.recruiterNotes || "");
@@ -174,13 +183,19 @@ export default function CandidateProfileModal({ application, onClose, onUpdated 
             />
 
             <label className="block text-xs font-semibold text-muted-foreground uppercase tracking-wider mb-1.5">Private Notes</label>
-            <textarea
-              value={notes}
-              onChange={(e) => setNotes(e.target.value)}
-              rows={3}
-              placeholder="Only visible to your company — not the candidate."
-              className="w-full bg-background border border-border rounded-xl px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-primary/30 resize-none"
-            />
+            {canSeeNotes ? (
+              <textarea
+                value={notes}
+                onChange={(e) => setNotes(e.target.value)}
+                rows={3}
+                placeholder="Only visible to your company — not the candidate."
+                className="w-full bg-background border border-border rounded-xl px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-primary/30 resize-none"
+              />
+            ) : (
+              <p className="text-xs text-muted-foreground bg-secondary/60 rounded-xl px-3 py-2.5">
+                Private notes are hidden for your access level, so your assessment stays independent. An account owner can change this on the Hiring Team page.
+              </p>
+            )}
             <button onClick={save} className="mt-2 w-full py-2.5 rounded-xl bg-primary hover:bg-accent text-white text-sm font-medium transition-all duration-150">
               {saved ? "Saved ✓" : "Save"}
             </button>

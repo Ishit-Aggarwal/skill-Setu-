@@ -6,6 +6,7 @@ import { useAuth } from "../lib/auth";
 import { roleHomePage, PAGE_PATHS } from "../lib/nav";
 import DemoModeMenu from "../components/DemoModeMenu";
 import RoleSwitcher from "../components/RoleSwitcher";
+import { LANDING_SECTORS } from "../lib/domains";
 
 function IconArrowRight() {
   return (
@@ -34,51 +35,54 @@ const highlights = [
   {
     emoji: "🎯",
     title: "Skill Mapping & Gap Analysis",
-    desc: "Every student gets a live skill radar built from their test scores, with gap nudges that point straight at what to work on next.",
+    desc: "Every student gets a live skill radar across ten domains — five general aptitude and fundamentals areas plus five AYUSH-specific ones — with gap nudges pointing at what to work on next.",
+  },
+  {
+    emoji: "🌿",
+    title: "Real AYUSH Depth, Not a Generic Bucket",
+    desc: "Ayurveda, Panchakarma, Yoga & Naturopathy, Unani, Siddha and Homeopathy each get their own sector, skill tests and employers — the ecosystem SIH26044 was commissioned for, alongside every other field.",
   },
   {
     emoji: "📋",
     title: "Live Applicant Pipeline",
-    desc: "Industry partners track every candidate through Applied → Shortlisted → Interview → Hired, with skill-match scores surfaced at every stage.",
+    desc: "Recruiters track every candidate through Applied → Shortlisted → Interview → Hired → Joined, with skill-match scores, eligibility filters and bulk review for high-volume roles.",
   },
   {
-    emoji: "🎓",
+    emoji: "🔬",
     title: "FDPs & Research Collaboration",
-    desc: "Academicians host Faculty Development Programs and respond to industry & academic research collaboration requests, all from one hub.",
+    desc: "Faculty host development programmes with managed rosters and certificates, publish their own calls for collaborators, and run accepted projects with milestones and a shared workspace.",
   },
   {
-    emoji: "📊",
-    title: "Placement Analytics",
-    desc: "Institutions get a real-time placement funnel and cohort skill-gap breakdown, computed live from activity across the platform.",
+    emoji: "🏫",
+    title: "A Real Placement-Cell Toolkit",
+    desc: "Institutions get a searchable student roster, cohort skill-gap heatmaps, drive scheduling with recruiter RSVPs, MOU tracking and multi-year placement history for accreditation reporting.",
+  },
+  {
+    emoji: "🧭",
+    title: "Curriculum Alignment Insights",
+    desc: "See what employers are actually hiring for against what your programmes produce, with specific electives and certifications suggested to close each gap.",
   },
   {
     emoji: "🔐",
     title: "Verified Accounts, Any Device",
-    desc: "Real email-OTP verification and a shared cloud database mean one account works the same whether you sign in from a laptop or a phone.",
+    desc: "Email-OTP verification plus a partner verification code for every institution, faculty member and recruiter — one account works from a laptop or a phone.",
   },
 ];
 
 const stats = [
-  { value: "18,400+", label: "Students Enrolled" },
-  { value: "920+", label: "Partner Industries" },
-  { value: "210+", label: "Academic Institutions" },
-  { value: "91%", label: "Placement Rate" },
+  { value: "35", label: "Sectors Across Every Field" },
+  { value: "10", label: "Skill Domains Assessed" },
+  { value: "4", label: "Connected Stakeholder Roles" },
+  { value: "SIH26044", label: "Ministry of Ayush Problem Statement" },
 ];
 
 const steps = [
-  { num: "01", title: "Create Your Profile", desc: "Students complete a skill-mapped profile; industries post roles; academicians register programs." },
-  { num: "02", title: "Skill Matching", desc: "Scores from skill tests are matched against each opportunity's required skills to surface the most relevant fits first." },
-  { num: "03", title: "Connect & Collaborate", desc: "Apply, shortlist, and track placements — with real-time analytics for every stakeholder." },
+  { num: "01", title: "Create Your Profile", desc: "Students map their skills; employers post roles in their sector; faculty and institutions register with a partner verification code." },
+  { num: "02", title: "Skill Matching", desc: "Skill-test scores are matched against each opportunity's required skills, with minimum-qualification and eligible-department filters applied before an application is even sent." },
+  { num: "03", title: "Connect & Collaborate", desc: "Apply, shortlist, run campus drives and research collaborations — with role-scoped analytics for every stakeholder." },
 ];
 
-const sectors = [
-  { abbr: "IT", full: "Software & Information Technology" },
-  { abbr: "MF", full: "Manufacturing & Core Engineering" },
-  { abbr: "FN", full: "Banking, Finance & Consulting" },
-  { abbr: "DS", full: "Design & Creative Industries" },
-  { abbr: "HC", full: "Healthcare & Life Sciences" },
-  { abbr: "RS", full: "Research & Public Sector" },
-];
+const sectors = LANDING_SECTORS;
 
 export default function LandingPage() {
   const { user, logout } = useAuth();
@@ -138,7 +142,7 @@ export default function LandingPage() {
         <div className="absolute inset-0">
           <img
             src="https://images.unsplash.com/photo-1656321717360-be568acc171b?w=1600&h=900&fit=crop&auto=format"
-            alt="Presidency University, Kolkata"
+            alt="A university campus"
             className="w-full h-full object-cover"
           />
           <div className="absolute inset-0 bg-gradient-to-br from-olive-900/85 via-olive-800/70 to-olive-700/50" />
@@ -149,7 +153,7 @@ export default function LandingPage() {
           <div className="max-w-2xl">
             <div className="inline-flex items-center gap-2 bg-white/10 backdrop-blur-sm border border-white/20 rounded-full px-4 py-1.5 text-sm text-white/80 mb-8">
               <span className="w-4 h-4 text-base leading-none">🎯</span>
-              <span>Smart India Hackathon · SIH26044</span>
+              <span>Smart India Hackathon · SIH26044 · Ministry of Ayush</span>
             </div>
 
             <h1 className="text-4xl sm:text-5xl lg:text-6xl font-semibold text-white leading-[1.12] mb-6">
@@ -158,7 +162,7 @@ export default function LandingPage() {
             </h1>
 
             <p className="text-lg sm:text-xl text-white/70 mb-10 max-w-xl leading-relaxed">
-              Skill mapping, internships, and placements — connecting students, industries, and academic institutions across every sector under one platform.
+              Skill mapping, internships and placements across every sector — with dedicated depth for the AYUSH ecosystem the Ministry commissioned it for.
             </p>
 
             <div className="flex flex-col sm:flex-row flex-wrap gap-3">
@@ -202,10 +206,10 @@ export default function LandingPage() {
 
         <div className="grid md:grid-cols-2 lg:grid-cols-4 gap-6">
           {[
-            { role: "student", emoji: "🎓", title: "Students", subtitle: "Engineering · Management · Design · Sciences · Arts", features: ["Skill tests & gap analysis", "Curated internship matches", "Portfolio & certification tracker"], cta: "Sign Up as Student" },
-            { role: "industry", emoji: "🏢", title: "Industries", subtitle: "IT · Manufacturing · Finance · Consulting · Design", features: ["Post jobs & internships", "Skill-matched candidate shortlisting", "Applicant pipeline tracking"], cta: "Partner as Industry", featured: true },
-            { role: "academician", emoji: "📚", title: "Academicians", subtitle: "Faculty · Researchers · Program Leads", features: ["Host & join FDP programs", "Research collaboration hub", "Track student placements"], cta: "Join as Academician" },
-            { role: "institution", emoji: "🏫", title: "Institutions", subtitle: "Deans · Placement Cells · Admins", features: ["Placement funnel analytics", "Cohort skill-gap breakdowns", "Curriculum alignment insights"], cta: "Register Institution" },
+            { role: "student", emoji: "🎓", title: "Students", subtitle: "Ayush · Engineering · Management · Sciences · Design", features: ["Skill tests & gap analysis", "Matched internships across every sector", "Portfolio & certification tracker"], cta: "Sign Up as Student" },
+            { role: "industry", emoji: "🏢", title: "Industries", subtitle: "Ayush & Wellness · IT · Manufacturing · Finance · Design", features: ["Post roles with eligibility filters", "Proactive talent-pool search", "Pipeline, offers & joining tracking"], cta: "Partner as Industry", featured: true },
+            { role: "academician", emoji: "📚", title: "Academicians", subtitle: "Faculty · Researchers · Programme Leads", features: ["Host FDPs with rosters & certificates", "Propose & run research collaborations", "Mentor advisees and book office hours"], cta: "Join as Academician" },
+            { role: "institution", emoji: "🏫", title: "Institutions", subtitle: "Placement Cells · Deans · Multi-faculty Institutes", features: ["Student roster, drives & MOU tracking", "Cohort skill-gap heatmaps", "Curriculum alignment & accreditation exports"], cta: "Register Institution" },
           ].map((card) => (
             <div
               key={card.role}
@@ -267,7 +271,7 @@ export default function LandingPage() {
         <div className="text-center mb-10">
           <div className="text-xs font-semibold text-primary uppercase tracking-widest mb-3">Highlights</div>
           <h2 className="text-3xl font-semibold text-foreground mb-3">What Makes Skill Setu Work</h2>
-          <p className="text-muted-foreground max-w-lg mx-auto">A closer look at what each role actually gets on the platform.</p>
+          <p className="text-muted-foreground max-w-lg mx-auto">A closer look at what each role actually gets — built around how institutions, faculty and employers really work.</p>
         </div>
 
         <div className="relative bg-card border border-border rounded-2xl p-8 sm:p-12 text-center min-h-[260px] flex flex-col items-center justify-center overflow-hidden">
@@ -309,19 +313,32 @@ export default function LandingPage() {
         <div className="text-center mb-10">
           <div className="text-xs font-semibold text-primary uppercase tracking-widest mb-3">Network</div>
           <h2 className="text-2xl font-semibold text-foreground mb-2">Every Sector, One Portal</h2>
-          <p className="text-muted-foreground text-sm">Built for cross-industry academia collaboration, not locked to a single domain.</p>
+          <p className="text-muted-foreground text-sm">From Ayurveda, Yoga & Naturopathy, Unani, Siddha and Homeopathy through to software, engineering, finance and design — one platform, not one domain.</p>
         </div>
 
-        <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-4">
+        <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-4">
           {sectors.map((s) => (
-            <div key={s.abbr} className="bg-card border border-border rounded-xl p-4 text-center hover:border-primary/40 hover:shadow-sm transition-all duration-150 group">
+            <div
+              key={s.abbr}
+              className={`relative bg-card border rounded-xl p-4 text-center hover:shadow-sm transition-all duration-150 group ${
+                s.ayush ? "border-primary/40" : "border-border hover:border-primary/40"
+              }`}
+            >
+              {s.ayush && (
+                <span className="absolute top-2 right-2 text-[8px] font-semibold tracking-wide uppercase text-primary bg-primary/10 px-1.5 py-0.5 rounded-full">
+                  Ayush
+                </span>
+              )}
               <div className="w-10 h-10 rounded-full bg-primary/10 flex items-center justify-center mx-auto mb-2 text-xs font-bold text-primary group-hover:bg-primary group-hover:text-white transition-all duration-150">
                 {s.abbr}
               </div>
-              <div className="text-[10px] text-muted-foreground leading-tight">{s.full}</div>
+              <div className="text-[11px] text-muted-foreground leading-tight">{s.full}</div>
             </div>
           ))}
         </div>
+        <p className="text-center text-xs text-muted-foreground mt-6">
+          Eight of thirty-five sectors shown. AYUSH categories are marked — they carry their own skill tests and taxonomy, not a shared “Healthcare” bucket.
+        </p>
       </section>
 
       <section className="bg-secondary/50 border-y border-border py-20">
@@ -333,8 +350,8 @@ export default function LandingPage() {
 
           <div className="space-y-4">
             {[
-              { q: "Is Skill Setu free to use?", a: "Yes. Creating an account and using every feature — skill tests, internship listings, portfolios, analytics — is free." },
-              { q: "Which industries does it support?", a: "All of them. Skill Setu isn't locked to one sector — IT, manufacturing, finance, design, and more all post and browse opportunities on the same platform." },
+              { q: "Is Skill Setu free to use?", a: "Yes. Creating an account and using every feature — skill tests, internship listings, portfolios, drives and analytics — is free." },
+              { q: "Which sectors does it support?", a: "All of them. Software, data, manufacturing, finance, design, healthcare, policy and more all post and browse on the same platform. Because SIH26044 was issued by the Ministry of Ayush, the AYUSH ecosystem is covered in first-class depth too — Ayurveda, Yoga & Naturopathy, Unani, Siddha and Homeopathy, plus Ayush pharma, Panchakarma and wellness therapy, clinical research, wellness tourism and diagnostics — with its own skill tests and sector taxonomy rather than a single generic Healthcare bucket." },
               { q: "How do industry, academician, and institution accounts get verified?", a: "Signup for those roles asks for a short partner verification code, similar to how many campus placement portals confirm an organisation before granting posting access." },
               { q: "Is my data safe?", a: "Your account and activity are stored server-side in our Convex database (with your device's local storage as an offline fallback) — see the Privacy Policy for the full picture, including how passwords and OTPs are handled." },
               { q: "What's Demo Mode?", a: "A one-click way to explore a fully populated Student, Industry, Academician, or Institution dashboard without creating an account first." },
@@ -356,7 +373,7 @@ export default function LandingPage() {
                 <img src="/logo.png" alt="Skill Setu" className="h-7 w-auto object-contain" />
               </div>
               <p className="text-xs text-muted-foreground max-w-xs leading-relaxed">
-                A skill-mapping, internship, and placement platform bridging academia and industry across every sector.
+                A skill-mapping, internship and placement platform bridging academia and industry across every sector, with dedicated AYUSH coverage. Built for problem statement SIH26044.
               </p>
             </div>
             <div className="flex flex-wrap gap-x-8 gap-y-2 text-sm text-muted-foreground">
