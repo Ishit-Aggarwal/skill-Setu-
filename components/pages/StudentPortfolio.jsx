@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useMemo, useState } from "react";
+import Link from "next/link";
 import DashboardLayout from "../DashboardLayout";
 import { useAuth } from "../../lib/auth";
 import { getAssessment, getPortfolio, savePortfolio, listApplicationsForStudent } from "../../lib/store";
@@ -150,10 +151,25 @@ export default function StudentPortfolio() {
                   <p className="text-sm text-muted-foreground">{[user.course, user.year].filter(Boolean).join(" · ") || "Student"} · {user.institution}</p>
                 </div>
               </div>
-              <button onClick={handleDownload} className={`flex items-center gap-2 text-sm font-medium px-4 py-2.5 rounded-xl transition-all duration-200 flex-shrink-0 ${downloaded ? "bg-green-50 text-green-600" : "bg-primary hover:bg-accent text-white hover:shadow-md"}`}>
-                {downloaded ? "Preparing PDF…" : "Download Resume"}
-              </button>
+              <div className="flex items-center gap-2 flex-wrap flex-shrink-0">
+                <Link
+                  href="/portfolio/resume"
+                  className="flex items-center gap-1.5 text-xs font-semibold px-4 py-2.5 rounded-xl bg-primary hover:bg-accent text-white hover:shadow-md transition-all duration-200"
+                >
+                  <span>📄 Generate ATS Resume</span>
+                </Link>
+                <button
+                  onClick={handleDownload}
+                  title="Quick print current screen"
+                  className={`flex items-center gap-1.5 text-xs font-medium px-3 py-2.5 rounded-xl border border-border transition-all duration-200 ${
+                    downloaded ? "bg-green-50 text-green-600 border-green-200" : "bg-card hover:bg-secondary text-foreground"
+                  }`}
+                >
+                  <span>🖨️</span>
+                </button>
+              </div>
             </div>
+
 
             <div className="mt-4">
               <textarea

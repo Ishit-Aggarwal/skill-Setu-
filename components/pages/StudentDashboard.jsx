@@ -14,6 +14,7 @@ import { computeMatch, daysUntil, formatDate, relativeTime } from "../../lib/mat
 import { SKILL_DOMAINS } from "../../lib/questionBank";
 import { Badge, Flash, Modal, useFlash } from "../ui/Kit";
 import { subscribeToMutations } from "../../lib/sync";
+import AiGapAnalysisModal from "../AiGapAnalysisModal";
 
 const RADAR_DOMAINS = SKILL_DOMAINS;
 
@@ -55,6 +56,7 @@ export default function StudentDashboard() {
   const [appliedIds, setAppliedIds] = useState(new Set());
   const [announcements, setAnnouncements] = useState([]);
   const [viewAllNotices, setViewAllNotices] = useState(false);
+  const [showAiGapModal, setShowAiGapModal] = useState(false);
   const [flash, setFlash] = useFlash(6000);
 
   function refresh() {
@@ -233,7 +235,18 @@ export default function StudentDashboard() {
             </div>
 
             <div className="bg-card border border-border rounded-2xl p-5">
-              <h3 className="font-semibold text-foreground text-sm mb-3">Skill Gap Nudges</h3>
+              <div className="flex items-center justify-between gap-2 mb-3">
+                <div>
+                  <h3 className="font-semibold text-foreground text-sm">Skill Gap Nudges</h3>
+                  <p className="text-xs text-muted-foreground mt-0.5">Competency deficits mapped against industry</p>
+                </div>
+                <button
+                  onClick={() => setShowAiGapModal(true)}
+                  className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-primary/10 hover:bg-primary/20 text-primary text-xs font-semibold transition-colors border border-primary/20 shadow-sm"
+                >
+                  <span>✨ AI Roadmap</span>
+                </button>
+              </div>
               {skillGaps.length === 0 ? (
                 <p className="text-sm text-muted-foreground">Take the skill assessment to see personalised gap analysis here.</p>
               ) : (
@@ -479,6 +492,14 @@ export default function StudentDashboard() {
         </div>
       </Modal>
     )}
+
+    <AiGapAnalysisModal
+      isOpen={showAiGapModal}
+      onClose={() => setShowAiGapModal(false)}
+      assessment={assessment}
+      internships={internships}
+      applications={applications}
+    />
     </>
   );
 }
