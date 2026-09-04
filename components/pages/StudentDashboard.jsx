@@ -165,6 +165,7 @@ export default function StudentDashboard() {
       <div className="space-y-6 animate-fade-slide">
         <div className="flex items-start justify-between gap-4">
           <div>
+            <p className="text-xs font-semibold text-primary uppercase tracking-widest mb-1">Student Workspace</p>
             <h2 className="text-xl font-semibold text-foreground">Good to see you, {firstName} 👋</h2>
             <p className="text-muted-foreground text-sm mt-0.5">{[user.course, user.year].filter(Boolean).join(" · ") || "Student"} · {user.institution || "Your Institution"}</p>
           </div>

@@ -156,6 +156,7 @@ export default function AcademicianDashboard() {
     <DashboardLayout activePage="academician-dashboard" title="Faculty Dashboard">
       <div className="animate-fade-slide space-y-6">
         <PageHeader
+          eyebrow="Academician Workspace"
           title={`Good to see you, ${greetingName}`}
           subtitle={`${user?.designation ? `${user.designation} · ` : ""}${user?.department || "Faculty"} · ${user?.institution || ""}`}
           actions={

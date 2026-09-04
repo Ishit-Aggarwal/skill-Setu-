@@ -84,6 +84,7 @@ export default function InstitutionDashboard() {
     <DashboardLayout activePage="institution-dashboard" title="Institution Dashboard">
       <div className="animate-fade-slide space-y-6">
         <PageHeader
+          eyebrow="Institution Workspace"
           title={instituteName || "Your Institution"}
           subtitle={`${profile?.instituteType || "Higher Education Institution"}${profile?.city ? ` · ${profile.city}, ${profile.state}` : ""} · placement cell overview`}
           actions={

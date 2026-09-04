@@ -161,6 +161,7 @@ export default function IndustryDashboard() {
     <DashboardLayout activePage="industry-dashboard" title="Industry Dashboard">
       <div className="animate-fade-slide space-y-6">
         <PageHeader
+          eyebrow="Industry Workspace"
           title={`Welcome, ${user.name?.split(" ")[0] || "there"}`}
           subtitle={`${user.companyName || "Your organisation"} · ${user.companyDomain || "Talent acquisition"}`}
           actions={

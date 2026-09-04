@@ -37,6 +37,32 @@
   --accent-foreground-rgb: 255 255 255;
 }
 
+/* Per-role accent theming for the four dashboard portals. DashboardLayout
+   sets data-role on <html> so this also reaches modals rendered as siblings
+   of DashboardLayout rather than as its children (ApplyConfirmModal,
+   CandidateProfileModal, etc.) — a plain React-tree override would miss
+   those. Student keeps the default olive --primary/--accent from :root. */
+:root[data-role="industry"] {
+  --primary: #2d6a9f;
+  --primary-rgb: 45 106 159;
+  --accent: #3f7fb8;
+  --accent-rgb: 63 127 184;
+}
+
+:root[data-role="academician"] {
+  --primary: #7c5c2e;
+  --primary-rgb: 124 92 46;
+  --accent: #9c7a46;
+  --accent-rgb: 156 122 70;
+}
+
+:root[data-role="institution"] {
+  --primary: #5c2e7c;
+  --primary-rgb: 92 46 124;
+  --accent: #7a46a0;
+  --accent-rgb: 122 70 160;
+}
+
 html,
 body,
 #__next {

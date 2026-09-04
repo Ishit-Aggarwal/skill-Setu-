@@ -125,6 +125,20 @@ const ROLE_LABEL = {
   institution: "Institution Admin",
 };
 
+const ROLE_PORTAL_LABEL = {
+  student: "Student Portal",
+  industry: "Industry Portal",
+  academician: "Academician Portal",
+  institution: "Institution Portal",
+};
+
+const ROLE_EMOJI = {
+  student: "🎓",
+  industry: "🏢",
+  academician: "📚",
+  institution: "🏫",
+};
+
 export default function DashboardLayout({ children, activePage, title }) {
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const [showEditProfile, setShowEditProfile] = useState(false);
@@ -133,6 +147,14 @@ export default function DashboardLayout({ children, activePage, title }) {
   const navigate = useNav();
 
   const role = user?.role || "student";
+
+  // Sets data-role on <html> (not just this subtree) so role-accent CSS vars
+  // in globals.css also reach modals like ApplyConfirmModal that render as
+  // siblings of DashboardLayout rather than as its children.
+  useEffect(() => {
+    document.documentElement.setAttribute("data-role", role);
+    return () => document.documentElement.removeAttribute("data-role");
+  }, [role]);
 
   useEffect(() => {
     if (!user || user.role !== "student") return;
@@ -177,6 +199,13 @@ export default function DashboardLayout({ children, activePage, title }) {
             <img src="/logo.png" alt="Skill Setu" className="h-9 w-auto max-w-[190px] object-contain mix-blend-multiply" />
             <div className="text-[11px] text-muted-foreground">Academia–Industry Portal</div>
           </Link>
+
+          <div className="px-3 pt-3">
+            <div className="flex items-center gap-2 px-3 py-2 rounded-xl bg-primary/10">
+              <span className="text-base leading-none">{ROLE_EMOJI[role]}</span>
+              <p className="text-[10px] font-semibold uppercase tracking-widest text-primary truncate">{ROLE_PORTAL_LABEL[role]}</p>
+            </div>
+          </div>
 
           <nav className="flex-1 px-3 py-4 space-y-0.5">
             {navItems.map((item) => {
