@@ -7,3 +7,5 @@ out/
 .vercel
 npm-debug.log*
 .DS_Store
+.claude/
+HANDOFF.md

@@ -14,6 +14,7 @@ export const PLACEMENT_TONE = {
   Placed: "green",
   "In Process": "blue",
   Applied: "amber",
+  Rejected: "red",
   Unplaced: "muted",
 };
 

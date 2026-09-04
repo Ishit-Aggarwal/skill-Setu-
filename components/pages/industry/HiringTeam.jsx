@@ -18,9 +18,9 @@ import {
 const ACCESS_LEVELS = ["Owner", "Recruiter", "Interviewer"];
 
 const ACCESS_DESCRIPTION = {
-  Owner: "Full access — postings, candidates, offers, company profile and team.",
-  Recruiter: "Manages assigned postings and their candidates.",
-  Interviewer: "Views assigned candidates only; cannot edit postings.",
+  Owner: "Full access — postings, candidates, offers, company profile and team management.",
+  Recruiter: "Assigned posting and candidate recruiter role (recorded role).",
+  Interviewer: "Interviewer and candidate review role (recorded role).",
 };
 
 /**
@@ -89,7 +89,7 @@ export default function HiringTeam() {
     },
     {
       key: "notes",
-      header: "Sees private notes",
+      header: "Private notes (preview)",
       align: "center",
       render: (r) => (
         <input

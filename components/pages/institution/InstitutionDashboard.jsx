@@ -85,7 +85,7 @@ export default function InstitutionDashboard() {
       <div className="animate-fade-slide space-y-6">
         <PageHeader
           title={instituteName || "Your Institution"}
-          subtitle={`${profile?.instituteType || "Ayush institution"}${profile?.city ? ` · ${profile.city}, ${profile.state}` : ""} · placement cell overview`}
+          subtitle={`${profile?.instituteType || "Higher Education Institution"}${profile?.city ? ` · ${profile.city}, ${profile.state}` : ""} · placement cell overview`}
           actions={
             <>
               <Button variant="outline" size="sm" onClick={() => navigate("institution-students")}>Manage roster</Button>

@@ -123,11 +123,25 @@ export default defineSchema({
     mode: v.string(),
     ownerId: v.string(),
     status: v.string(),
+    description: v.optional(v.string()),
+    venue: v.optional(v.string()),
+    createdAt: v.optional(v.string()),
+    certificatesIssuedAt: v.optional(v.string()),
   }).index("by_owner", ["ownerId"]),
 
   programRegistrations: defineTable({
+    id: v.optional(v.string()),
     programId: v.string(),
     userId: v.string(),
+    name: v.optional(v.string()),
+    email: v.optional(v.string()),
+    institution: v.optional(v.string()),
+    designation: v.optional(v.string()),
+    status: v.optional(v.string()),
+    attended: v.optional(v.boolean()),
+    certificateNo: v.optional(v.string()),
+    certificateIssuedAt: v.optional(v.string()),
+    promotedAt: v.optional(v.string()),
     registeredAt: v.string(),
   })
     .index("by_program", ["programId"])
@@ -203,4 +217,294 @@ export default defineSchema({
     collabId: v.string(),
     response: v.string(),
   }).index("by_collab", ["collabId"]),
+
+  activityLog: defineTable({
+    id: v.optional(v.string()),
+    scope: v.string(),
+    actor: v.string(),
+    action: v.string(),
+    detail: v.optional(v.string()),
+    at: v.string(),
+  }).index("by_scope", ["scope"]),
+
+  advisees: defineTable({
+    id: v.optional(v.string()),
+    facultyId: v.string(),
+    studentId: v.string(),
+    since: v.string(),
+  })
+    .index("by_faculty", ["facultyId"])
+    .index("by_student", ["studentId"]),
+
+  announcements: defineTable({
+    id: v.optional(v.string()),
+    instituteName: v.string(),
+    title: v.string(),
+    body: v.string(),
+    target: v.optional(v.string()),
+    department: v.optional(v.string()),
+    author: v.optional(v.string()),
+    postedAt: v.string(),
+  }).index("by_institute", ["instituteName"]),
+
+  collabFiles: defineTable({
+    id: v.optional(v.string()),
+    collabId: v.string(),
+    name: v.string(),
+    size: v.optional(v.string()),
+    url: v.optional(v.string()),
+    uploadedBy: v.optional(v.string()),
+    uploadedAt: v.string(),
+  }).index("by_collab", ["collabId"]),
+
+  collabInterests: defineTable({
+    id: v.optional(v.string()),
+    listingId: v.string(),
+    userId: v.string(),
+    name: v.optional(v.string()),
+    institution: v.optional(v.string()),
+    message: v.optional(v.string()),
+    status: v.string(),
+    at: v.string(),
+  })
+    .index("by_listing", ["listingId"])
+    .index("by_user", ["userId"]),
+
+  collabListings: defineTable({
+    id: v.optional(v.string()),
+    ownerId: v.string(),
+    ownerName: v.string(),
+    title: v.string(),
+    domain: v.optional(v.string()),
+    departments: v.optional(v.array(v.string())),
+    description: v.optional(v.string()),
+    deliverables: v.optional(v.string()),
+    status: v.string(),
+    createdAt: v.string(),
+  })
+    .index("by_owner", ["ownerId"])
+    .index("by_status", ["status"]),
+
+  collabMessages: defineTable({
+    id: v.optional(v.string()),
+    collabId: v.string(),
+    author: v.string(),
+    body: v.string(),
+    at: v.string(),
+  }).index("by_collab", ["collabId"]),
+
+  collabMilestones: defineTable({
+    id: v.optional(v.string()),
+    collabId: v.string(),
+    title: v.string(),
+    due: v.optional(v.string()),
+    done: v.boolean(),
+    createdAt: v.string(),
+    completedAt: v.optional(v.union(v.string(), v.null())),
+  }).index("by_collab", ["collabId"]),
+
+  companyReviews: defineTable({
+    id: v.optional(v.string()),
+    company: v.string(),
+    authorName: v.optional(v.string()),
+    role: v.optional(v.string()),
+    rating: v.number(),
+    pros: v.optional(v.string()),
+    cons: v.optional(v.string()),
+    createdAt: v.string(),
+  }).index("by_company", ["company"]),
+
+  driveEligibility: defineTable({
+    id: v.optional(v.string()),
+    driveId: v.string(),
+    studentId: v.string(),
+    taggedAt: v.string(),
+  })
+    .index("by_drive", ["driveId"])
+    .index("by_student", ["studentId"]),
+
+  driveInvites: defineTable({
+    id: v.optional(v.string()),
+    driveId: v.string(),
+    company: v.string(),
+    contactEmail: v.optional(v.string()),
+    roleOffered: v.optional(v.string()),
+    stipend: v.optional(v.string()),
+    rsvp: v.string(),
+    invitedAt: v.string(),
+    rsvpAt: v.optional(v.string()),
+  }).index("by_drive", ["driveId"]),
+
+  drives: defineTable({
+    id: v.optional(v.string()),
+    instituteName: v.string(),
+    title: v.string(),
+    date: v.string(),
+    venue: v.optional(v.string()),
+    status: v.string(),
+    eligibleBatches: v.optional(v.array(v.string())),
+    createdAt: v.string(),
+  }).index("by_institute", ["instituteName"]),
+
+  institutionAdmins: defineTable({
+    id: v.optional(v.string()),
+    instituteName: v.string(),
+    name: v.string(),
+    email: v.string(),
+    role: v.string(),
+    designation: v.optional(v.string()),
+    status: v.string(),
+    addedAt: v.string(),
+  })
+    .index("by_institute", ["instituteName"])
+    .index("by_email", ["email"]),
+
+  institutionProfiles: defineTable({
+    id: v.optional(v.string()),
+    instituteName: v.string(),
+    code: v.optional(v.string()),
+    instituteType: v.optional(v.string()),
+    address: v.optional(v.string()),
+    city: v.optional(v.string()),
+    state: v.optional(v.string()),
+    website: v.optional(v.string()),
+    contactEmail: v.optional(v.string()),
+    contactPhone: v.optional(v.string()),
+    naacGrade: v.optional(v.string()),
+    nirfRank: v.optional(v.string()),
+    departments: v.optional(v.array(v.string())),
+    placementPolicy: v.optional(v.string()),
+    updatedAt: v.optional(v.string()),
+  }).index("by_name", ["instituteName"]),
+
+  mentorBookings: defineTable({
+    id: v.optional(v.string()),
+    slotId: v.string(),
+    facultyId: v.string(),
+    studentId: v.string(),
+    studentName: v.string(),
+    topic: v.optional(v.string()),
+    status: v.string(),
+    bookedAt: v.string(),
+  })
+    .index("by_slot", ["slotId"])
+    .index("by_faculty", ["facultyId"])
+    .index("by_student", ["studentId"]),
+
+  mentorNotes: defineTable({
+    id: v.optional(v.string()),
+    facultyId: v.string(),
+    studentId: v.string(),
+    note: v.optional(v.string()),
+    flag: v.optional(v.string()),
+    recommendations: v.optional(v.array(v.any())),
+    updatedAt: v.string(),
+  })
+    .index("by_faculty", ["facultyId"])
+    .index("by_student", ["studentId"]),
+
+  mous: defineTable({
+    id: v.optional(v.string()),
+    instituteName: v.string(),
+    partnerName: v.string(),
+    partnerType: v.optional(v.string()),
+    signedOn: v.optional(v.string()),
+    validUntil: v.optional(v.string()),
+    expiryDate: v.optional(v.string()),
+    status: v.optional(v.string()),
+    scopes: v.optional(v.array(v.string())),
+    contactPerson: v.optional(v.string()),
+    contactEmail: v.optional(v.string()),
+    timeline: v.optional(v.array(v.any())),
+    createdAt: v.string(),
+  }).index("by_institute", ["instituteName"]),
+
+  notifyBatches: defineTable({
+    id: v.optional(v.string()),
+    instituteName: v.string(),
+    recipients: v.number(),
+    message: v.string(),
+    from: v.string(),
+    sentAt: v.string(),
+  }).index("by_institute", ["instituteName"]),
+
+  officeHours: defineTable({
+    id: v.optional(v.string()),
+    facultyId: v.string(),
+    slot: v.optional(v.string()),
+    day: v.optional(v.string()),
+    time: v.optional(v.string()),
+    mode: v.optional(v.string()),
+    meetingUrl: v.optional(v.string()),
+    location: v.optional(v.string()),
+    capacity: v.optional(v.number()),
+    createdAt: v.string(),
+  }).index("by_faculty", ["facultyId"]),
+
+  placementHistory: defineTable({
+    id: v.optional(v.string()),
+    instituteName: v.string(),
+    batch: v.union(v.string(), v.number()),
+    department: v.string(),
+    students: v.number(),
+    placed: v.number(),
+    medianStipend: v.optional(v.number()),
+    topRecruiter: v.optional(v.string()),
+  }).index("by_institute", ["instituteName"]),
+
+  programFeedback: defineTable({
+    id: v.optional(v.string()),
+    programId: v.string(),
+    userId: v.string(),
+    rating: v.number(),
+    comment: v.optional(v.string()),
+    submittedAt: v.string(),
+  })
+    .index("by_program", ["programId"])
+    .index("by_user", ["userId"]),
+
+  recruiters: defineTable({
+    id: v.optional(v.string()),
+    companyOwnerId: v.string(),
+    name: v.string(),
+    email: v.string(),
+    title: v.optional(v.string()),
+    accessLevel: v.string(),
+    notesVisible: v.optional(v.boolean()),
+    addedAt: v.string(),
+  })
+    .index("by_owner", ["companyOwnerId"])
+    .index("by_email", ["email"]),
+
+  researchOutputs: defineTable({
+    id: v.optional(v.string()),
+    facultyId: v.string(),
+    title: v.string(),
+    type: v.string(),
+    journalOrConference: v.optional(v.string()),
+    year: v.optional(v.string()),
+    doi: v.optional(v.string()),
+    url: v.optional(v.string()),
+    collaborators: v.optional(v.array(v.string())),
+    addedAt: v.string(),
+  }).index("by_faculty", ["facultyId"]),
+
+  studentNotifications: defineTable({
+    id: v.optional(v.string()),
+    studentId: v.string(),
+    batchId: v.optional(v.string()),
+    message: v.string(),
+    from: v.string(),
+    sentAt: v.string(),
+    read: v.boolean(),
+    readAt: v.optional(v.string()),
+  }).index("by_student", ["studentId"]),
+
+  savedSearches: defineTable({
+    id: v.optional(v.string()),
+    ownerId: v.string(),
+    name: v.string(),
+    filters: v.any(),
+    savedAt: v.string(),
+  }).index("by_owner", ["ownerId"]),
 });

@@ -6,10 +6,10 @@ import DashboardLayout from "../../DashboardLayout";
 import { useAuth } from "../../../lib/auth";
 import { Badge, Button, Card, DataTable, EmptyState, Field, Flash, PageHeader, ProgressBar, Section, Select, StatGrid, useFlash } from "../../ui/Kit";
 import { SKILL_DOMAINS } from "../../../lib/questionBank";
-import { downloadFile, listApplications, listProgramRegistrations, listPrograms, toCsv } from "../../../lib/store";
+import { downloadFile, listApplications, listProgramRegistrations, listPrograms, toCsv, PIPELINE_STAGES, TERMINAL_STAGES } from "../../../lib/store";
 import { PLACEMENT_TONE, STUDENT_EXPORT_COLUMNS, averageDomainScores, buildFacultyStudents } from "./useFaculty";
 
-const STAGE_ORDER = ["Applied", "Shortlisted", "Interview", "Hired"];
+const STAGE_ORDER = PIPELINE_STAGES;
 const STAGE_COLORS = { Applied: "#8A9A4A", Shortlisted: "#3C5A8A", Interview: "#B8860B", Hired: "#6B7C3C" };
 
 /**
@@ -49,9 +49,18 @@ export default function AcademicianAnalytics() {
   const assessed = cohort.filter((s) => s.score != null);
   const avgScore = assessed.length ? Math.round(assessed.reduce((s, x) => s + x.score, 0) / assessed.length) : null;
 
-  const funnel = useMemo(
-    () => STAGE_ORDER.map((stage, i) => ({ stage, count: applications.filter((a) => STAGE_ORDER.indexOf(a.status) >= i).length })),
+  const inPipeline = useMemo(
+    () => applications.filter((a) => !TERMINAL_STAGES.includes(a.status)),
     [applications]
+  );
+  const rejectedCount = useMemo(
+    () => applications.filter((a) => a.status === "Rejected").length,
+    [applications]
+  );
+
+  const funnel = useMemo(
+    () => STAGE_ORDER.map((stage, i) => ({ stage, count: inPipeline.filter((a) => STAGE_ORDER.indexOf(a.status) >= i).length })),
+    [inPipeline]
   );
 
   const radarData = useMemo(() => {
@@ -180,6 +189,11 @@ export default function AcademicianAnalytics() {
                           </div>
                         );
                       })}
+                      {rejectedCount > 0 && (
+                        <p className="text-[11px] text-muted-foreground pt-1.5">
+                          {rejectedCount} application{rejectedCount === 1 ? "" : "s"} rejected, not in live pipeline
+                        </p>
+                      )}
                     </div>
                   )}
                 </Section>

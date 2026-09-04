@@ -23,12 +23,13 @@ export const SCORE_BANDS = [
   { key: "none", label: "Not assessed", test: (s) => s.score == null },
 ];
 
-export const PLACEMENT_STATUSES = ["All", "Placed", "In Process", "Applied", "Unplaced"];
+export const PLACEMENT_STATUSES = ["All", "Placed", "In Process", "Applied", "Rejected", "Unplaced"];
 
 export const PLACEMENT_TONE = {
   Placed: "green",
   "In Process": "blue",
   Applied: "amber",
+  Rejected: "red",
   Unplaced: "muted",
 };
 

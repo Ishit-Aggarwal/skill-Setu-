@@ -193,11 +193,11 @@ export default function CompanyProfile() {
             </div>
 
             <Field label="About">
-              <TextArea rows={3} value={form.companyDescription} onChange={(e) => set("companyDescription", e.target.value)} placeholder="What your organisation does in the Ayush ecosystem." />
+              <TextArea rows={3} value={form.companyDescription} onChange={(e) => set("companyDescription", e.target.value)} placeholder="Describe your organisation, products/services, and industry focus." />
             </Field>
 
             <Field label="Why work with us" hint="Shown prominently to students browsing your postings — what an intern actually gets out of it.">
-              <TextArea rows={3} value={form.whyWorkWithUs} onChange={(e) => set("whyWorkWithUs", e.target.value)} placeholder="Mentorship, rotations across teams, exposure to real clinical or lab work." />
+              <TextArea rows={3} value={form.whyWorkWithUs} onChange={(e) => set("whyWorkWithUs", e.target.value)} placeholder="Mentorship, rotations across teams, exposure to real-world projects and technologies." />
             </Field>
 
             <div className="grid sm:grid-cols-2 gap-3">

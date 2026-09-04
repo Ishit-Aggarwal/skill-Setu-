@@ -285,7 +285,7 @@ function CreateDriveModal({ instituteName, actor, batches, onClose, onDone }) {
   return (
     <Modal title="Schedule a placement drive" onClose={onClose}>
       <form onSubmit={submit} className="space-y-4">
-        <Field label="Drive title"><TextInput required value={form.title} onChange={(e) => set("title", e.target.value)} placeholder="Winter Ayush Placement Drive 2026" /></Field>
+        <Field label="Drive title"><TextInput required value={form.title} onChange={(e) => set("title", e.target.value)} placeholder="Annual Campus Placement Drive 2026" /></Field>
         <div className="grid grid-cols-2 gap-3">
           <Field label="Date"><TextInput required type="date" value={form.date} onChange={(e) => set("date", e.target.value)} /></Field>
           <Field label="Venue"><TextInput value={form.venue} onChange={(e) => set("venue", e.target.value)} placeholder="Main Auditorium" /></Field>

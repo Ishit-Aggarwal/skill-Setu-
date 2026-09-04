@@ -10,13 +10,13 @@ import DemoModeMenu from "../../components/DemoModeMenu";
 const roleConfig = {
   student: {
     label: "Student",
-    desc: "Ayush · Engineering · Management · Design · Sciences",
+    desc: "Engineering · Management · Technology · Sciences · Ayush · Design",
     image: "https://images.unsplash.com/photo-1686624386665-4cd01b96d0f6?w=800&h=1100&fit=crop&auto=format",
     tagline: "Map your skills. Find your internship.",
   },
   industry: {
     label: "Industry",
-    desc: "Ayush & Wellness · IT · Manufacturing · Finance",
+    desc: "IT & Tech · Manufacturing · Finance · Healthcare · Ayush & Wellness",
     image: "https://images.unsplash.com/photo-1577962917302-cd874c4e31d2?w=800&h=1100&fit=crop&auto=format",
     tagline: "Hire talent matched to your needs.",
   },

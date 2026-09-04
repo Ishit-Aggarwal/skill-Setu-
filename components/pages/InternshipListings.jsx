@@ -20,11 +20,13 @@ import {
   recordInternshipView,
   setPostingStatus,
   update,
+  PIPELINE_STAGES,
+  TERMINAL_STAGES,
 } from "../../lib/store";
 import { checkEligibility, computeMatch, computeSkillGap, daysUntil, formatDate } from "../../lib/match";
 
 const typeFilters = ["All", "Remote", "Hybrid", "Onsite"];
-const STAGE_ORDER = ["Applied", "Shortlisted", "Interview", "Hired"];
+const STAGE_ORDER = PIPELINE_STAGES;
 
 const typeColor = {
   Remote: "text-emerald-700 bg-emerald-50",
@@ -393,10 +395,12 @@ function IndustryView({ user }) {
         <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-4">
           {filtered.map((p) => {
             const apps = appsFor(p.id);
+            const inPipeline = apps.filter((a) => !TERMINAL_STAGES.includes(a.status));
+            const rejectedCount = apps.filter((a) => a.status === "Rejected").length;
             const days = daysUntil(p.deadline);
             const funnel = STAGE_ORDER.map((stage, i) => ({
               stage,
-              count: apps.filter((a) => STAGE_ORDER.indexOf(a.status) >= i).length,
+              count: inPipeline.filter((a) => STAGE_ORDER.indexOf(a.status) >= i).length,
             }));
             const applyRate = p.uniqueViews ? Math.round((apps.length / p.uniqueViews) * 100) : null;
             return (
@@ -441,6 +445,11 @@ function IndustryView({ user }) {
                           <span className="text-[10px] font-semibold text-foreground w-4 text-right flex-shrink-0">{f.count}</span>
                         </div>
                       ))}
+                      {rejectedCount > 0 && (
+                        <p className="text-[9px] text-muted-foreground pt-1">
+                          {rejectedCount} rejected, not in live funnel
+                        </p>
+                      )}
                     </div>
                   )}
                 </div>

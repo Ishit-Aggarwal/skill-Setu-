@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useAuth } from "../lib/auth";
 import { roleHomePage, PAGE_PATHS } from "../lib/nav";
@@ -105,10 +106,10 @@ export default function LandingPage() {
     <div className="min-h-screen bg-background">
       <nav className="sticky top-0 z-50 bg-background border-b border-border">
         <div className="max-w-6xl mx-auto px-5 py-3.5 flex items-center justify-between">
-          <div className="flex items-center gap-2.5 min-w-0">
+          <Link href="/" className="flex items-center gap-2.5 min-w-0 cursor-pointer hover:opacity-90 transition-opacity">
             <img src="/logo.png" alt="Skill Setu" className="h-8 w-auto object-contain flex-shrink-0" />
             <span className="hidden sm:inline text-xs text-muted-foreground truncate">Academia–Industry Portal</span>
-          </div>
+          </Link>
           <div className="flex items-center gap-2">
             {user ? (
               <>
@@ -162,7 +163,7 @@ export default function LandingPage() {
             </h1>
 
             <p className="text-lg sm:text-xl text-white/70 mb-10 max-w-xl leading-relaxed">
-              Skill mapping, internships and placements across every sector — with dedicated depth for the AYUSH ecosystem the Ministry commissioned it for.
+              Skill mapping, internships and placements across every sector — connecting students, academicians, institutions and employers nationwide with dedicated depth for traditional sciences.
             </p>
 
             <div className="flex flex-col sm:flex-row flex-wrap gap-3">
@@ -206,8 +207,8 @@ export default function LandingPage() {
 
         <div className="grid md:grid-cols-2 lg:grid-cols-4 gap-6">
           {[
-            { role: "student", emoji: "🎓", title: "Students", subtitle: "Ayush · Engineering · Management · Sciences · Design", features: ["Skill tests & gap analysis", "Matched internships across every sector", "Portfolio & certification tracker"], cta: "Sign Up as Student" },
-            { role: "industry", emoji: "🏢", title: "Industries", subtitle: "Ayush & Wellness · IT · Manufacturing · Finance · Design", features: ["Post roles with eligibility filters", "Proactive talent-pool search", "Pipeline, offers & joining tracking"], cta: "Partner as Industry", featured: true },
+            { role: "student", emoji: "🎓", title: "Students", subtitle: "Engineering · Management · Technology · Sciences · Ayush · Design", features: ["Skill tests & gap analysis", "Matched internships across every sector", "Portfolio & certification tracker"], cta: "Sign Up as Student" },
+            { role: "industry", emoji: "🏢", title: "Industries", subtitle: "IT & Tech · Manufacturing · Finance · Healthcare · Ayush & Wellness", features: ["Post roles with eligibility filters", "Proactive talent-pool search", "Pipeline, offers & joining tracking"], cta: "Partner as Industry", featured: true },
             { role: "academician", emoji: "📚", title: "Academicians", subtitle: "Faculty · Researchers · Programme Leads", features: ["Host FDPs with rosters & certificates", "Propose & run research collaborations", "Mentor advisees and book office hours"], cta: "Join as Academician" },
             { role: "institution", emoji: "🏫", title: "Institutions", subtitle: "Placement Cells · Deans · Multi-faculty Institutes", features: ["Student roster, drives & MOU tracking", "Cohort skill-gap heatmaps", "Curriculum alignment & accreditation exports"], cta: "Register Institution" },
           ].map((card) => (
@@ -313,7 +314,7 @@ export default function LandingPage() {
         <div className="text-center mb-10">
           <div className="text-xs font-semibold text-primary uppercase tracking-widest mb-3">Network</div>
           <h2 className="text-2xl font-semibold text-foreground mb-2">Every Sector, One Portal</h2>
-          <p className="text-muted-foreground text-sm">From Ayurveda, Yoga & Naturopathy, Unani, Siddha and Homeopathy through to software, engineering, finance and design — one platform, not one domain.</p>
+          <p className="text-muted-foreground text-sm">From engineering, software, and finance to healthcare, traditional medicine, and creative arts — one unified platform connecting academia with industry.</p>
         </div>
 
         <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-4">
@@ -337,7 +338,7 @@ export default function LandingPage() {
           ))}
         </div>
         <p className="text-center text-xs text-muted-foreground mt-6">
-          Eight of thirty-five sectors shown. AYUSH categories are marked — they carry their own skill tests and taxonomy, not a shared “Healthcare” bucket.
+          Eight of thirty-five sectors shown. All industry sectors supported, with specialized depth for the commissioning AYUSH vertical.
         </p>
       </section>
 
@@ -369,9 +370,9 @@ export default function LandingPage() {
         <div className="max-w-6xl mx-auto px-5 py-10">
           <div className="flex flex-col md:flex-row items-start md:items-center justify-between gap-6">
             <div>
-              <div className="flex items-center mb-2">
+              <Link href="/" className="flex items-center mb-2 inline-block cursor-pointer hover:opacity-90 transition-opacity">
                 <img src="/logo.png" alt="Skill Setu" className="h-7 w-auto object-contain" />
-              </div>
+              </Link>
               <p className="text-xs text-muted-foreground max-w-xs leading-relaxed">
                 A skill-mapping, internship and placement platform bridging academia and industry across every sector, with dedicated AYUSH coverage. Built for problem statement SIH26044.
               </p>

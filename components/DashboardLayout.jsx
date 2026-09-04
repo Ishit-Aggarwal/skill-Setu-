@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import Link from "next/link";
 import { useAuth } from "../lib/auth";
 import { useNav } from "../lib/nav";
 import EditProfileModal from "./EditProfileModal";
@@ -154,12 +155,12 @@ export default function DashboardLayout({ children, activePage, title }) {
       >
         {mobile && <div className="absolute inset-0 bg-black/40" onClick={() => setSidebarOpen(false)} />}
         <div className={mobile ? "relative z-10 flex flex-col w-64 min-h-screen bg-card border-r border-border overflow-y-auto" : "flex flex-col w-60 min-h-screen"}>
-          <button onClick={() => navigate("landing")} className="flex flex-col items-start gap-1 px-5 py-4 border-b border-border text-left hover:bg-secondary/50 transition-colors">
+          <Link href="/" className="flex flex-col items-start gap-1 px-5 py-4 border-b border-border text-left hover:bg-secondary/50 transition-colors cursor-pointer">
             {/* The wordmark is wide (≈3.6:1) — capped by height and allowed to
                 size its own width so it never overflows the 240px rail. */}
             <img src="/logo.png" alt="Skill Setu" className="h-7 w-auto max-w-[170px] object-contain" />
-            <div className="text-[11px] text-muted-foreground">Ayush Academia × Industry</div>
-          </button>
+            <div className="text-[11px] text-muted-foreground">Academia–Industry Portal</div>
+          </Link>
 
           <nav className="flex-1 px-3 py-4 space-y-0.5">
             {navItems.map((item) => {
@@ -214,9 +215,9 @@ export default function DashboardLayout({ children, activePage, title }) {
             <IconMenu />
           </button>
 
-          <button onClick={() => navigate("landing")} className="lg:hidden flex items-center min-w-0">
+          <Link href="/" className="lg:hidden flex items-center min-w-0 cursor-pointer">
             <img src="/logo.png" alt="Skill Setu" className="h-6 w-auto max-w-[130px] object-contain" />
-          </button>
+          </Link>
 
           <div className="flex-1 hidden lg:block min-w-0">{title && <h1 className="text-base font-semibold text-foreground truncate">{title}</h1>}</div>
 

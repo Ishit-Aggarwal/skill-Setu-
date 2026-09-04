@@ -18,8 +18,8 @@ import { useInstitutionName } from "./useInstitution";
 const ROLE_TONE = { Admin: "primary", Viewer: "muted" };
 
 const ROLE_DESCRIPTION = {
-  Admin: "Can edit the roster, post notices, schedule drives and manage MOUs.",
-  Viewer: "Read-only access to dashboards, analytics and reports.",
+  Admin: "Full placement-cell administrative access (recorded for the audit log).",
+  Viewer: "Institutional observer and reporting access level (recorded for the audit log).",
 };
 
 /**
@@ -113,7 +113,7 @@ export default function TeamActivity() {
           ]}
         />
 
-        <Section title="Who can access this account" description="Admins can change data; viewers can only read dashboards and reports.">
+        <Section title="Who can access this account" description="Team members and their recorded access roles for the institutional audit log.">
           <DataTable columns={columns} rows={admins} rowKey={(a) => a.id} empty="No team members added yet." />
           <div className="grid sm:grid-cols-2 gap-3 mt-3">
             {Object.entries(ROLE_DESCRIPTION).map(([role, desc]) => (

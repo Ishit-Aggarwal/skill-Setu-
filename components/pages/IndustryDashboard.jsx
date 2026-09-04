@@ -12,17 +12,21 @@ import {
   listInternshipsByOwner,
   listRecruiters,
   updateApplicationStatus,
+  PIPELINE_STAGES,
+  TERMINAL_STAGES,
+  ALL_APPLICATION_STATUSES,
 } from "../../lib/store";
 import { ALL_DOMAINS, DOMAIN_GROUPS } from "../../lib/domains";
 import { daysUntil, formatDate } from "../../lib/match";
 
-const statusCols = ["Applied", "Shortlisted", "Interview", "Hired"];
+const statusCols = [...PIPELINE_STAGES, "Rejected"];
 
 const statusStyle = {
   Applied: "bg-secondary/70",
   Shortlisted: "bg-blue-50",
   Interview: "bg-amber-50",
   Hired: "bg-green-50",
+  Rejected: "bg-red-50",
 };
 
 const statusBadge = {
@@ -30,6 +34,7 @@ const statusBadge = {
   Shortlisted: "bg-blue-100 text-blue-700",
   Interview: "bg-amber-100 text-amber-700",
   Hired: "bg-green-100 text-green-700",
+  Rejected: "bg-red-100 text-red-700",
 };
 
 function initials(name) {
@@ -204,7 +209,7 @@ export default function IndustryDashboard() {
               onOpen={setSelectedApplicant}
             />
           ) : (
-            <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 overflow-x-auto">
+            <div className="grid grid-cols-2 lg:grid-cols-5 gap-4 overflow-x-auto">
               {statusCols.map((status) => {
                 const cols = byStatus(status);
                 return (
@@ -256,15 +261,32 @@ export default function IndustryDashboard() {
                           )}
 
                           <div className="mt-2 flex gap-1">
-                            {status !== "Applied" && (
-                              <button onClick={() => moveApplicant(applicant.id, statusCols[statusCols.indexOf(status) - 1])} className="flex-1 text-[10px] py-1 bg-secondary rounded-lg hover:bg-muted text-muted-foreground transition-colors">
-                                ← Move back
+                            {status === "Rejected" ? (
+                              <button
+                                onClick={() => moveApplicant(applicant.id, "Applied")}
+                                className="w-full text-[10px] py-1 bg-secondary rounded-lg hover:bg-muted text-muted-foreground transition-colors"
+                              >
+                                Restore to Applied
                               </button>
-                            )}
-                            {status !== "Hired" && (
-                              <button onClick={() => moveApplicant(applicant.id, statusCols[statusCols.indexOf(status) + 1])} className="flex-1 text-[10px] py-1 bg-primary/10 rounded-lg hover:bg-primary text-primary hover:text-white transition-colors">
-                                Advance →
-                              </button>
+                            ) : (
+                              <>
+                                {status !== "Applied" && (
+                                  <button
+                                    onClick={() => moveApplicant(applicant.id, PIPELINE_STAGES[PIPELINE_STAGES.indexOf(status) - 1])}
+                                    className="flex-1 text-[10px] py-1 bg-secondary rounded-lg hover:bg-muted text-muted-foreground transition-colors"
+                                  >
+                                    ← Move back
+                                  </button>
+                                )}
+                                {status !== "Hired" && (
+                                  <button
+                                    onClick={() => moveApplicant(applicant.id, PIPELINE_STAGES[PIPELINE_STAGES.indexOf(status) + 1])}
+                                    className="flex-1 text-[10px] py-1 bg-primary/10 rounded-lg hover:bg-primary text-primary hover:text-white transition-colors"
+                                  >
+                                    Advance →
+                                  </button>
+                                )}
+                              </>
                             )}
                           </div>
                         </div>
@@ -397,7 +419,7 @@ function BulkReview({ applications, onAction, onOpen }) {
     setSelected(new Set());
   }
 
-  const nextStage = statusCols[Math.min(statusCols.indexOf(stage) + 1, statusCols.length - 1)];
+  const nextStage = PIPELINE_STAGES[Math.min(PIPELINE_STAGES.indexOf(stage) + 1, PIPELINE_STAGES.length - 1)];
 
   return (
     <div className="space-y-3">
@@ -418,9 +440,17 @@ function BulkReview({ applications, onAction, onOpen }) {
           </label>
           <span className="text-xs text-muted-foreground">· {selected.size} selected</span>
           <div className="flex flex-wrap gap-2 ml-auto">
-            {stage !== "Hired" && <Button size="sm" disabled={!selected.size} onClick={() => act(nextStage)}>Advance to {nextStage}</Button>}
-            {stage !== "Applied" && <Button size="sm" variant="outline" disabled={!selected.size} onClick={() => act(statusCols[statusCols.indexOf(stage) - 1])}>Move back</Button>}
-            <Button size="sm" variant="danger" disabled={!selected.size} onClick={() => act("Rejected")}>Reject</Button>
+            {stage === "Rejected" ? (
+              <Button size="sm" disabled={!selected.size} onClick={() => act("Applied")}>
+                Restore to Applied
+              </Button>
+            ) : (
+              <>
+                {stage !== "Hired" && <Button size="sm" disabled={!selected.size} onClick={() => act(nextStage)}>Advance to {nextStage}</Button>}
+                {stage !== "Applied" && <Button size="sm" variant="outline" disabled={!selected.size} onClick={() => act(PIPELINE_STAGES[PIPELINE_STAGES.indexOf(stage) - 1])}>Move back</Button>}
+                <Button size="sm" variant="danger" disabled={!selected.size} onClick={() => act("Rejected")}>Reject</Button>
+              </>
+            )}
           </div>
         </div>
       </Card>

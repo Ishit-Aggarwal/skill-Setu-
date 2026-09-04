@@ -107,7 +107,17 @@ export default function Programs() {
             <Badge tone={myReg.status === "Confirmed" ? "green" : "amber"}>
               {myReg.status === "Confirmed" ? "✓ Your seat is confirmed" : "On the waitlist"}
             </Badge>
-            {myReg.certificateNo && <Badge tone="primary">Certificate {myReg.certificateNo}</Badge>}
+            {myReg.certificateNo && (
+              <a
+                href={`/academician/programs/certificate/${myReg.id}`}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="inline-flex items-center gap-1 text-xs font-medium text-primary hover:underline"
+                title="View & print certificate"
+              >
+                <Badge tone="primary">Certificate {myReg.certificateNo} ↗</Badge>
+              </a>
+            )}
             <button onClick={() => { cancelProgramRegistration(myReg.id); bump("Registration cancelled."); }} className="text-xs text-muted-foreground hover:text-red-600">
               Cancel registration
             </button>
@@ -323,7 +333,20 @@ function AttendeesModal({ program, onClose, onChange }) {
       key: "certificate",
       header: "Certificate",
       align: "center",
-      render: (r) => (r.certificateNo ? <Badge tone="green">{r.certificateNo}</Badge> : <span className="text-[11px] text-muted-foreground">—</span>),
+      render: (r) =>
+        r.certificateNo ? (
+          <a
+            href={`/academician/programs/certificate/${r.id}`}
+            target="_blank"
+            rel="noopener noreferrer"
+            className="hover:opacity-80 transition inline-flex items-center"
+            title="View & print certificate"
+          >
+            <Badge tone="green">{r.certificateNo} ↗</Badge>
+          </a>
+        ) : (
+          <span className="text-[11px] text-muted-foreground">—</span>
+        ),
     },
     {
       key: "actions",

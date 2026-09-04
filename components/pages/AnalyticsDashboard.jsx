@@ -5,11 +5,11 @@ import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContaine
 import DashboardLayout from "../DashboardLayout";
 import { useAuth } from "../../lib/auth";
 import { Badge, Card, PageHeader, ProgressBar, Section, StatGrid, Tabs } from "../ui/Kit";
-import { all, listApplications, listInternships, listInternshipsByOwner, listUsersByRole } from "../../lib/store";
+import { all, listApplications, listInternships, listInternshipsByOwner, listUsersByRole, PIPELINE_STAGES, TERMINAL_STAGES } from "../../lib/store";
 
 const PIE_COLORS = ["#6B7C3C", "#8A9A4A", "#A8B860", "#3C5A8A", "#5A3C8A"];
 const STATUS_COLORS = { Applied: "#8A9A4A", Shortlisted: "#3C5A8A", Interview: "#B8860B", Hired: "#6B7C3C" };
-const STAGE_ORDER = ["Applied", "Shortlisted", "Interview", "Hired"];
+const STAGE_ORDER = PIPELINE_STAGES;
 
 function daysBetween(aIso, bIso) {
   return (new Date(bIso).getTime() - new Date(aIso).getTime()) / 86400000;
@@ -21,9 +21,10 @@ function stageTimestamp(app, stage) {
 }
 
 function buildFunnel(applications) {
+  const inPipeline = applications.filter((a) => !TERMINAL_STAGES.includes(a.status));
   return STAGE_ORDER.map((stage, i) => ({
     stage,
-    count: applications.filter((a) => STAGE_ORDER.indexOf(a.status) >= i).length,
+    count: inPipeline.filter((a) => STAGE_ORDER.indexOf(a.status) >= i).length,
   }));
 }
 
@@ -72,6 +73,10 @@ export default function AnalyticsDashboard({ activePage = "analytics", title = "
   const scopedApplications = scope === "company" ? myApplications : applications;
   const scopedFunnel = useMemo(() => buildFunnel(scopedApplications), [scopedApplications]);
   const platformFunnel = useMemo(() => buildFunnel(applications), [applications]);
+  const scopedRejected = useMemo(
+    () => scopedApplications.filter((a) => a.status === "Rejected").length,
+    [scopedApplications]
+  );
 
   const timeToHire = useMemo(() => avgTimeToHire(scopedApplications), [scopedApplications]);
   const platformTimeToHire = useMemo(() => avgTimeToHire(applications), [applications]);
@@ -274,6 +279,11 @@ export default function AnalyticsDashboard({ activePage = "analytics", title = "
                       </div>
                     );
                   })}
+                  {scopedRejected > 0 && (
+                    <p className="text-[11px] text-muted-foreground pt-1">
+                      {scopedRejected} application{scopedRejected === 1 ? "" : "s"} rejected, not in live pipeline
+                    </p>
+                  )}
                   <div className="grid grid-cols-3 gap-2 pt-3 mt-1 border-t border-border">
                     {stageDurations.map((s) => (
                       <div key={s.label} className="text-center">
