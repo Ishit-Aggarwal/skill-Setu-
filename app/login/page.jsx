@@ -394,9 +394,9 @@ function LoginPageInner() {
                   </div>
                   <div>
                     <label className="block text-sm font-medium text-foreground mb-1.5">Teacher Code</label>
-                    <input type="text" value={form.teacherCode} onChange={(e) => setField("teacherCode", e.target.value)} placeholder="RIAAS-FAC-2026"
+                    <input type="text" value={form.teacherCode} onChange={(e) => setField("teacherCode", e.target.value)} placeholder="APEX-FAC-2026"
                       className={`w-full bg-card border rounded-xl px-4 py-3 text-sm text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-primary/30 transition-all uppercase ${codeValidation.valid ? "border-green-400" : form.teacherCode ? "border-red-300" : "border-border"}`} />
-                    <p className="text-xs text-muted-foreground mt-1">{codeValidation.valid ? `✓ Verified: ${codeValidation.data?.name}` : "Sample: RIAAS-FAC-2026, AIIA-FAC-1002, SIT-FAC-3301"}</p>
+                    <p className="text-xs text-muted-foreground mt-1">{codeValidation.valid ? `✓ Verified: ${codeValidation.data?.name}` : "Sample: APEX-FAC-2026, SIT-FAC-3301, AIIA-FAC-1002"}</p>
                   </div>
                 </>
               )}
@@ -415,9 +415,9 @@ function LoginPageInner() {
                   </div>
                   <div>
                     <label className="block text-sm font-medium text-foreground mb-1.5">Institute Verification Code</label>
-                    <input type="text" value={form.instituteCode} onChange={(e) => setField("instituteCode", e.target.value)} placeholder="RIAAS-INST-001"
+                    <input type="text" value={form.instituteCode} onChange={(e) => setField("instituteCode", e.target.value)} placeholder="APEX-INST-2026"
                       className={`w-full bg-card border rounded-xl px-4 py-3 text-sm text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-primary/30 transition-all uppercase ${codeValidation.valid ? "border-green-400" : form.instituteCode ? "border-red-300" : "border-border"}`} />
-                    <p className="text-xs text-muted-foreground mt-1">{codeValidation.valid ? `✓ Verified: ${codeValidation.data?.institution}` : "Sample: RIAAS-INST-001, AIIA-INST-002, SIT-INST-006"}</p>
+                    <p className="text-xs text-muted-foreground mt-1">{codeValidation.valid ? `✓ Verified: ${codeValidation.data?.institution}` : "Sample: APEX-INST-2026, SIT-INST-006, NSM-INST-007"}</p>
                   </div>
                 </>
               )}
