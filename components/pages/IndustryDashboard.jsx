@@ -18,6 +18,7 @@ import {
 } from "../../lib/store";
 import { ALL_DOMAINS, DOMAIN_GROUPS } from "../../lib/domains";
 import { daysUntil, formatDate } from "../../lib/match";
+import { subscribeToMutations } from "../../lib/sync";
 
 const statusCols = [...PIPELINE_STAGES, "Rejected"];
 
@@ -26,7 +27,7 @@ const statusStyle = {
   Shortlisted: "bg-blue-50",
   Interview: "bg-amber-50",
   Hired: "bg-green-50",
-  Rejected: "bg-red-50",
+  Rejected: "bg-red-50 border-red-200",
 };
 
 const statusBadge = {
@@ -62,16 +63,44 @@ export default function IndustryDashboard() {
   const [bulkMode, setBulkMode] = useState(false);
   const [postingFilter, setPostingFilter] = useState("All");
   const [flash, setFlash] = useFlash();
+  const [newApplicantIds, setNewApplicantIds] = useState(() => new Set());
 
   const [form, setForm] = useState({ title: "", location: "", stipend: "", duration: "", tags: "", domain: ALL_DOMAINS[0] });
 
   function refresh() {
+    if (!user) return;
     setPostings(listInternshipsByOwner(user.id));
     setApplications(listApplicationsForOwner(user.id));
     setRecruiters(listRecruiters(user.id));
   }
 
   useEffect(() => { refresh(); }, [user]);
+
+  useEffect(() => {
+    if (!user) return;
+    const unsub = subscribeToMutations(["applications", "internships", "collabInterests"], (event) => {
+      refresh();
+      if (event.collection === "applications" && event.action === "INSERT" && event.payload) {
+        const app = event.payload;
+        const myJobs = listInternshipsByOwner(user.id);
+        const belongsToMe = myJobs.some((j) => j.id === app.internshipId) || (user.companyName && app.company === user.companyName);
+        if (belongsToMe) {
+          setFlash(`New application received from ${app.studentName || "a candidate"}!`);
+          if (app.id) {
+            setNewApplicantIds((prev) => new Set([...prev, app.id]));
+            setTimeout(() => {
+              setNewApplicantIds((prev) => {
+                const next = new Set(prev);
+                next.delete(app.id);
+                return next;
+              });
+            }, 8000);
+          }
+        }
+      }
+    });
+    return unsub;
+  }, [user]);
 
   const scoped = useMemo(
     () => (postingFilter === "All" ? applications : applications.filter((a) => a.internshipId === postingFilter)),
@@ -99,8 +128,9 @@ export default function IndustryDashboard() {
     const interview = scoped.filter((a) => ["Interview", "Hired"].includes(a.status)).length;
     const hired = scoped.filter((a) => a.status === "Hired").length;
     const joined = scoped.filter((a) => a.offerStage === "Joined").length;
+    const rejected = scoped.filter((a) => a.status === "Rejected").length;
     return [
-      { label: "Total applications", value: String(total), icon: "📋", hint: `${postings.length} posting${postings.length === 1 ? "" : "s"}` },
+      { label: "Total applications", value: String(total), icon: "📋", hint: `${rejected} terminal/rejected applications accounted for` },
       { label: "Shortlisted", value: String(shortlisted), icon: "⭐", hint: total ? `${Math.round((shortlisted / total) * 100)}% rate` : "—" },
       { label: "In interview", value: String(interview), icon: "🎙", hint: total ? `${Math.round((interview / total) * 100)}% rate` : "—" },
       { label: "Hired", value: String(hired), icon: "✅", hint: total ? `${Math.round((hired / total) * 100)}% conversion` : "—" },
@@ -223,7 +253,7 @@ export default function IndustryDashboard() {
                       {cols.map((applicant) => (
                         <div
                           key={applicant.id}
-                          className={`bg-card border rounded-xl p-3 hover:shadow-sm transition-all duration-150 ${compareIds.includes(applicant.id) ? "border-primary" : "border-border"} ${movingId === applicant.id ? "opacity-40 scale-95" : ""}`}
+                          className={`bg-card border rounded-xl p-3 hover:shadow-sm transition-all duration-200 ${compareIds.includes(applicant.id) ? "border-primary" : "border-border"} ${movingId === applicant.id ? "opacity-40 scale-95" : ""} ${newApplicantIds.has(applicant.id) ? "ring-2 ring-emerald-500 bg-emerald-50/50 shadow-md animate-pulse" : ""}`}
                         >
                           <div className="flex items-center gap-2 mb-2">
                             <input

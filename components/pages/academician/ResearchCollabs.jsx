@@ -27,6 +27,7 @@ import {
   toggleCollabMilestone,
   updateCollabListing,
 } from "../../../lib/store";
+import { subscribeToMutations } from "../../../lib/sync";
 
 const TYPE_TONE = { Industry: "blue", Academic: "purple", Govt: "green" };
 const OUTPUT_TYPES = ["Journal Paper", "Conference Paper", "Book Chapter", "Patent", "Technical Report"];
@@ -58,6 +59,16 @@ export default function ResearchCollabs() {
   const [workspaceId, setWorkspaceId] = useState(null);
 
   useEffect(() => setReady(true), []);
+
+  useEffect(() => {
+    const unsub = subscribeToMutations(
+      ["collabListings", "collabInterests", "collabMessages", "collabMilestones", "collabResponses", "collabFiles", "researchOutputs"],
+      () => {
+        setVersion((v) => v + 1);
+      }
+    );
+    return unsub;
+  }, []);
 
   const responses = useMemo(() => {
     if (!ready) return {};

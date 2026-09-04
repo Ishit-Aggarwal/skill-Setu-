@@ -20,6 +20,7 @@ import {
   untagStudentFromDrive,
   updateDrive,
 } from "../../../lib/store";
+import { subscribeToMutations } from "../../../lib/sync";
 import { buildRoster, useInstitutionName } from "./useInstitution";
 
 const RSVP_TONE = { Confirmed: "green", Tentative: "amber", Declined: "red", Invited: "muted" };
@@ -36,6 +37,13 @@ export default function PlacementDrives() {
   const [showInvite, setShowInvite] = useState(false);
 
   useEffect(() => setReady(true), []);
+
+  useEffect(() => {
+    const unsub = subscribeToMutations(["drives", "driveInvites", "mous"], () => {
+      setVersion((v) => v + 1);
+    });
+    return unsub;
+  }, []);
 
   const drives = useMemo(() => (ready && instituteName ? listDrives(instituteName) : []), [instituteName, ready, version]);
   const roster = useMemo(() => (ready && instituteName ? buildRoster(instituteName) : []), [instituteName, ready, version]);

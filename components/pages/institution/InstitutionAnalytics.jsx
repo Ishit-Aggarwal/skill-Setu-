@@ -21,6 +21,7 @@ import {
   removePlacementHistory,
   getInstitutionProfile,
 } from "../../../lib/store";
+import { subscribeToMutations } from "../../../lib/sync";
 import { DEPARTMENTS } from "../../../lib/domains";
 import { PLACEMENT_TONE, buildRoster, useInstitutionName } from "./useInstitution";
 
@@ -63,10 +64,16 @@ export default function InstitutionAnalytics() {
 
   useEffect(() => setReady(true), []);
 
+  useEffect(() => {
+    return subscribeToMutations(["applications", "internships", "placementHistory", "users", "assessments"], () => {
+      setVersion((v) => v + 1);
+    });
+  }, []);
+
   const profile = useMemo(() => (ready && instituteName ? getInstitutionProfile(instituteName) : null), [instituteName, ready]);
   const departmentOptions = useMemo(() => (profile?.departments?.length ? profile.departments : DEPARTMENTS), [profile]);
 
-  const roster = useMemo(() => (ready && instituteName ? buildRoster(instituteName) : []), [instituteName, ready]);
+  const roster = useMemo(() => (ready && instituteName ? buildRoster(instituteName) : []), [instituteName, ready, version]);
   const history = useMemo(() => (ready && instituteName ? listPlacementHistory(instituteName) : []), [instituteName, ready, version]);
 
   const batches = useMemo(() => ["All", ...[...new Set(roster.map((r) => r.batch).filter(Boolean))].sort()], [roster]);
@@ -75,7 +82,7 @@ export default function InstitutionAnalytics() {
 
   const applications = useMemo(
     () => (ready ? listApplications().filter((a) => scopedIds.has(a.studentId)) : []),
-    [scopedIds, ready]
+    [scopedIds, ready, version]
   );
 
   const placed = scoped.filter((r) => r.status === "Placed").length;
@@ -195,11 +202,11 @@ export default function InstitutionAnalytics() {
       { label: "Average skill score", value: (r) => r.avgScore ?? "" },
     ];
     downloadFile(
-      `${(instituteName || "institution").replace(/\W+/g, "-").toLowerCase()}-placement-report-${batch === "All" ? "all" : batch}.csv`,
+      `${(instituteName || "institution").replace(/\W+/g, "-").toLowerCase()}-nirf-naac-report-${batch === "All" ? "all" : batch}.csv`,
       toCsv(byDepartment, columns)
     );
-    logActivity(instituteName, user?.name || "Admin", "Exported placement report card", batch === "All" ? "All batches" : `Batch ${batch}`);
-    setFlash("Placement report card exported.");
+    logActivity(instituteName, user?.name || "Admin", "Exported NIRF/NAAC report", batch === "All" ? "All batches" : `Batch ${batch}`);
+    setFlash("NIRF/NAAC report exported.");
   }
 
   function exportHistoryCsv() {
@@ -325,7 +332,7 @@ export default function InstitutionAnalytics() {
           subtitle={`Computed only from students registered under ${instituteName || "your institution"} — not platform-wide figures.`}
           actions={
             tab === "current" ? (
-              <Button size="sm" variant="outline" onClick={exportReportCard}>Export report card</Button>
+              <Button size="sm" variant="outline" onClick={exportReportCard}>Export NIRF/NAAC Report</Button>
             ) : (
               <div className="flex items-center gap-2 flex-wrap">
                 <Button size="sm" onClick={() => setShowAddBatch(true)}>+ Add historic batch</Button>
@@ -396,7 +403,7 @@ export default function InstitutionAnalytics() {
                       })}
                       {rejectedCount > 0 && (
                         <p className="text-[11px] text-muted-foreground pt-1.5">
-                          {rejectedCount} application{rejectedCount === 1 ? "" : "s"} rejected, not in live pipeline
+                          {rejectedCount} terminal/rejected application{rejectedCount === 1 ? "" : "s"} accounted for
                         </p>
                       )}
                     </div>

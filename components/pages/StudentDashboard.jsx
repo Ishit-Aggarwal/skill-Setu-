@@ -12,9 +12,18 @@ import StudentInbox from "../StudentInbox";
 import MentoringPanel from "../MentoringPanel";
 import { computeMatch, daysUntil, formatDate, relativeTime } from "../../lib/match";
 import { SKILL_DOMAINS } from "../../lib/questionBank";
-import { Badge, Modal } from "../ui/Kit";
+import { Badge, Flash, Modal, useFlash } from "../ui/Kit";
+import { subscribeToMutations } from "../../lib/sync";
 
 const RADAR_DOMAINS = SKILL_DOMAINS;
+
+const appStatusBadge = {
+  Applied: "bg-blue-100 text-blue-700 border-blue-200",
+  Shortlisted: "bg-purple-100 text-purple-700 border-purple-200",
+  Interview: "bg-amber-100 text-amber-700 border-amber-200",
+  Hired: "bg-green-100 text-green-700 border-green-200",
+  Rejected: "bg-red-100 text-red-700 border-red-200",
+};
 
 function ProfileCompletionBar({ percent }) {
   const [width, setWidth] = useState(0);
@@ -46,8 +55,9 @@ export default function StudentDashboard() {
   const [appliedIds, setAppliedIds] = useState(new Set());
   const [announcements, setAnnouncements] = useState([]);
   const [viewAllNotices, setViewAllNotices] = useState(false);
+  const [flash, setFlash] = useFlash(6000);
 
-  useEffect(() => {
+  function refresh() {
     if (!user) return;
     setAssessment(getAssessment(user.id));
     setPortfolio(getPortfolio(user.id));
@@ -58,6 +68,23 @@ export default function StudentDashboard() {
     const inst = user.institution || user.instituteName;
     setAnnouncements(listAnnouncements(inst));
     setReady(true);
+  }
+
+  useEffect(() => {
+    refresh();
+  }, [user]);
+
+  useEffect(() => {
+    if (!user) return;
+    const unsub = subscribeToMutations(["applications", "studentNotifications", "internships", "announcements"], (event) => {
+      refresh();
+      if (event.collection === "applications" && event.action === "UPDATE" && event.payload) {
+        if (event.payload.studentId === user.id) {
+          setFlash(`Application update: "${event.payload.internshipTitle || "Internship"}" is now "${event.payload.status}"`);
+        }
+      }
+    });
+    return unsub;
   }, [user]);
 
   const radarData = useMemo(
@@ -144,6 +171,8 @@ export default function StudentDashboard() {
           </button>
         </div>
 
+        <Flash message={flash} />
+
         <TalentPoolToggle />
 
         <div className="grid lg:grid-cols-2 gap-5">
@@ -222,6 +251,49 @@ export default function StudentDashboard() {
               )}
             </div>
           </div>
+        </div>
+
+        {/* Active Applications Section */}
+        <div className="bg-card border border-border rounded-2xl p-5">
+          <div className="flex items-center justify-between mb-4">
+            <div>
+              <div className="flex items-center gap-2">
+                <h3 className="font-semibold text-foreground text-sm">Active Applications</h3>
+                <span className="text-xs bg-primary/10 text-primary px-2 py-0.5 rounded-full font-medium">
+                  {applications.length} total
+                </span>
+              </div>
+              <p className="text-xs text-muted-foreground mt-0.5">
+                Live status and progression across your internship applications
+              </p>
+            </div>
+            <button onClick={() => navigate("internship-listings")} className="text-xs text-primary font-medium hover:underline">
+              Explore more roles →
+            </button>
+          </div>
+
+          {applications.length === 0 ? (
+            <div className="text-center py-6 text-xs text-muted-foreground">
+              You have not applied to any opportunities yet.
+            </div>
+          ) : (
+            <div className="space-y-2.5">
+              {applications.map((app) => (
+                <div key={app.id} className="flex flex-wrap items-center justify-between gap-3 p-3 bg-secondary/40 border border-border rounded-xl hover:bg-secondary/60 transition-colors">
+                  <div className="min-w-0 flex-1">
+                    <div className="text-sm font-semibold text-foreground truncate">{app.internshipTitle || "Internship Role"}</div>
+                    <div className="text-xs text-muted-foreground mt-0.5 truncate">{app.company} · Applied {formatDate(app.appliedAt)}</div>
+                  </div>
+                  <div className="flex items-center gap-3">
+                    <span className="text-xs font-semibold text-primary">{app.match}% match</span>
+                    <span className={`text-xs font-medium px-2.5 py-1 rounded-full border transition-all duration-300 ${appStatusBadge[app.status] || "bg-secondary text-muted-foreground border-border"}`}>
+                      {app.status}
+                    </span>
+                  </div>
+                </div>
+              ))}
+            </div>
+          )}
         </div>
 
         <div>

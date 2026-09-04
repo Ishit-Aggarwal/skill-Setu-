@@ -5,7 +5,13 @@ import { findOne, insert, update, remove, getDemoUser, all, saveAll } from "./st
 import { hashPassword } from "./hash";
 
 const AuthContext = createContext(null);
-const SESSION_KEY = "ayusetu:session";
+const TAB_SESSION_KEY = "ayusetu:tab_session";
+const GLOBAL_SESSION_KEY = "ayusetu:session";
+
+function getActiveUserId() {
+  if (typeof window === "undefined") return null;
+  return window.sessionStorage.getItem(TAB_SESSION_KEY) || window.localStorage.getItem(GLOBAL_SESSION_KEY);
+}
 
 /**
  * Accounts are owned by the server (Convex) so they work from any device.
@@ -48,7 +54,7 @@ export function AuthProvider({ children }) {
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    const uid = window.localStorage.getItem(SESSION_KEY);
+    const uid = getActiveUserId();
     if (uid) {
       const found = findOne("users", (u) => u.id === uid);
       if (found) setUser(found);
@@ -58,8 +64,14 @@ export function AuthProvider({ children }) {
 
   function persistSession(u) {
     setUser(u);
-    if (u) window.localStorage.setItem(SESSION_KEY, u.id);
-    else window.localStorage.removeItem(SESSION_KEY);
+    if (typeof window === "undefined") return;
+    if (u) {
+      window.sessionStorage.setItem(TAB_SESSION_KEY, u.id);
+      window.localStorage.setItem(GLOBAL_SESSION_KEY, u.id);
+    } else {
+      window.sessionStorage.removeItem(TAB_SESSION_KEY);
+      window.localStorage.removeItem(GLOBAL_SESSION_KEY);
+    }
   }
 
   /** Cache the server-owned profile locally (upsert, so repeat sign-ins don't duplicate). */

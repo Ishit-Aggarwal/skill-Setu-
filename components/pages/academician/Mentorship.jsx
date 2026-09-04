@@ -13,6 +13,7 @@ import {
   removeOfficeHourSlot,
   setBookingStatus,
 } from "../../../lib/store";
+import { subscribeToMutations } from "../../../lib/sync";
 
 const STATUS_TONE = { Booked: "primary", Completed: "green", "No show": "red", Cancelled: "muted" };
 
@@ -40,6 +41,12 @@ export default function Mentorship() {
   const [showAdd, setShowAdd] = useState(false);
 
   useEffect(() => setReady(true), []);
+
+  useEffect(() => {
+    return subscribeToMutations(["officeHours", "mentorBookings"], () => {
+      setVersion((v) => v + 1);
+    });
+  }, []);
 
   const slots = useMemo(() => (ready && user ? listOfficeHours(user.id) : []), [user, ready, version]);
   const bookings = useMemo(() => (ready && user ? listMentorBookings(user.id) : []), [user, ready, version]);

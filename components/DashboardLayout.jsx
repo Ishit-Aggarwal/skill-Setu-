@@ -1,9 +1,11 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import Link from "next/link";
 import { useAuth } from "../lib/auth";
 import { useNav } from "../lib/nav";
+import { listStudentNotifications } from "../lib/store";
+import { subscribeToMutations } from "../lib/sync";
 import EditProfileModal from "./EditProfileModal";
 
 function Icon({ children }) {
@@ -126,10 +128,23 @@ const ROLE_LABEL = {
 export default function DashboardLayout({ children, activePage, title }) {
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const [showEditProfile, setShowEditProfile] = useState(false);
+  const [unreadCount, setUnreadCount] = useState(0);
   const { user, logout } = useAuth();
   const navigate = useNav();
 
   const role = user?.role || "student";
+
+  useEffect(() => {
+    if (!user || user.role !== "student") return;
+    const updateUnread = () => {
+      const notifs = listStudentNotifications(user.id);
+      setUnreadCount(notifs.filter((n) => !n.read).length);
+    };
+    updateUnread();
+    const unsub = subscribeToMutations(["studentNotifications"], updateUnread);
+    return unsub;
+  }, [user]);
+
   const navItems = NAV[role] || NAV.student;
   const userName = user?.name || "Guest";
   const userSub = `${ROLE_LABEL[role]} · ${user?.institution || user?.companyName || user?.instituteName || ""}`;
@@ -223,6 +238,25 @@ export default function DashboardLayout({ children, activePage, title }) {
           <div className="flex-1 hidden lg:block min-w-0">{title && <h1 className="text-base font-semibold text-foreground truncate">{title}</h1>}</div>
 
           <div className="ml-auto flex items-center gap-2">
+            {role === "student" && (
+              <button
+                onClick={() => navigate("student-dashboard")}
+                className="relative p-2 rounded-xl text-muted-foreground hover:bg-secondary hover:text-foreground transition-colors"
+                title={unreadCount > 0 ? `${unreadCount} unread notification(s)` : "Notifications"}
+                aria-label="Notifications"
+              >
+                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                  <path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9" />
+                  <path d="M13.73 21a2 2 0 0 1-3.46 0" />
+                </svg>
+                {unreadCount > 0 && (
+                  <span className="absolute top-1.5 right-1.5 flex h-2.5 w-2.5">
+                    <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-primary opacity-75"></span>
+                    <span className="relative inline-flex rounded-full h-2.5 w-2.5 bg-primary"></span>
+                  </span>
+                )}
+              </button>
+            )}
             <button onClick={() => setShowEditProfile(true)} className="w-8 h-8 rounded-full bg-primary/15 flex items-center justify-center text-primary text-xs font-semibold overflow-hidden" aria-label="Edit profile">
               {user?.avatarDataUrl ? <img src={user.avatarDataUrl} alt="" className="w-full h-full object-cover" /> : userInitials}
             </button>

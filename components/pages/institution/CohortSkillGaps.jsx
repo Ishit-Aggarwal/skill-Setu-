@@ -7,6 +7,7 @@ import { useAuth } from "../../../lib/auth";
 import { Badge, Button, Card, EmptyState, Field, Flash, PageHeader, ProgressBar, Section, Select, StatGrid, Tabs, useFlash } from "../../ui/Kit";
 import { SKILL_DOMAINS } from "../../../lib/questionBank";
 import { cohortSkillMatrix, downloadFile, listInstitutionStudents, logActivity, skillTrendByTerm, toCsv } from "../../../lib/store";
+import { subscribeToMutations } from "../../../lib/sync";
 import { buildRoster, useInstitutionName } from "./useInstitution";
 
 const READINESS_TARGET = 75;
@@ -32,6 +33,7 @@ export default function CohortSkillGaps() {
   const { user } = useAuth();
   const instituteName = useInstitutionName();
   const [ready, setReady] = useState(false);
+  const [version, setVersion] = useState(0);
   const [batch, setBatch] = useState("All");
   const [tab, setTab] = useState("heatmap");
   const [drill, setDrill] = useState(null);
@@ -39,7 +41,14 @@ export default function CohortSkillGaps() {
 
   useEffect(() => setReady(true), []);
 
-  const roster = useMemo(() => (ready && instituteName ? buildRoster(instituteName) : []), [instituteName, ready]);
+  useEffect(() => {
+    const unsub = subscribeToMutations(["applications", "assessments", "users"], () => {
+      setVersion((v) => v + 1);
+    });
+    return unsub;
+  }, []);
+
+  const roster = useMemo(() => (ready && instituteName ? buildRoster(instituteName) : []), [instituteName, ready, version]);
   const batches = useMemo(() => ["All", ...[...new Set(roster.map((r) => r.batch).filter(Boolean))].sort()], [roster]);
 
   const matrix = useMemo(

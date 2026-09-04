@@ -22,6 +22,7 @@ import {
   toCsv,
   updateProgram,
 } from "../../../lib/store";
+import { subscribeToMutations } from "../../../lib/sync";
 
 const MODE_TONE = { Hybrid: "blue", Online: "green", Onsite: "amber" };
 const STATUS_TONE = { Open: "green", Completed: "muted", Cancelled: "red" };
@@ -38,6 +39,13 @@ export default function Programs() {
   const [feedbackFor, setFeedbackFor] = useState(null);
 
   useEffect(() => setReady(true), []);
+
+  useEffect(() => {
+    const unsub = subscribeToMutations(["programs", "programRegistrations"], () => {
+      setVersion((v) => v + 1);
+    });
+    return unsub;
+  }, []);
 
   const programs = useMemo(() => (ready ? listPrograms() : []), [ready, version]);
   const hosting = useMemo(() => programs.filter((p) => p.ownerId === user?.id), [programs, user]);
@@ -65,6 +73,8 @@ export default function Programs() {
     const regs = listProgramRegistrations(program.id);
     const confirmed = regs.filter((r) => r.status === "Confirmed").length;
     const waitlisted = regs.filter((r) => r.status === "Waitlisted").length;
+    const remainingSeats = Math.max(0, (program.seats || 0) - confirmed);
+    const isFull = confirmed >= (program.seats || 0);
     const fill = program.seats ? Math.round((confirmed / program.seats) * 100) : 0;
     const myReg = myRegistrations.find((r) => r.programId === program.id);
 
@@ -85,7 +95,7 @@ export default function Programs() {
 
         <div className="flex flex-wrap items-center gap-4 text-xs text-muted-foreground mb-2">
           <span>📅 {program.dates}</span>
-          <span>🪑 {confirmed}/{program.seats} seats</span>
+          <span>🪑 Seats: {remainingSeats}/{program.seats} remaining</span>
           {waitlisted > 0 && <span className="text-amber-600">⏳ {waitlisted} waitlisted</span>}
           {program.venue && <span className="truncate">📍 {program.venue}</span>}
         </div>
@@ -126,8 +136,10 @@ export default function Programs() {
         ) : (
           <Button
             className="w-full"
-            variant={confirmed >= program.seats ? "outline" : "primary"}
+            variant={isFull ? "outline" : "primary"}
+            disabled={isFull}
             onClick={() => {
+              if (isFull) return;
               const reg = registerForProgram(program.id, user.id, {
                 name: user.name,
                 email: user.email,
@@ -137,7 +149,7 @@ export default function Programs() {
               bump(reg.status === "Confirmed" ? "Seat confirmed." : "Programme is full — you've been added to the waitlist.");
             }}
           >
-            {confirmed >= program.seats ? "Join the waitlist" : "Register"}
+            {isFull ? "Fully Booked" : "Register"}
           </Button>
         )}
       </Card>

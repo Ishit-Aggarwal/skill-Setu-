@@ -4,6 +4,7 @@ import { useEffect, useMemo, useState } from "react";
 import { Badge, Card, Section } from "./ui/Kit";
 import { relativeTime } from "../lib/match";
 import { listStudentNotifications, update } from "../lib/store";
+import { subscribeToMutations } from "../lib/sync";
 
 /**
  * Where notices from a student's placement cell and recommendations from their
@@ -15,6 +16,13 @@ export default function StudentInbox({ user }) {
   const [ready, setReady] = useState(false);
 
   useEffect(() => setReady(true), []);
+
+  useEffect(() => {
+    const unsub = subscribeToMutations(["studentNotifications"], () => {
+      setVersion((v) => v + 1);
+    });
+    return unsub;
+  }, []);
 
   const notifications = useMemo(
     () => (ready && user ? listStudentNotifications(user.id) : []),

@@ -16,6 +16,7 @@ import {
   mouStatus,
   updateMou,
 } from "../../../lib/store";
+import { subscribeToMutations } from "../../../lib/sync";
 import { buildRoster, useInstitutionName } from "./useInstitution";
 
 const STATUS_TONE = { Active: "green", "Renewal due": "amber", Expired: "red" };
@@ -47,6 +48,13 @@ export default function Partnerships() {
   const [filter, setFilter] = useState("All");
 
   useEffect(() => setReady(true), []);
+
+  useEffect(() => {
+    const unsub = subscribeToMutations(["mous", "applications"], () => {
+      setVersion((v) => v + 1);
+    });
+    return unsub;
+  }, []);
 
   const mous = useMemo(() => (ready && instituteName ? listMous(instituteName) : []), [instituteName, ready, version]);
   const roster = useMemo(() => (ready && instituteName ? buildRoster(instituteName) : []), [instituteName, ready, version]);

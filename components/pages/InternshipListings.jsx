@@ -6,6 +6,7 @@ import ApplyConfirmModal from "../ApplyConfirmModal";
 import { useAuth } from "../../lib/auth";
 import { Badge, Button, Card, EmptyState, Field, Flash, Modal, PageHeader, ProgressBar, SearchInput, Section, Select, StatGrid, TextArea, TextInput, useFlash } from "../ui/Kit";
 import { ALL_DOMAINS, DEPARTMENTS, DOMAIN_GROUPS, domainColor } from "../../lib/domains";
+import { subscribeToMutations } from "../../lib/sync";
 import {
   applyToInternship,
   cloneInternship,
@@ -46,6 +47,8 @@ function StudentView({ user }) {
   const [eligibleOnly, setEligibleOnly] = useState(false);
   const [saved, setSaved] = useState([]);
   const [applyTarget, setApplyTarget] = useState(null);
+  const [recentNewIds, setRecentNewIds] = useState(() => new Set());
+  const [flash, setFlash] = useFlash(8000);
 
   function refresh() {
     setInternships(listInternships());
@@ -55,6 +58,25 @@ function StudentView({ user }) {
   }
 
   useEffect(() => { refresh(); }, [user]);
+
+  useEffect(() => {
+    const unsub = subscribeToMutations(["internships", "applications"], (event) => {
+      refresh();
+      if (event.collection === "internships" && event.action === "INSERT" && event.payload?.id) {
+        const id = event.payload.id;
+        setRecentNewIds((prev) => new Set([...prev, id]));
+        setFlash(`A new role matching your skills was just posted by ${event.payload.company || "an organisation"}: "${event.payload.title}"`);
+        setTimeout(() => {
+          setRecentNewIds((prev) => {
+            const next = new Set(prev);
+            next.delete(id);
+            return next;
+          });
+        }, 10000);
+      }
+    });
+    return unsub;
+  }, [user]);
 
   const enriched = useMemo(
     () =>
@@ -77,8 +99,14 @@ function StudentView({ user }) {
         const matchesEligibility = !eligibleOnly || i.eligibility.eligible;
         return matchesSearch && matchesDomain && matchesType && matchesEligibility && i.status !== "Closed";
       })
-      .sort((a, b) => (sortBy === "match" ? b.match - a.match : new Date(a.deadline) - new Date(b.deadline)));
-  }, [enriched, search, domain, type, sortBy, eligibleOnly]);
+      .sort((a, b) => {
+        const aNew = recentNewIds.has(a.id);
+        const bNew = recentNewIds.has(b.id);
+        if (aNew && !bNew) return -1;
+        if (!aNew && bNew) return 1;
+        return sortBy === "match" ? b.match - a.match : new Date(a.deadline) - new Date(b.deadline);
+      });
+  }, [enriched, search, domain, type, sortBy, eligibleOnly, recentNewIds]);
 
   // Views feed the recruiter's performance panel — recorded once per posting
   // per browser session, not on every re-render.
@@ -103,6 +131,7 @@ function StudentView({ user }) {
 
   return (
     <div className="animate-fade-slide space-y-5">
+      <Flash message={flash} />
       <div className="flex gap-3">
         <SearchInput value={search} onChange={setSearch} placeholder="Search roles, organisations, skills…" className="flex-1" />
         <Select value={sortBy} onChange={(e) => setSortBy(e.target.value)} className="w-auto">
@@ -186,6 +215,15 @@ function StudentView({ user }) {
                 </div>
 
                 <div className="flex items-center gap-1.5 flex-wrap mb-3">
+                  {recentNewIds.has(intern.id) && (
+                    <span className="inline-flex items-center gap-1 text-[10px] font-semibold bg-emerald-100 text-emerald-800 px-2 py-0.5 rounded-full border border-emerald-300">
+                      <span className="relative flex h-2 w-2">
+                        <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-500 opacity-75"></span>
+                        <span className="relative inline-flex rounded-full h-2 w-2 bg-emerald-600"></span>
+                      </span>
+                      NEW
+                    </span>
+                  )}
                   <span className={`text-[10px] font-medium px-2 py-0.5 rounded-full ${typeColor[intern.type] || "bg-muted text-muted-foreground"}`}>{intern.type}</span>
                   <span className="text-[10px] bg-secondary text-secondary-foreground px-2 py-0.5 rounded-full">{intern.domain}</span>
                   {intern.hot && <span className="text-[10px] font-semibold text-orange-600 bg-orange-50 px-2 py-0.5 rounded-full">🔥 Hot</span>}
@@ -279,6 +317,13 @@ function IndustryView({ user }) {
   }
 
   useEffect(() => { refresh(); }, [user]);
+
+  useEffect(() => {
+    const unsub = subscribeToMutations(["internships", "applications"], () => {
+      refresh();
+    });
+    return unsub;
+  }, [user]);
 
   function appsFor(internshipId) {
     return applications.filter((a) => a.internshipId === internshipId);

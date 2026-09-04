@@ -7,6 +7,7 @@ import { useAuth } from "../../../lib/auth";
 import { Badge, Button, Card, DataTable, EmptyState, Field, Flash, PageHeader, ProgressBar, Section, Select, StatGrid, useFlash } from "../../ui/Kit";
 import { SKILL_DOMAINS } from "../../../lib/questionBank";
 import { downloadFile, listApplications, listProgramRegistrations, listPrograms, toCsv, PIPELINE_STAGES, TERMINAL_STAGES } from "../../../lib/store";
+import { subscribeToMutations } from "../../../lib/sync";
 import { PLACEMENT_TONE, STUDENT_EXPORT_COLUMNS, averageDomainScores, buildFacultyStudents } from "./useFaculty";
 
 const STAGE_ORDER = PIPELINE_STAGES;
@@ -24,11 +25,18 @@ export default function AcademicianAnalytics() {
   const [scope, setScope] = useState("department");
   const [batch, setBatch] = useState("All");
   const [flash, setFlash] = useFlash();
+  const [version, setVersion] = useState(0);
 
   useEffect(() => setReady(true), []);
 
-  const students = useMemo(() => (ready && user ? buildFacultyStudents(user) : []), [user, ready]);
-  const programs = useMemo(() => (ready ? listPrograms().filter((p) => p.ownerId === user?.id) : []), [ready, user]);
+  useEffect(() => {
+    return subscribeToMutations(["applications", "programs", "users", "assessments"], () => {
+      setVersion((v) => v + 1);
+    });
+  }, []);
+
+  const students = useMemo(() => (ready && user ? buildFacultyStudents(user) : []), [user, ready, version]);
+  const programs = useMemo(() => (ready ? listPrograms().filter((p) => p.ownerId === user?.id) : []), [ready, user, version]);
 
   const batches = useMemo(() => ["All", ...[...new Set(students.map((s) => s.batch).filter(Boolean))].sort()], [students]);
 
@@ -43,7 +51,7 @@ export default function AcademicianAnalytics() {
   }, [students, scope, batch, user]);
 
   const cohortIds = useMemo(() => new Set(cohort.map((s) => s.id)), [cohort]);
-  const applications = useMemo(() => (ready ? listApplications().filter((a) => cohortIds.has(a.studentId)) : []), [cohortIds, ready]);
+  const applications = useMemo(() => (ready ? listApplications().filter((a) => cohortIds.has(a.studentId)) : []), [cohortIds, ready, version]);
 
   const placed = cohort.filter((s) => s.status === "Placed").length;
   const assessed = cohort.filter((s) => s.score != null);
@@ -191,7 +199,7 @@ export default function AcademicianAnalytics() {
                       })}
                       {rejectedCount > 0 && (
                         <p className="text-[11px] text-muted-foreground pt-1.5">
-                          {rejectedCount} application{rejectedCount === 1 ? "" : "s"} rejected, not in live pipeline
+                          {rejectedCount} terminal/rejected application{rejectedCount === 1 ? "" : "s"} accounted for
                         </p>
                       )}
                     </div>

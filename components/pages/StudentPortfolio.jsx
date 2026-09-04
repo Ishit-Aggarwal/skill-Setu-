@@ -4,6 +4,7 @@ import { useEffect, useMemo, useState } from "react";
 import DashboardLayout from "../DashboardLayout";
 import { useAuth } from "../../lib/auth";
 import { getAssessment, getPortfolio, savePortfolio, listApplicationsForStudent } from "../../lib/store";
+import { subscribeToMutations } from "../../lib/sync";
 
 const levelColor = {
   Advanced: "bg-primary/10 text-primary border-primary/20",
@@ -56,6 +57,11 @@ export default function StudentPortfolio() {
     setPortfolio(existing || emptyPortfolio);
     setAssessment(getAssessment(user.id));
     setApplications(listApplicationsForStudent(user.id));
+
+    const unsub = subscribeToMutations(["applications"], () => {
+      setApplications(listApplicationsForStudent(user.id));
+    });
+    return unsub;
   }, [user]);
 
   function persist(patch) {

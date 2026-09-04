@@ -6,6 +6,7 @@ import DashboardLayout from "../DashboardLayout";
 import { useAuth } from "../../lib/auth";
 import { Badge, Card, PageHeader, ProgressBar, Section, StatGrid, Tabs } from "../ui/Kit";
 import { all, listApplications, listInternships, listInternshipsByOwner, listUsersByRole, PIPELINE_STAGES, TERMINAL_STAGES } from "../../lib/store";
+import { subscribeToMutations } from "../../lib/sync";
 
 const PIE_COLORS = ["#6B7C3C", "#8A9A4A", "#A8B860", "#3C5A8A", "#5A3C8A"];
 const STATUS_COLORS = { Applied: "#8A9A4A", Shortlisted: "#3C5A8A", Interview: "#B8860B", Hired: "#6B7C3C" };
@@ -57,12 +58,22 @@ export default function AnalyticsDashboard({ activePage = "analytics", title = "
   const [myPostingIds, setMyPostingIds] = useState(new Set());
   const [scope, setScope] = useState(isIndustry ? "company" : "platform");
 
-  useEffect(() => {
+  const refresh = () => {
     setStudents(listUsersByRole("student"));
     setInternships(listInternships());
     setApplications(listApplications());
     setAssessments(all("assessments"));
     if (user?.role === "industry") setMyPostingIds(new Set(listInternshipsByOwner(user.id).map((i) => i.id)));
+  };
+
+  useEffect(() => {
+    refresh();
+  }, [user]);
+
+  useEffect(() => {
+    return subscribeToMutations(["applications", "internships", "assessments"], () => {
+      refresh();
+    });
   }, [user]);
 
   const myApplications = useMemo(
@@ -281,7 +292,7 @@ export default function AnalyticsDashboard({ activePage = "analytics", title = "
                   })}
                   {scopedRejected > 0 && (
                     <p className="text-[11px] text-muted-foreground pt-1">
-                      {scopedRejected} application{scopedRejected === 1 ? "" : "s"} rejected, not in live pipeline
+                      {scopedRejected} terminal/rejected application{scopedRejected === 1 ? "" : "s"} accounted for
                     </p>
                   )}
                   <div className="grid grid-cols-3 gap-2 pt-3 mt-1 border-t border-border">

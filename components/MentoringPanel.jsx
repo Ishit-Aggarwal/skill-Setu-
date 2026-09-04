@@ -4,6 +4,7 @@ import { useEffect, useMemo, useState } from "react";
 import { Badge, Button, Card, Field, Flash, Modal, Section, Select, TextInput, useFlash } from "./ui/Kit";
 import { formatDateTime } from "../lib/match";
 import { bookOfficeHourSlot, listBookingsForSlot, listOfficeHours, listUsersByRole } from "../lib/store";
+import { subscribeToMutations } from "../lib/sync";
 
 /**
  * The student half of faculty office hours — a mentor publishes availability
@@ -17,6 +18,13 @@ export default function MentoringPanel({ user }) {
   const [flash, setFlash] = useFlash();
 
   useEffect(() => setReady(true), []);
+
+  useEffect(() => {
+    const unsub = subscribeToMutations(["officeHours", "mentorBookings"], () => {
+      setVersion((v) => v + 1);
+    });
+    return unsub;
+  }, []);
 
   const faculty = useMemo(
     () => (ready ? listUsersByRole("academician").filter((f) => !user?.institution || f.institution === user.institution) : []),

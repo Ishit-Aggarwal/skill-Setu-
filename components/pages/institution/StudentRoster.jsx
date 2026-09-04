@@ -32,6 +32,7 @@ import {
   tagStudentsForDrive,
   toCsv,
 } from "../../../lib/store";
+import { subscribeToMutations } from "../../../lib/sync";
 import { PLACEMENT_STATUSES, PLACEMENT_TONE, ROSTER_EXPORT_COLUMNS, SCORE_BANDS, buildRoster, useInstitutionName } from "./useInstitution";
 
 const YEARS = ["1st Year", "2nd Year", "3rd Year", "4th Year", "Final Year", "Graduated"];
@@ -63,6 +64,13 @@ export default function StudentRoster() {
   const [showTag, setShowTag] = useState(false);
 
   useEffect(() => setReady(true), []);
+
+  useEffect(() => {
+    const unsub = subscribeToMutations(["applications", "users", "assessments"], () => {
+      setVersion((v) => v + 1);
+    });
+    return unsub;
+  }, []);
 
   const roster = useMemo(() => (ready && instituteName ? buildRoster(instituteName) : []), [instituteName, ready, version]);
   const drives = useMemo(() => (ready ? listDrives(instituteName) : []), [instituteName, ready, version]);
