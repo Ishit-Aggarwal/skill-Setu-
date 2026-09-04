@@ -10,13 +10,13 @@ import DemoModeMenu from "../../components/DemoModeMenu";
 const roleConfig = {
   student: {
     label: "Student",
-    desc: "Engineering · Management · Technology · Sciences · Ayush · Design",
+    desc: "Engineering · Management · Technology · Sciences · Healthcare · Design",
     image: "https://images.unsplash.com/photo-1686624386665-4cd01b96d0f6?w=800&h=1100&fit=crop&auto=format",
     tagline: "Map your skills. Find your internship.",
   },
   industry: {
     label: "Industry",
-    desc: "IT & Tech · Manufacturing · Finance · Healthcare · Ayush & Wellness",
+    desc: "IT & Tech · Manufacturing · Finance · Healthcare & Life Sciences",
     image: "https://images.unsplash.com/photo-1577962917302-cd874c4e31d2?w=800&h=1100&fit=crop&auto=format",
     tagline: "Hire talent matched to your needs.",
   },
@@ -338,7 +338,7 @@ function LoginPageInner() {
                 <>
                   <div>
                     <label className="block text-sm font-medium text-foreground mb-1.5">Institution</label>
-                    <input type="text" value={form.institution} onChange={(e) => setField("institution", e.target.value)} placeholder="Rajasthan Institute of Ayurvedic & Applied Sciences"
+                    <input type="text" value={form.institution} onChange={(e) => setField("institution", e.target.value)} placeholder="Apex University of Technology & Applied Sciences"
                       className="w-full bg-card border border-border rounded-xl px-4 py-3 text-sm text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-primary/30 focus:border-primary transition-all" />
                   </div>
                   <div className="grid grid-cols-2 gap-3">
@@ -384,7 +384,7 @@ function LoginPageInner() {
                 <>
                   <div>
                     <label className="block text-sm font-medium text-foreground mb-1.5">Institution</label>
-                    <input type="text" value={form.institution} onChange={(e) => setField("institution", e.target.value)} placeholder="Rajasthan Institute of Ayurvedic & Applied Sciences"
+                    <input type="text" value={form.institution} onChange={(e) => setField("institution", e.target.value)} placeholder="Apex University of Technology & Applied Sciences"
                       className="w-full bg-card border border-border rounded-xl px-4 py-3 text-sm text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-primary/30 focus:border-primary transition-all" />
                   </div>
                   <div>
@@ -405,7 +405,7 @@ function LoginPageInner() {
                 <>
                   <div>
                     <label className="block text-sm font-medium text-foreground mb-1.5">Institution Name</label>
-                    <input type="text" value={form.instituteName} onChange={(e) => setField("instituteName", e.target.value)} placeholder="Rajasthan Institute of Ayurvedic & Applied Sciences"
+                    <input type="text" value={form.instituteName} onChange={(e) => setField("instituteName", e.target.value)} placeholder="Apex University of Technology & Applied Sciences"
                       className="w-full bg-card border border-border rounded-xl px-4 py-3 text-sm text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-primary/30 focus:border-primary transition-all" />
                   </div>
                   <div>

@@ -262,7 +262,7 @@ function MouModal({ instituteName, actor, mou, onClose, onDone, onDelete }) {
     <Modal title={mou ? "Edit partnership" : "Record a new MOU"} onClose={onClose} size="lg">
       <form onSubmit={submit} className="space-y-4">
         {error && <Flash message={error} tone="red" />}
-        <Field label="Partner organisation"><TextInput required value={form.partner} onChange={(e) => set("partner", e.target.value)} placeholder="Himadri Ayurveda Pharmaceuticals Ltd." /></Field>
+        <Field label="Partner organisation"><TextInput required value={form.partner} onChange={(e) => set("partner", e.target.value)} placeholder="Apex Global Technologies & Innovations" /></Field>
         <div className="grid grid-cols-2 gap-3">
           <Field label="Signed on"><TextInput type="date" value={form.signedDate} onChange={(e) => set("signedDate", e.target.value)} /></Field>
           <Field label="Valid until" hint="Drives the renewal reminder."><TextInput type="date" value={form.expiryDate} onChange={(e) => set("expiryDate", e.target.value)} /></Field>

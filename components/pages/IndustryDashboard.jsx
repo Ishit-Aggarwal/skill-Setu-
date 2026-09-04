@@ -349,7 +349,7 @@ export default function IndustryDashboard() {
       {showPostJob && (
         <Modal title="Post a new opportunity" onClose={() => setShowPostJob(false)}>
           <form onSubmit={handleCreate} className="space-y-4">
-            <Field label="Role title"><TextInput required value={form.title} onChange={(e) => setForm((f) => ({ ...f, title: e.target.value }))} placeholder="Ayurvedic Formulation Intern" /></Field>
+            <Field label="Role title"><TextInput required value={form.title} onChange={(e) => setForm((f) => ({ ...f, title: e.target.value }))} placeholder="Software Engineer Intern (Full-Stack)" /></Field>
             <Field label="Sector">
               <Select value={form.domain} onChange={(e) => setForm((f) => ({ ...f, domain: e.target.value }))}>
                 {DOMAIN_GROUPS.map((g) => (

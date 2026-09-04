@@ -520,7 +520,7 @@ function PostingModal({ posting, onClose, onSubmit }) {
       size="lg"
     >
       <form onSubmit={(e) => { e.preventDefault(); onSubmit(form); }} className="space-y-4">
-        <Field label="Role title"><TextInput required value={form.title} onChange={(e) => set("title", e.target.value)} placeholder="Ayurvedic Formulation Intern" /></Field>
+        <Field label="Role title"><TextInput required value={form.title} onChange={(e) => set("title", e.target.value)} placeholder="Software Development Engineer Intern" /></Field>
 
         <div className="grid grid-cols-2 gap-3">
           <Field label="Work type">
@@ -581,7 +581,7 @@ function PostingModal({ posting, onClose, onSubmit }) {
           </Field>
 
           <Field label="Eligible institutions" hint="Comma separated. Leave empty to open the role to every institution.">
-            <TextInput value={form.eligibleInstitutions} onChange={(e) => set("eligibleInstitutions", e.target.value)} placeholder="Rajasthan Institute of Ayurvedic Sciences" />
+            <TextInput value={form.eligibleInstitutions} onChange={(e) => set("eligibleInstitutions", e.target.value)} placeholder="Apex University of Technology & Applied Sciences" />
           </Field>
         </div>
 

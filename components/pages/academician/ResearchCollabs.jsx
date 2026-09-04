@@ -543,7 +543,7 @@ function OutputForm({ onCancel, onSubmit }) {
       </Field>
       <Field label="Title"><TextInput required value={form.title} onChange={(e) => set("title", e.target.value)} /></Field>
       <div className="grid grid-cols-[2fr_1fr] gap-3">
-        <Field label="Journal / venue / office"><TextInput value={form.venue} onChange={(e) => set("venue", e.target.value)} placeholder="Journal of Ayurveda & Integrative Medicine" /></Field>
+        <Field label="Journal / venue / office"><TextInput value={form.venue} onChange={(e) => set("venue", e.target.value)} placeholder="International Journal of Applied Computing & Research" /></Field>
         <Field label="Year"><TextInput value={form.year} onChange={(e) => set("year", e.target.value)} /></Field>
       </div>
       <div className="flex gap-3">

@@ -2,14 +2,14 @@ import { mutation } from "./_generated/server";
 
 /**
  * Server-side seeding for a fresh Convex deployment. Mirrors the demo content
- * the browser store seeds locally — a cross-sector mix with the AYUSH
- * ecosystem built out in first-class depth — so a deployment that starts from
- * an empty database still opens on a populated platform.
+ * the browser store seeds locally — an all-industry cross-sector mix with
+ * comprehensive depth across engineering, technology, management, sciences,
+ * and traditional disciplines.
  *
  * Run once with: npx convex run seed:seedDatabase
  */
 
-const DEMO_INSTITUTION = "Rajasthan Institute of Ayurvedic & Applied Sciences";
+const DEMO_INSTITUTION = "Apex University of Technology & Applied Sciences";
 
 const SEED_INTERNSHIPS = [
   { title: "Ayurvedic Formulation Intern", company: "Himadri Ayurveda Pharmaceuticals Ltd.", location: "Haridwar", type: "Onsite", domain: "Ayush Pharmaceuticals & Nutraceuticals", duration: "6 months", stipend: "₹18,000/mo", tags: ["Dravyaguna", "GMP Compliance", "Quality Control"], deadline: "2026-10-12", description: "Work with the formulation team on classical and proprietary Ayurvedic preparations, from raw-material intake through batch release.", color: "#3C6B8A", hot: true },
@@ -225,13 +225,13 @@ export const seedDatabase = mutation({
         email: "demo.student@setu.dev",
         passwordHash: null,
         role: "student",
-        name: "Ananya Deshpande",
+        name: "Aarav Sharma",
         institution: DEMO_INSTITUTION,
-        department: "Ayurveda (BAMS)",
-        course: "BAMS",
+        department: "Computer Science & Engineering",
+        course: "B.Tech CSE",
         batch: "2023",
         year: "4th Year",
-        rollNo: "BAMS/2023/001",
+        rollNo: "23CSE042",
         openToOpportunities: true,
         emailVerified: true,
         createdAt: new Date().toISOString(),
@@ -240,36 +240,45 @@ export const seedDatabase = mutation({
       await ctx.db.insert("assessments", {
         studentId: "demo-student",
         domainScores: {
-          "Ayurveda & Panchakarma": 86,
-          "Ayush Pharmacology & Formulation": 71,
-          "Unani, Siddha & Homeopathy": 64,
-          "Research & Clinical Documentation": 58,
-          "Business & Communication": 82,
-          "Quantitative Aptitude": 74,
+          "Quantitative Aptitude": 84,
+          "Logical Reasoning": 88,
+          "Verbal Communication": 82,
+          "Programming & Digital Fundamentals": 92,
+          "Problem Solving & Critical Thinking": 86,
+          "Business & Professional Dynamics": 78,
+          "Data Analysis & Interpretation": 85,
+          "Research & Documentation": 74,
         },
-        overallScore: 75,
-        strongTags: ["Ayurveda & Panchakarma", "Ayush Pharmacology & Formulation", "Business & Communication", "Quantitative Aptitude"],
+        overallScore: 84,
+        strongTags: ["Programming & Digital Fundamentals", "Problem Solving & Critical Thinking", "Logical Reasoning"],
         updatedAt: new Date().toISOString(),
       });
 
       await ctx.db.insert("portfolios", {
         studentId: "demo-student",
-        bio: "Final-year BAMS student focused on clinical Panchakarma and evidence-based Ayurvedic practice. Currently assisting on an OPD lifestyle-disorder study.",
+        bio: "Final-year Computer Science & Engineering undergraduate focused on scalable full-stack architecture, distributed cloud systems, and applied AI.",
         skillBadges: {
-          "Clinical Skills": [
-            { name: "Panchakarma Protocols", level: "Advanced" },
-            { name: "Case Taking", level: "Proficient" },
-            { name: "Patient Counselling", level: "Proficient" },
+          "Engineering & Development": [
+            { name: "Full-Stack Development (React/Node.js)", level: "Advanced" },
+            { name: "Distributed Systems & Cloud (AWS)", level: "Proficient" },
+            { name: "Data Structures & Algorithms", level: "Advanced" },
           ],
-          "Research & Analytical": [{ name: "Clinical Documentation", level: "Proficient" }],
-          "Pharmacy & Formulation": [{ name: "Dravyaguna", level: "Proficient" }],
+          "Data & Machine Learning": [
+            { name: "Python / Data Science", level: "Advanced" },
+            { name: "SQL & Relational Databases", level: "Proficient" },
+          ],
+          "Professional & Workflow": [
+            { name: "Agile Project Delivery & Git", level: "Proficient" },
+            { name: "System Architecture & Documentation", level: "Proficient" },
+          ],
         },
         certifications: [
-          { name: "Certified Yoga Instructor (Level 1)", issuer: "Yoga Certification Board", year: "2025", score: "Pass" },
+          { name: "AWS Certified Cloud Practitioner", issuer: "Amazon Web Services", year: "2025", score: "Pass" },
+          { name: "Advanced Data Structures & Algorithms", issuer: "NPTEL", year: "2024", score: "Elite Gold" },
         ],
         timeline: [
-          { year: "2023", title: "Admitted — BAMS", org: DEMO_INSTITUTION, type: "Education" },
-          { year: "2025", title: "Clinical Posting — Panchakarma OPD", org: "RIAAS Teaching Hospital", type: "Internship" },
+          { year: "2023", title: "Admitted — B.Tech Computer Science & Engineering", org: DEMO_INSTITUTION, type: "Education" },
+          { year: "2025", title: "Software Engineering Intern", org: "Apex Global Technologies", type: "Internship" },
         ],
         documents: [],
       });
@@ -287,16 +296,16 @@ export const seedDatabase = mutation({
         passwordHash: null,
         role: "industry",
         name: "Rakesh Menon",
-        companyName: "Setu Wellness & Technologies Pvt. Ltd.",
-        companyDomain: "Ayush Pharmaceuticals & Nutraceuticals",
+        companyName: "Apex Global Technologies & Innovations",
+        companyDomain: "Enterprise Software & Cloud Platforms",
         companyDescription:
-          "A GMP-certified Ayurvedic formulations manufacturer and wellness clinic network, with an in-house R&D unit and a digital health team building the platform its clinics run on.",
-        hqLocation: "Pune, Maharashtra",
-        companySize: "201-500",
+          "A premier engineering enterprise delivering high-performance cloud architectures, enterprise analytics, intelligent automation, and scalable cross-sector software platforms across global markets.",
+        hqLocation: "Bengaluru, Karnataka",
+        companySize: "501-1000",
         whyWorkWithUs:
-          "Interns rotate across formulation, quality control, the clinical research cell and the product engineering team — and every intern is paired with a senior mentor from day one.",
-        workEmailDomain: "@setu-wellness.in",
-        verifiedCode: "HIMADRI-IND-1902",
+          "Interns gain production codebase ownership from week two, work directly with staff engineers on distributed cloud architectures, and participate in cross-functional product design sprints.",
+        workEmailDomain: "@apextechnologies.in",
+        verifiedCode: "APEX-IND-2026",
         emailVerified: true,
         createdAt: new Date().toISOString(),
       });
@@ -315,17 +324,17 @@ export const seedDatabase = mutation({
         role: "academician",
         name: "Dr. Shalini Kulkarni",
         institution: DEMO_INSTITUTION,
-        department: "Dravyaguna (Ayurvedic Pharmacology)",
+        department: "Life Sciences & Biotechnology",
         designation: "Associate Professor",
         experienceYears: "14",
-        subjectsTaught: ["Dravyaguna Vigyan", "Pharmacognosy", "Research Methodology"],
+        subjectsTaught: ["Bioinformatics", "Data-Driven Research Methodology", "Applied Phytochemistry"],
         researchInterests: [
-          "Phytochemistry & Standardisation",
-          "Medicinal Plant Taxonomy",
-          "Clinical Trials & Good Clinical Practice",
+          "Computational Biology & Standardisation",
+          "Natural Product Genomics",
+          "Translational Research Protocols",
         ],
         orcid: "0000-0002-1825-0097",
-        verifiedCode: "RIAAS-FAC-2026",
+        verifiedCode: "APEX-FAC-2026",
         emailVerified: true,
         createdAt: new Date().toISOString(),
       });
@@ -342,15 +351,15 @@ export const seedDatabase = mutation({
         email: "demo.institution@setu.dev",
         passwordHash: null,
         role: "institution",
-        name: "Dr. Meenakshi Rao",
+        name: "Dr. Arvind Sundaram",
         instituteName: DEMO_INSTITUTION,
-        instituteId: "AISHE-U-0417",
-        verifiedCode: "RIAAS-INST-001",
+        instituteId: "AISHE-U-0842",
+        verifiedCode: "APEX-INST-2026",
         emailVerified: true,
         createdAt: new Date().toISOString(),
       });
     }
 
-    return { success: true, message: "Ayush demo data seeded successfully." };
+    return { success: true, message: "Cross-industry national demo data seeded successfully." };
   },
 });

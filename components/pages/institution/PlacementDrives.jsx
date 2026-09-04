@@ -338,7 +338,7 @@ function InviteCompanyModal({ drive, instituteName, actor, suggestions, onClose,
             list="drive-company-suggestions"
             value={form.company}
             onChange={(e) => set("company", e.target.value)}
-            placeholder="Himadri Ayurveda Pharmaceuticals Ltd."
+            placeholder="Apex Global Technologies & Innovations"
             className="w-full bg-background border border-border rounded-xl px-3.5 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-primary/30"
           />
           <datalist id="drive-company-suggestions">
