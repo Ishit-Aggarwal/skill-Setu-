@@ -72,9 +72,16 @@ export default function AcademicianAnalytics() {
     [inPipeline]
   );
 
+  /* Only the domains this cohort is actually assessed on are charted. Plotting
+     every platform domain and defaulting the rest to 0 drew a mentor's students
+     as failing subjects their course never covers. */
   const radarData = useMemo(() => {
     const averages = Object.fromEntries(averageDomainScores(cohort).map((d) => [d.domain, d.avg]));
-    return SKILL_DOMAINS.map((skill) => ({ skill: skill.split(" ")[0], full: skill, value: averages[skill] ?? 0 }));
+    return SKILL_DOMAINS.filter((skill) => averages[skill] != null).map((skill) => ({
+      skill: skill.split(" ")[0],
+      full: skill,
+      value: averages[skill],
+    }));
   }, [cohort]);
 
   const byBatch = useMemo(() => {
