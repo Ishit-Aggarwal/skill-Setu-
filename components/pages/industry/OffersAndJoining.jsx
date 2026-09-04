@@ -6,6 +6,7 @@ import { useAuth } from "../../../lib/auth";
 import { Avatar, Badge, Button, Card, DataTable, EmptyState, Field, Flash, Modal, PageHeader, Section, Select, StatGrid, TextArea, TextInput, useFlash } from "../../ui/Kit";
 import { formatDate, relativeTime } from "../../../lib/match";
 import { OFFER_STAGES, downloadFile, listApplicationsForOwner, setOfferStage, toCsv } from "../../../lib/store";
+import StudentProfileModal from "../../StudentProfileModal";
 
 const STAGE_TONE = {
   "Not sent": "muted",
@@ -27,6 +28,7 @@ export default function OffersAndJoining() {
   const [flash, setFlash] = useFlash();
   const [filter, setFilter] = useState("All");
   const [editing, setEditing] = useState(null);
+  const [viewingStudent, setViewingStudent] = useState(null);
 
   useEffect(() => setReady(true), []);
 
@@ -82,7 +84,13 @@ export default function OffersAndJoining() {
         <div className="flex items-center gap-2.5 min-w-0">
           <Avatar name={a.studentName} size={32} />
           <div className="min-w-0">
-            <div className="font-medium text-foreground truncate">{a.studentName}</div>
+            <button
+              onClick={() => setViewingStudent(a)}
+              className="font-medium text-foreground hover:text-primary hover:underline truncate text-left block"
+              title="Click to view candidate profile"
+            >
+              {a.studentName}
+            </button>
             <div className="text-[11px] text-muted-foreground truncate">{a.studentInstitution || a.studentCourse}</div>
           </div>
         </div>
@@ -204,6 +212,13 @@ export default function OffersAndJoining() {
             }}
           />
         </Modal>
+      )}
+
+      {viewingStudent && (
+        <StudentProfileModal
+          application={viewingStudent}
+          onClose={() => setViewingStudent(null)}
+        />
       )}
     </DashboardLayout>
   );

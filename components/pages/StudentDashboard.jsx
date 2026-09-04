@@ -6,12 +6,13 @@ import DashboardLayout from "../DashboardLayout";
 import ApplyConfirmModal from "../ApplyConfirmModal";
 import { useAuth } from "../../lib/auth";
 import { useNav } from "../../lib/nav";
-import { getAssessment, getPortfolio, listInternships, listApplicationsForStudent, applyToInternship } from "../../lib/store";
+import { getAssessment, getPortfolio, listInternships, listApplicationsForStudent, applyToInternship, listAnnouncements } from "../../lib/store";
 import TalentPoolToggle from "../TalentPoolToggle";
 import StudentInbox from "../StudentInbox";
 import MentoringPanel from "../MentoringPanel";
-import { computeMatch, daysUntil, formatDate } from "../../lib/match";
+import { computeMatch, daysUntil, formatDate, relativeTime } from "../../lib/match";
 import { SKILL_DOMAINS } from "../../lib/questionBank";
+import { Badge, Modal } from "../ui/Kit";
 
 const RADAR_DOMAINS = SKILL_DOMAINS;
 
@@ -43,6 +44,8 @@ export default function StudentDashboard() {
   const [internships, setInternships] = useState([]);
   const [applications, setApplications] = useState([]);
   const [appliedIds, setAppliedIds] = useState(new Set());
+  const [announcements, setAnnouncements] = useState([]);
+  const [viewAllNotices, setViewAllNotices] = useState(false);
 
   useEffect(() => {
     if (!user) return;
@@ -52,6 +55,8 @@ export default function StudentDashboard() {
     const apps = listApplicationsForStudent(user.id);
     setApplications(apps);
     setAppliedIds(new Set(apps.map((a) => a.internshipId)));
+    const inst = user.institution || user.instituteName;
+    setAnnouncements(listAnnouncements(inst));
     setReady(true);
   }, [user]);
 
@@ -276,6 +281,70 @@ export default function StudentDashboard() {
           </div>
         </div>
 
+        {/* Campus Notice Board Widget */}
+        <div className="bg-card border border-border rounded-2xl p-5">
+          <div className="flex items-center justify-between mb-4">
+            <div>
+              <div className="flex items-center gap-2">
+                <h3 className="font-semibold text-foreground text-sm">Campus Notice Board</h3>
+                <span className="text-xs bg-primary/10 text-primary px-2 py-0.5 rounded-full font-medium">
+                  {user?.institution || "Apex University"}
+                </span>
+              </div>
+              <p className="text-xs text-muted-foreground mt-0.5">
+                Official circulars, schedules, and announcements from your faculty & placement cell
+              </p>
+            </div>
+            {announcements.length > 2 && (
+              <button
+                onClick={() => setViewAllNotices(true)}
+                className="text-xs text-primary font-medium hover:underline"
+              >
+                View all ({announcements.length}) →
+              </button>
+            )}
+          </div>
+
+          {announcements.length === 0 ? (
+            <p className="text-xs text-muted-foreground">No circulars posted by your institution yet.</p>
+          ) : (
+            <div className="grid md:grid-cols-2 gap-3.5">
+              {announcements.slice(0, 4).map((a) => (
+                <div key={a.id} className="bg-secondary/30 border border-border rounded-xl p-3.5 flex flex-col justify-between">
+                  <div>
+                    <div className="flex items-start justify-between gap-2 mb-1.5">
+                      <h4 className="text-xs font-semibold text-foreground line-clamp-1">{a.title}</h4>
+                      {a.pinned && <span className="text-[10px] bg-amber-100 text-amber-800 dark:bg-amber-900/30 dark:text-amber-300 px-1.5 py-0.5 rounded font-medium flex-shrink-0">Pinned</span>}
+                    </div>
+                    <div className="text-[11px] text-muted-foreground mb-2">
+                      {a.author || "Placement Cell"} · {relativeTime(a.postedAt)}
+                    </div>
+                    <p className="text-xs text-muted-foreground line-clamp-2 mb-3 leading-relaxed">{a.body}</p>
+                  </div>
+
+                  {a.attachment && (
+                    <div className="pt-2.5 border-t border-border/60 flex items-center justify-between gap-2">
+                      <div className="flex items-center gap-1.5 min-w-0">
+                        <span className="text-sm">📄</span>
+                        <span className="text-[11px] font-medium text-foreground truncate">{a.attachment.name}</span>
+                      </div>
+                      <a
+                        href={a.attachment.dataUrl || a.attachment.url || "#"}
+                        download={a.attachment.name}
+                        target="_blank"
+                        rel="noreferrer"
+                        className="text-[11px] font-semibold text-primary hover:underline flex-shrink-0"
+                      >
+                        PDF ↓
+                      </a>
+                    </div>
+                  )}
+                </div>
+              ))}
+            </div>
+          )}
+        </div>
+
         <div className="bg-card border border-border rounded-2xl p-5">
           <h3 className="font-semibold text-foreground text-sm mb-4">Upcoming Deadlines</h3>
           <div className="space-y-3">
@@ -298,6 +367,46 @@ export default function StudentDashboard() {
       </div>
     </DashboardLayout>
     {applyTarget && <ApplyConfirmModal internship={applyTarget} user={user} onConfirm={confirmApply} onClose={() => setApplyTarget(null)} />}
+    {viewAllNotices && (
+      <Modal
+        title={`Campus Notice Board · ${user?.institution || "Apex University"}`}
+        description="All official announcements, drive notifications, and attached PDF documents."
+        onClose={() => setViewAllNotices(false)}
+      >
+        <div className="space-y-3.5 max-h-[70vh] overflow-y-auto pr-1">
+          {announcements.map((a) => (
+            <div key={a.id} className="bg-card border border-border rounded-xl p-4">
+              <div className="flex items-center justify-between gap-2 mb-1">
+                <h4 className="text-sm font-semibold text-foreground">{a.title}</h4>
+                {a.pinned && <Badge tone="amber">Pinned</Badge>}
+              </div>
+              <div className="text-xs text-muted-foreground mb-2">
+                {a.author || "Placement Cell"} · {relativeTime(a.postedAt)} · Audience: {a.audience}
+              </div>
+              <p className="text-xs text-muted-foreground leading-relaxed whitespace-pre-line mb-3">{a.body}</p>
+              {a.attachment && (
+                <div className="flex items-center justify-between gap-3 bg-secondary/50 border border-border rounded-xl px-3 py-2 text-xs">
+                  <div className="flex items-center gap-2 min-w-0">
+                    <span className="text-base">📄</span>
+                    <span className="font-medium text-foreground truncate">{a.attachment.name}</span>
+                    {a.attachment.size && <span className="text-muted-foreground">({a.attachment.size})</span>}
+                  </div>
+                  <a
+                    href={a.attachment.dataUrl || a.attachment.url || "#"}
+                    download={a.attachment.name}
+                    target="_blank"
+                    rel="noreferrer"
+                    className="px-2.5 py-1 rounded-lg bg-primary text-white text-xs font-medium hover:bg-accent transition-colors flex-shrink-0"
+                  >
+                    Download PDF
+                  </a>
+                </div>
+              )}
+            </div>
+          ))}
+        </div>
+      </Modal>
+    )}
     </>
   );
 }

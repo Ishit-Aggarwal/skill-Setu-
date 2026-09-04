@@ -17,7 +17,9 @@ function readFileAsDataUrl(file) {
 }
 
 export default function EditProfileModal({ onClose }) {
-  const { user, updateProfile } = useAuth();
+  const { user, updateProfile, deleteAccount } = useAuth();
+  const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
+  const [deleting, setDeleting] = useState(false);
   const [form, setForm] = useState({
     name: user.name || "",
     institution: user.institution || "",
@@ -205,6 +207,63 @@ export default function EditProfileModal({ onClose }) {
             <button type="submit" disabled={saving} className="flex-1 py-3 rounded-xl bg-primary hover:bg-accent disabled:opacity-60 text-white text-sm font-medium transition-all duration-150">Save Changes</button>
           </div>
         </form>
+
+        {/* Danger Zone: Account Deletion */}
+        <div className="mt-6 pt-5 border-t border-border">
+          <div className="flex items-center justify-between gap-3">
+            <div>
+              <div className="text-xs font-semibold text-red-600 uppercase tracking-wider">Danger Zone</div>
+              <p className="text-xs text-muted-foreground mt-0.5">Permanently delete your account and profile data</p>
+            </div>
+            <button
+              type="button"
+              onClick={() => setShowDeleteConfirm(true)}
+              className="px-3 py-1.5 rounded-xl border border-red-300 text-red-600 hover:bg-red-50 dark:hover:bg-red-950/30 text-xs font-medium transition-colors flex-shrink-0"
+            >
+              Delete Account
+            </button>
+          </div>
+        </div>
+
+        {/* Confirmation Modal */}
+        {showDeleteConfirm && (
+          <div className="fixed inset-0 z-60 flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm">
+            <div className="bg-card border border-border rounded-2xl p-6 max-w-sm w-full shadow-2xl space-y-4 animate-fade-slide">
+              <div className="w-12 h-12 rounded-full bg-red-100 dark:bg-red-900/30 text-red-600 flex items-center justify-center text-xl mx-auto">
+                ⚠️
+              </div>
+              <div className="text-center">
+                <h4 className="font-bold text-foreground text-base">Delete Account?</h4>
+                <p className="text-xs text-muted-foreground mt-1.5 leading-relaxed">
+                  This action cannot be undone. All your profile information, assessments, applications, and saved preferences will be permanently wiped.
+                </p>
+              </div>
+              <div className="flex gap-3 pt-2">
+                <button
+                  type="button"
+                  disabled={deleting}
+                  onClick={() => setShowDeleteConfirm(false)}
+                  className="flex-1 py-2.5 rounded-xl border border-border text-xs text-muted-foreground hover:bg-secondary font-medium transition-colors"
+                >
+                  Cancel
+                </button>
+                <button
+                  type="button"
+                  disabled={deleting}
+                  onClick={async () => {
+                    setDeleting(true);
+                    await deleteAccount();
+                    onClose();
+                    window.location.href = "/";
+                  }}
+                  className="flex-1 py-2.5 rounded-xl bg-red-600 hover:bg-red-700 text-white text-xs font-medium transition-colors"
+                >
+                  {deleting ? "Deleting..." : "Yes, Delete Account"}
+                </button>
+              </div>
+            </div>
+          </div>
+        )}
       </div>
     </div>
   );

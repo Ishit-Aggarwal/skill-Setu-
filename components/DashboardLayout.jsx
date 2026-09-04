@@ -97,6 +97,7 @@ const NAV = {
     { label: "Research Collabs", short: "Research", page: "academician-collabs", icon: <IconFlask /> },
     { label: "Programs (FDPs)", short: "FDPs", page: "academician-programs", icon: <IconBookOpen /> },
     { label: "Industry Alignment", short: "Align", page: "academician-alignment", icon: <IconCompass /> },
+    { label: "Campus Board", short: "Board", page: "institution-announcements", icon: <IconMegaphone /> },
     { label: "Analytics", short: "Insights", page: "academician-analytics", icon: <IconBarChart /> },
     { label: "Skill Tests", short: "Tests", page: "skill-assessment", icon: <IconTarget /> },
     { label: "Faculty Profile", short: "Profile", page: "academician-profile", icon: <IconUser /> },

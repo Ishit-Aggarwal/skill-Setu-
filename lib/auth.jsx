@@ -1,7 +1,7 @@
 "use client";
 
 import { createContext, useContext, useEffect, useState } from "react";
-import { findOne, insert, update, getDemoUser } from "./store";
+import { findOne, insert, update, remove, getDemoUser, all, saveAll } from "./store";
 import { hashPassword } from "./hash";
 
 const AuthContext = createContext(null);
@@ -169,8 +169,24 @@ export function AuthProvider({ children }) {
     persistSession(null);
   }
 
+  async function deleteAccount() {
+    if (!user) return;
+    const uid = user.id;
+    postJson("/api/auth/delete", { id: uid }).catch(() => {});
+    remove("users", uid);
+    if (user.role === "student") {
+      try {
+        const remainingApps = all("applications").filter((a) => a.studentId !== uid);
+        saveAll("applications", remainingApps);
+        remove("portfolios", uid);
+        remove("assessments", uid);
+      } catch {}
+    }
+    persistSession(null);
+  }
+
   return (
-    <AuthContext.Provider value={{ user, loading, login, logout, sendSignupOtp, completeSignup, loginAsDemo, updateProfile }}>
+    <AuthContext.Provider value={{ user, loading, login, logout, deleteAccount, sendSignupOtp, completeSignup, loginAsDemo, updateProfile }}>
       {children}
     </AuthContext.Provider>
   );

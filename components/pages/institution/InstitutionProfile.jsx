@@ -6,7 +6,7 @@ import { useAuth } from "../../../lib/auth";
 import { Badge, Button, Card, Field, Flash, PageHeader, Section, Select, TextArea, TextInput, useFlash } from "../../ui/Kit";
 import { ACCREDITATION_BODIES, DEPARTMENTS, INSTITUTION_TYPES } from "../../../lib/domains";
 import { formatDate } from "../../../lib/match";
-import { getInstitutionProfile, logActivity, saveInstitutionProfile } from "../../../lib/store";
+import { getInstitutionProfile, logActivity, saveInstitutionProfile, listInstitutionDocs, addInstitutionDoc, removeInstitutionDoc } from "../../../lib/store";
 import { useInstitutionName } from "./useInstitution";
 
 const MAX_FILE_BYTES = 1.5 * 1024 * 1024;
@@ -51,16 +51,52 @@ export default function InstitutionProfile() {
   const [flash, setFlash] = useFlash();
   const [error, setError] = useState(null);
 
+  const [docs, setDocs] = useState([]);
+  const [showAddDoc, setShowAddDoc] = useState(false);
+  const [docTitle, setDocTitle] = useState("");
+  const [docCategory, setDocCategory] = useState("Brochure & Prospectus");
+  const [docFile, setDocFile] = useState(null);
+
   useEffect(() => {
     const stored = getInstitutionProfile(instituteName);
     setForm({ ...EMPTY, ...(stored || {}), placementCell: { ...EMPTY.placementCell, ...(stored?.placementCell || {}) } });
     setName(instituteName);
     setInstituteId(user?.instituteId || "");
+    if (instituteName) {
+      setDocs(listInstitutionDocs(instituteName));
+    }
     setReady(true);
   }, [instituteName, user]);
 
   const set = (k, v) => setForm((f) => ({ ...f, [k]: v }));
   const setCell = (k, v) => setForm((f) => ({ ...f, placementCell: { ...f.placementCell, [k]: v } }));
+
+  async function handleAddDoc(e) {
+    e.preventDefault();
+    if (!docTitle.trim() || !docFile) return setError("Please enter a title and select a PDF document.");
+    if (docFile.size > 5 * 1024 * 1024) return setError("Document must be under 5MB.");
+    setError(null);
+    const dataUrl = await readFileAsDataUrl(docFile);
+    addInstitutionDoc(instituteName, {
+      title: docTitle.trim(),
+      category: docCategory,
+      fileName: docFile.name,
+      fileSize: `${(docFile.size / 1024).toFixed(0)} KB`,
+      dataUrl,
+      uploadedBy: user?.name || "Admin",
+    });
+    setDocs(listInstitutionDocs(instituteName));
+    setDocTitle("");
+    setDocFile(null);
+    setShowAddDoc(false);
+    setFlash("Official institutional document uploaded successfully.");
+  }
+
+  function handleRemoveDoc(id) {
+    removeInstitutionDoc(id);
+    setDocs(listInstitutionDocs(instituteName));
+    setFlash("Document removed.");
+  }
 
   async function handleLogo(e) {
     const file = e.target.files?.[0];
@@ -289,6 +325,92 @@ export default function InstitutionProfile() {
                 <Field label="Email"><TextInput type="email" value={form.placementCell.email} onChange={(e) => setCell("email", e.target.value)} /></Field>
                 <Field label="Phone"><TextInput value={form.placementCell.phone} onChange={(e) => setCell("phone", e.target.value)} /></Field>
               </div>
+            </Section>
+          </Card>
+
+          <Card>
+            <Section
+              title="Official Documents & Institutional PDFs"
+              description="Upload official university brochures, NIRF disclosures, placement policies, and accreditation reports."
+              actions={
+                <Button type="button" size="sm" variant="outline" onClick={() => setShowAddDoc((v) => !v)}>
+                  {showAddDoc ? "Close form" : "Upload new document"}
+                </Button>
+              }
+            >
+              {showAddDoc && (
+                <div className="bg-secondary/40 border border-border rounded-xl p-4 mb-4 space-y-3">
+                  <div className="grid sm:grid-cols-2 gap-3">
+                    <Field label="Document Title">
+                      <TextInput
+                        value={docTitle}
+                        onChange={(e) => setDocTitle(e.target.value)}
+                        placeholder="e.g. Campus Placement Guidelines & Policy 2026"
+                      />
+                    </Field>
+                    <Field label="Category">
+                      <Select value={docCategory} onChange={(e) => setDocCategory(e.target.value)}>
+                        {["Brochure & Prospectus", "NIRF & Accreditations", "Placement Policy", "Annual Report", "Compliance & Guidelines"].map((c) => (
+                          <option key={c}>{c}</option>
+                        ))}
+                      </Select>
+                    </Field>
+                  </div>
+                  <Field label="Select PDF File" hint="PDF files up to 5MB">
+                    <input
+                      type="file"
+                      accept=".pdf,application/pdf"
+                      onChange={(e) => setDocFile(e.target.files?.[0] || null)}
+                      className="w-full text-xs text-muted-foreground file:mr-3 file:py-2 file:px-3.5 file:rounded-xl file:border file:border-border file:text-xs file:font-semibold file:bg-secondary file:text-foreground hover:file:bg-muted cursor-pointer"
+                    />
+                  </Field>
+                  <div className="flex justify-end gap-2 pt-1">
+                    <Button type="button" variant="outline" size="sm" onClick={() => setShowAddDoc(false)}>Cancel</Button>
+                    <Button type="button" size="sm" onClick={handleAddDoc}>Upload Document</Button>
+                  </div>
+                </div>
+              )}
+
+              {docs.length === 0 ? (
+                <p className="text-xs text-muted-foreground py-2">No official documents uploaded yet.</p>
+              ) : (
+                <div className="space-y-2.5">
+                  {docs.map((d) => (
+                    <div key={d.id} className="flex items-center justify-between gap-3 bg-card border border-border rounded-xl px-4 py-3 text-xs">
+                      <div className="flex items-center gap-3 min-w-0">
+                        <span className="text-2xl flex-shrink-0">📄</span>
+                        <div className="min-w-0">
+                          <div className="font-semibold text-foreground truncate flex items-center gap-2">
+                            <span>{d.title}</span>
+                            <Badge tone="primary">{d.category}</Badge>
+                          </div>
+                          <div className="text-[11px] text-muted-foreground truncate mt-0.5">
+                            {d.fileName} · {d.fileSize || "PDF"} {d.uploadedAt ? `· Uploaded ${formatDate(d.uploadedAt)}` : ""}
+                          </div>
+                        </div>
+                      </div>
+                      <div className="flex items-center gap-3 flex-shrink-0">
+                        <a
+                          href={d.dataUrl || "#"}
+                          download={d.fileName}
+                          target="_blank"
+                          rel="noreferrer"
+                          className="px-3 py-1.5 rounded-lg bg-primary text-white text-xs font-medium hover:bg-accent transition-colors"
+                        >
+                          Download PDF
+                        </a>
+                        <button
+                          type="button"
+                          onClick={() => handleRemoveDoc(d.id)}
+                          className="text-muted-foreground hover:text-red-600 text-xs transition-colors"
+                        >
+                          Remove
+                        </button>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              )}
             </Section>
           </Card>
 

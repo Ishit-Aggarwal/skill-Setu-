@@ -55,6 +55,7 @@ export default function StudentRoster() {
   const [status, setStatus] = useState("All");
   const [sort, setSort] = useState("name");
   const [selected, setSelected] = useState(() => new Set());
+  const [viewingStudent, setViewingStudent] = useState(null);
 
   const [showAdd, setShowAdd] = useState(false);
   const [showImport, setShowImport] = useState(false);
@@ -158,7 +159,13 @@ export default function StudentRoster() {
       render: (r) => (
         <div className="min-w-0">
           <div className="font-medium text-foreground flex items-center gap-1.5">
-            <span className="truncate">{r.name}</span>
+            <button
+              onClick={() => setViewingStudent(r)}
+              className="truncate text-foreground hover:text-primary hover:underline font-medium text-left"
+              title="Click to view full read-only student profile"
+            >
+              {r.name}
+            </button>
             {r.invited && <Badge tone="amber">Invited</Badge>}
           </div>
           <div className="text-[11px] text-muted-foreground truncate">{r.rollNo || r.email}</div>
@@ -329,6 +336,13 @@ export default function StudentRoster() {
             setFlash(msg);
             setVersion((v) => v + 1);
           }}
+        />
+      )}
+
+      {viewingStudent && (
+        <StudentProfileModal
+          student={viewingStudent}
+          onClose={() => setViewingStudent(null)}
         />
       )}
     </DashboardLayout>

@@ -13,6 +13,7 @@ import {
   logActivity,
   notifyStudents,
   update,
+  updateAnnouncement,
 } from "../../../lib/store";
 import { buildRoster, useInstitutionName } from "./useInstitution";
 
@@ -41,6 +42,7 @@ export default function NoticeBoard() {
   const [version, setVersion] = useState(0);
   const [flash, setFlash] = useFlash();
   const [showCompose, setShowCompose] = useState(false);
+  const [editingNotice, setEditingNotice] = useState(null);
 
   useEffect(() => setReady(true), []);
 
@@ -52,14 +54,14 @@ export default function NoticeBoard() {
   const rest = notices.filter((n) => !n.pinned);
 
   function togglePin(n) {
-    update("announcements", n.id, { pinned: !n.pinned });
+    updateAnnouncement(n.id, { pinned: !n.pinned });
     setVersion((v) => v + 1);
     setFlash(n.pinned ? "Unpinned." : "Pinned to the top of the board.");
   }
 
   function removeNotice(n) {
     deleteAnnouncement(n.id);
-    logActivity(instituteName, user?.name || "Admin", "Deleted a notice", n.title);
+    logActivity(instituteName, user?.name || "Faculty / Admin", "Deleted a notice", n.title);
     setVersion((v) => v + 1);
     setFlash("Notice removed.");
   }
@@ -81,7 +83,30 @@ export default function NoticeBoard() {
           </div>
         </div>
         <p className="text-sm text-muted-foreground leading-relaxed whitespace-pre-line">{n.body}</p>
-        <div className="flex items-center gap-3 mt-3 pt-3 border-t border-border">
+
+        {n.attachment && (
+          <div className="mt-3 flex items-center justify-between gap-3 bg-secondary/50 border border-border rounded-xl px-3.5 py-2.5 text-xs">
+            <div className="flex items-center gap-2.5 min-w-0">
+              <span className="text-lg">📄</span>
+              <div className="min-w-0">
+                <span className="font-medium text-foreground truncate block">{n.attachment.name}</span>
+                {n.attachment.size && <span className="text-[10px] text-muted-foreground block">{n.attachment.size}</span>}
+              </div>
+            </div>
+            <a
+              href={n.attachment.dataUrl || n.attachment.url || "#"}
+              download={n.attachment.name}
+              target="_blank"
+              rel="noreferrer"
+              className="px-2.5 py-1 rounded-lg bg-primary text-white text-[11px] font-medium hover:bg-accent transition-colors flex-shrink-0"
+            >
+              Download PDF
+            </a>
+          </div>
+        )}
+
+        <div className="flex items-center gap-4 mt-3 pt-3 border-t border-border">
+          <button onClick={() => setEditingNotice(n)} className="text-xs text-primary font-medium hover:underline">Edit</button>
           <button onClick={() => togglePin(n)} className="text-xs text-muted-foreground hover:text-foreground">{n.pinned ? "Unpin" : "Pin to top"}</button>
           <button onClick={() => removeNotice(n)} className="text-xs text-muted-foreground hover:text-red-600">Delete</button>
         </div>
@@ -142,21 +167,45 @@ export default function NoticeBoard() {
           <ComposeForm
             roster={roster}
             onCancel={() => setShowCompose(false)}
-            onSubmit={({ title, body, audience, pinned: isPinned }) => {
+            onSubmit={({ title, body, audience, pinned: isPinned, attachment }) => {
               const recipients = resolveAudience(audience, roster);
               createAnnouncement(instituteName, {
                 title,
                 body,
                 audience,
                 pinned: isPinned,
-                author: user?.name || "Placement Cell",
+                attachment,
+                author: user?.name || (user?.role === "academician" ? "Prof. " + user.name : "Placement Cell"),
                 recipients: recipients.length,
               });
               notifyStudents(instituteName, recipients.map((r) => r.id), `${title} — ${body}`, user?.name || "Placement Cell");
-              logActivity(instituteName, user?.name || "Admin", "Posted a notice", title);
+              logActivity(instituteName, user?.name || "Faculty / Admin", "Posted a notice", title);
               setShowCompose(false);
               setVersion((v) => v + 1);
               setFlash(`Notice posted to ${recipients.length} student${recipients.length === 1 ? "" : "s"}.`);
+            }}
+          />
+        </Modal>
+      )}
+
+      {editingNotice && (
+        <Modal title="Edit notice" description="Update the notice title, message, audience, or attached document." onClose={() => setEditingNotice(null)}>
+          <ComposeForm
+            initialData={editingNotice}
+            roster={roster}
+            onCancel={() => setEditingNotice(null)}
+            onSubmit={({ title, body, audience, pinned: isPinned, attachment }) => {
+              updateAnnouncement(editingNotice.id, {
+                title,
+                body,
+                audience,
+                pinned: isPinned,
+                attachment,
+              });
+              logActivity(instituteName, user?.name || "Faculty / Admin", "Updated notice", title);
+              setEditingNotice(null);
+              setVersion((v) => v + 1);
+              setFlash("Notice updated successfully.");
             }}
           />
         </Modal>
@@ -165,18 +214,33 @@ export default function NoticeBoard() {
   );
 }
 
-function ComposeForm({ roster, onCancel, onSubmit }) {
-  const [title, setTitle] = useState("");
-  const [body, setBody] = useState("");
-  const [audience, setAudience] = useState(AUDIENCES[0]);
-  const [pinned, setPinned] = useState(false);
+function ComposeForm({ initialData, roster, onCancel, onSubmit }) {
+  const [title, setTitle] = useState(initialData?.title || "");
+  const [body, setBody] = useState(initialData?.body || "");
+  const [audience, setAudience] = useState(initialData?.audience || AUDIENCES[0]);
+  const [pinned, setPinned] = useState(Boolean(initialData?.pinned));
+  const [attachment, setAttachment] = useState(initialData?.attachment || null);
   const reach = resolveAudience(audience, roster).length;
+
+  function handleFile(e) {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    const reader = new FileReader();
+    reader.onload = () => {
+      setAttachment({
+        name: file.name,
+        size: `${(file.size / 1024).toFixed(0)} KB`,
+        dataUrl: reader.result,
+      });
+    };
+    reader.readAsDataURL(file);
+  }
 
   return (
     <form
       onSubmit={(e) => {
         e.preventDefault();
-        onSubmit({ title, body, audience, pinned });
+        onSubmit({ title, body, audience, pinned, attachment });
       }}
       className="space-y-4"
     >
@@ -187,13 +251,40 @@ function ComposeForm({ roster, onCancel, onSubmit }) {
           {AUDIENCES.map((a) => <option key={a}>{a}</option>)}
         </Select>
       </Field>
+
+      <Field label="Attach Document (PDF)" hint="Upload a circular, schedule, or syllabus document.">
+        {attachment ? (
+          <div className="flex items-center justify-between gap-3 bg-secondary/50 border border-border rounded-xl px-3.5 py-2.5 text-xs">
+            <div className="flex items-center gap-2 min-w-0">
+              <span className="text-base">📄</span>
+              <span className="font-medium text-foreground truncate">{attachment.name}</span>
+              {attachment.size && <span className="text-muted-foreground">({attachment.size})</span>}
+            </div>
+            <button
+              type="button"
+              onClick={() => setAttachment(null)}
+              className="text-red-600 hover:underline font-medium text-xs flex-shrink-0"
+            >
+              Remove
+            </button>
+          </div>
+        ) : (
+          <input
+            type="file"
+            accept=".pdf,application/pdf"
+            onChange={handleFile}
+            className="w-full text-xs text-muted-foreground file:mr-3 file:py-2 file:px-3.5 file:rounded-xl file:border file:border-border file:text-xs file:font-semibold file:bg-secondary file:text-foreground hover:file:bg-muted cursor-pointer"
+          />
+        )}
+      </Field>
+
       <label className="flex items-center gap-2 text-sm text-foreground">
         <input type="checkbox" checked={pinned} onChange={(e) => setPinned(e.target.checked)} className="w-4 h-4 accent-primary" />
         Pin to the top of the board
       </label>
       <div className="flex gap-3">
         <Button type="button" variant="outline" className="flex-1" onClick={onCancel}>Cancel</Button>
-        <Button type="submit" className="flex-1">Post notice</Button>
+        <Button type="submit" className="flex-1">{initialData ? "Save changes" : "Post notice"}</Button>
       </div>
     </form>
   );
