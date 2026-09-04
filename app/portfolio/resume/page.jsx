@@ -4,6 +4,7 @@ import { useEffect, useState } from "react";
 import Link from "next/link";
 import { useAuth } from "../../../lib/auth";
 import { getPortfolio, getAssessment, listApplicationsForStudent } from "../../../lib/store";
+import { scoresFor } from "../../../lib/taxonomy";
 import RequireAuth from "../../../components/RequireAuth";
 
 function ResumeContent() {
@@ -35,9 +36,13 @@ function ResumeContent() {
     );
   }
 
-  // Extract top verified skill domains
-  const domainScores = assessment?.domainScores || {};
-  const sortedDomains = Object.entries(domainScores).sort((a, b) => b[1] - a[1]);
+  // Competencies are listed against this student's own stream rubric, so a CSE
+  // candidate's resume never carries a clinical axis (and vice versa).
+  const competency = scoresFor(user, assessment);
+  const sortedDomains = competency.rows
+    .filter((r) => r.score != null)
+    .sort((a, b) => b.score - a.score)
+    .map((r) => [r.skill, r.score]);
 
   // Extract timeline experience
   const timeline = portfolio?.timeline || [];
@@ -260,8 +265,11 @@ function ResumeContent() {
           <div>
             Verified through <strong>Skill Setu National Talent Registry</strong> (SIH Problem Statement SIH26044).
           </div>
+          {/* Derived from the student id, not the clock: a verification stamp
+              that changed on every render (and every reprint) could never be
+              checked against anything. */}
           <div className="font-mono">
-            STAMP: MOA-SIH-{Date.now().toString(36).toUpperCase()}
+            STAMP: SETU-{String(user.id || "student").split("").reduce((h, c) => (h * 31 + c.charCodeAt(0)) >>> 0, 7).toString(36).toUpperCase().padStart(6, "0")}
           </div>
         </footer>
       </div>

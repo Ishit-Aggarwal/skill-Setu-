@@ -201,9 +201,10 @@ const badgeDotTones = {
   muted: "bg-muted-foreground",
 };
 
-export function Badge({ tone = "neutral", dot = false, children, className = "" }) {
+export function Badge({ tone = "neutral", dot = false, children, className = "", ...rest }) {
   return (
     <span
+      {...rest}
       className={`inline-flex items-center gap-1.5 text-[10px] font-semibold px-2.5 py-1 rounded-full whitespace-nowrap ${
         badgeTones[tone] || badgeTones.neutral
       } ${className}`}

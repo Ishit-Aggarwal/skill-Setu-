@@ -73,6 +73,30 @@ const emptyPortfolio = {
 const MAX_DOC_BYTES = 2 * 1024 * 1024;
 const DOC_TYPES = ["Resume", "Degree / Marksheet", "Transcript", "ID Proof", "Offer Letter", "Recommendation", "Other"];
 
+/* Images go into an <img>, so only real image types are accepted; proof
+   documents may also be a PDF. Both are validated on type as well as size —
+   an accept="" attribute is a hint to the file picker, not a guarantee. */
+const MAX_IMAGE_BYTES = 2 * 1024 * 1024;
+const IMAGE_TYPES = ["image/png", "image/jpeg", "image/webp", "image/gif"];
+const PROOF_TYPES = [...IMAGE_TYPES, "application/pdf"];
+
+const BANNER_GUIDANCE = "Wide image, around 1500 × 300. PNG, JPG or WEBP under 2MB.";
+
+function validateFile(file, { allowed, maxBytes, label }) {
+  if (!allowed.includes(file.type)) {
+    return `${label} must be ${allowed.includes("application/pdf") ? "a PDF or an image" : "a PNG, JPG or WEBP image"}.`;
+  }
+  if (file.size > maxBytes) return `${label} must be under ${formatBytes(maxBytes)}.`;
+  return null;
+}
+
+/** Where a certificate sits in the verification chain, for the status badge. */
+function certStatus(cert) {
+  if (cert.verifiedAt) return { label: "Verified", tone: "green", hint: "Checked by an institution or issuer on Skill Setu." };
+  if (cert.dataUrl) return { label: "Pending verification", tone: "amber", hint: "Proof uploaded — awaiting review by your institution." };
+  return { label: "No proof", tone: "muted", hint: "Added before proof was required." };
+}
+
 function readFileAsDataUrl(file) {
   return new Promise((resolve, reject) => {
     const reader = new FileReader();
@@ -125,7 +149,8 @@ export default function StudentPortfolio() {
   const [certForm, setCertForm] = useState({ name: "", issuer: "", year: "", score: "", credentialUrl: "" });
   const [certFile, setCertFile] = useState(null);
   const [projectForm, setProjectForm] = useState({ title: "", description: "", tags: "", link: "", year: "" });
-  const [eduForm, setEduForm] = useState({ degree: "", institution: "", startYear: "", endYear: "", score: "" });
+  const [eduForm, setEduForm] = useState({ degree: "", institution: "", startYear: "", endYear: "", score: "", pursuing: true });
+  const [eduFile, setEduFile] = useState(null);
   const [timelineForm, setTimelineForm] = useState({ year: "", title: "", org: "", type: "Internship", detail: "" });
   const [docType, setDocType] = useState("Resume");
 
@@ -133,11 +158,14 @@ export default function StudentPortfolio() {
   // automatically — just once the typing stops.
   const bioTimer = useRef(null);
   const [bioDraft, setBioDraft] = useState("");
+  const headlineTimer = useRef(null);
+  const [headlineDraft, setHeadlineDraft] = useState("");
 
   function reload(uid) {
     const existing = getPortfolio(uid);
     setPortfolio(existing ? { ...emptyPortfolio, ...existing } : emptyPortfolio);
     setBioDraft(existing?.bio || "");
+    setHeadlineDraft(existing?.headline || "");
     setAssessment(getAssessment(uid));
     setApplications(listApplicationsForStudent(uid));
     setCredentials(listCredentialsForStudent(uid));
@@ -155,6 +183,7 @@ export default function StudentPortfolio() {
     return () => {
       unsub();
       if (bioTimer.current) clearTimeout(bioTimer.current);
+      if (headlineTimer.current) clearTimeout(headlineTimer.current);
     };
   }, [user]);
 
@@ -168,6 +197,33 @@ export default function StudentPortfolio() {
     if (bioTimer.current) clearTimeout(bioTimer.current);
     bioTimer.current = setTimeout(() => persist({ bio: value }), 500);
   }
+
+  function handleHeadlineChange(value) {
+    setHeadlineDraft(value);
+    if (headlineTimer.current) clearTimeout(headlineTimer.current);
+    headlineTimer.current = setTimeout(() => persist({ headline: value }), 500);
+  }
+
+  /* Banner and photo live on the user record, not the portfolio, because the
+     avatar is already read from there by every other surface (talent pool,
+     candidate modal, dashboards) — storing a second copy would let the two
+     drift apart. */
+  async function handleImageUpload(e, field, label) {
+    const file = e.target.files?.[0];
+    e.target.value = "";
+    if (!file) return;
+    const problem = validateFile(file, { allowed: IMAGE_TYPES, maxBytes: MAX_IMAGE_BYTES, label });
+    if (problem) return setError(problem);
+    try {
+      setError(null);
+      updateProfile({ [field]: await readFileAsDataUrl(file) });
+    } catch {
+      setError(`${label} could not be read. Try a different file.`);
+    }
+  }
+
+  const handleBannerUpload = (e) => handleImageUpload(e, "bannerDataUrl", "Banner image");
+  const handleAvatarUpload = (e) => handleImageUpload(e, "avatarDataUrl", "Profile photo");
 
   function handlePrint() {
     setPrinting(true);
@@ -199,27 +255,40 @@ export default function StudentPortfolio() {
 
   async function handleCertFile(e) {
     const file = e.target.files?.[0];
+    e.target.value = "";
     if (!file) return;
-    if (file.size > MAX_DOC_BYTES) {
-      setError("Certificate files must be under 2MB.");
-      e.target.value = "";
-      return;
+    const problem = validateFile(file, { allowed: PROOF_TYPES, maxBytes: MAX_DOC_BYTES, label: "The certificate file" });
+    if (problem) return setError(problem);
+    try {
+      setError(null);
+      setCertFile({ fileName: file.name, size: file.size, dataUrl: await readFileAsDataUrl(file) });
+    } catch {
+      setError("That certificate file could not be read. Try a different one.");
     }
-    setError(null);
-    const dataUrl = await readFileAsDataUrl(file);
-    setCertFile({ fileName: file.name, size: file.size, dataUrl });
   }
 
   function addCert(e) {
     e.preventDefault();
     if (!certForm.name.trim()) return;
+    // Proof is required. A claimed certificate with nothing behind it is what
+    // the verified-credentials story has to rule out, so the entry cannot be
+    // created without a file to verify against.
+    if (!certFile) {
+      setError("Attach the certificate itself (PDF or image) before saving it.");
+      return;
+    }
+    setError(null);
     persist({
       certifications: [
         ...(portfolio.certifications || []),
         {
           id: newId("cert"),
           ...certForm,
-          ...(certFile ? { fileName: certFile.fileName, fileSize: certFile.size, dataUrl: certFile.dataUrl } : {}),
+          fileName: certFile.fileName,
+          fileSize: certFile.size,
+          dataUrl: certFile.dataUrl,
+          uploadedAt: new Date().toISOString(),
+          verifiedAt: null,
         },
       ],
     });
@@ -257,11 +326,42 @@ export default function StudentPortfolio() {
 
   /* ---------------- Education ---------------- */
 
+  async function handleEduFile(e) {
+    const file = e.target.files?.[0];
+    e.target.value = "";
+    if (!file) return;
+    const problem = validateFile(file, { allowed: PROOF_TYPES, maxBytes: MAX_DOC_BYTES, label: "The degree certificate" });
+    if (problem) return setError(problem);
+    try {
+      setError(null);
+      setEduFile({ fileName: file.name, size: file.size, dataUrl: await readFileAsDataUrl(file) });
+    } catch {
+      setError("That degree certificate could not be read. Try a different file.");
+    }
+  }
+
   function addEducation(e) {
     e.preventDefault();
     if (!eduForm.degree.trim()) return;
-    persist({ education: [...(portfolio.education || []), { id: newId("edu"), ...eduForm }] });
-    setEduForm({ degree: "", institution: "", startYear: "", endYear: "", score: "" });
+    // Proof is required for a finished degree only — a student mid-course has
+    // nothing to upload yet, so demanding it would block the common case.
+    if (!eduForm.pursuing && !eduFile) {
+      setError("Attach the degree or provisional certificate for a completed qualification.");
+      return;
+    }
+    setError(null);
+    persist({
+      education: [
+        ...(portfolio.education || []),
+        {
+          id: newId("edu"),
+          ...eduForm,
+          ...(eduFile ? { fileName: eduFile.fileName, fileSize: eduFile.size, dataUrl: eduFile.dataUrl, uploadedAt: new Date().toISOString(), verifiedAt: null } : {}),
+        },
+      ],
+    });
+    setEduForm({ degree: "", institution: "", startYear: "", endYear: "", score: "", pursuing: true });
+    setEduFile(null);
     setShowAdd(null);
   }
 
@@ -346,41 +446,84 @@ export default function StudentPortfolio() {
         )}
 
         <div className="bg-card border border-border rounded-2xl overflow-hidden">
-          <div className="h-24 bg-gradient-to-r from-primary/80 to-accent/60 relative">
-            <div className="absolute inset-0 opacity-20" style={{ backgroundImage: "radial-gradient(circle at 20% 50%, white 0%, transparent 60%)" }} />
+          {/* Banner: the olive gradient stays as the default, so a portfolio
+              with no upload still looks finished rather than unfinished. */}
+          <div className="h-28 bg-gradient-to-r from-primary/80 to-accent/60 relative">
+            {user.bannerDataUrl ? (
+              <img src={user.bannerDataUrl} alt="" className="w-full h-full object-cover" />
+            ) : (
+              <div className="absolute inset-0 opacity-20" style={{ backgroundImage: "radial-gradient(circle at 20% 50%, white 0%, transparent 60%)" }} />
+            )}
+            <div className="absolute top-2 right-2 flex items-center gap-1.5 print:hidden">
+              <label
+                title={BANNER_GUIDANCE}
+                className="cursor-pointer text-[11px] font-medium px-2.5 py-1.5 rounded-lg bg-black/45 text-white hover:bg-black/60 backdrop-blur-sm transition-colors focus-within:outline focus-within:outline-2 focus-within:outline-offset-2 focus-within:outline-white"
+              >
+                {user.bannerDataUrl ? "Change banner" : "Add banner"}
+                <input type="file" accept={IMAGE_TYPES.join(",")} onChange={handleBannerUpload} className="sr-only" />
+              </label>
+              {user.bannerDataUrl && (
+                <button
+                  onClick={() => updateProfile({ bannerDataUrl: null })}
+                  className="text-[11px] font-medium px-2.5 py-1.5 rounded-lg bg-black/45 text-white hover:bg-black/60 backdrop-blur-sm transition-colors"
+                >
+                  Remove
+                </button>
+              )}
+            </div>
           </div>
           <div className="px-6 pb-6 -mt-10 relative">
             <div className="flex flex-wrap items-end justify-between gap-4">
               <div className="flex items-end gap-4">
-                <div className="w-20 h-20 rounded-2xl bg-primary flex items-center justify-center text-white text-2xl font-bold border-4 border-card shadow-md overflow-hidden">
-                  {user.avatarDataUrl ? <img src={user.avatarDataUrl} alt="" className="w-full h-full object-cover" /> : userInitials}
+                <div className="relative flex-shrink-0">
+                  <div className="w-20 h-20 rounded-2xl bg-primary flex items-center justify-center text-white text-2xl font-bold border-4 border-card shadow-md overflow-hidden">
+                    {user.avatarDataUrl ? <img src={user.avatarDataUrl} alt="" className="w-full h-full object-cover" /> : userInitials}
+                  </div>
+                  <label
+                    title="Upload a profile photo — square works best, under 2MB."
+                    className="print:hidden absolute -bottom-1 -right-1 cursor-pointer w-7 h-7 rounded-full bg-card border border-border shadow-sm flex items-center justify-center text-xs hover:bg-secondary transition-colors focus-within:outline focus-within:outline-2 focus-within:outline-offset-2 focus-within:outline-primary"
+                  >
+                    <span aria-hidden="true">📷</span>
+                    <span className="sr-only">Upload profile photo</span>
+                    <input type="file" accept={IMAGE_TYPES.join(",")} onChange={handleAvatarUpload} className="sr-only" />
+                  </label>
                 </div>
                 <div className="pb-1 min-w-0">
                   <h2 className="text-xl font-semibold text-foreground">{user.name}</h2>
-                  <p className="text-sm text-muted-foreground">
-                    {user.headline || [user.course, user.year].filter(Boolean).join(" · ") || "Student"}
-                  </p>
+                  <input
+                    value={headlineDraft}
+                    onChange={(e) => handleHeadlineChange(e.target.value)}
+                    placeholder={[user.course, user.year].filter(Boolean).join(" · ") || "Add a one-line headline"}
+                    aria-label="Headline"
+                    maxLength={90}
+                    className="text-sm text-muted-foreground bg-transparent border border-dashed border-transparent hover:border-border focus:border-border rounded px-1 -ml-1 w-full focus:outline-none focus:ring-2 focus:ring-primary/30"
+                  />
                   <p className="text-xs text-muted-foreground mt-0.5">
                     {[user.institution, user.department].filter(Boolean).join(" · ")}
                   </p>
                 </div>
               </div>
-              <div className="flex items-center gap-2 flex-wrap flex-shrink-0">
-                <Link
-                  href="/portfolio/resume"
-                  className="flex items-center gap-1.5 text-xs font-semibold px-4 py-2.5 rounded-xl bg-primary hover:bg-accent text-white hover:shadow-md transition-all duration-200"
-                >
-                  <span>📄 Generate ATS Resume</span>
-                </Link>
+              <div className="flex items-center gap-2 flex-wrap flex-shrink-0 print:hidden">
+                {/* Two resumes, each named for what it is. "ATS" is jargon most
+                    students have never met, so it is never the whole label and
+                    always travels with its explanation. */}
                 <button
                   onClick={handlePrint}
-                  title="Print this portfolio"
-                  className={`flex items-center gap-1.5 text-xs font-medium px-3 py-2.5 rounded-xl border border-border transition-all duration-200 ${
-                    printing ? "bg-green-50 text-green-600 border-green-200" : "bg-card hover:bg-secondary text-foreground"
+                  title="A designed, human-readable PDF of this portfolio."
+                  className={`flex items-center gap-1.5 text-xs font-semibold px-4 py-2.5 rounded-xl border transition-all duration-200 ${
+                    printing ? "bg-green-50 text-green-600 border-green-200" : "bg-primary hover:bg-accent text-white border-transparent hover:shadow-md"
                   }`}
                 >
-                  <span>🖨️</span>
+                  <span>📄 Download Resume</span>
                 </button>
+                <Link
+                  href="/portfolio/resume"
+                  title="A plain-formatted version that applicant-tracking software at large companies can read correctly — no columns, icons, or graphics."
+                  className="flex items-center gap-1.5 text-xs font-medium px-4 py-2.5 rounded-xl border border-border bg-card hover:bg-secondary text-foreground transition-all duration-200"
+                >
+                  <span>Download ATS-Friendly Resume</span>
+                  <span aria-hidden="true" className="w-4 h-4 rounded-full border border-current text-[9px] flex items-center justify-center opacity-70">i</span>
+                </Link>
               </div>
             </div>
 
@@ -637,7 +780,26 @@ export default function StudentPortfolio() {
                 <div className="flex-1 min-w-0">
                   <div className="text-sm font-semibold text-foreground">{ed.degree}</div>
                   <div className="text-xs text-muted-foreground mt-0.5">
-                    {[ed.institution, [ed.startYear, ed.endYear].filter(Boolean).join(" – ")].filter(Boolean).join(" · ")}
+                    {[
+                      ed.institution,
+                      ed.pursuing
+                        ? `${ed.startYear || ""}${ed.startYear ? " – " : ""}expected ${ed.endYear || "—"}`
+                        : [ed.startYear, ed.endYear].filter(Boolean).join(" – "),
+                    ].filter(Boolean).join(" · ")}
+                  </div>
+                  <div className="flex flex-wrap items-center gap-1.5 mt-1.5">
+                    {ed.pursuing ? (
+                      <Badge tone="blue" dot>Currently pursuing</Badge>
+                    ) : ed.dataUrl ? (
+                      <Badge tone="amber" dot>Degree uploaded · pending verification</Badge>
+                    ) : (
+                      <Badge tone="muted" dot>No degree proof</Badge>
+                    )}
+                    {ed.dataUrl && (
+                      <a href={ed.dataUrl} target="_blank" rel="noreferrer" className="text-[11px] text-primary hover:underline">
+                        View {ed.fileName ? `(${formatBytes(ed.fileSize)})` : "proof"}
+                      </a>
+                    )}
                   </div>
                 </div>
                 {ed.score && <Badge tone="primary">{ed.score}</Badge>}
@@ -658,16 +820,46 @@ export default function StudentPortfolio() {
                     <Field label="From">
                       <TextInput value={eduForm.startYear} onChange={(e) => setEduForm((f) => ({ ...f, startYear: e.target.value }))} placeholder="2023" />
                     </Field>
-                    <Field label="To">
+                    <Field label={eduForm.pursuing ? "Expected completion" : "To"}>
                       <TextInput value={eduForm.endYear} onChange={(e) => setEduForm((f) => ({ ...f, endYear: e.target.value }))} placeholder="2027" />
                     </Field>
                     <Field label="Score">
                       <TextInput value={eduForm.score} onChange={(e) => setEduForm((f) => ({ ...f, score: e.target.value }))} placeholder="8.4 CGPA" />
                     </Field>
                   </div>
+
+                  <label className="flex items-center gap-2 text-xs text-foreground cursor-pointer">
+                    <input
+                      type="checkbox"
+                      checked={eduForm.pursuing}
+                      onChange={(e) => setEduForm((f) => ({ ...f, pursuing: e.target.checked }))}
+                      className="w-3.5 h-3.5 accent-primary focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary"
+                    />
+                    I am currently pursuing this
+                  </label>
+
+                  {/* A completed degree has to come with the certificate; an
+                      in-progress one obviously cannot, so the requirement is
+                      conditional rather than blanket. */}
+                  {eduForm.pursuing ? (
+                    <p className="text-[11px] text-muted-foreground">
+                      No document needed while you are still studying — add the degree certificate once you graduate.
+                    </p>
+                  ) : (
+                    <Field label="Degree / provisional certificate" hint="Required for a completed degree. PDF or image, under 2MB.">
+                      <label className="flex items-center gap-2 text-xs cursor-pointer border border-dashed border-border rounded-lg px-3 py-2.5 hover:border-primary/50 transition-colors focus-within:outline focus-within:outline-2 focus-within:outline-offset-2 focus-within:outline-primary">
+                        <span aria-hidden="true">📎</span>
+                        <span className={eduFile ? "text-foreground font-medium" : "text-muted-foreground"}>
+                          {eduFile ? `${eduFile.fileName} · ${formatBytes(eduFile.size)}` : "Choose a file"}
+                        </span>
+                        <input type="file" accept={PROOF_TYPES.join(",")} onChange={handleEduFile} className="sr-only" />
+                      </label>
+                    </Field>
+                  )}
+
                   <div className="flex gap-2">
                     <Button type="submit" className="flex-1">Add education</Button>
-                    <Button type="button" variant="outline" onClick={() => setShowAdd(null)}>Cancel</Button>
+                    <Button type="button" variant="outline" onClick={() => { setShowAdd(null); setEduFile(null); }}>Cancel</Button>
                   </div>
                 </form>
               </Card>
@@ -733,7 +925,13 @@ export default function StudentPortfolio() {
                   <Card key={cert.id || i} className="flex flex-wrap items-center gap-4" hover>
                     <div className="w-12 h-12 rounded-xl bg-secondary flex items-center justify-center text-2xl flex-shrink-0">🎓</div>
                     <div className="flex-1 min-w-[10rem]">
-                      <div className="text-sm font-semibold text-foreground">{cert.name}</div>
+                      <div className="flex flex-wrap items-center gap-2">
+                        <span className="text-sm font-semibold text-foreground">{cert.name}</span>
+                        {(() => {
+                          const status = certStatus(cert);
+                          return <Badge tone={status.tone} dot title={status.hint}>{status.label}</Badge>;
+                        })()}
+                      </div>
                       <div className="text-xs text-muted-foreground mt-0.5">
                         {[cert.issuer, cert.year].filter(Boolean).join(" · ") || "—"}
                         {cert.fileName && <span> · {cert.fileName} ({formatBytes(cert.fileSize)})</span>}
@@ -780,11 +978,11 @@ export default function StudentPortfolio() {
                       <Field label="Verification link" hint="Optional — the issuer's own verification page.">
                         <TextInput value={certForm.credentialUrl} onChange={(e) => setCertForm((f) => ({ ...f, credentialUrl: e.target.value }))} placeholder="https://…" />
                       </Field>
-                      <Field label="Certificate file" hint="PDF or image, under 2MB. Recruiters open this straight from your profile.">
+                      <Field label="Certificate file (required)" hint="PDF or image, under 2MB. Recruiters open this straight from your profile, and your institution verifies against it.">
                         <div className="flex flex-wrap items-center gap-3">
-                          <label className="inline-flex items-center gap-2 bg-primary/10 text-primary hover:bg-primary hover:text-white rounded-xl px-3.5 py-2 text-xs font-medium cursor-pointer transition-colors">
+                          <label className="inline-flex items-center gap-2 bg-primary/10 text-primary hover:bg-primary hover:text-white rounded-xl px-3.5 py-2 text-xs font-medium cursor-pointer transition-colors focus-within:outline focus-within:outline-2 focus-within:outline-offset-2 focus-within:outline-primary">
                             {certFile ? "Choose a different file" : "Attach PDF / image"}
-                            <input type="file" accept=".pdf,image/*" onChange={handleCertFile} className="hidden" />
+                            <input type="file" accept={PROOF_TYPES.join(",")} onChange={handleCertFile} className="sr-only" />
                           </label>
                           {certFile && (
                             <span className="text-xs text-muted-foreground truncate">
@@ -797,9 +995,12 @@ export default function StudentPortfolio() {
                         </div>
                       </Field>
                       <div className="flex gap-2">
-                        <Button type="submit" className="flex-1">Add certification</Button>
+                        <Button type="submit" className="flex-1" disabled={!certFile}>Add certification</Button>
                         <Button type="button" variant="outline" onClick={() => { setShowAdd(null); setCertFile(null); }}>Cancel</Button>
                       </div>
+                      {!certFile && (
+                        <p className="text-[11px] text-muted-foreground">Attach the certificate to enable saving.</p>
+                      )}
                     </form>
                   </Card>
                 ) : (
