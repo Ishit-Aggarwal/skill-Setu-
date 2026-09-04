@@ -3,7 +3,7 @@
 import { useEffect, useMemo, useState } from "react";
 import DashboardLayout from "../../DashboardLayout";
 import { useAuth } from "../../../lib/auth";
-import { Avatar, Badge, Button, Card, EmptyState, Field, Flash, Modal, PageHeader, Section, Select, StatGrid, TextInput, useFlash } from "../../ui/Kit";
+import { Avatar, Badge, Button, Card, EmptyState, Field, Flash, IconTile, Modal, PageHeader, Section, Select, StatGrid, TextInput, useFlash } from "../../ui/Kit";
 import { formatDate, formatDateTime, relativeTime } from "../../../lib/match";
 import {
   addOfficeHourSlot,
@@ -67,12 +67,15 @@ export default function Mentorship() {
     const slotBookings = listBookingsForSlot(slot.id);
     const remaining = (Number(slot.capacity) || 1) - slotBookings.filter((b) => b.status !== "Cancelled").length;
     return (
-      <div className={`border rounded-xl p-4 ${isPast ? "border-border opacity-70" : "border-border"}`}>
+      <div className={`bg-card border border-border rounded-2xl p-4 transition-shadow ${isPast ? "opacity-70" : "hover:shadow-[0_6px_20px_rgba(25,25,26,0.06)]"}`}>
         <div className="flex flex-wrap items-start justify-between gap-2 mb-2">
-          <div className="min-w-0">
-            <div className="text-sm font-semibold text-foreground">{formatDateTime(slot.slot)}</div>
-            <div className="text-[11px] text-muted-foreground">
-              {slot.durationMins || 30} min · {slot.mode} · {slot.location || "Location TBC"}
+          <div className="flex items-center gap-3 min-w-0">
+            <IconTile icon="📅" tone={isPast ? "purple" : "primary"} size={34} />
+            <div className="min-w-0">
+              <div className="text-sm font-semibold text-foreground">{formatDateTime(slot.slot)}</div>
+              <div className="text-[11px] text-muted-foreground">
+                {slot.durationMins || 30} min · {slot.mode} · {slot.location || "Location TBC"}
+              </div>
             </div>
           </div>
           <Badge tone={remaining > 0 ? "green" : "amber"}>

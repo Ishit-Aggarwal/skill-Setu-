@@ -3,7 +3,7 @@
 import { useEffect, useMemo, useState } from "react";
 import DashboardLayout from "../../DashboardLayout";
 import { useAuth } from "../../../lib/auth";
-import { Badge, Button, Card, EmptyState, Field, Flash, Modal, PageHeader, Section, Select, StatGrid, TextArea, TextInput, useFlash } from "../../ui/Kit";
+import { Badge, Button, Card, EmptyState, Field, Flash, IconTile, Modal, PageHeader, Section, Select, StatGrid, TextArea, TextInput, useFlash } from "../../ui/Kit";
 import { relativeTime } from "../../../lib/match";
 import {
   createAnnouncement,
@@ -68,17 +68,20 @@ export default function NoticeBoard() {
 
   function NoticeCard({ n }) {
     return (
-      <Card>
+      <Card hover>
         <div className="flex items-start justify-between gap-3 mb-2">
-          <div className="min-w-0">
-            <div className="flex items-center gap-2 flex-wrap">
-              <span className="text-sm font-semibold text-foreground">{n.title}</span>
-              {n.pinned && <Badge tone="amber">Pinned</Badge>}
-              <Badge tone="primary">{n.audience}</Badge>
-            </div>
-            <div className="text-[11px] text-muted-foreground mt-0.5">
-              {n.author || "Placement Cell"} · {relativeTime(n.postedAt)}
-              {n.recipients != null && ` · reached ${n.recipients} student${n.recipients === 1 ? "" : "s"}`}
+          <div className="min-w-0 flex items-start gap-3">
+            <IconTile icon={n.pinned ? "📌" : "📣"} tone={n.pinned ? "amber" : "primary"} size={34} className="mt-0.5" />
+            <div className="min-w-0">
+              <div className="flex items-center gap-2 flex-wrap">
+                <span className="text-sm font-semibold text-foreground">{n.title}</span>
+                {n.pinned && <Badge tone="amber">Pinned</Badge>}
+                <Badge tone="primary">{n.audience}</Badge>
+              </div>
+              <div className="text-[11px] text-muted-foreground mt-0.5">
+                {n.author || "Placement Cell"} · {relativeTime(n.postedAt)}
+                {n.recipients != null && ` · reached ${n.recipients} student${n.recipients === 1 ? "" : "s"}`}
+              </div>
             </div>
           </div>
         </div>
@@ -87,7 +90,7 @@ export default function NoticeBoard() {
         {n.attachment && (
           <div className="mt-3 flex items-center justify-between gap-3 bg-secondary/50 border border-border rounded-xl px-3.5 py-2.5 text-xs">
             <div className="flex items-center gap-2.5 min-w-0">
-              <span className="text-lg">📄</span>
+              <IconTile icon="📄" tone="blue" size={30} />
               <div className="min-w-0">
                 <span className="font-medium text-foreground truncate block">{n.attachment.name}</span>
                 {n.attachment.size && <span className="text-[10px] text-muted-foreground block">{n.attachment.size}</span>}
@@ -127,10 +130,10 @@ export default function NoticeBoard() {
 
         <StatGrid
           stats={[
-            { label: "Notices posted", value: String(notices.length), icon: "📣" },
-            { label: "Pinned", value: String(pinned.length), icon: "📌" },
-            { label: "Students reachable", value: String(roster.length), icon: "🎓" },
-            { label: "Direct sends", value: String(batches.length), icon: "✉️", hint: batches[0] ? relativeTime(batches[0].sentAt) : "None yet" },
+            { label: "Notices posted", value: String(notices.length), icon: "📣", tone: "primary" },
+            { label: "Pinned", value: String(pinned.length), icon: "📌", tone: "amber" },
+            { label: "Students reachable", value: String(roster.length), icon: "🎓", tone: "blue" },
+            { label: "Direct sends", value: String(batches.length), icon: "✉️", tone: "purple", hint: batches[0] ? relativeTime(batches[0].sentAt) : "None yet" },
           ]}
         />
 

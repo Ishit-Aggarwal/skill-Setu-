@@ -143,13 +143,13 @@ export default function TalentPool() {
           <div className="flex flex-wrap items-center gap-2">
             <span className="text-xs text-muted-foreground font-medium">Saved searches:</span>
             {savedSearches.map((s) => (
-              <span key={s.id} className="inline-flex items-center gap-1.5 bg-secondary rounded-full pl-3 pr-2 py-1.5 text-xs">
+              <span key={s.id} className="inline-flex items-center gap-1.5 bg-secondary hover:bg-muted rounded-full pl-3 pr-2 py-1.5 text-xs transition-colors">
                 <button onClick={() => setFilters({ ...DEFAULT_FILTERS, ...s.filters })} className="text-foreground hover:text-primary font-medium">
                   {s.name}
                 </button>
                 <button
                   onClick={() => { remove("savedSearches", s.id); setVersion((v) => v + 1); }}
-                  className="text-muted-foreground hover:text-red-600"
+                  className="text-muted-foreground hover:text-red-600 leading-none"
                   aria-label={`Delete ${s.name}`}
                 >
                   ×
@@ -221,23 +221,23 @@ export default function TalentPool() {
                 <button
                   key={s.id}
                   onClick={() => setSelected(s)}
-                  className="text-left bg-card border border-border rounded-2xl p-4 hover:shadow-md hover:-translate-y-0.5 transition-all duration-200"
+                  className="text-left bg-card border border-border rounded-2xl p-5 shadow-[0_1px_2px_rgba(25,25,26,0.04)] hover:shadow-[0_6px_20px_rgba(25,25,26,0.08)] hover:-translate-y-0.5 transition-all duration-200"
                 >
-                  <div className="flex items-center gap-3 mb-3">
-                    <Avatar name={s.name} size={40} src={s.avatarDataUrl} />
+                  <div className="flex items-center gap-3 mb-3.5">
+                    <Avatar name={s.name} size={42} src={s.avatarDataUrl} />
                     <div className="min-w-0 flex-1">
                       <div className="text-sm font-semibold text-foreground truncate">{s.name}</div>
                       <div className="text-xs text-muted-foreground truncate">{s.course || "—"}{s.year ? ` · ${s.year}` : ""}</div>
                     </div>
-                    <Badge tone={s.status === "Placed" ? "green" : s.status === "Unplaced" ? "primary" : "amber"}>{s.status}</Badge>
+                    <Badge tone={s.status === "Placed" ? "green" : s.status === "Unplaced" ? "primary" : "amber"} dot>{s.status}</Badge>
                   </div>
                   <div className="text-xs text-muted-foreground truncate mb-1">{s.institution}</div>
-                  {s.department && <div className="text-[10px] text-muted-foreground truncate mb-2">{s.department}</div>}
-                  <div className="flex flex-wrap gap-1 mb-3">
-                    {s.topSkills.map((sk) => <span key={sk} className="text-[10px] bg-primary/8 text-primary px-2 py-0.5 rounded-full">{sk}</span>)}
+                  {s.department && <div className="text-[10px] text-muted-foreground truncate mb-3">{s.department}</div>}
+                  <div className="flex flex-wrap gap-1.5 mb-3.5">
+                    {s.topSkills.map((sk) => <Badge key={sk} tone="primary">{sk}</Badge>)}
                     {s.topSkills.length === 0 && <span className="text-[10px] text-muted-foreground">No skills listed yet</span>}
                   </div>
-                  <div className="flex items-center justify-between text-xs mb-1">
+                  <div className="flex items-center justify-between text-xs mb-1.5 pt-3 border-t border-border">
                     <span className="text-muted-foreground">{filters.domain === "All" ? "Overall skill score" : filters.domain}</span>
                     <span className="font-semibold text-primary">{shownScore != null ? `${shownScore}/100` : "—"}</span>
                   </div>

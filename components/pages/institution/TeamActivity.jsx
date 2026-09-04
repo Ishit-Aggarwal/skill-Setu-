@@ -106,10 +106,10 @@ export default function TeamActivity() {
 
         <StatGrid
           stats={[
-            { label: "Team members", value: String(admins.length), icon: "👥" },
-            { label: "Admins", value: String(admins.filter((a) => a.role === "Admin").length), icon: "🔑" },
-            { label: "Viewers", value: String(admins.filter((a) => a.role === "Viewer").length), icon: "👁" },
-            { label: "Logged changes", value: String(activity.length), icon: "📝", hint: activity[0] ? relativeTime(activity[0].at) : "None yet" },
+            { label: "Team members", value: String(admins.length), icon: "👥", tone: "blue" },
+            { label: "Admins", value: String(admins.filter((a) => a.role === "Admin").length), icon: "🔑", tone: "primary" },
+            { label: "Viewers", value: String(admins.filter((a) => a.role === "Viewer").length), icon: "👁", tone: "purple" },
+            { label: "Logged changes", value: String(activity.length), icon: "📝", tone: "amber", hint: activity[0] ? relativeTime(activity[0].at) : "None yet" },
           ]}
         />
 

@@ -3,7 +3,7 @@
 import { useEffect, useMemo, useState } from "react";
 import DashboardLayout from "../../DashboardLayout";
 import { useAuth } from "../../../lib/auth";
-import { Badge, Button, Card, EmptyState, Field, Flash, Modal, PageHeader, Section, Select, StatGrid, TextArea, TextInput, useFlash } from "../../ui/Kit";
+import { Avatar, Badge, Button, Card, EmptyState, Field, FilterPills, Flash, IconTile, Modal, PageHeader, Section, Select, StatGrid, TextArea, TextInput, useFlash } from "../../ui/Kit";
 import { formatDate, relativeTime } from "../../../lib/match";
 import {
   MOU_SCOPES,
@@ -105,26 +105,14 @@ export default function Partnerships() {
 
         <StatGrid
           stats={[
-            { label: "Total partnerships", value: String(mous.length), icon: "🤝" },
-            { label: "Active", value: String(counts.Active), icon: "✅" },
-            { label: "Renewal due (90 days)", value: String(counts["Renewal due"]), icon: "⏳" },
-            { label: "Lapsed", value: String(counts.Expired), icon: "⚠️" },
+            { label: "Total partnerships", value: String(mous.length), icon: "🤝", tone: "primary" },
+            { label: "Active", value: String(counts.Active), icon: "✅", tone: "green" },
+            { label: "Renewal due (90 days)", value: String(counts["Renewal due"]), icon: "⏳", tone: "amber" },
+            { label: "Lapsed", value: String(counts.Expired), icon: "⚠️", tone: "red" },
           ]}
         />
 
-        <div className="flex flex-wrap gap-2">
-          {["All", "Active", "Renewal due", "Expired"].map((f) => (
-            <button
-              key={f}
-              onClick={() => setFilter(f)}
-              className={`text-xs px-3 py-1.5 rounded-full border font-medium transition-all duration-150 ${
-                filter === f ? "bg-primary text-white border-transparent" : "bg-card border-border text-muted-foreground hover:border-primary/40"
-              }`}
-            >
-              {f}
-            </button>
-          ))}
-        </div>
+        <FilterPills options={["All", "Active", "Renewal due", "Expired"]} value={filter} onChange={setFilter} />
 
         {rows.length === 0 ? (
           <EmptyState icon="🤝" title={mous.length ? "No partnerships in this state" : "No MOUs recorded yet"}>
@@ -133,15 +121,18 @@ export default function Partnerships() {
         ) : (
           <div className="grid lg:grid-cols-2 gap-4">
             {rows.map((m) => (
-              <Card key={m.id}>
+              <Card key={m.id} hover>
                 <div className="flex items-start justify-between gap-3 mb-3">
-                  <div className="min-w-0">
-                    <div className="text-sm font-semibold text-foreground">{m.partner}</div>
-                    <div className="text-[11px] text-muted-foreground">
-                      Signed {m.signedDate ? formatDate(m.signedDate) : "—"} · expires {m.expiryDate ? formatDate(m.expiryDate) : "—"}
+                  <div className="min-w-0 flex items-start gap-3">
+                    <Avatar name={m.partner} size={38} />
+                    <div className="min-w-0">
+                      <div className="text-sm font-semibold text-foreground">{m.partner}</div>
+                      <div className="text-[11px] text-muted-foreground">
+                        Signed {m.signedDate ? formatDate(m.signedDate) : "—"} · expires {m.expiryDate ? formatDate(m.expiryDate) : "—"}
+                      </div>
                     </div>
                   </div>
-                  <Badge tone={STATUS_TONE[m.computedStatus]}>{m.computedStatus}</Badge>
+                  <Badge tone={STATUS_TONE[m.computedStatus]} dot>{m.computedStatus}</Badge>
                 </div>
 
                 <div className="flex flex-wrap gap-1.5 mb-3">

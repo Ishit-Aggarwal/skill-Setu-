@@ -6,19 +6,20 @@ import DashboardLayout from "../DashboardLayout";
 import { useAuth } from "../../lib/auth";
 import { getAssessment, getPortfolio, savePortfolio, listApplicationsForStudent } from "../../lib/store";
 import { subscribeToMutations } from "../../lib/sync";
+import { Badge, Button, Card, EmptyState, Select, StatGrid, Tabs, TextInput } from "../ui/Kit";
 
-const levelColor = {
-  Advanced: "bg-primary/10 text-primary border-primary/20",
-  Proficient: "bg-blue-50 text-blue-700 border-blue-200",
-  Intermediate: "bg-amber-50 text-amber-700 border-amber-200",
+const levelTone = {
+  Advanced: "primary",
+  Proficient: "blue",
+  Intermediate: "amber",
 };
 
-const typeColor = {
-  Education: "bg-blue-50 text-blue-700",
-  Internship: "bg-emerald-50 text-emerald-700",
-  Research: "bg-purple-50 text-purple-700",
-  Publication: "bg-amber-50 text-amber-700",
-  Achievement: "bg-olive-100 text-olive-700",
+const typeTone = {
+  Education: "blue",
+  Internship: "green",
+  Research: "purple",
+  Publication: "amber",
+  Achievement: "primary",
 };
 
 const typeIcon = { Education: "🎓", Internship: "💼", Research: "🔬", Publication: "📄", Achievement: "🏆" };
@@ -191,67 +192,64 @@ export default function StudentPortfolio() {
           </div>
         </div>
 
-        <div className="grid grid-cols-4 gap-3">
-          {[
-            { label: "Skill Score", value: assessment ? String(Math.round(assessment.overallScore)) : "—", unit: assessment ? "/100" : "" },
-            { label: "Certifications", value: String(certCount), unit: "" },
-            { label: "Publications", value: String(publicationCount), unit: "" },
-            { label: "Avg Match", value: String(avgMatch), unit: "%" },
-          ].map((s) => (
-            <div key={s.label} className="bg-card border border-border rounded-xl p-3 text-center">
-              <div className="text-lg font-bold text-primary">{s.value}<span className="text-xs font-normal text-muted-foreground">{s.unit}</span></div>
-              <div className="text-[10px] text-muted-foreground mt-0.5">{s.label}</div>
-            </div>
-          ))}
-        </div>
+        <StatGrid
+          columns={4}
+          stats={[
+            { label: "Skill Score", value: assessment ? `${Math.round(assessment.overallScore)}/100` : "—", icon: "🎯", tone: "primary" },
+            { label: "Certifications", value: String(certCount), icon: "🏅", tone: "amber" },
+            { label: "Publications", value: String(publicationCount), icon: "📄", tone: "purple" },
+            { label: "Avg Match", value: `${avgMatch}%`, icon: "📈", tone: "green" },
+          ]}
+        />
 
-        <div className="flex bg-secondary rounded-xl p-1">
-          {[
+        <Tabs
+          className="w-full"
+          tabs={[
             { key: "skills", label: "Skills & Competencies" },
             { key: "certs", label: "Certifications" },
             { key: "timeline", label: "Career Timeline" },
             { key: "documents", label: "Documents" },
-          ].map((tab) => (
-            <button key={tab.key} onClick={() => { setActiveSection(tab.key); setShowAdd(null); }} className={`flex-1 py-2.5 rounded-lg text-sm font-medium transition-all duration-150 ${activeSection === tab.key ? "bg-card text-foreground shadow-sm" : "text-muted-foreground hover:text-foreground"}`}>
-              {tab.label}
-            </button>
-          ))}
-        </div>
+          ]}
+          value={activeSection}
+          onChange={(key) => { setActiveSection(key); setShowAdd(null); }}
+        />
 
         {activeSection === "skills" && (
           <div className="space-y-5 animate-fade-slide">
             {Object.keys(portfolio.skillBadges || {}).length === 0 && (
-              <div className="bg-card border border-border rounded-2xl p-6 text-center text-sm text-muted-foreground">No skills added yet.</div>
+              <EmptyState icon="🧩" title="No skills added yet" />
             )}
             {Object.entries(portfolio.skillBadges || {}).map(([category, skills]) => (
-              <div key={category} className="bg-card border border-border rounded-2xl p-5">
+              <Card key={category}>
                 <h3 className="text-sm font-semibold text-foreground mb-3">{category}</h3>
                 <div className="flex flex-wrap gap-2">
                   {skills.map((skill, i) => (
-                    <span key={i} className={`inline-flex items-center gap-1.5 text-xs font-medium px-3 py-1.5 rounded-full border ${levelColor[skill.level]}`}>
+                    <Badge key={i} tone={levelTone[skill.level]} className="!text-xs !px-3 !py-1.5">
                       {skill.name}<span className="opacity-60 text-[10px]">· {skill.level}</span>
-                    </span>
+                    </Badge>
                   ))}
                 </div>
-              </div>
+              </Card>
             ))}
 
             {showAdd === "skill" ? (
-              <form onSubmit={addSkill} className="bg-card border border-border rounded-2xl p-5 space-y-3">
-                <div className="grid grid-cols-2 gap-3">
-                  <select value={skillForm.category} onChange={(e) => setSkillForm((f) => ({ ...f, category: e.target.value }))} className="bg-background border border-border rounded-xl px-3 py-2.5 text-sm">
-                    {["Technical Skills", "Research & Analytical", "Soft Skills"].map((c) => <option key={c}>{c}</option>)}
-                  </select>
-                  <select value={skillForm.level} onChange={(e) => setSkillForm((f) => ({ ...f, level: e.target.value }))} className="bg-background border border-border rounded-xl px-3 py-2.5 text-sm">
-                    {["Intermediate", "Proficient", "Advanced"].map((l) => <option key={l}>{l}</option>)}
-                  </select>
-                </div>
-                <input value={skillForm.name} onChange={(e) => setSkillForm((f) => ({ ...f, name: e.target.value }))} placeholder="Skill name, e.g. Python Programming" className="w-full bg-background border border-border rounded-xl px-3 py-2.5 text-sm" />
-                <div className="flex gap-2">
-                  <button type="submit" className="flex-1 bg-primary text-white rounded-xl py-2 text-sm font-medium">Add Skill</button>
-                  <button type="button" onClick={() => setShowAdd(null)} className="px-4 rounded-xl border border-border text-sm text-muted-foreground">Cancel</button>
-                </div>
-              </form>
+              <Card>
+                <form onSubmit={addSkill} className="space-y-3">
+                  <div className="grid grid-cols-2 gap-3">
+                    <Select value={skillForm.category} onChange={(e) => setSkillForm((f) => ({ ...f, category: e.target.value }))}>
+                      {["Technical Skills", "Research & Analytical", "Soft Skills"].map((c) => <option key={c}>{c}</option>)}
+                    </Select>
+                    <Select value={skillForm.level} onChange={(e) => setSkillForm((f) => ({ ...f, level: e.target.value }))}>
+                      {["Intermediate", "Proficient", "Advanced"].map((l) => <option key={l}>{l}</option>)}
+                    </Select>
+                  </div>
+                  <TextInput value={skillForm.name} onChange={(e) => setSkillForm((f) => ({ ...f, name: e.target.value }))} placeholder="Skill name, e.g. Python Programming" />
+                  <div className="flex gap-2">
+                    <Button type="submit" className="flex-1">Add Skill</Button>
+                    <Button type="button" variant="outline" onClick={() => setShowAdd(null)}>Cancel</Button>
+                  </div>
+                </form>
+              </Card>
             ) : (
               <button onClick={() => setShowAdd("skill")} className="w-full text-sm text-center text-primary hover:underline py-2">+ Add Skill</button>
             )}
@@ -260,9 +258,9 @@ export default function StudentPortfolio() {
 
         {activeSection === "certs" && (
           <div className="space-y-3 animate-fade-slide">
-            {certCount === 0 && <div className="bg-card border border-border rounded-2xl p-6 text-center text-sm text-muted-foreground">No certifications added yet.</div>}
+            {certCount === 0 && <EmptyState icon="🎓" title="No certifications added yet" />}
             {(portfolio.certifications || []).map((cert, i) => (
-              <div key={i} className="bg-card border border-border rounded-2xl p-4 flex items-center gap-4 hover:shadow-sm transition-shadow">
+              <Card key={i} className="flex items-center gap-4" hover>
                 <div className="w-12 h-12 rounded-xl bg-secondary flex items-center justify-center text-2xl flex-shrink-0">🎓</div>
                 <div className="flex-1 min-w-0">
                   <div className="text-sm font-semibold text-foreground">{cert.name}</div>
@@ -272,22 +270,24 @@ export default function StudentPortfolio() {
                   <div className="text-xs font-semibold text-primary">{cert.score}</div>
                   <div className="text-xs text-muted-foreground">{cert.year}</div>
                 </div>
-              </div>
+              </Card>
             ))}
 
             {showAdd === "cert" ? (
-              <form onSubmit={addCert} className="bg-card border border-border rounded-2xl p-5 space-y-3">
-                <input value={certForm.name} onChange={(e) => setCertForm((f) => ({ ...f, name: e.target.value }))} placeholder="Certification name" required className="w-full bg-background border border-border rounded-xl px-3 py-2.5 text-sm" />
-                <input value={certForm.issuer} onChange={(e) => setCertForm((f) => ({ ...f, issuer: e.target.value }))} placeholder="Issuing body" className="w-full bg-background border border-border rounded-xl px-3 py-2.5 text-sm" />
-                <div className="grid grid-cols-2 gap-3">
-                  <input value={certForm.year} onChange={(e) => setCertForm((f) => ({ ...f, year: e.target.value }))} placeholder="Year" className="bg-background border border-border rounded-xl px-3 py-2.5 text-sm" />
-                  <input value={certForm.score} onChange={(e) => setCertForm((f) => ({ ...f, score: e.target.value }))} placeholder="Score / Grade" className="bg-background border border-border rounded-xl px-3 py-2.5 text-sm" />
-                </div>
-                <div className="flex gap-2">
-                  <button type="submit" className="flex-1 bg-primary text-white rounded-xl py-2 text-sm font-medium">Add Certification</button>
-                  <button type="button" onClick={() => setShowAdd(null)} className="px-4 rounded-xl border border-border text-sm text-muted-foreground">Cancel</button>
-                </div>
-              </form>
+              <Card>
+                <form onSubmit={addCert} className="space-y-3">
+                  <TextInput value={certForm.name} onChange={(e) => setCertForm((f) => ({ ...f, name: e.target.value }))} placeholder="Certification name" required />
+                  <TextInput value={certForm.issuer} onChange={(e) => setCertForm((f) => ({ ...f, issuer: e.target.value }))} placeholder="Issuing body" />
+                  <div className="grid grid-cols-2 gap-3">
+                    <TextInput value={certForm.year} onChange={(e) => setCertForm((f) => ({ ...f, year: e.target.value }))} placeholder="Year" />
+                    <TextInput value={certForm.score} onChange={(e) => setCertForm((f) => ({ ...f, score: e.target.value }))} placeholder="Score / Grade" />
+                  </div>
+                  <div className="flex gap-2">
+                    <Button type="submit" className="flex-1">Add Certification</Button>
+                    <Button type="button" variant="outline" onClick={() => setShowAdd(null)}>Cancel</Button>
+                  </div>
+                </form>
+              </Card>
             ) : (
               <button onClick={() => setShowAdd("cert")} className="w-full text-sm text-center text-primary hover:underline py-2">+ Add Certification</button>
             )}
@@ -296,43 +296,45 @@ export default function StudentPortfolio() {
 
         {activeSection === "timeline" && (
           <div className="animate-fade-slide space-y-4">
-            {(portfolio.timeline || []).length === 0 && <div className="bg-card border border-border rounded-2xl p-6 text-center text-sm text-muted-foreground">No timeline entries yet.</div>}
+            {(portfolio.timeline || []).length === 0 && <EmptyState icon="🧭" title="No timeline entries yet" />}
             <div className="relative">
               {(portfolio.timeline || []).length > 0 && <div className="absolute left-[23px] top-2 bottom-2 w-0.5 bg-border" />}
               <div className="space-y-4">
                 {[...(portfolio.timeline || [])].reverse().map((item, i) => (
                   <div key={i} className="relative flex gap-4">
                     <div className="w-12 h-12 rounded-xl bg-card border border-border flex items-center justify-center text-xl flex-shrink-0 z-10 shadow-sm">{typeIcon[item.type] || "📌"}</div>
-                    <div className="flex-1 bg-card border border-border rounded-2xl p-4 hover:shadow-sm transition-shadow">
+                    <Card className="flex-1" hover>
                       <div className="flex flex-wrap items-start justify-between gap-2 mb-1">
                         <div className="text-sm font-semibold text-foreground">{item.title}</div>
                         <div className="flex items-center gap-2 flex-shrink-0">
-                          <span className={`text-[10px] font-medium px-2 py-0.5 rounded-full ${typeColor[item.type] ?? "bg-muted text-muted-foreground"}`}>{item.type}</span>
+                          <Badge tone={typeTone[item.type] ?? "muted"}>{item.type}</Badge>
                           <span className="text-xs font-semibold text-muted-foreground">{item.year}</span>
                         </div>
                       </div>
                       <div className="text-xs text-muted-foreground leading-relaxed">{item.org}</div>
-                    </div>
+                    </Card>
                   </div>
                 ))}
               </div>
             </div>
 
             {showAdd === "timeline" ? (
-              <form onSubmit={addTimeline} className="bg-card border border-border rounded-2xl p-5 space-y-3">
-                <input value={timelineForm.title} onChange={(e) => setTimelineForm((f) => ({ ...f, title: e.target.value }))} placeholder="Title, e.g. Summer Research Assistant" required className="w-full bg-background border border-border rounded-xl px-3 py-2.5 text-sm" />
-                <input value={timelineForm.org} onChange={(e) => setTimelineForm((f) => ({ ...f, org: e.target.value }))} placeholder="Organisation" className="w-full bg-background border border-border rounded-xl px-3 py-2.5 text-sm" />
-                <div className="grid grid-cols-2 gap-3">
-                  <input value={timelineForm.year} onChange={(e) => setTimelineForm((f) => ({ ...f, year: e.target.value }))} placeholder="Year" className="bg-background border border-border rounded-xl px-3 py-2.5 text-sm" />
-                  <select value={timelineForm.type} onChange={(e) => setTimelineForm((f) => ({ ...f, type: e.target.value }))} className="bg-background border border-border rounded-xl px-3 py-2.5 text-sm">
-                    {Object.keys(typeColor).map((t) => <option key={t}>{t}</option>)}
-                  </select>
-                </div>
-                <div className="flex gap-2">
-                  <button type="submit" className="flex-1 bg-primary text-white rounded-xl py-2 text-sm font-medium">Add Entry</button>
-                  <button type="button" onClick={() => setShowAdd(null)} className="px-4 rounded-xl border border-border text-sm text-muted-foreground">Cancel</button>
-                </div>
-              </form>
+              <Card>
+                <form onSubmit={addTimeline} className="space-y-3">
+                  <TextInput value={timelineForm.title} onChange={(e) => setTimelineForm((f) => ({ ...f, title: e.target.value }))} placeholder="Title, e.g. Summer Research Assistant" required />
+                  <TextInput value={timelineForm.org} onChange={(e) => setTimelineForm((f) => ({ ...f, org: e.target.value }))} placeholder="Organisation" />
+                  <div className="grid grid-cols-2 gap-3">
+                    <TextInput value={timelineForm.year} onChange={(e) => setTimelineForm((f) => ({ ...f, year: e.target.value }))} placeholder="Year" />
+                    <Select value={timelineForm.type} onChange={(e) => setTimelineForm((f) => ({ ...f, type: e.target.value }))}>
+                      {Object.keys(typeTone).map((t) => <option key={t}>{t}</option>)}
+                    </Select>
+                  </div>
+                  <div className="flex gap-2">
+                    <Button type="submit" className="flex-1">Add Entry</Button>
+                    <Button type="button" variant="outline" onClick={() => setShowAdd(null)}>Cancel</Button>
+                  </div>
+                </form>
+              </Card>
             ) : (
               <button onClick={() => setShowAdd("timeline")} className="w-full text-sm text-center text-primary hover:underline py-2">+ Add Timeline Entry</button>
             )}
@@ -348,11 +350,11 @@ export default function StudentPortfolio() {
             )}
 
             {(portfolio.documents || []).length === 0 && (
-              <div className="bg-card border border-border rounded-2xl p-6 text-center text-sm text-muted-foreground">No documents uploaded yet.</div>
+              <EmptyState icon="📁" title="No documents uploaded yet" />
             )}
 
             {(portfolio.documents || []).map((doc) => (
-              <div key={doc.id} className="bg-card border border-border rounded-2xl p-4 flex items-center gap-4 hover:shadow-sm transition-shadow">
+              <Card key={doc.id} className="flex items-center gap-4" hover>
                 <div className="w-12 h-12 rounded-xl bg-secondary flex items-center justify-center text-xl flex-shrink-0">📄</div>
                 <div className="flex-1 min-w-0">
                   <div className="text-sm font-semibold text-foreground truncate">{doc.fileName}</div>
@@ -360,22 +362,22 @@ export default function StudentPortfolio() {
                 </div>
                 <a href={doc.dataUrl} target="_blank" rel="noreferrer" className="text-xs font-medium text-primary hover:underline flex-shrink-0">View</a>
                 <button onClick={() => removeDoc(doc.id)} className="text-xs text-muted-foreground hover:text-red-600 flex-shrink-0">Remove</button>
-              </div>
+              </Card>
             ))}
 
-            <div className="bg-card border border-border rounded-2xl p-5 space-y-3">
+            <Card className="space-y-3">
               <div className="text-sm font-semibold text-foreground">Upload a document</div>
               <p className="text-xs text-muted-foreground">Add your resume, degree certificate, or ID proof. PDF or image, under 2MB.</p>
               <div className="grid grid-cols-2 gap-3">
-                <select value={docType} onChange={(e) => setDocType(e.target.value)} className="bg-background border border-border rounded-xl px-3 py-2.5 text-sm">
+                <Select value={docType} onChange={(e) => setDocType(e.target.value)}>
                   {DOC_TYPES.map((t) => <option key={t}>{t}</option>)}
-                </select>
+                </Select>
                 <label className="flex items-center justify-center gap-2 bg-primary/10 text-primary hover:bg-primary hover:text-white rounded-xl px-3 py-2.5 text-sm font-medium cursor-pointer text-center transition-colors">
                   {uploading ? "Uploading…" : "Choose File"}
                   <input type="file" accept=".pdf,image/*" onChange={handleDocUpload} disabled={uploading} className="hidden" />
                 </label>
               </div>
-            </div>
+            </Card>
           </div>
         )}
       </div>

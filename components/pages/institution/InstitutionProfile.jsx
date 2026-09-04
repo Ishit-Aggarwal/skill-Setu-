@@ -3,7 +3,7 @@
 import { useEffect, useMemo, useState } from "react";
 import DashboardLayout from "../../DashboardLayout";
 import { useAuth } from "../../../lib/auth";
-import { Badge, Button, Card, Field, Flash, PageHeader, Section, Select, TextArea, TextInput, useFlash } from "../../ui/Kit";
+import { Badge, Button, Card, Field, Flash, IconTile, PageHeader, Section, Select, TextArea, TextInput, useFlash } from "../../ui/Kit";
 import { ACCREDITATION_BODIES, DEPARTMENTS, INSTITUTION_TYPES } from "../../../lib/domains";
 import { formatDate } from "../../../lib/match";
 import { getInstitutionProfile, logActivity, saveInstitutionProfile, listInstitutionDocs, addInstitutionDoc, removeInstitutionDoc } from "../../../lib/store";
@@ -191,8 +191,8 @@ export default function InstitutionProfile() {
           <Section title="Verification & compliance" description="Signup already requires a partner verification code; this is the full picture.">
             <div className="grid sm:grid-cols-2 gap-3">
               {compliance.map((c) => (
-                <div key={c.label} className={`flex items-start gap-2.5 rounded-xl px-3.5 py-3 ${c.ok ? "bg-green-50/60" : "bg-amber-50/60"}`}>
-                  <span className={`text-sm ${c.ok ? "text-green-600" : "text-amber-600"}`}>{c.ok ? "✓" : "!"}</span>
+                <div key={c.label} className={`flex items-start gap-3 rounded-xl px-3.5 py-3 ${c.ok ? "bg-green-50/60" : "bg-amber-50/60"}`}>
+                  <IconTile icon={c.ok ? "✓" : "!"} tone={c.ok ? "green" : "amber"} size={28} />
                   <div className="min-w-0">
                     <div className="text-xs font-medium text-foreground">{c.label}</div>
                     <div className="text-[11px] text-muted-foreground break-words">{c.detail}</div>
@@ -255,7 +255,7 @@ export default function InstitutionProfile() {
               ) : (
                 <div className="space-y-3">
                   {form.accreditations.map((a, i) => (
-                    <div key={i} className="border border-border rounded-xl p-4">
+                    <div key={i} className="border border-border rounded-xl p-4 transition-shadow hover:shadow-[0_4px_14px_rgba(25,25,26,0.06)]">
                       <div className="grid sm:grid-cols-4 gap-3 mb-3">
                         <Field label="Body">
                           <Select value={a.body} onChange={(e) => updateAccreditation(i, { body: e.target.value })}>
@@ -376,9 +376,9 @@ export default function InstitutionProfile() {
               ) : (
                 <div className="space-y-2.5">
                   {docs.map((d) => (
-                    <div key={d.id} className="flex items-center justify-between gap-3 bg-card border border-border rounded-xl px-4 py-3 text-xs">
+                    <div key={d.id} className="flex items-center justify-between gap-3 bg-card border border-border rounded-xl px-4 py-3 text-xs transition-shadow hover:shadow-[0_4px_14px_rgba(25,25,26,0.06)]">
                       <div className="flex items-center gap-3 min-w-0">
-                        <span className="text-2xl flex-shrink-0">📄</span>
+                        <IconTile icon="📄" tone="blue" size={38} />
                         <div className="min-w-0">
                           <div className="font-semibold text-foreground truncate flex items-center gap-2">
                             <span>{d.title}</span>

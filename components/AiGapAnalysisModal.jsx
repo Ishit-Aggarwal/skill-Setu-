@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useEffect } from "react";
-import { Modal, Badge } from "./ui/Kit";
+import { Modal, Badge, Button, Card, Field, ProgressRing, Select, Tabs } from "./ui/Kit";
 
 export default function AiGapAnalysisModal({ isOpen, onClose, assessment, internships = [], applications = [] }) {
   const [selectedRole, setSelectedRole] = useState("");
@@ -76,47 +76,37 @@ export default function AiGapAnalysisModal({ isOpen, onClose, assessment, intern
     >
       <div className="space-y-6">
         {/* Role Selector Controls */}
-        <div className="bg-secondary/40 border border-border p-4 rounded-2xl flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-3">
-          <div className="flex-1">
-            <label className="text-xs font-semibold text-muted-foreground uppercase tracking-wider block mb-1">
-              Target Career Benchmark
-            </label>
-            <select
+        <Card className="!bg-secondary/40 flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-3">
+          <Field label="Target Career Benchmark" className="flex-1">
+            <Select
               value={selectedRole}
               onChange={(e) => {
                 const found = uniqueRoles.find((r) => r.title === e.target.value);
                 setSelectedRole(e.target.value);
                 setSelectedSector(found?.domain || "General Industry");
               }}
-              className="w-full bg-card border border-border rounded-xl px-3.5 py-2 text-sm text-foreground focus:outline-none focus:ring-2 focus:ring-primary/40"
             >
               {uniqueRoles.map((r, i) => (
                 <option key={i} value={r.title}>
                   {r.title} ({r.domain})
                 </option>
               ))}
-            </select>
-          </div>
+            </Select>
+          </Field>
 
           <div className="sm:self-end">
-            <button
-              onClick={handleAnalyze}
-              disabled={loading}
-              className="w-full sm:w-auto px-5 py-2 rounded-xl bg-primary hover:bg-accent text-white text-sm font-semibold transition-all shadow-sm flex items-center justify-center gap-2"
-            >
+            <Button onClick={handleAnalyze} disabled={loading} className="w-full sm:w-auto flex items-center justify-center gap-2">
               {loading ? (
                 <>
                   <span className="animate-spin text-xs">⏳</span>
                   <span>Synthesizing...</span>
                 </>
               ) : (
-                <>
-                  <span>✨ Re-Analyze</span>
-                </>
+                <span>✨ Re-Analyze</span>
               )}
-            </button>
+            </Button>
           </div>
-        </div>
+        </Card>
 
         {loading ? (
           <div className="py-12 text-center space-y-3">
@@ -132,17 +122,12 @@ export default function AiGapAnalysisModal({ isOpen, onClose, assessment, intern
           <div className="space-y-5 animate-fade-slide">
             {/* Top Stat Row */}
             <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
-              <div className="bg-card border border-border p-4 rounded-2xl flex items-center justify-between">
-                <div>
-                  <div className="text-xs text-muted-foreground">Target Role Match</div>
-                  <div className="text-2xl font-bold text-primary mt-0.5">
-                    {analysis.matchPercentage}%
-                  </div>
-                </div>
-                <div className="text-3xl">🎯</div>
-              </div>
+              <Card className="flex items-center gap-4">
+                <ProgressRing value={analysis.matchPercentage} size={72} stroke={7} tone="primary" />
+                <div className="text-xs text-muted-foreground">Target Role Match</div>
+              </Card>
 
-              <div className="bg-card border border-border p-4 rounded-2xl flex items-center justify-between">
+              <Card className="flex items-center justify-between">
                 <div>
                   <div className="text-xs text-muted-foreground">Readiness Assessment</div>
                   <div className="text-base font-semibold text-foreground mt-0.5">
@@ -160,9 +145,9 @@ export default function AiGapAnalysisModal({ isOpen, onClose, assessment, intern
                 >
                   Verified Radar
                 </Badge>
-              </div>
+              </Card>
 
-              <div className="bg-card border border-border p-4 rounded-2xl flex items-center justify-between">
+              <Card className="flex items-center justify-between">
                 <div>
                   <div className="text-xs text-muted-foreground">Engine Mode</div>
                   <div className="text-sm font-semibold text-foreground mt-0.5">
@@ -172,11 +157,11 @@ export default function AiGapAnalysisModal({ isOpen, onClose, assessment, intern
                 <Badge tone={analysis.isFallback ? "neutral" : "purple"}>
                   {analysis.isFallback ? "Offline Fail-Safe" : "GenAI Live"}
                 </Badge>
-              </div>
+              </Card>
             </div>
 
             {/* Critical Competency Gaps */}
-            <div className="bg-card border border-border p-4 rounded-2xl">
+            <Card>
               <div className="flex items-center justify-between mb-3">
                 <h4 className="text-xs font-semibold text-foreground uppercase tracking-wider">
                   Critical Competency Gaps Identified
@@ -196,15 +181,7 @@ export default function AiGapAnalysisModal({ isOpen, onClose, assessment, intern
                       <span className="text-xs font-semibold text-foreground truncate">
                         {gap.skill}
                       </span>
-                      <span
-                        className={`text-[10px] font-semibold px-2 py-0.5 rounded-full ${
-                          gap.severity === "High"
-                            ? "bg-red-50 text-red-700 border border-red-200"
-                            : "bg-amber-50 text-amber-700 border border-amber-200"
-                        }`}
-                      >
-                        {gap.severity} Priority
-                      </span>
+                      <Badge tone={gap.severity === "High" ? "red" : "amber"}>{gap.severity} Priority</Badge>
                     </div>
                     <p className="text-[11px] text-muted-foreground leading-snug">
                       {gap.impact}
@@ -212,33 +189,23 @@ export default function AiGapAnalysisModal({ isOpen, onClose, assessment, intern
                   </div>
                 ))}
               </div>
-            </div>
+            </Card>
 
             {/* 30-60-90 Day Milestone Roadmap */}
-            <div className="bg-card border border-border rounded-2xl p-4">
-              <div className="flex items-center justify-between mb-3">
+            <Card>
+              <div className="flex flex-wrap items-center justify-between gap-3 mb-3">
                 <h4 className="text-xs font-semibold text-foreground uppercase tracking-wider">
                   Personalized 30-60-90 Day Bridge Curriculum
                 </h4>
-                <div className="flex items-center gap-1 bg-secondary p-1 rounded-xl">
-                  {[
-                    { id: "days_1_30", label: "Days 1–30 (Foundation)" },
-                    { id: "days_31_60", label: "Days 31–60 (Applied Capstones)" },
-                    { id: "days_61_90", label: "Days 61–90 (Placement Ready)" },
-                  ].map((tab) => (
-                    <button
-                      key={tab.id}
-                      onClick={() => setActiveTab(tab.id)}
-                      className={`text-xs px-3 py-1 rounded-lg font-medium transition-all ${
-                        activeTab === tab.id
-                          ? "bg-card text-foreground shadow-sm"
-                          : "text-muted-foreground hover:text-foreground"
-                      }`}
-                    >
-                      {tab.label}
-                    </button>
-                  ))}
-                </div>
+                <Tabs
+                  tabs={[
+                    { key: "days_1_30", label: "Days 1–30 (Foundation)" },
+                    { key: "days_31_60", label: "Days 31–60 (Applied Capstones)" },
+                    { key: "days_61_90", label: "Days 61–90 (Placement Ready)" },
+                  ]}
+                  value={activeTab}
+                  onChange={setActiveTab}
+                />
               </div>
 
               {/* Tab Milestones */}
@@ -262,14 +229,12 @@ export default function AiGapAnalysisModal({ isOpen, onClose, assessment, intern
                     </div>
 
                     <div className="flex items-center gap-2 flex-shrink-0">
-                      <span className="text-[11px] font-medium px-2.5 py-0.5 rounded-full bg-primary/10 text-primary border border-primary/20">
-                        {step.type}
-                      </span>
+                      <Badge tone="primary">{step.type}</Badge>
                     </div>
                   </div>
                 ))}
               </div>
-            </div>
+            </Card>
 
             {/* AYUSH & Cross-Sectoral Bridge Callout */}
             {analysis.ayushSpecificIntervention && (
@@ -296,21 +261,17 @@ export default function AiGapAnalysisModal({ isOpen, onClose, assessment, intern
           </div>
 
           <div className="flex items-center gap-2">
-            <button
+            <Button
+              size="sm"
+              variant="outline"
               onClick={() => {
                 setSavedSuccess(true);
                 setTimeout(() => setSavedSuccess(false), 3000);
               }}
-              className="px-4 py-2 rounded-xl border border-border bg-card hover:bg-secondary text-foreground text-xs font-medium transition-colors"
             >
               Save to My Goals
-            </button>
-            <button
-              onClick={onClose}
-              className="px-4 py-2 rounded-xl bg-primary hover:bg-accent text-white text-xs font-semibold transition-colors"
-            >
-              Done
-            </button>
+            </Button>
+            <Button size="sm" onClick={onClose}>Done</Button>
           </div>
         </div>
       </div>

@@ -5,7 +5,7 @@ import { CartesianGrid, Line, LineChart, ResponsiveContainer, Tooltip, XAxis, YA
 import DashboardLayout from "../../DashboardLayout";
 import { useAuth } from "../../../lib/auth";
 import { useNav } from "../../../lib/nav";
-import { Badge, Button, Card, EmptyState, Field, Modal, PageHeader, ProgressBar, Section, Select, StatGrid, Tabs } from "../../ui/Kit";
+import { Badge, Button, Card, EmptyState, Field, IconTile, Modal, PageHeader, ProgressBar, Section, Select, StatGrid, Tabs } from "../../ui/Kit";
 import { suggestIntervention } from "../../../lib/domains";
 import { skillDomainForTag } from "../../../lib/match";
 import { industrySkillDemand, listInternships, listPrograms, skillTrendByTerm } from "../../../lib/store";
@@ -129,22 +129,25 @@ export default function IndustryAlignment() {
                 {demandAgainstCohort.length === 0 ? (
                   <p className="text-sm text-muted-foreground py-6 text-center">No live postings yet.</p>
                 ) : (
-                  <div className="space-y-3">
+                  <div className="space-y-4">
                     {demandAgainstCohort.map((d) => (
-                      <div key={d.skill}>
-                        <div className="flex items-center justify-between text-xs mb-1 gap-2">
-                          <span className="text-foreground truncate">{d.skill}</span>
-                          <span className="text-muted-foreground flex-shrink-0">
-                            {d.count} posting{d.count === 1 ? "" : "s"}
-                            {d.cohortAvg != null && <span className={d.cohortAvg < TARGET ? " text-red-600" : " text-primary"}> · cohort {d.cohortAvg}%</span>}
-                          </span>
-                        </div>
-                        <div className="relative h-2 bg-muted rounded-full overflow-hidden">
-                          <div className="absolute inset-y-0 left-0 bg-primary/30 rounded-full" style={{ width: `${(d.count / demand[0].count) * 100}%` }} />
-                          {d.cohortAvg != null && <div className="absolute inset-y-0 left-0 bg-primary rounded-full" style={{ width: `${d.cohortAvg}%` }} />}
-                        </div>
-                        <div className="text-[10px] text-muted-foreground mt-1 truncate">
-                          {d.employers.slice(0, 2).join(", ")}{d.employers.length > 2 ? ` +${d.employers.length - 2}` : ""}
+                      <div key={d.skill} className="flex items-start gap-3">
+                        <IconTile icon="🎯" tone={d.cohortAvg != null && d.cohortAvg < TARGET ? "red" : "primary"} size={30} />
+                        <div className="min-w-0 flex-1">
+                          <div className="flex items-center justify-between text-xs mb-1 gap-2">
+                            <span className="text-foreground truncate">{d.skill}</span>
+                            <span className="text-muted-foreground flex-shrink-0">
+                              {d.count} posting{d.count === 1 ? "" : "s"}
+                              {d.cohortAvg != null && <span className={d.cohortAvg < TARGET ? " text-red-600" : " text-primary"}> · cohort {d.cohortAvg}%</span>}
+                            </span>
+                          </div>
+                          <div className="relative h-2 bg-muted rounded-full overflow-hidden">
+                            <div className="absolute inset-y-0 left-0 bg-primary/30 rounded-full" style={{ width: `${(d.count / demand[0].count) * 100}%` }} />
+                            {d.cohortAvg != null && <div className="absolute inset-y-0 left-0 bg-primary rounded-full" style={{ width: `${d.cohortAvg}%` }} />}
+                          </div>
+                          <div className="text-[10px] text-muted-foreground mt-1 truncate">
+                            {d.employers.slice(0, 2).join(", ")}{d.employers.length > 2 ? ` +${d.employers.length - 2}` : ""}
+                          </div>
                         </div>
                       </div>
                     ))}
@@ -172,7 +175,7 @@ export default function IndustryAlignment() {
                       <button
                         key={d.domain}
                         onClick={() => setDrill(d)}
-                        className="w-full text-left px-3 py-2.5 rounded-xl hover:bg-secondary transition-colors"
+                        className="w-full text-left px-3 py-2.5 rounded-xl border border-transparent hover:border-border hover:bg-secondary/60 transition-all"
                       >
                         <div className="flex items-center justify-between text-xs mb-1 gap-2">
                           <span className="text-foreground truncate">{d.domain}</span>
@@ -240,8 +243,8 @@ export default function IndustryAlignment() {
               {(() => {
                 const suggestion = suggestIntervention(drill.domain);
                 return (
-                  <div className="flex items-start gap-2.5 bg-primary/5 rounded-xl px-3.5 py-3">
-                    <span className="text-base">💡</span>
+                  <div className="flex items-start gap-3 bg-primary/5 rounded-xl px-3.5 py-3">
+                    <IconTile icon="💡" tone="amber" size={32} />
                     <div>
                       <div className="text-sm font-medium text-foreground">{suggestion.elective}</div>
                       <div className="text-[11px] text-muted-foreground">Add as a {suggestion.type.toLowerCase()} for this cohort.</div>

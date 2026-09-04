@@ -2,8 +2,10 @@
 
 import { useEffect, useMemo, useState } from "react";
 import DashboardLayout from "../../DashboardLayout";
+import StudentProfileModal from "../../StudentProfileModal";
 import { useAuth } from "../../../lib/auth";
 import {
+  Avatar,
   Badge,
   Button,
   Card,
@@ -139,10 +141,10 @@ export default function StudentRoster() {
   }
 
   const stats = [
-    { label: "On roster", value: String(roster.length) },
-    { label: "Matching filters", value: String(filtered.length) },
-    { label: "Selected", value: String(selected.size) },
-    { label: "Awaiting first application", value: String(roster.filter((r) => r.status === "Unplaced").length) },
+    { label: "On roster", value: String(roster.length), icon: "🎓", tone: "blue" },
+    { label: "Matching filters", value: String(filtered.length), icon: "🔎", tone: "purple" },
+    { label: "Selected", value: String(selected.size), icon: "☑️", tone: "primary" },
+    { label: "Awaiting first application", value: String(roster.filter((r) => r.status === "Unplaced").length), icon: "⏳", tone: "amber" },
   ];
 
   const columns = [
@@ -165,18 +167,21 @@ export default function StudentRoster() {
       key: "name",
       header: "Student",
       render: (r) => (
-        <div className="min-w-0">
-          <div className="font-medium text-foreground flex items-center gap-1.5">
-            <button
-              onClick={() => setViewingStudent(r)}
-              className="truncate text-foreground hover:text-primary hover:underline font-medium text-left"
-              title="Click to view full read-only student profile"
-            >
-              {r.name}
-            </button>
-            {r.invited && <Badge tone="amber">Invited</Badge>}
+        <div className="min-w-0 flex items-center gap-2.5">
+          <Avatar name={r.name} size={30} />
+          <div className="min-w-0">
+            <div className="font-medium text-foreground flex items-center gap-1.5">
+              <button
+                onClick={() => setViewingStudent(r)}
+                className="truncate text-foreground hover:text-primary hover:underline font-medium text-left"
+                title="Click to view full read-only student profile"
+              >
+                {r.name}
+              </button>
+              {r.invited && <Badge tone="amber">Invited</Badge>}
+            </div>
+            <div className="text-[11px] text-muted-foreground truncate">{r.rollNo || r.email}</div>
           </div>
-          <div className="text-[11px] text-muted-foreground truncate">{r.rollNo || r.email}</div>
         </div>
       ),
     },

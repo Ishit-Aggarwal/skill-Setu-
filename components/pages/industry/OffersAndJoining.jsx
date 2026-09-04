@@ -3,7 +3,7 @@
 import { useEffect, useMemo, useState } from "react";
 import DashboardLayout from "../../DashboardLayout";
 import { useAuth } from "../../../lib/auth";
-import { Avatar, Badge, Button, Card, DataTable, EmptyState, Field, Flash, Modal, PageHeader, Section, Select, StatGrid, TextArea, TextInput, useFlash } from "../../ui/Kit";
+import { Avatar, Badge, Button, Card, DataTable, EmptyState, Field, Flash, Modal, PageHeader, ProgressRing, Section, Select, StatGrid, TextArea, TextInput, useFlash } from "../../ui/Kit";
 import { formatDate, relativeTime } from "../../../lib/match";
 import { OFFER_STAGES, downloadFile, listApplicationsForOwner, setOfferStage, toCsv } from "../../../lib/store";
 import StudentProfileModal from "../../StudentProfileModal";
@@ -146,14 +146,19 @@ export default function OffersAndJoining() {
 
         <Flash message={flash} />
 
-        <StatGrid
-          stats={[
-            { label: "Hired candidates", value: String(hired.length), icon: "🤝" },
-            { label: "Offers sent", value: String(counts["Offer sent"] + counts["Offer accepted"] + counts.Joined + counts["Offer declined"]), icon: "📨" },
-            { label: "Offer acceptance", value: acceptRate != null ? `${acceptRate}%` : "—", icon: "✅", hint: `${counts["Offer declined"]} declined` },
-            { label: "Joined", value: String(counts.Joined), icon: "🎉", hint: joinRate != null ? `${joinRate}% of accepted offers` : "—" },
-          ]}
-        />
+        <div className="grid sm:grid-cols-[auto_1fr] gap-4 items-stretch">
+          <Card className="flex flex-col items-center justify-center px-8">
+            <ProgressRing value={acceptRate ?? 0} label={acceptRate != null ? undefined : "—"} sublabel="Offer acceptance rate" tone="green" />
+          </Card>
+          <StatGrid
+            columns={3}
+            stats={[
+              { label: "Hired candidates", value: String(hired.length), icon: "🤝" },
+              { label: "Offers sent", value: String(counts["Offer sent"] + counts["Offer accepted"] + counts.Joined + counts["Offer declined"]), icon: "📨", hint: `${counts["Offer declined"]} declined` },
+              { label: "Joined", value: String(counts.Joined), icon: "🎉", hint: joinRate != null ? `${joinRate}% of accepted offers` : "—" },
+            ]}
+          />
+        </div>
 
         <div className="flex flex-wrap gap-2">
           {["All", ...OFFER_STAGES].map((f) => (
@@ -184,11 +189,16 @@ export default function OffersAndJoining() {
                 {hired
                   .filter((a) => a.offerStage === "Offer accepted")
                   .map((a) => (
-                    <div key={a.id} className="flex flex-wrap items-center justify-between gap-2 bg-card border border-border rounded-xl px-4 py-3">
-                      <span className="text-sm font-medium text-foreground">{a.studentName}</span>
-                      <span className="text-xs text-muted-foreground">
-                        {a.internshipTitle} · joining {a.joiningDate ? formatDate(a.joiningDate) : "date not set"}
-                      </span>
+                    <div key={a.id} className="flex flex-wrap items-center justify-between gap-3 bg-card border border-border rounded-xl px-4 py-3 hover:shadow-sm transition-shadow duration-200">
+                      <div className="flex items-center gap-2.5 min-w-0">
+                        <Avatar name={a.studentName} size={30} />
+                        <div className="min-w-0">
+                          <div className="text-sm font-medium text-foreground truncate">{a.studentName}</div>
+                          <div className="text-xs text-muted-foreground truncate">
+                            {a.internshipTitle} · joining {a.joiningDate ? formatDate(a.joiningDate) : "date not set"}
+                          </div>
+                        </div>
+                      </div>
                       <Button size="sm" onClick={() => { setOfferStage(a.id, "Joined"); bump(`${a.studentName} marked as joined.`); }}>
                         Mark joined
                       </Button>

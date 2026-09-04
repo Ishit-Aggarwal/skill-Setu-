@@ -3,7 +3,7 @@
 import { useEffect, useMemo, useState } from "react";
 import DashboardLayout from "../../DashboardLayout";
 import { useAuth } from "../../../lib/auth";
-import { Avatar, Badge, Button, Card, Field, Flash, PageHeader, Section, Select, StatGrid, TextArea, TextInput, useFlash } from "../../ui/Kit";
+import { Avatar, Badge, Button, Card, Field, Flash, PageHeader, ProgressRing, Section, Select, StatGrid, TextArea, TextInput, useFlash } from "../../ui/Kit";
 import { COLLAB_EXPERTISE, DEPARTMENTS } from "../../../lib/domains";
 import { listAdvisees, listCollabListingsByOwner, listPrograms, listResearchOutputs } from "../../../lib/store";
 
@@ -102,14 +102,29 @@ export default function FacultyProfile() {
 
         <Flash message={flash} />
 
-        <StatGrid
-          stats={[
-            { label: "Profile completeness", value: `${completeness}%`, icon: "📋" },
-            { label: "Publications & patents", value: String(outputs.length), icon: "📄", hint: `${outputs.filter((o) => o.type === "Patent").length} patent(s)` },
-            { label: "Ongoing projects", value: String(listings.length), icon: "🔬" },
-            { label: "Advisees mentored", value: String(advisees.length), icon: "🎓", hint: `${programs.length} programme(s) hosted` },
-          ]}
-        />
+        <Card>
+          <div className="flex flex-col sm:flex-row items-center sm:items-start gap-6">
+            <div className="flex-shrink-0 flex sm:flex-col items-center gap-3 sm:border-r sm:border-border sm:pr-6">
+              <ProgressRing
+                value={completeness}
+                size={88}
+                stroke={8}
+                tone={completeness >= 80 ? "green" : completeness >= 50 ? "amber" : "red"}
+                sublabel="Profile complete"
+              />
+            </div>
+            <div className="flex-1 w-full min-w-0">
+              <StatGrid
+                columns={3}
+                stats={[
+                  { label: "Publications & patents", value: String(outputs.length), icon: "📄", hint: `${outputs.filter((o) => o.type === "Patent").length} patent(s)` },
+                  { label: "Ongoing projects", value: String(listings.length), icon: "🔬" },
+                  { label: "Advisees mentored", value: String(advisees.length), icon: "🎓", hint: `${programs.length} programme(s) hosted` },
+                ]}
+              />
+            </div>
+          </div>
+        </Card>
 
         <form onSubmit={submit} className="space-y-5">
           <Card>
@@ -212,12 +227,12 @@ export default function FacultyProfile() {
               <Section title="Publication record" description="Logged from the Research Collabs page — shown here as your credibility summary.">
                 <div className="space-y-2">
                   {outputs.map((o) => (
-                    <div key={o.id} className="flex items-start gap-3">
-                      <Badge tone={o.type === "Patent" ? "purple" : "primary"}>{o.type}</Badge>
-                      <div className="min-w-0">
+                    <div key={o.id} className="flex items-start gap-3 border border-border rounded-xl px-3.5 py-2.5">
+                      <div className="min-w-0 flex-1">
                         <div className="text-sm text-foreground">{o.title}</div>
-                        <div className="text-[11px] text-muted-foreground">{o.venue}{o.year ? ` · ${o.year}` : ""}</div>
+                        <div className="text-[11px] text-muted-foreground mt-0.5">{o.venue}{o.year ? ` · ${o.year}` : ""}</div>
                       </div>
+                      <Badge tone={o.type === "Patent" ? "purple" : "primary"}>{o.type}</Badge>
                     </div>
                   ))}
                 </div>

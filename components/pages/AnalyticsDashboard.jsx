@@ -4,7 +4,7 @@ import { useEffect, useMemo, useState } from "react";
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, Legend } from "recharts";
 import DashboardLayout from "../DashboardLayout";
 import { useAuth } from "../../lib/auth";
-import { Badge, Card, PageHeader, ProgressBar, Section, StatGrid, Tabs } from "../ui/Kit";
+import { Card, PageHeader, ProgressBar, Section, StatGrid, Tabs } from "../ui/Kit";
 import { all, listApplications, listInternships, listInternshipsByOwner, listUsersByRole, PIPELINE_STAGES, TERMINAL_STAGES } from "../../lib/store";
 import { subscribeToMutations } from "../../lib/sync";
 

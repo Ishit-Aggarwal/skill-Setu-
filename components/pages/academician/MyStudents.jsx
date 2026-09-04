@@ -12,6 +12,7 @@ import {
   EmptyState,
   Field,
   Flash,
+  IconTile,
   Modal,
   PageHeader,
   ProgressBar,
@@ -301,11 +302,14 @@ function StudentProfileModal({ faculty, student, onClose, onSaved }) {
   return (
     <Modal title={student.name} description={`${student.course || student.department} · ${student.year || student.batch}`} onClose={onClose} size="lg">
       <div className="space-y-5">
-        <div className="flex flex-wrap gap-2 text-xs">
-          <Badge tone="neutral">{student.department}</Badge>
-          {student.rollNo && <Badge tone="neutral">{student.rollNo}</Badge>}
-          <Badge tone={PLACEMENT_TONE[student.status]}>{student.status}</Badge>
-          {student.isAdvisee && <Badge tone="primary">My advisee</Badge>}
+        <div className="flex items-center gap-3.5">
+          <Avatar name={student.name} size={48} />
+          <div className="flex flex-wrap gap-2 text-xs">
+            <Badge tone="neutral">{student.department}</Badge>
+            {student.rollNo && <Badge tone="neutral">{student.rollNo}</Badge>}
+            <Badge tone={PLACEMENT_TONE[student.status]}>{student.status}</Badge>
+            {student.isAdvisee && <Badge tone="primary">My advisee</Badge>}
+          </div>
         </div>
 
         <div>
@@ -421,7 +425,8 @@ function RecommendModal({ faculty, student, postings, onClose, onDone }) {
         ) : (
           <div className="space-y-2 max-h-80 overflow-y-auto pr-1">
             {filtered.map((p) => (
-              <div key={p.id} className="flex items-center gap-3 border border-border rounded-xl px-4 py-3">
+              <div key={p.id} className="flex items-center gap-3 border border-border rounded-xl px-4 py-3 hover:border-primary/30 transition-colors">
+                <IconTile icon="💼" tone="blue" size={34} />
                 <div className="min-w-0 flex-1">
                   <div className="text-sm font-medium text-foreground truncate">{p.title}</div>
                   <div className="text-[11px] text-muted-foreground truncate">{p.company} · {p.domain} · closes {formatDate(p.deadline)}</div>

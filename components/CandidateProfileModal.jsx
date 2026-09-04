@@ -4,10 +4,7 @@ import { useEffect, useState } from "react";
 import { findOne, getAssessment, getPortfolio, listRecruiters, updateApplicationRecruiterFields } from "../lib/store";
 import { useAuth } from "../lib/auth";
 import { formatDate } from "../lib/match";
-
-function initials(name) {
-  return (name || "?").split(" ").map((p) => p[0]).slice(0, 2).join("").toUpperCase();
-}
+import { Avatar, Badge, IconTile } from "./ui/Kit";
 
 /**
  * Read-only candidate profile for a recruiter — opened either from an
@@ -57,9 +54,7 @@ export default function CandidateProfileModal({ application, onClose, onUpdated 
       <div className="relative z-10 bg-card border border-border rounded-2xl w-full max-w-lg shadow-xl animate-fade-slide max-h-[88vh] overflow-y-auto">
         <div className="sticky top-0 bg-card border-b border-border p-5 flex items-start justify-between gap-3 z-10">
           <div className="flex items-center gap-3 min-w-0">
-            <div className="w-11 h-11 rounded-full bg-primary/15 flex items-center justify-center text-primary text-sm font-semibold flex-shrink-0">
-              {initials(application.studentName)}
-            </div>
+            <Avatar name={application.studentName} size={44} src={student?.avatarDataUrl} />
             <div className="min-w-0">
               <div className="text-sm font-semibold text-foreground truncate">{application.studentName}</div>
               <div className="text-xs text-muted-foreground truncate">
@@ -72,9 +67,9 @@ export default function CandidateProfileModal({ application, onClose, onUpdated 
 
         <div className="p-5 space-y-5">
           <div className="flex flex-wrap gap-2 text-xs">
-            <span className="px-2.5 py-1 rounded-full bg-secondary text-secondary-foreground">{application.studentInstitution || "Institution unknown"}</span>
-            {application.match != null && <span className="px-2.5 py-1 rounded-full bg-primary/10 text-primary font-medium">{application.match}% match</span>}
-            {hasApplication && <span className="px-2.5 py-1 rounded-full bg-secondary text-secondary-foreground">Applied {formatDate(application.appliedAt)}</span>}
+            <Badge tone="neutral">{application.studentInstitution || "Institution unknown"}</Badge>
+            {application.match != null && <Badge tone="primary">{application.match}% match</Badge>}
+            {hasApplication && <Badge tone="neutral">Applied {formatDate(application.appliedAt)}</Badge>}
           </div>
 
           <div>
@@ -95,13 +90,16 @@ export default function CandidateProfileModal({ application, onClose, onUpdated 
           {assessment && (
             <div>
               <div className="text-xs font-semibold text-muted-foreground uppercase tracking-wider mb-2">Skill Assessment</div>
-              <div className="flex items-center gap-2 mb-2">
-                <span className="text-lg font-bold text-foreground">{Math.round(assessment.overallScore)}</span>
-                <span className="text-xs text-muted-foreground">/ 100 overall</span>
+              <div className="flex items-center gap-3 mb-2.5">
+                <IconTile icon="📊" size={34} />
+                <div>
+                  <span className="text-lg font-bold text-foreground">{Math.round(assessment.overallScore)}</span>
+                  <span className="text-xs text-muted-foreground"> / 100 overall</span>
+                </div>
               </div>
               <div className="flex flex-wrap gap-1.5">
                 {Object.entries(assessment.domainScores || {}).map(([domain, score]) => (
-                  <span key={domain} className="text-[10px] px-2 py-1 rounded-full bg-secondary text-secondary-foreground">{domain}: {Math.round(score)}</span>
+                  <Badge key={domain} tone="neutral">{domain}: {Math.round(score)}</Badge>
                 ))}
               </div>
             </div>
@@ -110,13 +108,13 @@ export default function CandidateProfileModal({ application, onClose, onUpdated 
           {portfolio?.skillBadges && Object.keys(portfolio.skillBadges).length > 0 && (
             <div>
               <div className="text-xs font-semibold text-muted-foreground uppercase tracking-wider mb-2">Skills</div>
-              <div className="space-y-2">
+              <div className="space-y-2.5">
                 {Object.entries(portfolio.skillBadges).map(([category, skills]) => (
                   <div key={category}>
-                    <div className="text-[10px] text-muted-foreground mb-1">{category}</div>
+                    <div className="text-[10px] text-muted-foreground mb-1.5">{category}</div>
                     <div className="flex flex-wrap gap-1.5">
                       {skills.map((s) => (
-                        <span key={s.name} className="text-[10px] px-2 py-1 rounded-full bg-primary/8 text-primary font-medium">{s.name} · {s.level}</span>
+                        <Badge key={s.name} tone="primary">{s.name} · {s.level}</Badge>
                       ))}
                     </div>
                   </div>
@@ -157,8 +155,11 @@ export default function CandidateProfileModal({ application, onClose, onUpdated 
           </div>
 
           {hasApplication && (
-          <div className="border-t border-border pt-4">
-            <div className="text-xs font-semibold text-primary uppercase tracking-wider mb-2">Recruiter-only</div>
+          <div className="border-t border-border pt-5">
+            <div className="flex items-center gap-2 mb-3">
+              <IconTile icon="🔒" size={24} />
+              <div className="text-xs font-semibold text-primary uppercase tracking-wider">Recruiter-only</div>
+            </div>
 
             <label className="block text-xs font-semibold text-muted-foreground uppercase tracking-wider mb-1.5">Interview Mode</label>
             <div className="flex gap-2 mb-4">

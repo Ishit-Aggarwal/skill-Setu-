@@ -4,7 +4,7 @@ import { useEffect, useMemo, useState } from "react";
 import { Line, LineChart, ResponsiveContainer, Tooltip, XAxis, YAxis, CartesianGrid } from "recharts";
 import DashboardLayout from "../../DashboardLayout";
 import { useAuth } from "../../../lib/auth";
-import { Badge, Button, Card, EmptyState, Field, Flash, PageHeader, ProgressBar, Section, Select, StatGrid, Tabs, useFlash } from "../../ui/Kit";
+import { Badge, Button, Card, EmptyState, Field, Flash, IconTile, PageHeader, ProgressBar, Section, Select, StatGrid, Tabs, useFlash } from "../../ui/Kit";
 import { SKILL_DOMAINS } from "../../../lib/questionBank";
 import { cohortSkillMatrix, downloadFile, listInstitutionStudents, logActivity, skillTrendByTerm, toCsv } from "../../../lib/store";
 import { subscribeToMutations } from "../../../lib/sync";
@@ -117,10 +117,10 @@ export default function CohortSkillGaps() {
 
         <StatGrid
           stats={[
-            { label: "Students in scope", value: String(scopedRoster.length), hint: `${assessedCount} assessed` },
-            { label: "Departments covered", value: String(matrix.length) },
-            { label: "Domains below target", value: `${belowTarget}/${SKILL_DOMAINS.length}`, hint: `Target ${READINESS_TARGET}%` },
-            { label: "Weakest domain", value: weakest[0] ? `${weakest[0].average}%` : "—", hint: weakest[0]?.domain || "No assessments yet" },
+            { label: "Students in scope", value: String(scopedRoster.length), icon: "🎓", tone: "blue", hint: `${assessedCount} assessed` },
+            { label: "Departments covered", value: String(matrix.length), icon: "🏛", tone: "purple" },
+            { label: "Domains below target", value: `${belowTarget}/${SKILL_DOMAINS.length}`, icon: "⚠️", tone: "amber", hint: `Target ${READINESS_TARGET}%` },
+            { label: "Weakest domain", value: weakest[0] ? `${weakest[0].average}%` : "—", icon: "🧭", tone: "red", hint: weakest[0]?.domain || "No assessments yet" },
           ]}
         />
 
@@ -294,9 +294,9 @@ export default function CohortSkillGaps() {
             ) : (
               <div className="grid sm:grid-cols-3 gap-3">
                 {weakest.map((w, i) => (
-                  <div key={w.domain} className="border border-border rounded-xl p-4">
-                    <div className="flex items-center gap-2 mb-1">
-                      <span className="text-xs font-bold text-muted-foreground">#{i + 1}</span>
+                  <div key={w.domain} className="border border-border rounded-xl p-4 transition-shadow hover:shadow-[0_4px_14px_rgba(25,25,26,0.06)]">
+                    <div className="flex items-center justify-between gap-2 mb-2">
+                      <IconTile icon={`#${i + 1}`} tone={w.average < 60 ? "red" : "amber"} size={30} className="text-xs font-bold" />
                       <Badge tone={w.average < 60 ? "red" : "amber"}>{w.average}%</Badge>
                     </div>
                     <div className="text-sm font-semibold text-foreground">{w.domain}</div>

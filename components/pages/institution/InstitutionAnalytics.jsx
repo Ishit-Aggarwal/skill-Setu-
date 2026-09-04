@@ -4,7 +4,7 @@ import { useEffect, useMemo, useRef, useState } from "react";
 import { Bar, BarChart, CartesianGrid, Line, LineChart, ResponsiveContainer, Tooltip, XAxis, YAxis, Legend } from "recharts";
 import DashboardLayout from "../../DashboardLayout";
 import { useAuth } from "../../../lib/auth";
-import { Badge, Button, Card, DataTable, EmptyState, Field, Flash, Modal, PageHeader, ProgressBar, Section, Select, StatGrid, Tabs, TextInput, useFlash } from "../../ui/Kit";
+import { Badge, Button, Card, DataTable, EmptyState, Field, Flash, IconTile, Modal, PageHeader, ProgressBar, ProgressRing, Section, Select, StatGrid, Tabs, TextInput, useFlash } from "../../ui/Kit";
 import { formatDate } from "../../../lib/match";
 import {
   downloadFile,
@@ -362,11 +362,11 @@ export default function InstitutionAnalytics() {
           <>
             <StatGrid
               stats={[
-                { label: "Students in scope", value: String(scoped.length), icon: "🎓" },
-                { label: "Placed", value: String(placed), icon: "✅", hint: `${placementRate}% placement rate` },
-                { label: "Applications sent", value: String(applications.length), icon: "📤" },
-                { label: "Partner companies engaged", value: String(ourRecruiters.length), icon: "🏢" },
-                { label: "Avg. time to hire", value: timeToHire != null ? `${timeToHire}d` : "—", icon: "⏱" },
+                { label: "Students in scope", value: String(scoped.length), icon: "🎓", tone: "blue" },
+                { label: "Placed", value: String(placed), icon: "✅", tone: "green", hint: `${placementRate}% placement rate` },
+                { label: "Applications sent", value: String(applications.length), icon: "📤", tone: "amber" },
+                { label: "Partner companies engaged", value: String(ourRecruiters.length), icon: "🏢", tone: "purple" },
+                { label: "Avg. time to hire", value: timeToHire != null ? `${timeToHire}d` : "—", icon: "⏱", tone: "primary" },
               ]}
               columns={5}
             />
@@ -377,7 +377,11 @@ export default function InstitutionAnalytics() {
                   {funnel[0].count === 0 ? (
                     <p className="text-sm text-muted-foreground py-8 text-center">No applications from your students yet.</p>
                   ) : (
-                    <div className="space-y-3">
+                    <div className="flex flex-col sm:flex-row gap-6">
+                      <div className="flex-shrink-0 flex items-center justify-center sm:border-r sm:border-border sm:pr-6">
+                        <ProgressRing value={placementRate} tone="green" sublabel="Current cohort placed" />
+                      </div>
+                      <div className="flex-1 space-y-3 min-w-0">
                       {funnel.map((f, i) => {
                         const width = Math.max((f.count / funnel[0].count) * 100, f.count > 0 ? 6 : 0);
                         const conversion = i > 0 && funnel[i - 1].count ? Math.round((f.count / funnel[i - 1].count) * 100) : null;
@@ -406,6 +410,7 @@ export default function InstitutionAnalytics() {
                           {rejectedCount} terminal/rejected application{rejectedCount === 1 ? "" : "s"} accounted for
                         </p>
                       )}
+                      </div>
                     </div>
                   )}
                 </Section>
@@ -416,16 +421,19 @@ export default function InstitutionAnalytics() {
                   {ourRecruiters.length === 0 ? (
                     <p className="text-sm text-muted-foreground py-8 text-center">No engagement recorded yet.</p>
                   ) : (
-                    <div className="space-y-3">
+                    <div className="space-y-4">
                       {ourRecruiters.slice(0, 6).map((c, i) => (
-                        <div key={c.company}>
-                          <div className="flex items-center justify-between text-xs mb-1 gap-2">
-                            <span className="font-medium text-foreground truncate">{i + 1}. {c.company}</span>
-                            <span className="text-muted-foreground flex-shrink-0">{c.hired} hired</span>
-                          </div>
-                          <ProgressBar value={c.hired} max={ourRecruiters[0].hired || 1} tone="bg-primary" />
-                          <div className="text-[10px] text-muted-foreground mt-1">
-                            {c.applications} application{c.applications === 1 ? "" : "s"} · {c.conversion}% conversion
+                        <div key={c.company} className="flex items-start gap-2.5">
+                          <IconTile icon={i + 1} tone={i === 0 ? "primary" : "blue"} size={26} className="mt-0.5 text-[11px] font-semibold" />
+                          <div className="min-w-0 flex-1">
+                            <div className="flex items-center justify-between text-xs mb-1 gap-2">
+                              <span className="font-medium text-foreground truncate">{c.company}</span>
+                              <span className="text-muted-foreground flex-shrink-0">{c.hired} hired</span>
+                            </div>
+                            <ProgressBar value={c.hired} max={ourRecruiters[0].hired || 1} tone="bg-primary" />
+                            <div className="text-[10px] text-muted-foreground mt-1">
+                              {c.applications} application{c.applications === 1 ? "" : "s"} · {c.conversion}% conversion
+                            </div>
                           </div>
                         </div>
                       ))}
@@ -449,7 +457,7 @@ export default function InstitutionAnalytics() {
                 ) : (
                   <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-2">
                     {atRisk.map((s) => (
-                      <div key={s.id} className="bg-card border border-border rounded-xl px-3.5 py-3">
+                      <div key={s.id} className="bg-card border border-border rounded-xl px-3.5 py-3 transition-shadow hover:shadow-[0_4px_14px_rgba(25,25,26,0.06)]">
                         <div className="flex items-start justify-between gap-2 mb-1">
                           <span className="text-sm font-medium text-foreground truncate">{s.name}</span>
                           <Badge tone={s.risk >= 70 ? "red" : "amber"}>{s.risk >= 70 ? "High" : "Watch"}</Badge>
@@ -488,13 +496,14 @@ export default function InstitutionAnalytics() {
               <>
                 <StatGrid
                   stats={[
-                    { label: "Batches on record", value: String(historyByBatch.length), icon: "📚" },
-                    { label: "Alumni tracked", value: String(historyByBatch.reduce((s, b) => s + b.students, 0)), icon: "🎓" },
-                    { label: "Best placement year", value: `${[...historyByBatch].sort((a, b) => b.rate - a.rate)[0].rate}%`, icon: "🏅", hint: `Batch ${[...historyByBatch].sort((a, b) => b.rate - a.rate)[0].batch}` },
+                    { label: "Batches on record", value: String(historyByBatch.length), icon: "📚", tone: "blue" },
+                    { label: "Alumni tracked", value: String(historyByBatch.reduce((s, b) => s + b.students, 0)), icon: "🎓", tone: "purple" },
+                    { label: "Best placement year", value: `${[...historyByBatch].sort((a, b) => b.rate - a.rate)[0].rate}%`, icon: "🏅", tone: "green", hint: `Batch ${[...historyByBatch].sort((a, b) => b.rate - a.rate)[0].batch}` },
                     {
                       label: "Median stipend trend",
                       value: `₹${(historyByBatch[historyByBatch.length - 1].medianStipend / 1000).toFixed(1)}k`,
                       icon: "💰",
+                      tone: "amber",
                       hint: `from ₹${(historyByBatch[0].medianStipend / 1000).toFixed(1)}k in ${historyByBatch[0].batch}`,
                     },
                   ]}

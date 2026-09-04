@@ -3,7 +3,7 @@
 import { useEffect, useMemo, useState } from "react";
 import DashboardLayout from "../../DashboardLayout";
 import { useAuth } from "../../../lib/auth";
-import { Badge, Button, Card, EmptyState, Flash, PageHeader, ProgressBar, Section, StatGrid, useFlash } from "../../ui/Kit";
+import { Badge, Button, Card, EmptyState, Flash, IconTile, PageHeader, ProgressBar, Section, StatGrid, useFlash } from "../../ui/Kit";
 import { suggestIntervention } from "../../../lib/domains";
 import { skillDomainForTag } from "../../../lib/match";
 import { downloadFile, getPortfolio, industrySkillDemand, listInternships, logActivity, toCsv } from "../../../lib/store";
@@ -107,10 +107,10 @@ export default function CurriculumAlignment() {
 
         <StatGrid
           stats={[
-            { label: "Live postings analysed", value: String(postings.length), icon: "📋" },
-            { label: "Distinct skills requested", value: String(rows.length), icon: "🎯" },
-            { label: "Average student coverage", value: `${avgCoverage}%`, icon: "🎓", hint: `Ready = ${READY_AT}+ in the mapped domain` },
-            { label: "Skills with a gap", value: String(gaps.length), icon: "⚠️", hint: gaps[0] ? `Widest: ${gaps[0].skill}` : "None" },
+            { label: "Live postings analysed", value: String(postings.length), icon: "📋", tone: "blue" },
+            { label: "Distinct skills requested", value: String(rows.length), icon: "🎯", tone: "purple" },
+            { label: "Average student coverage", value: `${avgCoverage}%`, icon: "🎓", tone: "green", hint: `Ready = ${READY_AT}+ in the mapped domain` },
+            { label: "Skills with a gap", value: String(gaps.length), icon: "⚠️", tone: "amber", hint: gaps[0] ? `Widest: ${gaps[0].skill}` : "None" },
           ]}
         />
 
@@ -171,7 +171,7 @@ export default function CurriculumAlignment() {
                       {gaps.slice(0, 6).map((g) => {
                         const suggestion = suggestIntervention(g.skill);
                         return (
-                          <div key={g.skill} className="bg-card border border-border rounded-xl p-4">
+                          <div key={g.skill} className="bg-card border border-border rounded-xl p-4 transition-shadow hover:shadow-[0_4px_14px_rgba(25,25,26,0.06)]">
                             <div className="flex flex-wrap items-start justify-between gap-2 mb-2">
                               <div className="min-w-0">
                                 <div className="text-sm font-semibold text-foreground">{g.skill}</div>
@@ -181,8 +181,8 @@ export default function CurriculumAlignment() {
                               </div>
                               <Badge tone={g.gap >= 40 ? "red" : "amber"}>Gap {g.gap}</Badge>
                             </div>
-                            <div className="flex items-start gap-2 bg-primary/5 rounded-lg px-3 py-2.5">
-                              <span className="text-sm">💡</span>
+                            <div className="flex items-start gap-2.5 bg-primary/5 rounded-lg px-3 py-2.5">
+                              <IconTile icon="💡" tone="primary" size={26} />
                               <div className="min-w-0">
                                 <div className="text-xs font-medium text-foreground">{suggestion.elective}</div>
                                 <div className="text-[10px] text-muted-foreground">Introduce as a {suggestion.type.toLowerCase()} — closes the gap for {g.domain || "this requirement"}.</div>

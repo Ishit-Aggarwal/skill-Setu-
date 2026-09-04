@@ -3,7 +3,7 @@
 import { useEffect, useMemo, useState } from "react";
 import DashboardLayout from "../../DashboardLayout";
 import { useAuth } from "../../../lib/auth";
-import { Badge, Button, Card, EmptyState, Field, Flash, Modal, PageHeader, Section, Select, StatGrid, TextArea, TextInput, useFlash } from "../../ui/Kit";
+import { Avatar, Badge, Button, Card, EmptyState, Field, Flash, IconTile, Modal, PageHeader, Section, Select, StatGrid, TextArea, TextInput, useFlash } from "../../ui/Kit";
 import { formatDate } from "../../../lib/match";
 import {
   createDrive,
@@ -102,9 +102,9 @@ export default function PlacementDrives() {
                       <Badge tone={upcoming ? "primary" : "muted"}>{upcoming ? "Upcoming" : "Past"}</Badge>
                     </div>
                     <div className="text-xs text-muted-foreground mb-3">{formatDate(d.date)} · {d.venue || "Venue TBC"}</div>
-                    <div className="flex items-center gap-3 text-[11px] text-muted-foreground">
-                      <span>🏢 {dConfirmed}/{dInvites.length} confirmed</span>
-                      <span>🎓 {listDriveEligibility(d.id).length} eligible</span>
+                    <div className="flex items-center gap-4 text-[11px] text-muted-foreground">
+                      <span className="flex items-center gap-1.5"><span>🏢</span>{dConfirmed}/{dInvites.length} confirmed</span>
+                      <span className="flex items-center gap-1.5"><span>🎓</span>{listDriveEligibility(d.id).length} eligible</span>
                     </div>
                   </button>
                 );
@@ -115,10 +115,10 @@ export default function PlacementDrives() {
               <>
                 <StatGrid
                   stats={[
-                    { label: "Companies invited", value: String(invites.length), icon: "✉️" },
-                    { label: "Confirmed", value: String(confirmed.length), icon: "✅", hint: `${invites.filter((i) => i.rsvp === "Tentative").length} tentative` },
-                    { label: "Roles on offer", value: String(confirmed.reduce((s, i) => s + (Number(i.expectedRoles) || 0), 0)), icon: "💼" },
-                    { label: "Expected footfall", value: String(eligibleStudents.length), icon: "🎓", hint: "Students tagged eligible" },
+                    { label: "Companies invited", value: String(invites.length), icon: "✉️", tone: "blue" },
+                    { label: "Confirmed", value: String(confirmed.length), icon: "✅", tone: "green", hint: `${invites.filter((i) => i.rsvp === "Tentative").length} tentative` },
+                    { label: "Roles on offer", value: String(confirmed.reduce((s, i) => s + (Number(i.expectedRoles) || 0), 0)), icon: "💼", tone: "purple" },
+                    { label: "Expected footfall", value: String(eligibleStudents.length), icon: "🎓", tone: "amber", hint: "Students tagged eligible" },
                   ]}
                 />
 
@@ -134,7 +134,8 @@ export default function PlacementDrives() {
                       ) : (
                         <div className="space-y-2">
                           {invites.map((i) => (
-                            <div key={i.id} className="flex flex-wrap items-center gap-3 border border-border rounded-xl px-4 py-3">
+                            <div key={i.id} className="flex flex-wrap items-center gap-3 border border-border rounded-xl px-4 py-3 transition-shadow hover:shadow-[0_4px_14px_rgba(25,25,26,0.06)]">
+                              <Avatar name={i.company} size={32} />
                               <div className="min-w-0 flex-1">
                                 <div className="text-sm font-medium text-foreground truncate">{i.company}</div>
                                 <div className="text-[11px] text-muted-foreground truncate">
@@ -231,7 +232,8 @@ export default function PlacementDrives() {
                     ) : (
                       <div className="flex flex-wrap gap-2">
                         {eligibleStudents.map((s) => (
-                          <span key={s.id} className="inline-flex items-center gap-2 bg-secondary/70 rounded-full pl-3 pr-2 py-1.5 text-xs">
+                          <span key={s.id} className="inline-flex items-center gap-2 bg-secondary/70 rounded-full pl-1.5 pr-2 py-1.5 text-xs">
+                            <Avatar name={s.name} size={20} />
                             <span className="text-foreground">{s.name}</span>
                             <span className="text-muted-foreground">{s.department.split(" ")[0]}</span>
                             {s.score != null && <Badge tone={s.score >= 75 ? "green" : s.score >= 60 ? "amber" : "red"}>{s.score}</Badge>}

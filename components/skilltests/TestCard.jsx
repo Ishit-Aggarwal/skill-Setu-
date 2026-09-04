@@ -4,17 +4,18 @@ import { useState } from "react";
 import RegisterModal from "./RegisterModal";
 import { getRegistrationStatus, formatScheduled, isLinkRevealWindow } from "../../lib/testStatus";
 import { registerForSkillTest, selfReportOfflineAttendance } from "../../lib/store";
+import { Badge, Button, Card } from "../ui/Kit";
 
-const modeColor = {
-  Online: "text-emerald-700 bg-emerald-50",
-  Offline: "text-amber-700 bg-amber-50",
+const modeTone = {
+  Online: "green",
+  Offline: "amber",
 };
 
-const statusBadge = {
-  upcoming: "text-blue-600 bg-blue-50",
-  available: "text-primary bg-primary/10",
-  completed: "text-green-600 bg-green-50",
-  missed: "text-red-600 bg-red-50",
+const statusTone = {
+  upcoming: "blue",
+  available: "primary",
+  completed: "green",
+  missed: "red",
 };
 
 const statusLabel = {
@@ -41,16 +42,16 @@ export default function TestCard({ test, user, registration, attempt, onRefresh 
   }
 
   return (
-    <div className="bg-card border border-border rounded-2xl p-5 flex flex-col hover:shadow-sm transition-shadow">
+    <Card hover className="flex flex-col">
       <div className="flex items-center gap-1.5 flex-wrap mb-3">
-        <span className={`text-[10px] font-medium px-2 py-0.5 rounded-full ${modeColor[test.mode]}`}>{test.mode}</span>
-        <span className="text-[10px] bg-secondary text-secondary-foreground px-2 py-0.5 rounded-full">{test.domain}</span>
+        <Badge tone={modeTone[test.mode]}>{test.mode}</Badge>
+        <Badge tone="neutral">{test.domain}</Badge>
         {test.price > 0 ? (
-          <span className="text-[10px] font-semibold text-foreground bg-muted px-2 py-0.5 rounded-full">₹{test.price}</span>
+          <Badge tone="muted">₹{test.price}</Badge>
         ) : (
-          <span className="text-[10px] font-semibold text-primary bg-primary/8 px-2 py-0.5 rounded-full">Free</span>
+          <Badge tone="primary">Free</Badge>
         )}
-        {status && <span className={`text-[10px] font-medium px-2 py-0.5 rounded-full ml-auto ${statusBadge[status]}`}>{statusLabel[status]}</span>}
+        {status && <Badge tone={statusTone[status]} className="ml-auto">{statusLabel[status]}</Badge>}
       </div>
 
       <div className="text-sm font-semibold text-foreground mb-0.5">{test.title}</div>
@@ -73,9 +74,9 @@ export default function TestCard({ test, user, registration, attempt, onRefresh 
       </div>
 
       {!registration && (
-        <button onClick={() => setShowRegister(true)} className="mt-auto w-full py-2.5 rounded-xl text-sm font-medium bg-primary hover:bg-accent text-white transition-all duration-150">
+        <Button onClick={() => setShowRegister(true)} className="mt-auto w-full">
           Register
-        </button>
+        </Button>
       )}
 
       {registration && status === "upcoming" && (
@@ -103,6 +104,6 @@ export default function TestCard({ test, user, registration, attempt, onRefresh 
       )}
 
       {showRegister && <RegisterModal test={test} user={user} onConfirm={handleConfirmRegister} onClose={() => setShowRegister(false)} />}
-    </div>
+    </Card>
   );
 }

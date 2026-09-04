@@ -17,6 +17,7 @@ import {
   getRegistration,
   checkAndRecordMissedTests,
 } from "../../lib/store";
+import { Badge, Button, Card, EmptyState, Field, Modal, PageHeader, Select, Tabs, TextArea, TextInput } from "../ui/Kit";
 
 function StudentView({ user }) {
   const [tab, setTab] = useState("browse");
@@ -35,16 +36,16 @@ function StudentView({ user }) {
 
   return (
     <div className="animate-fade-slide space-y-5">
-      <div className="flex bg-secondary rounded-xl p-1 w-full sm:w-auto sm:inline-flex">
-        {[
+      <PageHeader eyebrow="Skill Tests" title="Assess & Certify Your Skills" subtitle="Take proctored tests hosted by industry partners and institutions to strengthen your verified skill profile." />
+
+      <Tabs
+        tabs={[
           { key: "browse", label: "Browse Tests" },
           { key: "mine", label: "My Tests" },
-        ].map((t) => (
-          <button key={t.key} onClick={() => setTab(t.key)} className={`flex-1 sm:flex-none px-4 py-2 rounded-lg text-sm font-medium transition-all duration-150 ${tab === t.key ? "bg-card text-foreground shadow-sm" : "text-muted-foreground hover:text-foreground"}`}>
-            {t.label}
-          </button>
-        ))}
-      </div>
+        ]}
+        value={tab}
+        onChange={setTab}
+      />
 
       {tab === "browse" && (
         <>
@@ -155,31 +156,26 @@ function HostView({ user }) {
 
   return (
     <div className="animate-fade-slide space-y-5">
-      <div className="flex items-center justify-between">
-        <div>
-          <h2 className="text-lg font-semibold text-foreground">Your Skill Tests</h2>
-          <p className="text-sm text-muted-foreground">{tests.length} test{tests.length === 1 ? "" : "s"} hosted</p>
-        </div>
-        <button onClick={() => setShowModal(true)} className="flex items-center gap-2 bg-primary hover:bg-accent text-white text-sm font-medium px-4 py-2.5 rounded-xl transition-all duration-150 hover:shadow-md">
-          + Host a Skill Test
-        </button>
-      </div>
+      <PageHeader
+        eyebrow="Test Hosting"
+        title="Your Skill Tests"
+        subtitle={`${tests.length} test${tests.length === 1 ? "" : "s"} hosted`}
+        actions={<Button onClick={() => setShowModal(true)}>+ Host a Skill Test</Button>}
+      />
 
       {tests.length === 0 ? (
-        <div className="text-center py-16 text-muted-foreground bg-card border border-border rounded-2xl">
-          <div className="text-4xl mb-4">📝</div>
-          <div className="font-medium text-foreground mb-1">No tests hosted yet</div>
-          <div className="text-sm">Host an online or offline skill test to help students showcase relevant skills.</div>
-        </div>
+        <EmptyState icon="📝" title="No tests hosted yet">
+          Host an online or offline skill test to help students showcase relevant skills.
+        </EmptyState>
       ) : (
         <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-4">
           {tests.map((test) => (
-            <div key={test.id} className="bg-card border border-border rounded-2xl p-5 flex flex-col">
+            <Card key={test.id} className="flex flex-col">
               <div className="flex items-center gap-1.5 flex-wrap mb-3">
-                <span className="text-[10px] font-medium px-2 py-0.5 rounded-full bg-secondary text-secondary-foreground">{test.mode}</span>
-                <span className="text-[10px] bg-secondary text-secondary-foreground px-2 py-0.5 rounded-full">{test.domain}</span>
-                {test.status === "In Progress" && <span className="text-[10px] font-medium px-2 py-0.5 rounded-full bg-primary/10 text-primary">In Progress</span>}
-                <span className="text-[10px] font-semibold text-primary bg-primary/8 px-2 py-0.5 rounded-full ml-auto">{test.price > 0 ? `₹${test.price}` : "Free"}</span>
+                <Badge tone="neutral">{test.mode}</Badge>
+                <Badge tone="neutral">{test.domain}</Badge>
+                {test.status === "In Progress" && <Badge tone="primary">In Progress</Badge>}
+                <Badge tone="primary" className="ml-auto">{test.price > 0 ? `₹${test.price}` : "Free"}</Badge>
               </div>
               <div className="text-sm font-semibold text-foreground mb-1">{test.title}</div>
               <p className="text-xs text-muted-foreground leading-relaxed mb-3">{test.description}</p>
@@ -214,138 +210,100 @@ function HostView({ user }) {
               >
                 {test.status === "In Progress" ? "Test Started" : "Start Test"}
               </button>
-            </div>
+            </Card>
           ))}
         </div>
       )}
 
       {showModal && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
-          <div className="absolute inset-0 bg-black/40 backdrop-blur-sm" onClick={() => setShowModal(false)} />
-          <div className="relative z-10 bg-card border border-border rounded-2xl p-6 w-full max-w-md shadow-xl animate-fade-slide max-h-[90vh] overflow-y-auto">
-            <h3 className="font-semibold text-foreground text-lg mb-5">Host a Skill Test</h3>
-            <form onSubmit={handleCreate} className="space-y-4">
-              <div>
-                <label className="block text-xs font-semibold text-muted-foreground uppercase tracking-wider mb-1.5">Test Title</label>
-                <input required value={form.title} onChange={(e) => setForm((f) => ({ ...f, title: e.target.value }))} placeholder="e.g. Programming Fundamentals Quiz"
-                  className="w-full bg-background border border-border rounded-xl px-4 py-3 text-sm focus:outline-none focus:ring-2 focus:ring-primary/30 focus:border-primary transition-all" />
-              </div>
-              <div className="grid grid-cols-2 gap-3">
-                <div>
-                  <label className="block text-xs font-semibold text-muted-foreground uppercase tracking-wider mb-1.5">Mode</label>
-                  <select value={form.mode} onChange={(e) => setForm((f) => ({ ...f, mode: e.target.value }))} className="w-full bg-background border border-border rounded-xl px-3 py-3 text-sm focus:outline-none focus:ring-2 focus:ring-primary/30">
-                    <option>Online</option>
-                    <option>Offline</option>
-                  </select>
+        <Modal title="Host a Skill Test" onClose={() => { setShowModal(false); setFormError(null); }} size="lg">
+          <form onSubmit={handleCreate} className="space-y-4">
+            <Field label="Test Title">
+              <TextInput required value={form.title} onChange={(e) => setForm((f) => ({ ...f, title: e.target.value }))} placeholder="e.g. Programming Fundamentals Quiz" />
+            </Field>
+            <div className="grid grid-cols-2 gap-3">
+              <Field label="Mode">
+                <Select value={form.mode} onChange={(e) => setForm((f) => ({ ...f, mode: e.target.value }))}>
+                  <option>Online</option>
+                  <option>Offline</option>
+                </Select>
+              </Field>
+              <Field label="Duration">
+                <TextInput value={form.duration} onChange={(e) => setForm((f) => ({ ...f, duration: e.target.value }))} placeholder="15 mins" />
+              </Field>
+            </div>
+
+            <Field label="Price (₹, 0 for free)">
+              <TextInput type="number" min="0" value={form.price} onChange={(e) => setForm((f) => ({ ...f, price: e.target.value }))} />
+            </Field>
+
+            {form.mode === "Online" ? (
+              <>
+                <Field label="Skill Domain" hint="Students take a ready-made short quiz for this domain.">
+                  <Select value={form.domain} onChange={(e) => setForm((f) => ({ ...f, domain: e.target.value }))}>
+                    {SKILL_DOMAINS.map((d) => <option key={d}>{d}</option>)}
+                  </Select>
+                </Field>
+                <div className="grid grid-cols-2 gap-3">
+                  <Field label="Test Date">
+                    <TextInput required type="date" value={form.scheduledAt} onChange={(e) => setForm((f) => ({ ...f, scheduledAt: e.target.value }))} />
+                  </Field>
+                  <Field label="Test Time">
+                    <TextInput required type="time" value={form.scheduledTime} onChange={(e) => setForm((f) => ({ ...f, scheduledTime: e.target.value }))} />
+                  </Field>
                 </div>
-                <div>
-                  <label className="block text-xs font-semibold text-muted-foreground uppercase tracking-wider mb-1.5">Duration</label>
-                  <input value={form.duration} onChange={(e) => setForm((f) => ({ ...f, duration: e.target.value }))} placeholder="15 mins"
-                    className="w-full bg-background border border-border rounded-xl px-3 py-3 text-sm focus:outline-none focus:ring-2 focus:ring-primary/30" />
+                <Field label="Meeting Link (optional — add now or later)" hint="Must be set at least 24 hours before the scheduled start.">
+                  <TextInput value={form.meetingLink} onChange={(e) => setForm((f) => ({ ...f, meetingLink: e.target.value }))} placeholder="https://meet.google.com/…" />
+                </Field>
+              </>
+            ) : (
+              <>
+                <Field label="Skill / Focus Area">
+                  <TextInput value={form.domain} onChange={(e) => setForm((f) => ({ ...f, domain: e.target.value }))} placeholder="e.g. Case Study & Group Discussion" />
+                </Field>
+                <div className="grid grid-cols-2 gap-3">
+                  <Field label="Date">
+                    <TextInput required type="date" value={form.scheduledAt} onChange={(e) => setForm((f) => ({ ...f, scheduledAt: e.target.value }))} />
+                  </Field>
+                  <Field label="Reporting Time">
+                    <TextInput value={form.reportingTime} onChange={(e) => setForm((f) => ({ ...f, reportingTime: e.target.value }))} placeholder="9:30 AM" />
+                  </Field>
                 </div>
-              </div>
+                <Field label="Venue">
+                  <TextInput value={form.venue} onChange={(e) => setForm((f) => ({ ...f, venue: e.target.value }))} placeholder="Campus / office address" />
+                </Field>
+                <Field label="Documents Required (comma separated)">
+                  <TextInput value={form.documentsRequired} onChange={(e) => setForm((f) => ({ ...f, documentsRequired: e.target.value }))} placeholder="Photo ID, Printed resume" />
+                </Field>
+              </>
+            )}
 
-              <div>
-                <label className="block text-xs font-semibold text-muted-foreground uppercase tracking-wider mb-1.5">Price (₹, 0 for free)</label>
-                <input type="number" min="0" value={form.price} onChange={(e) => setForm((f) => ({ ...f, price: e.target.value }))}
-                  className="w-full bg-background border border-border rounded-xl px-3 py-3 text-sm focus:outline-none focus:ring-2 focus:ring-primary/30" />
-              </div>
+            <Field label="Prerequisites">
+              <TextInput value={form.prerequisites} onChange={(e) => setForm((f) => ({ ...f, prerequisites: e.target.value }))} placeholder="What should candidates know beforehand?" />
+            </Field>
+            <Field label="Certification Awarded">
+              <TextInput value={form.certification} onChange={(e) => setForm((f) => ({ ...f, certification: e.target.value }))} placeholder="e.g. Programming Fundamentals Certificate" />
+            </Field>
+            <Field label="Rules (one per line)">
+              <TextArea value={form.rules} onChange={(e) => setForm((f) => ({ ...f, rules: e.target.value }))} rows={3} placeholder={"Keep your camera on\nNo external notes"} />
+            </Field>
+            <Field label="Description">
+              <TextArea value={form.description} onChange={(e) => setForm((f) => ({ ...f, description: e.target.value }))} rows={2} placeholder="What does this test evaluate?" />
+            </Field>
 
-              {form.mode === "Online" ? (
-                <>
-                  <div>
-                    <label className="block text-xs font-semibold text-muted-foreground uppercase tracking-wider mb-1.5">Skill Domain</label>
-                    <select value={form.domain} onChange={(e) => setForm((f) => ({ ...f, domain: e.target.value }))} className="w-full bg-background border border-border rounded-xl px-3 py-3 text-sm focus:outline-none focus:ring-2 focus:ring-primary/30">
-                      {SKILL_DOMAINS.map((d) => <option key={d}>{d}</option>)}
-                    </select>
-                    <p className="text-xs text-muted-foreground mt-1">Students take a ready-made short quiz for this domain.</p>
-                  </div>
-                  <div className="grid grid-cols-2 gap-3">
-                    <div>
-                      <label className="block text-xs font-semibold text-muted-foreground uppercase tracking-wider mb-1.5">Test Date</label>
-                      <input required type="date" value={form.scheduledAt} onChange={(e) => setForm((f) => ({ ...f, scheduledAt: e.target.value }))}
-                        className="w-full bg-background border border-border rounded-xl px-3 py-3 text-sm focus:outline-none focus:ring-2 focus:ring-primary/30" />
-                    </div>
-                    <div>
-                      <label className="block text-xs font-semibold text-muted-foreground uppercase tracking-wider mb-1.5">Test Time</label>
-                      <input required type="time" value={form.scheduledTime} onChange={(e) => setForm((f) => ({ ...f, scheduledTime: e.target.value }))}
-                        className="w-full bg-background border border-border rounded-xl px-3 py-3 text-sm focus:outline-none focus:ring-2 focus:ring-primary/30" />
-                    </div>
-                  </div>
-                  <div>
-                    <label className="block text-xs font-semibold text-muted-foreground uppercase tracking-wider mb-1.5">Meeting Link <span className="text-muted-foreground font-normal normal-case">(optional — add now or later)</span></label>
-                    <input value={form.meetingLink} onChange={(e) => setForm((f) => ({ ...f, meetingLink: e.target.value }))} placeholder="https://meet.google.com/…"
-                      className="w-full bg-background border border-border rounded-xl px-4 py-3 text-sm focus:outline-none focus:ring-2 focus:ring-primary/30 focus:border-primary transition-all" />
-                    <p className="text-xs text-muted-foreground mt-1">Must be set at least 24 hours before the scheduled start.</p>
-                  </div>
-                </>
-              ) : (
-                <>
-                  <div>
-                    <label className="block text-xs font-semibold text-muted-foreground uppercase tracking-wider mb-1.5">Skill / Focus Area</label>
-                    <input value={form.domain} onChange={(e) => setForm((f) => ({ ...f, domain: e.target.value }))} placeholder="e.g. Case Study & Group Discussion"
-                      className="w-full bg-background border border-border rounded-xl px-4 py-3 text-sm focus:outline-none focus:ring-2 focus:ring-primary/30 focus:border-primary transition-all" />
-                  </div>
-                  <div className="grid grid-cols-2 gap-3">
-                    <div>
-                      <label className="block text-xs font-semibold text-muted-foreground uppercase tracking-wider mb-1.5">Date</label>
-                      <input required type="date" value={form.scheduledAt} onChange={(e) => setForm((f) => ({ ...f, scheduledAt: e.target.value }))}
-                        className="w-full bg-background border border-border rounded-xl px-3 py-3 text-sm focus:outline-none focus:ring-2 focus:ring-primary/30" />
-                    </div>
-                    <div>
-                      <label className="block text-xs font-semibold text-muted-foreground uppercase tracking-wider mb-1.5">Reporting Time</label>
-                      <input value={form.reportingTime} onChange={(e) => setForm((f) => ({ ...f, reportingTime: e.target.value }))} placeholder="9:30 AM"
-                        className="w-full bg-background border border-border rounded-xl px-3 py-3 text-sm focus:outline-none focus:ring-2 focus:ring-primary/30" />
-                    </div>
-                  </div>
-                  <div>
-                    <label className="block text-xs font-semibold text-muted-foreground uppercase tracking-wider mb-1.5">Venue</label>
-                    <input value={form.venue} onChange={(e) => setForm((f) => ({ ...f, venue: e.target.value }))} placeholder="Campus / office address"
-                      className="w-full bg-background border border-border rounded-xl px-4 py-3 text-sm focus:outline-none focus:ring-2 focus:ring-primary/30 focus:border-primary transition-all" />
-                  </div>
-                  <div>
-                    <label className="block text-xs font-semibold text-muted-foreground uppercase tracking-wider mb-1.5">Documents Required (comma separated)</label>
-                    <input value={form.documentsRequired} onChange={(e) => setForm((f) => ({ ...f, documentsRequired: e.target.value }))} placeholder="Photo ID, Printed resume"
-                      className="w-full bg-background border border-border rounded-xl px-4 py-3 text-sm focus:outline-none focus:ring-2 focus:ring-primary/30 focus:border-primary transition-all" />
-                  </div>
-                </>
-              )}
+            {formError && (
+              <div className="flex items-start gap-2 rounded-xl border border-red-200 bg-red-50 px-3.5 py-2.5 text-xs text-red-700">
+                <span>⚠️</span>
+                <span>{formError}</span>
+              </div>
+            )}
 
-              <div>
-                <label className="block text-xs font-semibold text-muted-foreground uppercase tracking-wider mb-1.5">Prerequisites</label>
-                <input value={form.prerequisites} onChange={(e) => setForm((f) => ({ ...f, prerequisites: e.target.value }))} placeholder="What should candidates know beforehand?"
-                  className="w-full bg-background border border-border rounded-xl px-4 py-3 text-sm focus:outline-none focus:ring-2 focus:ring-primary/30 focus:border-primary transition-all" />
-              </div>
-              <div>
-                <label className="block text-xs font-semibold text-muted-foreground uppercase tracking-wider mb-1.5">Certification Awarded</label>
-                <input value={form.certification} onChange={(e) => setForm((f) => ({ ...f, certification: e.target.value }))} placeholder="e.g. Programming Fundamentals Certificate"
-                  className="w-full bg-background border border-border rounded-xl px-4 py-3 text-sm focus:outline-none focus:ring-2 focus:ring-primary/30 focus:border-primary transition-all" />
-              </div>
-              <div>
-                <label className="block text-xs font-semibold text-muted-foreground uppercase tracking-wider mb-1.5">Rules (one per line)</label>
-                <textarea value={form.rules} onChange={(e) => setForm((f) => ({ ...f, rules: e.target.value }))} rows={3} placeholder={"Keep your camera on\nNo external notes"}
-                  className="w-full bg-background border border-border rounded-xl px-4 py-3 text-sm focus:outline-none focus:ring-2 focus:ring-primary/30 focus:border-primary transition-all resize-none" />
-              </div>
-              <div>
-                <label className="block text-xs font-semibold text-muted-foreground uppercase tracking-wider mb-1.5">Description</label>
-                <textarea value={form.description} onChange={(e) => setForm((f) => ({ ...f, description: e.target.value }))} rows={2} placeholder="What does this test evaluate?"
-                  className="w-full bg-background border border-border rounded-xl px-4 py-3 text-sm focus:outline-none focus:ring-2 focus:ring-primary/30 focus:border-primary transition-all resize-none" />
-              </div>
-
-              {formError && (
-                <div className="flex items-start gap-2 rounded-xl border border-red-200 bg-red-50 px-3.5 py-2.5 text-xs text-red-700">
-                  <span>⚠️</span>
-                  <span>{formError}</span>
-                </div>
-              )}
-
-              <div className="flex gap-3 pt-2">
-                <button type="button" onClick={() => { setShowModal(false); setFormError(null); }} className="flex-1 py-3 rounded-xl border border-border text-sm text-muted-foreground hover:bg-secondary transition-colors">Cancel</button>
-                <button type="submit" className="flex-1 py-3 rounded-xl bg-primary hover:bg-accent text-white text-sm font-medium transition-all duration-150">Publish Test</button>
-              </div>
-            </form>
-          </div>
-        </div>
+            <div className="flex gap-3 pt-2">
+              <Button type="button" variant="outline" className="flex-1" onClick={() => { setShowModal(false); setFormError(null); }}>Cancel</Button>
+              <Button type="submit" className="flex-1">Publish Test</Button>
+            </div>
+          </form>
+        </Modal>
       )}
     </div>
   );

@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from "react";
 import { findOne, getAssessment, getPortfolio } from "../lib/store";
-import { Badge } from "./ui/Kit";
+import { Badge, IconTile } from "./ui/Kit";
 
 function initials(name) {
   return (name || "?")
@@ -54,7 +54,7 @@ export default function StudentProfileModal({ studentId, student: propStudent, a
         {/* Header */}
         <div className="p-6 border-b border-border bg-card flex items-start justify-between gap-4">
           <div className="flex items-center gap-4 min-w-0">
-            <div className="w-14 h-14 rounded-2xl bg-primary/15 text-primary flex items-center justify-center text-lg font-bold flex-shrink-0">
+            <div className="w-14 h-14 rounded-2xl bg-primary/15 text-primary flex items-center justify-center text-lg font-bold flex-shrink-0 shadow-[0_1px_2px_rgba(25,25,26,0.06)]">
               {student?.avatarDataUrl ? (
                 <img src={student.avatarDataUrl} alt={name} className="w-full h-full rounded-2xl object-cover" />
               ) : (
@@ -115,9 +115,7 @@ export default function StudentProfileModal({ studentId, student: propStudent, a
             <div className="flex items-center justify-between mb-3">
               <h4 className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">Skill Assessment & Readiness</h4>
               {assessment && (
-                <span className="text-xs font-semibold text-primary">
-                  Overall Score: {Math.round(assessment.overallScore || 0)} / 100
-                </span>
+                <Badge tone="primary">Overall {Math.round(assessment.overallScore || 0)} / 100</Badge>
               )}
             </div>
 
@@ -174,8 +172,9 @@ export default function StudentProfileModal({ studentId, student: propStudent, a
               <h4 className="text-xs font-semibold text-muted-foreground uppercase tracking-wider mb-2">Verified Certifications</h4>
               <div className="space-y-2">
                 {portfolio.certifications.map((c, i) => (
-                  <div key={i} className="flex items-center justify-between gap-3 bg-background border border-border rounded-xl px-3.5 py-2.5 text-xs">
-                    <div className="min-w-0">
+                  <div key={i} className="flex items-center gap-3 bg-background border border-border rounded-xl px-3.5 py-2.5 text-xs">
+                    <IconTile icon="🎓" tone="blue" size={30} />
+                    <div className="min-w-0 flex-1">
                       <div className="font-semibold text-foreground truncate">{c.name}</div>
                       <div className="text-muted-foreground">{c.issuer} · Issued {c.year}</div>
                     </div>
@@ -207,8 +206,8 @@ export default function StudentProfileModal({ studentId, student: propStudent, a
             <h4 className="text-xs font-semibold text-muted-foreground uppercase tracking-wider mb-2">Verified Resume & Documents</h4>
             {resumeDoc ? (
               <div className="flex items-center justify-between gap-3 bg-background border border-border rounded-xl p-3.5">
-                <div className="flex items-center gap-2.5 min-w-0">
-                  <span className="text-xl">📄</span>
+                <div className="flex items-center gap-3 min-w-0">
+                  <IconTile icon="📄" size={34} />
                   <div className="min-w-0">
                     <div className="text-xs font-semibold text-foreground truncate">{resumeDoc.fileName || resumeDoc.name || "Student Resume.pdf"}</div>
                     <div className="text-[10px] text-muted-foreground">PDF Document · Verified on Setu</div>
@@ -226,8 +225,8 @@ export default function StudentProfileModal({ studentId, student: propStudent, a
               </div>
             ) : (
               <div className="flex items-center justify-between gap-3 bg-background border border-border rounded-xl p-3.5">
-                <div className="flex items-center gap-2.5 min-w-0">
-                  <span className="text-xl">📄</span>
+                <div className="flex items-center gap-3 min-w-0">
+                  <IconTile icon="📄" size={34} />
                   <div className="min-w-0">
                     <div className="text-xs font-semibold text-foreground truncate">{name.replace(/\s+/g, "_")}_Resume.pdf</div>
                     <div className="text-[10px] text-muted-foreground">Generated Institutional Portfolio PDF</div>

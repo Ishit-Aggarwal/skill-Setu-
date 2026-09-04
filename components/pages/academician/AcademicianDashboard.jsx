@@ -4,7 +4,7 @@ import { useEffect, useMemo, useState } from "react";
 import DashboardLayout from "../../DashboardLayout";
 import { useAuth } from "../../../lib/auth";
 import { useNav } from "../../../lib/nav";
-import { Avatar, Badge, Button, Card, EmptyState, PageHeader, ProgressBar, Section, StatGrid } from "../../ui/Kit";
+import { Avatar, Badge, Button, Card, EmptyState, IconTile, PageHeader, ProgressBar, ProgressRing, Section, StatGrid } from "../../ui/Kit";
 import { formatDate, formatDateTime, relativeTime } from "../../../lib/match";
 import {
   SEED_COLLABS,
@@ -189,19 +189,19 @@ export default function AcademicianDashboard() {
                   Nothing is waiting on you right now.
                 </EmptyState>
               ) : (
-                <div className="space-y-1">
+                <div className="space-y-1.5">
                   {feed.map((f, i) => (
                     <button
                       key={i}
                       onClick={f.action}
-                      className="w-full flex items-start gap-3 text-left px-3 py-2.5 rounded-xl hover:bg-secondary transition-colors"
+                      className="w-full flex items-center gap-3 text-left px-3 py-2.5 rounded-xl border border-transparent hover:border-border hover:bg-secondary/60 transition-all"
                     >
-                      <span className="text-base flex-shrink-0 mt-0.5">{f.icon}</span>
+                      <IconTile icon={f.icon} tone={f.tone} size={36} />
                       <div className="min-w-0 flex-1">
-                        <div className="text-sm text-foreground">{f.text}</div>
+                        <div className="text-sm text-foreground leading-snug">{f.text}</div>
                         <div className="text-[11px] text-muted-foreground truncate">{f.detail}</div>
                       </div>
-                      {f.at && <span className="text-[10px] text-muted-foreground flex-shrink-0 mt-1">{relativeTime(f.at)}</span>}
+                      {f.at && <span className="text-[10px] text-muted-foreground flex-shrink-0">{relativeTime(f.at)}</span>}
                     </button>
                   ))}
                 </div>
@@ -246,24 +246,35 @@ export default function AcademicianDashboard() {
                   Assign students from your department as advisees to track them here.
                 </EmptyState>
               ) : (
-                <div className="space-y-2">
-                  {advisees.slice(0, 5).map((s) => (
-                    <div key={s.id} className="flex items-center gap-3 border border-border rounded-xl px-3 py-2.5">
-                      <Avatar name={s.name} size={32} />
-                      <div className="min-w-0 flex-1">
-                        <div className="text-sm font-medium text-foreground truncate">{s.name}</div>
-                        <div className="text-[11px] text-muted-foreground truncate">{s.course || s.department} · {s.year || s.batch}</div>
+                <div className="flex flex-col sm:flex-row gap-5">
+                  <div className="flex sm:flex-col items-center sm:items-start gap-3 sm:gap-2 flex-shrink-0 sm:w-24 sm:border-r sm:border-border sm:pr-5">
+                    <ProgressRing
+                      value={placedAdvisees}
+                      max={advisees.length || 1}
+                      size={78}
+                      stroke={7}
+                      sublabel="Placed"
+                    />
+                  </div>
+                  <div className="space-y-2 flex-1 min-w-0">
+                    {advisees.slice(0, 5).map((s) => (
+                      <div key={s.id} className="flex items-center gap-3 border border-border rounded-xl px-3 py-2.5 hover:border-primary/30 hover:bg-secondary/30 transition-colors">
+                        <Avatar name={s.name} size={32} />
+                        <div className="min-w-0 flex-1">
+                          <div className="text-sm font-medium text-foreground truncate">{s.name}</div>
+                          <div className="text-[11px] text-muted-foreground truncate">{s.course || s.department} · {s.year || s.batch}</div>
+                        </div>
+                        <div className="flex items-center gap-1.5 flex-shrink-0">
+                          {s.flag && <Badge tone={FLAG_TONE[s.flag]}>{s.flag}</Badge>}
+                          <Badge tone={PLACEMENT_TONE[s.status]}>{s.status}</Badge>
+                          <span className="text-xs font-semibold text-foreground w-6 text-right">{s.score ?? "—"}</span>
+                        </div>
                       </div>
-                      <div className="flex items-center gap-1.5 flex-shrink-0">
-                        {s.flag && <Badge tone={FLAG_TONE[s.flag]}>{s.flag}</Badge>}
-                        <Badge tone={PLACEMENT_TONE[s.status]}>{s.status}</Badge>
-                        <span className="text-xs font-semibold text-foreground w-6 text-right">{s.score ?? "—"}</span>
-                      </div>
-                    </div>
-                  ))}
-                  {advisees.length > 5 && (
-                    <p className="text-[11px] text-muted-foreground text-center pt-1">+{advisees.length - 5} more</p>
-                  )}
+                    ))}
+                    {advisees.length > 5 && (
+                      <p className="text-[11px] text-muted-foreground text-center pt-1">+{advisees.length - 5} more</p>
+                    )}
+                  </div>
                 </div>
               )}
             </Section>
@@ -279,8 +290,8 @@ export default function AcademicianDashboard() {
                   <p className="text-sm text-muted-foreground py-6 text-center">Nothing scheduled.</p>
                 )}
                 {upcomingBookings.map((b) => (
-                  <div key={b.id} className="flex items-start gap-2.5">
-                    <span className="text-sm">📅</span>
+                  <div key={b.id} className="flex items-center gap-2.5">
+                    <IconTile icon="📅" tone="primary" size={30} />
                     <div className="min-w-0">
                       <div className="text-xs font-medium text-foreground">Mentoring — {b.studentName}</div>
                       <div className="text-[11px] text-muted-foreground">{formatDateTime(b.slot.slot)} · {b.slot.mode}</div>
@@ -288,8 +299,8 @@ export default function AcademicianDashboard() {
                   </div>
                 ))}
                 {seatAlerts.slice(0, 2).map((p) => (
-                  <div key={p.id} className="flex items-start gap-2.5">
-                    <span className="text-sm">📘</span>
+                  <div key={p.id} className="flex items-center gap-2.5">
+                    <IconTile icon="📘" tone="blue" size={30} />
                     <div className="min-w-0 flex-1">
                       <div className="text-xs font-medium text-foreground truncate">{p.title}</div>
                       <div className="text-[11px] text-muted-foreground">{p.dates} · {p.confirmed}/{p.seats} seats{p.waitlisted ? ` · ${p.waitlisted} waitlisted` : ""}</div>
@@ -297,8 +308,8 @@ export default function AcademicianDashboard() {
                   </div>
                 ))}
                 {openMilestones.map((m) => (
-                  <div key={m.id} className="flex items-start gap-2.5">
-                    <span className="text-sm">🎯</span>
+                  <div key={m.id} className="flex items-center gap-2.5">
+                    <IconTile icon="🎯" tone="amber" size={30} />
                     <div className="min-w-0">
                       <div className="text-xs font-medium text-foreground">{m.title}</div>
                       <div className="text-[11px] text-muted-foreground">Due {formatDate(m.due)} · {m.collabTitle}</div>

@@ -3,7 +3,7 @@
 import { useEffect, useMemo, useState } from "react";
 import DashboardLayout from "../../DashboardLayout";
 import { useAuth } from "../../../lib/auth";
-import { Avatar, Badge, Button, Card, DataTable, EmptyState, Field, Flash, Modal, PageHeader, Section, Select, StatGrid, TextInput, useFlash } from "../../ui/Kit";
+import { Avatar, Badge, Button, Card, DataTable, EmptyState, Field, Flash, IconTile, Modal, PageHeader, Section, Select, StatGrid, TextInput, useFlash } from "../../ui/Kit";
 import { formatDate, relativeTime } from "../../../lib/match";
 import {
   addRecruiter,
@@ -22,6 +22,8 @@ const ACCESS_DESCRIPTION = {
   Recruiter: "Assigned posting and candidate recruiter role (recorded role).",
   Interviewer: "Interviewer and candidate review role (recorded role).",
 };
+
+const ACCESS_ICON = { Owner: "👑", Recruiter: "🧑‍💼", Interviewer: "🎙" };
 
 /**
  * Company accounts are rarely one person. Postings can be assigned to a named
@@ -139,9 +141,12 @@ export default function HiringTeam() {
           <DataTable columns={teamColumns} rows={recruiters} rowKey={(r) => r.id} empty="No team members added yet." />
           <div className="grid sm:grid-cols-3 gap-3 mt-3">
             {ACCESS_LEVELS.map((level) => (
-              <div key={level} className="flex items-start gap-2 text-[11px] text-muted-foreground bg-secondary/50 rounded-xl px-3 py-2.5">
-                <Badge tone={level === "Owner" ? "primary" : "muted"}>{level}</Badge>
-                <span>{ACCESS_DESCRIPTION[level]}</span>
+              <div key={level} className="flex items-start gap-3 text-[11px] text-muted-foreground bg-secondary/50 rounded-xl px-3.5 py-3">
+                <IconTile icon={ACCESS_ICON[level]} tone={level === "Owner" ? "primary" : "blue"} size={30} />
+                <div className="min-w-0 pt-0.5">
+                  <Badge tone={level === "Owner" ? "primary" : "muted"} className="mb-1">{level}</Badge>
+                  <p>{ACCESS_DESCRIPTION[level]}</p>
+                </div>
               </div>
             ))}
           </div>
@@ -155,7 +160,8 @@ export default function HiringTeam() {
               {postings.map((p) => {
                 const apps = applications.filter((a) => a.internshipId === p.id);
                 return (
-                  <div key={p.id} className="flex flex-wrap items-center gap-3 bg-card border border-border rounded-xl px-4 py-3">
+                  <div key={p.id} className="flex flex-wrap items-center gap-3 bg-card border border-border rounded-xl px-4 py-3 hover:shadow-sm transition-shadow duration-200">
+                    <IconTile icon="📋" size={32} />
                     <div className="min-w-0 flex-1">
                       <div className="text-sm font-medium text-foreground truncate">{p.title}</div>
                       <div className="text-[11px] text-muted-foreground truncate">

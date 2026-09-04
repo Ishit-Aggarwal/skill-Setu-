@@ -4,7 +4,7 @@ import { useEffect, useMemo, useState } from "react";
 import { Bar, BarChart, CartesianGrid, PolarAngleAxis, PolarGrid, Radar, RadarChart, ResponsiveContainer, Tooltip, XAxis, YAxis } from "recharts";
 import DashboardLayout from "../../DashboardLayout";
 import { useAuth } from "../../../lib/auth";
-import { Badge, Button, Card, DataTable, EmptyState, Field, Flash, PageHeader, ProgressBar, Section, Select, StatGrid, useFlash } from "../../ui/Kit";
+import { Avatar, Badge, Button, Card, DataTable, EmptyState, Field, Flash, IconTile, PageHeader, ProgressBar, ProgressRing, Section, Select, StatGrid, useFlash } from "../../ui/Kit";
 import { SKILL_DOMAINS } from "../../../lib/questionBank";
 import { downloadFile, listApplications, listProgramRegistrations, listPrograms, toCsv, PIPELINE_STAGES, TERMINAL_STAGES } from "../../../lib/store";
 import { subscribeToMutations } from "../../../lib/sync";
@@ -12,6 +12,7 @@ import { PLACEMENT_TONE, STUDENT_EXPORT_COLUMNS, averageDomainScores, buildFacul
 
 const STAGE_ORDER = PIPELINE_STAGES;
 const STAGE_COLORS = { Applied: "#8A9A4A", Shortlisted: "#3C5A8A", Interview: "#B8860B", Hired: "#6B7C3C" };
+const TILE_CYCLE_TONES = ["primary", "blue", "amber", "purple", "green", "red"];
 
 /**
  * Analytics scoped to a faculty member's own students — their advisees by
@@ -170,41 +171,50 @@ export default function AcademicianAnalytics() {
           <>
             <div className="grid lg:grid-cols-5 gap-5">
               <Card className="lg:col-span-3">
-                <Section title="Your cohort's hiring funnel" description="Applications from these students that reached each stage.">
-                  {funnel[0].count === 0 ? (
-                    <p className="text-sm text-muted-foreground py-8 text-center">This cohort hasn't applied to anything yet.</p>
-                  ) : (
-                    <div className="space-y-3">
-                      {funnel.map((f, i) => {
-                        const width = Math.max((f.count / funnel[0].count) * 100, f.count > 0 ? 6 : 0);
-                        const conversion = i > 0 && funnel[i - 1].count ? Math.round((f.count / funnel[i - 1].count) * 100) : null;
-                        return (
-                          <div key={f.stage}>
-                            <div className="flex items-center justify-between text-xs mb-1">
-                              <span className="font-medium text-foreground">{f.stage}</span>
-                              <span className="text-muted-foreground">
-                                {f.count}{conversion != null && <span className="ml-1.5">· {conversion}% from {funnel[i - 1].stage}</span>}
-                              </span>
-                            </div>
-                            <div className="h-7 bg-muted rounded-lg overflow-hidden">
-                              <div
-                                className="h-full rounded-lg flex items-center justify-end pr-2 text-[10px] font-semibold text-white transition-all duration-700"
-                                style={{ width: `${width}%`, backgroundColor: STAGE_COLORS[f.stage] }}
-                              >
-                                {f.count > 0 && f.count}
-                              </div>
-                            </div>
-                          </div>
-                        );
-                      })}
-                      {rejectedCount > 0 && (
-                        <p className="text-[11px] text-muted-foreground pt-1.5">
-                          {rejectedCount} terminal/rejected application{rejectedCount === 1 ? "" : "s"} accounted for
-                        </p>
-                      )}
+                <div className="flex flex-col sm:flex-row gap-6">
+                  {cohort.length > 0 && (
+                    <div className="flex-shrink-0 flex sm:flex-col items-center gap-3 sm:pr-6 sm:border-r sm:border-border">
+                      <ProgressRing value={placed} max={cohort.length || 1} size={84} stroke={8} sublabel="Placement rate" />
                     </div>
                   )}
-                </Section>
+                  <div className="flex-1 min-w-0">
+                    <Section title="Your cohort's hiring funnel" description="Applications from these students that reached each stage.">
+                      {funnel[0].count === 0 ? (
+                        <p className="text-sm text-muted-foreground py-8 text-center">This cohort hasn't applied to anything yet.</p>
+                      ) : (
+                        <div className="space-y-3">
+                          {funnel.map((f, i) => {
+                            const width = Math.max((f.count / funnel[0].count) * 100, f.count > 0 ? 6 : 0);
+                            const conversion = i > 0 && funnel[i - 1].count ? Math.round((f.count / funnel[i - 1].count) * 100) : null;
+                            return (
+                              <div key={f.stage}>
+                                <div className="flex items-center justify-between text-xs mb-1">
+                                  <span className="font-medium text-foreground">{f.stage}</span>
+                                  <span className="text-muted-foreground">
+                                    {f.count}{conversion != null && <span className="ml-1.5">· {conversion}% from {funnel[i - 1].stage}</span>}
+                                  </span>
+                                </div>
+                                <div className="h-7 bg-muted rounded-lg overflow-hidden">
+                                  <div
+                                    className="h-full rounded-lg flex items-center justify-end pr-2 text-[10px] font-semibold text-white transition-all duration-700"
+                                    style={{ width: `${width}%`, backgroundColor: STAGE_COLORS[f.stage] }}
+                                  >
+                                    {f.count > 0 && f.count}
+                                  </div>
+                                </div>
+                              </div>
+                            );
+                          })}
+                          {rejectedCount > 0 && (
+                            <p className="text-[11px] text-muted-foreground pt-1.5">
+                              {rejectedCount} terminal/rejected application{rejectedCount === 1 ? "" : "s"} accounted for
+                            </p>
+                          )}
+                        </div>
+                      )}
+                    </Section>
+                  </div>
+                </div>
               </Card>
 
               <Card className="lg:col-span-2">
@@ -249,14 +259,17 @@ export default function AcademicianAnalytics() {
                   {employers.length === 0 ? (
                     <p className="text-sm text-muted-foreground py-8 text-center">No applications from this cohort yet.</p>
                   ) : (
-                    <div className="space-y-3">
+                    <div className="space-y-3.5">
                       {employers.map((c, i) => (
-                        <div key={c.company}>
-                          <div className="flex items-center justify-between text-xs mb-1 gap-2">
-                            <span className="font-medium text-foreground truncate">{i + 1}. {c.company}</span>
-                            <span className="text-muted-foreground flex-shrink-0">{c.hired} hired / {c.applications} applied</span>
+                        <div key={c.company} className="flex items-center gap-3">
+                          <IconTile icon="🏢" tone={TILE_CYCLE_TONES[i % TILE_CYCLE_TONES.length]} size={30} />
+                          <div className="flex-1 min-w-0">
+                            <div className="flex items-center justify-between text-xs mb-1 gap-2">
+                              <span className="font-medium text-foreground truncate">{c.company}</span>
+                              <span className="text-muted-foreground flex-shrink-0">{c.hired} hired / {c.applications} applied</span>
+                            </div>
+                            <ProgressBar value={c.hired} max={employers[0].hired || 1} tone="bg-primary" />
                           </div>
-                          <ProgressBar value={c.hired} max={employers[0].hired || 1} tone="bg-primary" />
                         </div>
                       ))}
                     </div>
@@ -268,7 +281,12 @@ export default function AcademicianAnalytics() {
             <Section title="Students in scope" description="Click through from My Students to open a full profile and add mentor notes.">
               <DataTable
                 columns={[
-                  { key: "name", header: "Student", render: (s) => <span className="font-medium text-foreground">{s.name}</span> },
+                  { key: "name", header: "Student", render: (s) => (
+                    <div className="flex items-center gap-2.5">
+                      <Avatar name={s.name} size={26} />
+                      <span className="font-medium text-foreground">{s.name}</span>
+                    </div>
+                  ) },
                   { key: "batch", header: "Batch", align: "center", render: (s) => <span className="text-xs text-muted-foreground">{s.batch || "—"}</span> },
                   { key: "score", header: "Skill", align: "center", render: (s) => <span className="font-semibold text-foreground">{s.score ?? "—"}</span> },
                   { key: "apps", header: "Apps", align: "center", hideBelow: "hidden sm:table-cell", render: (s) => <span className="text-xs text-muted-foreground">{s.applications}</span> },

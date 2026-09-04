@@ -7,6 +7,7 @@ import { useNav } from "../lib/nav";
 import { listStudentNotifications } from "../lib/store";
 import { subscribeToMutations } from "../lib/sync";
 import EditProfileModal from "./EditProfileModal";
+import { Avatar, IconTile } from "./ui/Kit";
 
 function Icon({ children }) {
   return (
@@ -170,12 +171,6 @@ export default function DashboardLayout({ children, activePage, title }) {
   const navItems = NAV[role] || NAV.student;
   const userName = user?.name || "Guest";
   const userSub = `${ROLE_LABEL[role]} · ${user?.institution || user?.companyName || user?.instituteName || ""}`;
-  const userInitials = userName
-    .split(" ")
-    .map((p) => p[0])
-    .slice(0, 2)
-    .join("")
-    .toUpperCase();
 
   function handleSignOut() {
     logout();
@@ -192,7 +187,13 @@ export default function DashboardLayout({ children, activePage, title }) {
         }
       >
         {mobile && <div className="absolute inset-0 bg-black/40" onClick={() => setSidebarOpen(false)} />}
-        <div className={mobile ? "relative z-10 flex flex-col w-64 min-h-screen bg-card border-r border-border overflow-y-auto" : "flex flex-col w-60 min-h-screen"}>
+        <div
+          className={
+            mobile
+              ? "relative z-10 flex flex-col w-64 min-h-screen bg-card border-r border-border overflow-y-auto"
+              : "flex flex-col w-60 min-h-screen"
+          }
+        >
           <Link href="/" className="flex flex-col items-start gap-1 px-5 py-4 border-b border-border text-left hover:bg-secondary/50 transition-colors cursor-pointer">
             {/* The wordmark is wide (≈3.6:1) — capped by height and allowed to
                 size its own width so it never overflows the 240px rail. */}
@@ -200,14 +201,14 @@ export default function DashboardLayout({ children, activePage, title }) {
             <div className="text-[11px] text-muted-foreground">Academia–Industry Portal</div>
           </Link>
 
-          <div className="px-3 pt-3">
-            <div className="flex items-center gap-2 px-3 py-2 rounded-xl bg-primary/10">
-              <span className="text-base leading-none">{ROLE_EMOJI[role]}</span>
+          <div className="px-3 pt-3.5">
+            <div className="flex items-center gap-2.5 px-3 py-2.5 rounded-xl bg-primary/10">
+              <IconTile icon={ROLE_EMOJI[role]} tone="primary" size={28} />
               <p className="text-[10px] font-semibold uppercase tracking-widest text-primary truncate">{ROLE_PORTAL_LABEL[role]}</p>
             </div>
           </div>
 
-          <nav className="flex-1 px-3 py-4 space-y-0.5">
+          <nav className="flex-1 px-3 py-4 space-y-0.5 overflow-y-auto">
             {navItems.map((item) => {
               const isActive = activePage === item.page;
               return (
@@ -217,23 +218,21 @@ export default function DashboardLayout({ children, activePage, title }) {
                     navigate(item.page, item.query);
                     setSidebarOpen(false);
                   }}
-                  className={`w-full flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm font-medium transition-all duration-150 ${
-                    isActive ? "bg-primary/10 text-primary" : "text-muted-foreground hover:bg-secondary hover:text-foreground"
+                  className={`relative w-full flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm font-medium transition-all duration-150 ${
+                    isActive ? "bg-primary/10 text-primary shadow-[0_1px_2px_rgba(25,25,26,0.03)]" : "text-muted-foreground hover:bg-secondary hover:text-foreground"
                   }`}
                 >
+                  {isActive && <span className="absolute left-0 top-1/2 -translate-y-1/2 w-1 h-5 rounded-r-full bg-primary" />}
                   <span className={isActive ? "text-primary" : ""}>{item.icon}</span>
                   <span className="truncate">{item.label}</span>
-                  {isActive && <span className="ml-auto w-1.5 h-1.5 rounded-full bg-primary flex-shrink-0" />}
                 </button>
               );
             })}
           </nav>
 
-          <div className="px-3 py-4 border-t border-border space-y-2">
+          <div className="px-3 py-4 border-t border-border space-y-1">
             <button onClick={() => setShowEditProfile(true)} className="w-full flex items-center gap-2.5 px-3 py-2 rounded-xl hover:bg-secondary transition-colors text-left">
-              <div className="w-8 h-8 rounded-full bg-primary/15 flex items-center justify-center text-primary text-xs font-semibold flex-shrink-0 overflow-hidden">
-                {user?.avatarDataUrl ? <img src={user.avatarDataUrl} alt="" className="w-full h-full object-cover" /> : userInitials}
-              </div>
+              <Avatar name={userName} size={34} src={user?.avatarDataUrl} />
               <div className="min-w-0 flex-1">
                 <div className="text-sm font-medium text-foreground truncate">{userName}</div>
                 <div className="text-xs text-muted-foreground truncate">{userSub}</div>
@@ -255,7 +254,7 @@ export default function DashboardLayout({ children, activePage, title }) {
       {sidebarOpen && <Sidebar mobile />}
 
       <div className="flex-1 flex flex-col min-h-screen lg:max-h-screen lg:overflow-y-auto min-w-0">
-        <header className="sticky top-0 z-40 bg-card/80 backdrop-blur border-b border-border px-4 py-3 flex items-center gap-3 lg:px-6">
+        <header className="sticky top-0 z-40 bg-card/85 backdrop-blur border-b border-border px-4 py-3 flex items-center gap-3 lg:px-6">
           <button className="lg:hidden p-2 rounded-lg text-muted-foreground hover:bg-secondary transition-colors" onClick={() => setSidebarOpen(true)} aria-label="Open menu">
             <IconMenu />
           </button>
@@ -264,13 +263,13 @@ export default function DashboardLayout({ children, activePage, title }) {
             <img src="/logo.png" alt="Skill Setu" className="h-8 w-auto max-w-[150px] object-contain mix-blend-multiply" />
           </Link>
 
-          <div className="flex-1 hidden lg:block min-w-0">{title && <h1 className="text-base font-semibold text-foreground truncate">{title}</h1>}</div>
+          <div className="flex-1 hidden lg:block min-w-0">{title && <h1 className="text-base font-semibold text-foreground truncate tracking-tight">{title}</h1>}</div>
 
-          <div className="ml-auto flex items-center gap-2">
+          <div className="ml-auto flex items-center gap-2.5">
             {role === "student" && (
               <button
                 onClick={() => navigate("student-dashboard")}
-                className="relative p-2 rounded-xl text-muted-foreground hover:bg-secondary hover:text-foreground transition-colors"
+                className="relative p-2 rounded-xl text-muted-foreground bg-secondary/60 hover:bg-secondary hover:text-foreground transition-colors"
                 title={unreadCount > 0 ? `${unreadCount} unread notification(s)` : "Notifications"}
                 aria-label="Notifications"
               >
@@ -286,8 +285,8 @@ export default function DashboardLayout({ children, activePage, title }) {
                 )}
               </button>
             )}
-            <button onClick={() => setShowEditProfile(true)} className="w-8 h-8 rounded-full bg-primary/15 flex items-center justify-center text-primary text-xs font-semibold overflow-hidden" aria-label="Edit profile">
-              {user?.avatarDataUrl ? <img src={user.avatarDataUrl} alt="" className="w-full h-full object-cover" /> : userInitials}
+            <button onClick={() => setShowEditProfile(true)} aria-label="Edit profile" className="rounded-full hover:ring-2 hover:ring-primary/20 transition-all">
+              <Avatar name={userName} size={34} src={user?.avatarDataUrl} />
             </button>
           </div>
         </header>

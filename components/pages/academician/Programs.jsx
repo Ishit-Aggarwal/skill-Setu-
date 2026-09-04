@@ -3,7 +3,7 @@
 import { useEffect, useMemo, useState } from "react";
 import DashboardLayout from "../../DashboardLayout";
 import { useAuth } from "../../../lib/auth";
-import { Avatar, Badge, Button, Card, DataTable, EmptyState, Field, Flash, Modal, PageHeader, ProgressBar, Section, Select, StatGrid, Tabs, TextArea, TextInput, useFlash } from "../../ui/Kit";
+import { Avatar, Badge, Button, Card, DataTable, EmptyState, Field, Flash, Modal, PageHeader, ProgressBar, ProgressRing, Section, Select, StatGrid, Tabs, TextArea, TextInput, useFlash } from "../../ui/Kit";
 import { relativeTime } from "../../../lib/match";
 import {
   cancelProgram,
@@ -79,7 +79,7 @@ export default function Programs() {
     const myReg = myRegistrations.find((r) => r.programId === program.id);
 
     return (
-      <Card>
+      <Card hover>
         <div className="flex flex-wrap items-start justify-between gap-3 mb-3">
           <div className="flex-1 min-w-0">
             <div className="text-sm font-semibold text-foreground mb-0.5">{program.title}</div>
@@ -93,11 +93,11 @@ export default function Programs() {
 
         {program.description && <p className="text-xs text-muted-foreground mb-3 leading-relaxed">{program.description}</p>}
 
-        <div className="flex flex-wrap items-center gap-4 text-xs text-muted-foreground mb-2">
-          <span>📅 {program.dates}</span>
-          <span>🪑 Seats: {remainingSeats}/{program.seats} remaining</span>
-          {waitlisted > 0 && <span className="text-amber-600">⏳ {waitlisted} waitlisted</span>}
-          {program.venue && <span className="truncate">📍 {program.venue}</span>}
+        <div className="flex flex-wrap items-center gap-1.5 mb-3">
+          <span className="inline-flex items-center gap-1 text-xs text-muted-foreground bg-secondary/60 rounded-full px-2.5 py-1">📅 {program.dates}</span>
+          <span className="inline-flex items-center gap-1 text-xs text-muted-foreground bg-secondary/60 rounded-full px-2.5 py-1">🪑 {remainingSeats}/{program.seats} seats left</span>
+          {waitlisted > 0 && <span className="inline-flex items-center gap-1 text-xs text-amber-700 bg-amber-50 rounded-full px-2.5 py-1">⏳ {waitlisted} waitlisted</span>}
+          {program.venue && <span className="inline-flex items-center gap-1 text-xs text-muted-foreground bg-secondary/60 rounded-full px-2.5 py-1 truncate max-w-[14rem]">📍 {program.venue}</span>}
         </div>
 
         <div className="mb-4"><ProgressBar value={fill} tone={fill >= 90 ? "bg-red-500" : fill >= 60 ? "bg-amber-500" : "bg-primary"} /></div>
@@ -377,14 +377,21 @@ function AttendeesModal({ program, onClose, onChange }) {
       <div className="space-y-4">
         <Flash message={flash} />
 
-        <StatGrid
-          stats={[
-            { label: "Confirmed", value: `${confirmed.length}/${program.seats}` },
-            { label: "Waitlisted", value: String(waitlisted.length) },
-            { label: "Attended", value: String(attended) },
-            { label: "Feedback", value: avgRating ? `${avgRating}/5` : "—", hint: `${feedback.length} response(s)` },
-          ]}
-        />
+        <div className="flex flex-col sm:flex-row gap-5">
+          <div className="flex-shrink-0 flex sm:flex-col items-center gap-3 sm:border-r sm:border-border sm:pr-5">
+            <ProgressRing value={confirmed.length} max={program.seats || 1} size={76} stroke={7} sublabel="Seats filled" />
+          </div>
+          <div className="flex-1 min-w-0">
+            <StatGrid
+              columns={3}
+              stats={[
+                { label: "Waitlisted", value: String(waitlisted.length), icon: "⏳" },
+                { label: "Attended", value: String(attended), icon: "✅" },
+                { label: "Feedback", value: avgRating ? `${avgRating}/5` : "—", icon: "⭐", hint: `${feedback.length} response(s)` },
+              ]}
+            />
+          </div>
+        </div>
 
         <div className="flex flex-wrap gap-2">
           <Button

@@ -5,7 +5,7 @@ import DashboardLayout from "../DashboardLayout";
 import CandidateProfileModal from "../CandidateProfileModal";
 import { useAuth } from "../../lib/auth";
 import { useNav } from "../../lib/nav";
-import { Avatar, Badge, Button, Card, EmptyState, Field, Flash, Modal, PageHeader, ProgressBar, SearchInput, Section, Select, StatGrid, TextInput, useFlash } from "../ui/Kit";
+import { Avatar, Badge, Button, Card, EmptyState, Field, Flash, IconTile, Modal, PageHeader, ProgressBar, SearchInput, Section, Select, StatGrid, TextInput, useFlash } from "../ui/Kit";
 import {
   createInternship,
   listApplicationsForOwner,
@@ -36,6 +36,22 @@ const statusBadge = {
   Interview: "bg-amber-100 text-amber-700",
   Hired: "bg-green-100 text-green-700",
   Rejected: "bg-red-100 text-red-700",
+};
+
+const stageIcon = {
+  Applied: "📥",
+  Shortlisted: "⭐",
+  Interview: "🎙",
+  Hired: "✅",
+  Rejected: "✕",
+};
+
+const stageTone = {
+  Applied: "muted",
+  Shortlisted: "blue",
+  Interview: "amber",
+  Hired: "green",
+  Rejected: "red",
 };
 
 function initials(name) {
@@ -191,16 +207,19 @@ export default function IndustryDashboard() {
                 const apps = applications.filter((a) => a.internshipId === job.id).length;
                 const days = daysUntil(job.deadline);
                 return (
-                  <Card key={job.id}>
-                    <div className="flex items-start justify-between mb-2 gap-2">
-                      <div className="min-w-0">
-                        <div className="text-sm font-semibold text-foreground truncate">{job.title}</div>
-                        <div className="text-xs text-muted-foreground mt-0.5 truncate">{job.location} · {job.type}</div>
+                  <Card key={job.id} hover>
+                    <div className="flex items-start justify-between mb-3 gap-2">
+                      <div className="flex items-start gap-3 min-w-0">
+                        <IconTile icon="💼" size={36} />
+                        <div className="min-w-0">
+                          <div className="text-sm font-semibold text-foreground truncate">{job.title}</div>
+                          <div className="text-xs text-muted-foreground mt-0.5 truncate">{job.location} · {job.type}</div>
+                        </div>
                       </div>
                       {job.status === "Open" && days >= 0 && days <= 10 && <Badge tone="red">{days}d left</Badge>}
                       {job.status === "Closed" && <Badge tone="muted">Closed</Badge>}
                     </div>
-                    <div className="flex items-center justify-between text-xs text-muted-foreground mb-2">
+                    <div className="flex items-center justify-between text-xs text-muted-foreground mb-2 pt-2.5 border-t border-border">
                       <span>{apps} applicant{apps === 1 ? "" : "s"}</span>
                       <span>👁 {job.views || 0}</span>
                     </div>
@@ -245,16 +264,19 @@ export default function IndustryDashboard() {
                 const cols = byStatus(status);
                 return (
                   <div key={status} className={`rounded-2xl p-3 min-h-[300px] ${statusStyle[status]}`}>
-                    <div className="flex items-center justify-between mb-3">
-                      <span className="text-sm font-semibold text-foreground">{status}</span>
-                      <span className={`text-xs font-medium px-2 py-0.5 rounded-full ${statusBadge[status]}`}>{cols.length}</span>
+                    <div className="flex items-center justify-between mb-3.5 px-0.5">
+                      <div className="flex items-center gap-2 min-w-0">
+                        <IconTile icon={stageIcon[status]} tone={stageTone[status]} size={26} />
+                        <span className="text-sm font-semibold text-foreground truncate">{status}</span>
+                      </div>
+                      <span className={`text-xs font-medium px-2 py-0.5 rounded-full flex-shrink-0 ${statusBadge[status]}`}>{cols.length}</span>
                     </div>
 
                     <div className="space-y-2">
                       {cols.map((applicant) => (
                         <div
                           key={applicant.id}
-                          className={`bg-card border rounded-xl p-3 hover:shadow-sm transition-all duration-200 ${compareIds.includes(applicant.id) ? "border-primary" : "border-border"} ${movingId === applicant.id ? "opacity-40 scale-95" : ""} ${newApplicantIds.has(applicant.id) ? "ring-2 ring-emerald-500 bg-emerald-50/50 shadow-md animate-pulse" : ""}`}
+                          className={`bg-card border rounded-xl p-3.5 hover:shadow-md hover:-translate-y-0.5 transition-all duration-200 ${compareIds.includes(applicant.id) ? "border-primary" : "border-border"} ${movingId === applicant.id ? "opacity-40 scale-95" : ""} ${newApplicantIds.has(applicant.id) ? "ring-2 ring-emerald-500 bg-emerald-50/50 shadow-md animate-pulse" : ""}`}
                         >
                           <div className="flex items-center gap-2 mb-2">
                             <input
@@ -276,7 +298,7 @@ export default function IndustryDashboard() {
                           </div>
                           <div className="text-[10px] text-muted-foreground mb-2 truncate">{applicant.studentInstitution}</div>
                           <div className="flex items-center justify-between mb-1">
-                            <span className="text-[10px] font-semibold text-primary">{applicant.match}% match</span>
+                            <span className="text-[10px] font-semibold text-primary bg-primary/10 px-1.5 py-0.5 rounded-full">{applicant.match}% match</span>
                             <span className="text-[10px] text-muted-foreground">{formatDate(applicant.appliedAt)}</span>
                           </div>
                           {applicant.interviewMode && (
@@ -491,7 +513,7 @@ function BulkReview({ applications, onAction, onOpen }) {
       ) : (
         <div className="space-y-1.5">
           {rows.map((a) => (
-            <div key={a.id} className={`flex flex-wrap items-center gap-3 bg-card border rounded-xl px-4 py-2.5 transition-colors ${selected.has(a.id) ? "border-primary" : "border-border"}`}>
+            <div key={a.id} className={`flex flex-wrap items-center gap-3 bg-card border rounded-xl px-4 py-2.5 transition-all duration-150 hover:shadow-sm ${selected.has(a.id) ? "border-primary" : "border-border"}`}>
               <input
                 type="checkbox"
                 checked={selected.has(a.id)}

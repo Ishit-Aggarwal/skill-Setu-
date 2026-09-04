@@ -3,7 +3,11 @@
 import { useEffect, useState } from "react";
 
 /* Small shared primitives so the role dashboards stay consistent and the
-   page files stay about their own logic rather than repeating markup. */
+   page files stay about their own logic rather than repeating markup.
+
+   These are used by every dashboard page across all four roles, so
+   upgrading the look here cascades everywhere without touching each
+   page's own data logic. */
 
 const inputBase =
   "w-full bg-background border border-border rounded-xl px-3.5 py-2.5 text-sm text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-primary/30 focus:border-primary transition-all";
@@ -13,25 +17,33 @@ export function PageHeader({ eyebrow, title, subtitle, actions }) {
     <div className="flex flex-wrap items-start justify-between gap-3">
       <div className="min-w-0">
         {eyebrow && <p className="text-xs font-semibold text-primary uppercase tracking-widest mb-1">{eyebrow}</p>}
-        <h2 className="text-xl font-semibold text-foreground">{title}</h2>
-        {subtitle && <p className="text-sm text-muted-foreground mt-0.5">{subtitle}</p>}
+        <h2 className="text-xl sm:text-2xl font-semibold text-foreground tracking-tight">{title}</h2>
+        {subtitle && <p className="text-sm text-muted-foreground mt-1 max-w-2xl">{subtitle}</p>}
       </div>
       {actions && <div className="flex items-center gap-2 flex-wrap">{actions}</div>}
     </div>
   );
 }
 
-export function Card({ children, className = "", padded = true }) {
-  return <div className={`bg-card border border-border rounded-2xl ${padded ? "p-5" : ""} ${className}`}>{children}</div>;
+export function Card({ children, className = "", padded = true, hover = false }) {
+  return (
+    <div
+      className={`bg-card border border-border rounded-2xl shadow-[0_1px_2px_rgba(25,25,26,0.04)] transition-all duration-200 ${
+        hover ? "hover:shadow-[0_6px_20px_rgba(25,25,26,0.07)] hover:-translate-y-0.5" : ""
+      } ${padded ? "p-5" : ""} ${className}`}
+    >
+      {children}
+    </div>
+  );
 }
 
 export function Section({ title, description, actions, children, className = "" }) {
   return (
     <section className={className}>
       {(title || actions) && (
-        <div className="flex flex-wrap items-start justify-between gap-2 mb-3">
+        <div className="flex flex-wrap items-start justify-between gap-2 mb-3.5">
           <div className="min-w-0">
-            {title && <h3 className="font-semibold text-foreground text-sm">{title}</h3>}
+            {title && <h3 className="font-semibold text-foreground text-sm tracking-wide">{title}</h3>}
             {description && <p className="text-xs text-muted-foreground mt-0.5 max-w-2xl">{description}</p>}
           </div>
           {actions && <div className="flex items-center gap-2 flex-wrap">{actions}</div>}
@@ -42,20 +54,123 @@ export function Section({ title, description, actions, children, className = "" 
   );
 }
 
+/* Cycled icon-tile colors for stat tiles that don't specify their own tone —
+   purely decorative variety, the semantic accent (role primary) still wins
+   whenever a stat is the "headline" number via tone: "primary". */
+const TILE_TONES = {
+  primary: "bg-primary/10 text-primary",
+  blue: "bg-blue-50 text-blue-600",
+  amber: "bg-amber-50 text-amber-600",
+  purple: "bg-purple-50 text-purple-600",
+  green: "bg-emerald-50 text-emerald-600",
+  red: "bg-red-50 text-red-600",
+};
+const TILE_CYCLE = ["primary", "blue", "amber", "purple", "green", "red"];
+
+export function IconTile({ icon, tone = "primary", size = 38, className = "" }) {
+  return (
+    <span
+      className={`inline-flex items-center justify-center rounded-xl flex-shrink-0 ${TILE_TONES[tone] || TILE_TONES.primary} ${className}`}
+      style={{ width: size, height: size, fontSize: Math.round(size * 0.46) }}
+    >
+      {icon}
+    </span>
+  );
+}
+
+/* A hint like "+4 this month" or "-2 vs last week" renders with a coloured
+   trend arrow; anything else (an em dash, a plain description) renders as
+   plain muted text — so existing callers need no changes to opt in. */
+function TrendHint({ hint }) {
+  const m = typeof hint === "string" && hint.match(/^([+-])\s*\d/);
+  if (!m) return <div className="text-xs text-muted-foreground mt-1 truncate">{hint}</div>;
+  const up = m[1] === "+";
+  return (
+    <div className={`flex items-center gap-1 text-xs font-medium mt-1 truncate ${up ? "text-emerald-600" : "text-red-500"}`}>
+      <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round" className="flex-shrink-0">
+        {up ? <polyline points="18 15 12 9 6 15" /> : <polyline points="6 9 12 15 18 9" />}
+      </svg>
+      <span className="truncate">{hint}</span>
+    </div>
+  );
+}
+
 export function StatGrid({ stats, columns = 4 }) {
   const cols = { 3: "lg:grid-cols-3", 4: "lg:grid-cols-4", 5: "lg:grid-cols-5", 6: "lg:grid-cols-6" }[columns] || "lg:grid-cols-4";
   return (
     <div className={`grid grid-cols-2 ${cols} gap-4`}>
-      {stats.map((s) => (
-        <div key={s.label} className="bg-card border border-border rounded-2xl p-4 hover:shadow-sm transition-shadow">
-          <div className="flex items-center justify-between mb-1 gap-2">
-            <span className="text-xs text-muted-foreground truncate">{s.label}</span>
-            {s.icon && <span className="text-base flex-shrink-0">{s.icon}</span>}
+      {stats.map((s, i) => (
+        <div
+          key={s.label}
+          className="group bg-card border border-border rounded-2xl p-4 shadow-[0_1px_2px_rgba(25,25,26,0.04)] hover:shadow-[0_6px_20px_rgba(25,25,26,0.07)] hover:-translate-y-0.5 transition-all duration-200"
+        >
+          <div className="flex items-start justify-between gap-2 mb-2.5">
+            <span className="text-xs text-muted-foreground truncate pt-1">{s.label}</span>
+            {s.icon && <IconTile icon={s.icon} tone={s.tone || TILE_CYCLE[i % TILE_CYCLE.length]} size={34} />}
           </div>
-          <div className="text-2xl font-bold text-foreground">{s.value}</div>
-          {s.hint && <div className="text-xs text-muted-foreground mt-1">{s.hint}</div>}
+          <div className="text-2xl font-bold text-foreground tracking-tight">{s.value}</div>
+          {s.hint && <TrendHint hint={s.hint} />}
         </div>
       ))}
+    </div>
+  );
+}
+
+/* Circular progress indicator — an alternative to StatGrid/ProgressBar for a
+   single headline percentage (overall score, completion, placement rate). */
+export function ProgressRing({ value, max = 100, size = 96, stroke = 9, label, sublabel, tone = "primary" }) {
+  const pct = Math.max(0, Math.min(100, (value / (max || 1)) * 100));
+  const r = (size - stroke) / 2;
+  const c = 2 * Math.PI * r;
+  const offset = c * (1 - pct / 100);
+  const colors = { primary: "var(--primary)", blue: "#2d6a9f", amber: "#b8860b", purple: "#7a46a0", green: "#1a9c6b", red: "#c0392b" };
+  const strokeColor = colors[tone] || colors.primary;
+  return (
+    <div className="inline-flex flex-col items-center justify-center">
+      <div className="relative" style={{ width: size, height: size }}>
+        <svg width={size} height={size} className="-rotate-90">
+          <circle cx={size / 2} cy={size / 2} r={r} fill="none" stroke="var(--muted)" strokeWidth={stroke} />
+          <circle
+            cx={size / 2}
+            cy={size / 2}
+            r={r}
+            fill="none"
+            stroke={strokeColor}
+            strokeWidth={stroke}
+            strokeLinecap="round"
+            strokeDasharray={c}
+            strokeDashoffset={offset}
+            style={{ transition: "stroke-dashoffset 700ms ease-out" }}
+          />
+        </svg>
+        <div className="absolute inset-0 flex items-center justify-center">
+          <span className="text-xl font-bold text-foreground">{label ?? `${Math.round(pct)}%`}</span>
+        </div>
+      </div>
+      {sublabel && <div className="text-xs text-muted-foreground mt-2 text-center max-w-[10rem]">{sublabel}</div>}
+    </div>
+  );
+}
+
+/* Overlapping avatar row, e.g. an "assignees" or "attendees" cell. */
+export function AvatarStack({ people = [], max = 4, size = 26 }) {
+  const shown = people.slice(0, max);
+  const extra = people.length - shown.length;
+  return (
+    <div className="flex items-center" style={{ paddingRight: 4 }}>
+      {shown.map((p, i) => (
+        <div key={p.name || i} style={{ marginLeft: i === 0 ? 0 : -Math.round(size * 0.32), zIndex: shown.length - i }} className="relative ring-2 ring-card rounded-full">
+          <Avatar name={p.name} size={size} src={p.src} />
+        </div>
+      ))}
+      {extra > 0 && (
+        <div
+          className="relative ring-2 ring-card rounded-full bg-secondary text-secondary-foreground flex items-center justify-center font-semibold flex-shrink-0"
+          style={{ width: size, height: size, fontSize: Math.max(9, size / 3), marginLeft: -Math.round(size * 0.32), zIndex: 0 }}
+        >
+          +{extra}
+        </div>
+      )}
     </div>
   );
 }
@@ -71,9 +186,25 @@ const badgeTones = {
   muted: "bg-muted text-muted-foreground",
 };
 
-export function Badge({ tone = "neutral", children, className = "" }) {
+const badgeDotTones = {
+  neutral: "bg-secondary-foreground",
+  primary: "bg-primary",
+  green: "bg-green-600",
+  amber: "bg-amber-600",
+  red: "bg-red-600",
+  blue: "bg-blue-600",
+  purple: "bg-purple-600",
+  muted: "bg-muted-foreground",
+};
+
+export function Badge({ tone = "neutral", dot = false, children, className = "" }) {
   return (
-    <span className={`inline-block text-[10px] font-medium px-2 py-0.5 rounded-full whitespace-nowrap ${badgeTones[tone] || badgeTones.neutral} ${className}`}>
+    <span
+      className={`inline-flex items-center gap-1.5 text-[10px] font-semibold px-2.5 py-1 rounded-full whitespace-nowrap ${
+        badgeTones[tone] || badgeTones.neutral
+      } ${className}`}
+    >
+      {dot && <span className={`w-1.5 h-1.5 rounded-full flex-shrink-0 ${badgeDotTones[tone] || badgeDotTones.neutral}`} />}
       {children}
     </span>
   );
@@ -82,7 +213,7 @@ export function Badge({ tone = "neutral", children, className = "" }) {
 export function EmptyState({ icon = "📭", title, children, action }) {
   return (
     <div className="bg-card border border-border rounded-2xl p-10 text-center">
-      <div className="text-3xl mb-3">{icon}</div>
+      <div className="w-14 h-14 rounded-2xl bg-secondary flex items-center justify-center text-2xl mx-auto mb-4">{icon}</div>
       <div className="font-medium text-foreground mb-1">{title}</div>
       {children && <div className="text-sm text-muted-foreground max-w-md mx-auto">{children}</div>}
       {action && <div className="mt-4">{action}</div>}
@@ -92,7 +223,7 @@ export function EmptyState({ icon = "📭", title, children, action }) {
 
 export function Button({ variant = "primary", size = "md", className = "", children, ...rest }) {
   const variants = {
-    primary: "bg-primary hover:bg-accent text-white",
+    primary: "bg-primary hover:bg-accent text-white shadow-sm hover:shadow-md",
     secondary: "bg-secondary text-foreground hover:bg-muted",
     outline: "border border-border text-muted-foreground hover:bg-secondary hover:text-foreground",
     ghost: "text-primary hover:bg-primary/10",
@@ -102,7 +233,7 @@ export function Button({ variant = "primary", size = "md", className = "", child
   return (
     <button
       {...rest}
-      className={`rounded-xl font-medium transition-all duration-150 disabled:opacity-50 disabled:cursor-not-allowed ${variants[variant]} ${sizes[size]} ${className}`}
+      className={`rounded-xl font-medium transition-all duration-150 disabled:opacity-50 disabled:cursor-not-allowed active:scale-[0.98] ${variants[variant]} ${sizes[size]} ${className}`}
     >
       {children}
     </button>
@@ -158,7 +289,7 @@ export function FilterPills({ options, value, onChange, label }) {
             key={key}
             onClick={() => onChange(key)}
             className={`text-xs px-3 py-1.5 rounded-full border font-medium transition-all duration-150 ${
-              value === key ? "bg-primary text-white border-transparent" : "bg-card border-border text-muted-foreground hover:border-primary/40"
+              value === key ? "bg-primary text-white border-transparent shadow-sm" : "bg-card border-border text-muted-foreground hover:border-primary/40"
             }`}
           >
             {text}
@@ -189,7 +320,7 @@ export function Tabs({ tabs, value, onChange, className = "" }) {
 
 export function ProgressBar({ value, max = 100, tone }) {
   const pct = Math.max(0, Math.min(100, (value / (max || 1)) * 100));
-  const color = tone || (pct < 55 ? "bg-red-500" : pct < 75 ? "bg-amber-500" : "bg-primary");
+  const color = tone || (pct < 55 ? "bg-red-500" : pct < 75 ? "bg-amber-500" : "bg-gradient-to-r from-primary to-accent");
   return (
     <div className="h-1.5 bg-muted rounded-full overflow-hidden">
       <div className={`h-full rounded-full transition-all duration-700 ${color}`} style={{ width: `${pct}%` }} />
@@ -199,16 +330,16 @@ export function ProgressBar({ value, max = 100, tone }) {
 
 export function DataTable({ columns, rows, rowKey, empty = "Nothing here yet.", onRowClick, className = "" }) {
   if (!rows.length) {
-    return <div className="bg-card border border-border rounded-2xl p-8 text-center text-sm text-muted-foreground">{empty}</div>;
+    return <EmptyState icon="📭" title={empty} />;
   }
   return (
-    <div className={`bg-card border border-border rounded-2xl overflow-hidden ${className}`}>
+    <div className={`bg-card border border-border rounded-2xl overflow-hidden shadow-[0_1px_2px_rgba(25,25,26,0.04)] ${className}`}>
       <div className="overflow-x-auto">
         <table className="w-full text-sm">
           <thead>
-            <tr className="border-b border-border bg-secondary/40">
+            <tr className="border-b border-border bg-secondary/50">
               {columns.map((c) => (
-                <th key={c.key} className={`text-xs font-semibold text-muted-foreground px-4 py-3 whitespace-nowrap ${c.align === "center" ? "text-center" : c.align === "right" ? "text-right" : "text-left"} ${c.hideBelow || ""}`}>
+                <th key={c.key} className={`text-[11px] font-semibold text-muted-foreground uppercase tracking-wider px-4 py-3 whitespace-nowrap ${c.align === "center" ? "text-center" : c.align === "right" ? "text-right" : "text-left"} ${c.hideBelow || ""}`}>
                   {c.header}
                 </th>
               ))}
@@ -300,4 +431,3 @@ export function Avatar({ name, size = 36, src }) {
 export function Skeleton({ className = "" }) {
   return <div className={`animate-pulse bg-muted rounded-xl ${className}`} />;
 }
-

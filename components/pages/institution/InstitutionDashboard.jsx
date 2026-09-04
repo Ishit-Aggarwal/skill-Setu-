@@ -4,7 +4,7 @@ import { useEffect, useMemo, useState } from "react";
 import DashboardLayout from "../../DashboardLayout";
 import { useAuth } from "../../../lib/auth";
 import { useNav } from "../../../lib/nav";
-import { Badge, Button, Card, EmptyState, PageHeader, ProgressBar, Section, StatGrid } from "../../ui/Kit";
+import { Badge, Button, Card, EmptyState, IconTile, PageHeader, ProgressBar, ProgressRing, Section, StatGrid } from "../../ui/Kit";
 import { formatDate, relativeTime } from "../../../lib/match";
 import {
   getInstitutionProfile,
@@ -51,12 +51,14 @@ export default function InstitutionDashboard() {
   const confirmed = upcomingInvites.filter((i) => i.rsvp === "Confirmed");
 
   const stats = [
-    { label: "Registered students", value: String(roster.length), icon: "🎓", hint: `${notAssessed} not yet assessed` },
-    { label: "Placed", value: String(placed), icon: "✅", hint: roster.length ? `${Math.round((placed / roster.length) * 100)}% of cohort` : "—" },
-    { label: "In process", value: String(inProcess), icon: "🔄", hint: `${unplaced} yet to apply` },
-    { label: "Active MOUs", value: String(activeMous), icon: "🤝", hint: renewalDue.length ? `${renewalDue.length} need renewal` : "All current" },
-    { label: "Upcoming drives", value: String(drives.filter((d) => d.date >= new Date().toISOString().slice(0, 10)).length), icon: "📅", hint: upcomingDrive ? formatDate(upcomingDrive.date) : "None scheduled" },
+    { label: "Registered students", value: String(roster.length), icon: "🎓", tone: "blue", hint: `${notAssessed} not yet assessed` },
+    { label: "Placed", value: String(placed), icon: "✅", tone: "green", hint: roster.length ? `${Math.round((placed / roster.length) * 100)}% of cohort` : "—" },
+    { label: "In process", value: String(inProcess), icon: "🔄", tone: "amber", hint: `${unplaced} yet to apply` },
+    { label: "Active MOUs", value: String(activeMous), icon: "🤝", tone: "purple", hint: renewalDue.length ? `${renewalDue.length} need renewal` : "All current" },
+    { label: "Upcoming drives", value: String(drives.filter((d) => d.date >= new Date().toISOString().slice(0, 10)).length), icon: "📅", tone: "primary", hint: upcomingDrive ? formatDate(upcomingDrive.date) : "None scheduled" },
   ];
+
+  const overallPlacementRate = roster.length ? Math.round((placed / roster.length) * 100) : 0;
 
   const byDepartment = useMemo(() => {
     const groups = {};
@@ -107,16 +109,21 @@ export default function InstitutionDashboard() {
               {byDepartment.length === 0 ? (
                 <p className="text-sm text-muted-foreground py-6 text-center">No students on the roster yet.</p>
               ) : (
-                <div className="space-y-3">
-                  {byDepartment.map((d) => (
-                    <div key={d.department}>
-                      <div className="flex items-center justify-between text-xs mb-1 gap-2">
-                        <span className="font-medium text-foreground truncate">{d.department}</span>
-                        <span className="text-muted-foreground flex-shrink-0">{d.placed}/{d.total} · {d.rate}%</span>
+                <div className="flex flex-col sm:flex-row gap-6">
+                  <div className="flex-shrink-0 flex sm:flex-col items-center justify-center gap-2 sm:border-r sm:border-border sm:pr-6">
+                    <ProgressRing value={overallPlacementRate} tone="green" sublabel="Overall cohort placement" />
+                  </div>
+                  <div className="flex-1 space-y-3 min-w-0">
+                    {byDepartment.map((d) => (
+                      <div key={d.department}>
+                        <div className="flex items-center justify-between text-xs mb-1 gap-2">
+                          <span className="font-medium text-foreground truncate">{d.department}</span>
+                          <span className="text-muted-foreground flex-shrink-0">{d.placed}/{d.total} · {d.rate}%</span>
+                        </div>
+                        <ProgressBar value={d.rate} />
                       </div>
-                      <ProgressBar value={d.rate} />
-                    </div>
-                  ))}
+                    ))}
+                  </div>
                 </div>
               )}
             </Section>
@@ -124,10 +131,10 @@ export default function InstitutionDashboard() {
 
           <Card>
             <Section title="Verification & compliance" description="What the Ministry-facing record currently shows.">
-              <div className="space-y-2.5">
+              <div className="space-y-3">
                 {verification.map((v) => (
                   <div key={v.label} className="flex items-start gap-2.5">
-                    <span className={`mt-0.5 text-xs ${v.ok ? "text-green-600" : "text-amber-600"}`}>{v.ok ? "✓" : "•"}</span>
+                    <IconTile icon={v.ok ? "✓" : "!"} tone={v.ok ? "green" : "amber"} size={26} className="mt-0.5" />
                     <div className="min-w-0">
                       <div className="text-xs font-medium text-foreground">{v.label}</div>
                       <div className="text-[11px] text-muted-foreground truncate">{v.detail}</div>
@@ -156,7 +163,7 @@ export default function InstitutionDashboard() {
                       <div className="text-sm font-semibold text-foreground">{upcomingDrive.title}</div>
                       <div className="text-xs text-muted-foreground">{formatDate(upcomingDrive.date)} · {upcomingDrive.venue}</div>
                     </div>
-                    <Badge tone="primary">{confirmed.length} confirmed</Badge>
+                      <Badge tone="primary" dot>{confirmed.length} confirmed</Badge>
                   </div>
                   <div className="grid grid-cols-3 gap-2 my-4">
                     {[
@@ -164,9 +171,9 @@ export default function InstitutionDashboard() {
                       { label: "Confirmed", value: confirmed.length },
                       { label: "Roles offered", value: confirmed.reduce((s, i) => s + (Number(i.expectedRoles) || 0), 0) },
                     ].map((m) => (
-                      <div key={m.label} className="bg-secondary/50 rounded-xl py-2.5 text-center">
+                      <div key={m.label} className="bg-secondary/50 rounded-xl py-3 text-center">
                         <div className="text-lg font-bold text-foreground">{m.value}</div>
-                        <div className="text-[10px] text-muted-foreground">{m.label}</div>
+                        <div className="text-[10px] text-muted-foreground mt-0.5">{m.label}</div>
                       </div>
                     ))}
                   </div>
@@ -251,21 +258,21 @@ export default function InstitutionDashboard() {
 
           <Card>
             <Section title="Quick actions">
-              <div className="grid grid-cols-2 gap-2">
+              <div className="grid grid-cols-2 gap-2.5">
                 {[
-                  { label: "Add / import students", page: "institution-students", icon: "👥" },
-                  { label: "Cohort skill gaps", page: "institution-skill-gaps", icon: "🧭" },
-                  { label: "Curriculum alignment", page: "institution-curriculum", icon: "📚" },
-                  { label: "Post a notice", page: "institution-announcements", icon: "📣" },
-                  { label: "Track an MOU", page: "institution-partnerships", icon: "🤝" },
-                  { label: "Institution profile", page: "institution-profile", icon: "🏫" },
+                  { label: "Add / import students", page: "institution-students", icon: "👥", tone: "blue" },
+                  { label: "Cohort skill gaps", page: "institution-skill-gaps", icon: "🧭", tone: "purple" },
+                  { label: "Curriculum alignment", page: "institution-curriculum", icon: "📚", tone: "amber" },
+                  { label: "Post a notice", page: "institution-announcements", icon: "📣", tone: "primary" },
+                  { label: "Track an MOU", page: "institution-partnerships", icon: "🤝", tone: "green" },
+                  { label: "Institution profile", page: "institution-profile", icon: "🏫", tone: "red" },
                 ].map((a) => (
                   <button
                     key={a.label}
                     onClick={() => navigate(a.page)}
-                    className="flex items-center gap-2 text-left text-xs font-medium text-foreground bg-secondary/60 hover:bg-secondary rounded-xl px-3 py-3 transition-colors"
+                    className="flex items-center gap-2.5 text-left text-xs font-medium text-foreground bg-secondary/60 hover:bg-secondary rounded-xl px-3 py-3 transition-colors"
                   >
-                    <span className="text-base">{a.icon}</span>
+                    <IconTile icon={a.icon} tone={a.tone} size={30} />
                     <span className="min-w-0">{a.label}</span>
                   </button>
                 ))}

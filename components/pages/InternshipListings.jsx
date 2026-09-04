@@ -4,7 +4,7 @@ import { useEffect, useMemo, useState } from "react";
 import DashboardLayout from "../DashboardLayout";
 import ApplyConfirmModal from "../ApplyConfirmModal";
 import { useAuth } from "../../lib/auth";
-import { Badge, Button, Card, EmptyState, Field, Flash, Modal, PageHeader, ProgressBar, SearchInput, Section, Select, StatGrid, TextArea, TextInput, useFlash } from "../ui/Kit";
+import { Badge, Button, Card, EmptyState, Field, FilterPills, Flash, Modal, PageHeader, ProgressBar, SearchInput, Select, StatGrid, TextArea, TextInput, useFlash } from "../ui/Kit";
 import { ALL_DOMAINS, DEPARTMENTS, DOMAIN_GROUPS, domainColor } from "../../lib/domains";
 import { subscribeToMutations } from "../../lib/sync";
 import {
@@ -29,10 +29,10 @@ import { checkEligibility, computeMatch, computeSkillGap, daysUntil, formatDate 
 const typeFilters = ["All", "Remote", "Hybrid", "Onsite"];
 const STAGE_ORDER = PIPELINE_STAGES;
 
-const typeColor = {
-  Remote: "text-emerald-700 bg-emerald-50",
-  Hybrid: "text-blue-700 bg-blue-50",
-  Onsite: "text-amber-700 bg-amber-50",
+const typeTone = {
+  Remote: "green",
+  Hybrid: "blue",
+  Onsite: "amber",
 };
 
 function StudentView({ user }) {
@@ -131,56 +131,36 @@ function StudentView({ user }) {
 
   return (
     <div className="animate-fade-slide space-y-5">
+      <PageHeader
+        eyebrow="Explore Opportunities"
+        title="Internship & Job Listings"
+        subtitle={`${filtered.length} live ${filtered.length === 1 ? "opportunity" : "opportunities"} matched to your skill profile`}
+      />
+
       <Flash message={flash} />
-      <div className="flex gap-3">
-        <SearchInput value={search} onChange={setSearch} placeholder="Search roles, organisations, skills…" className="flex-1" />
-        <Select value={sortBy} onChange={(e) => setSortBy(e.target.value)} className="w-auto">
-          <option value="match">Best Match</option>
-          <option value="deadline">Deadline</option>
-        </Select>
-      </div>
 
-      <div className="flex flex-wrap gap-3">
-        <div className="flex items-center gap-1.5 flex-wrap">
-          <span className="text-xs text-muted-foreground font-medium mr-1">Sector:</span>
-          {domainsInUse.map((f) => (
-            <button
-              key={f}
-              onClick={() => setDomain(f)}
-              className={`text-xs px-3 py-1.5 rounded-full border font-medium transition-all duration-150 ${
-                domain === f ? "bg-primary text-white border-transparent" : "bg-card border-border text-muted-foreground hover:border-primary/40"
-              }`}
-            >
-              {f}
-            </button>
-          ))}
+      <Card className="space-y-3.5">
+        <div className="flex gap-3">
+          <SearchInput value={search} onChange={setSearch} placeholder="Search roles, organisations, skills…" className="flex-1" />
+          <Select value={sortBy} onChange={(e) => setSortBy(e.target.value)} className="w-auto">
+            <option value="match">Best Match</option>
+            <option value="deadline">Deadline</option>
+          </Select>
         </div>
-        <div className="flex items-center gap-1.5 flex-wrap">
-          <span className="text-xs text-muted-foreground font-medium mr-1">Type:</span>
-          {typeFilters.map((f) => (
-            <button
-              key={f}
-              onClick={() => setType(f)}
-              className={`text-xs px-3 py-1.5 rounded-full border font-medium transition-all duration-150 ${
-                type === f ? "bg-primary text-white border-transparent" : "bg-card border-border text-muted-foreground hover:border-primary/40"
-              }`}
-            >
-              {f}
-            </button>
-          ))}
-        </div>
-      </div>
 
-      <div className="flex flex-wrap items-center justify-between gap-3">
-        <span className="text-sm text-muted-foreground">{filtered.length} {filtered.length === 1 ? "opportunity" : "opportunities"} found</span>
-        <div className="flex items-center gap-4">
-          <label className="flex items-center gap-2 text-xs text-muted-foreground cursor-pointer">
+        <div className="flex flex-wrap gap-x-6 gap-y-2">
+          <FilterPills label="Sector:" options={domainsInUse} value={domain} onChange={setDomain} />
+          <FilterPills label="Type:" options={typeFilters} value={type} onChange={setType} />
+        </div>
+
+        <div className="flex flex-wrap items-center justify-between gap-3 pt-1 border-t border-border">
+          <label className="flex items-center gap-2 text-xs text-muted-foreground cursor-pointer pt-3">
             <input type="checkbox" checked={eligibleOnly} onChange={(e) => setEligibleOnly(e.target.checked)} className="w-3.5 h-3.5 accent-primary" />
             Only show roles I'm eligible for
           </label>
-          {appliedIds.size > 0 && <span className="text-xs text-primary font-medium">{appliedIds.size} applied</span>}
+          {appliedIds.size > 0 && <span className="text-xs text-primary font-medium pt-3">{appliedIds.size} applied</span>}
         </div>
-      </div>
+      </Card>
 
       {filtered.length === 0 ? (
         <EmptyState icon="🔍" title="No results found">Try adjusting your filters or search terms.</EmptyState>
@@ -192,7 +172,7 @@ function StudentView({ user }) {
             const gap = computeSkillGap(intern, portfolio);
             const blocked = !intern.eligibility.eligible;
             return (
-              <div key={intern.id} className="bg-card border border-border rounded-2xl p-5 hover:shadow-md hover:-translate-y-0.5 transition-all duration-200 flex flex-col">
+              <Card key={intern.id} hover className="flex flex-col">
                 <div className="flex items-start justify-between mb-3">
                   <div className="flex items-start gap-3 min-w-0">
                     <div className="w-10 h-10 rounded-xl flex-shrink-0 flex items-center justify-center text-white text-xs font-bold" style={{ backgroundColor: intern.color || domainColor(intern.domain) }}>
@@ -224,13 +204,13 @@ function StudentView({ user }) {
                       NEW
                     </span>
                   )}
-                  <span className={`text-[10px] font-medium px-2 py-0.5 rounded-full ${typeColor[intern.type] || "bg-muted text-muted-foreground"}`}>{intern.type}</span>
-                  <span className="text-[10px] bg-secondary text-secondary-foreground px-2 py-0.5 rounded-full">{intern.domain}</span>
-                  {intern.hot && <span className="text-[10px] font-semibold text-orange-600 bg-orange-50 px-2 py-0.5 rounded-full">🔥 Hot</span>}
+                  <Badge tone={typeTone[intern.type] || "neutral"}>{intern.type}</Badge>
+                  <Badge tone="neutral">{intern.domain}</Badge>
+                  {intern.hot && <Badge tone="amber">🔥 Hot</Badge>}
                 </div>
 
                 <div className="flex flex-wrap gap-1 mb-3">
-                  {(intern.tags || []).slice(0, 2).map((tag) => <span key={tag} className="text-[10px] bg-primary/8 text-primary px-2 py-0.5 rounded-full">{tag}</span>)}
+                  {(intern.tags || []).slice(0, 2).map((tag) => <Badge key={tag} tone="primary">{tag}</Badge>)}
                   {(intern.tags || []).length > 2 && <span className="text-[10px] text-muted-foreground">+{intern.tags.length - 2}</span>}
                 </div>
 
@@ -269,7 +249,7 @@ function StudentView({ user }) {
                 >
                   {isApplied ? "✓ Applied" : blocked ? "Not eligible" : "Apply Now"}
                 </button>
-              </div>
+              </Card>
             );
           })}
         </div>

@@ -3,7 +3,7 @@
 import { useEffect, useMemo, useState } from "react";
 import DashboardLayout from "../DashboardLayout";
 import { useAuth } from "../../lib/auth";
-import { Badge, Button, Card, Field, Flash, PageHeader, ProgressBar, Section, Select, StatGrid, TextArea, TextInput, useFlash } from "../ui/Kit";
+import { Avatar, Badge, Button, Card, Field, Flash, IconTile, PageHeader, ProgressBar, ProgressRing, Section, Select, StatGrid, TextArea, TextInput, useFlash } from "../ui/Kit";
 import { DOMAIN_GROUPS } from "../../lib/domains";
 import { relativeTime } from "../../lib/match";
 import { companyRating, listApplicationsForOwner, listCompanyReviews, listInternshipsByOwner } from "../../lib/store";
@@ -122,14 +122,19 @@ export default function CompanyProfile() {
         {error && <Flash message={error} tone="red" />}
         <Flash message={flash} />
 
-        <StatGrid
-          stats={[
-            { label: "Profile completeness", value: `${completeness}%`, icon: "📋" },
-            { label: "Live postings", value: String(postings.filter((p) => p.status === "Open").length), icon: "💼" },
-            { label: "Applicants reached", value: String(applications.length), icon: "📥" },
-            { label: "Intern rating", value: rating ? `${rating.average}/5` : "—", icon: "⭐", hint: rating ? `${rating.count} review(s)` : "No reviews yet" },
-          ]}
-        />
+        <div className="grid sm:grid-cols-[auto_1fr] gap-4 items-stretch">
+          <Card className="flex flex-col items-center justify-center px-8">
+            <ProgressRing value={completeness} sublabel="Profile completeness" />
+          </Card>
+          <StatGrid
+            columns={3}
+            stats={[
+              { label: "Live postings", value: String(postings.filter((p) => p.status === "Open").length), icon: "💼" },
+              { label: "Applicants reached", value: String(applications.length), icon: "📥" },
+              { label: "Intern rating", value: rating ? `${rating.average}/5` : "—", icon: "⭐", hint: rating ? `${rating.count} review(s)` : "No reviews yet" },
+            ]}
+          />
+        </div>
 
         <Card>
           <Section title="Verification status" description="How the “verified partner” badge on your postings is earned.">
@@ -138,9 +143,9 @@ export default function CompanyProfile() {
                 { label: "Partner code checked at signup", ok: codeVerified, detail: user?.verifiedCode || "No partner code on record — contact the platform admin." },
                 { label: "Sign-up email verified by OTP", ok: emailVerified, detail: user?.email || "" },
               ].map((c) => (
-                <div key={c.label} className={`flex items-start gap-2.5 rounded-xl px-3.5 py-3 ${c.ok ? "bg-green-50/60" : "bg-amber-50/60"}`}>
-                  <span className={`text-sm ${c.ok ? "text-green-600" : "text-amber-600"}`}>{c.ok ? "✓" : "!"}</span>
-                  <div className="min-w-0">
+                <div key={c.label} className={`flex items-start gap-3 rounded-xl px-3.5 py-3 ${c.ok ? "bg-green-50/60" : "bg-amber-50/60"}`}>
+                  <IconTile icon={c.ok ? "✓" : "!"} tone={c.ok ? "green" : "amber"} size={28} />
+                  <div className="min-w-0 pt-0.5">
                     <div className="text-xs font-medium text-foreground">{c.label}</div>
                     <div className="text-[11px] text-muted-foreground break-words">{c.detail}</div>
                   </div>
@@ -218,8 +223,8 @@ export default function CompanyProfile() {
               {gallery.length > 0 && (
                 <div className="grid grid-cols-3 sm:grid-cols-4 gap-2 mb-3">
                   {gallery.map((g, i) => (
-                    <div key={i} className="relative group aspect-video rounded-xl overflow-hidden border border-border">
-                      <img src={g.dataUrl} alt={g.name || `Gallery ${i + 1}`} className="w-full h-full object-cover" />
+                    <div key={i} className="relative group aspect-video rounded-xl overflow-hidden border border-border shadow-[0_1px_2px_rgba(25,25,26,0.04)]">
+                      <img src={g.dataUrl} alt={g.name || `Gallery ${i + 1}`} className="w-full h-full object-cover transition-transform duration-300 group-hover:scale-105" />
                       <button
                         type="button"
                         onClick={() => setGallery((prev) => prev.filter((_, idx) => idx !== i))}
@@ -276,13 +281,18 @@ export default function CompanyProfile() {
                 )}
                 <div className="space-y-3">
                   {reviews.map((r) => (
-                    <div key={r.id} className="border border-border rounded-xl px-4 py-3">
-                      <div className="flex items-center justify-between gap-2 mb-1">
-                        <span className="text-xs font-medium text-foreground">{r.author}{r.role ? ` · ${r.role}` : ""}</span>
-                        <Badge tone={r.rating >= 4 ? "green" : r.rating >= 3 ? "amber" : "red"}>{r.rating}/5</Badge>
+                    <div key={r.id} className="border border-border rounded-xl px-4 py-3.5 hover:shadow-sm transition-shadow duration-200">
+                      <div className="flex items-start gap-3">
+                        <Avatar name={r.author} size={32} />
+                        <div className="min-w-0 flex-1">
+                          <div className="flex items-center justify-between gap-2 mb-1">
+                            <span className="text-xs font-medium text-foreground truncate">{r.author}{r.role ? ` · ${r.role}` : ""}</span>
+                            <Badge tone={r.rating >= 4 ? "green" : r.rating >= 3 ? "amber" : "red"}>{r.rating}/5</Badge>
+                          </div>
+                          <p className="text-sm text-muted-foreground leading-relaxed">{r.body}</p>
+                          <div className="text-[10px] text-muted-foreground mt-1.5">{relativeTime(r.createdAt)}</div>
+                        </div>
                       </div>
-                      <p className="text-sm text-muted-foreground leading-relaxed">{r.body}</p>
-                      <div className="text-[10px] text-muted-foreground mt-1">{relativeTime(r.createdAt)}</div>
                     </div>
                   ))}
                 </div>

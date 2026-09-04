@@ -3,7 +3,7 @@
 import { useEffect, useMemo, useState } from "react";
 import DashboardLayout from "../../DashboardLayout";
 import { useAuth } from "../../../lib/auth";
-import { Avatar, Badge, Button, Card, EmptyState, Field, Flash, Modal, PageHeader, Section, Select, StatGrid, Tabs, TextArea, TextInput, useFlash } from "../../ui/Kit";
+import { Avatar, Badge, Button, Card, EmptyState, Field, Flash, IconTile, Modal, PageHeader, ProgressRing, Section, Select, StatGrid, Tabs, TextArea, TextInput, useFlash } from "../../ui/Kit";
 import { COLLAB_EXPERTISE } from "../../../lib/domains";
 import { formatDate, formatDateTime, relativeTime } from "../../../lib/match";
 import {
@@ -134,7 +134,7 @@ export default function ResearchCollabs() {
             {SEED_COLLABS.map((c) => {
               const response = responses[c.id];
               return (
-                <Card key={c.id}>
+                <Card key={c.id} hover>
                   <div className="flex flex-wrap items-start justify-between gap-3 mb-3">
                     <div className="flex-1 min-w-0">
                       <div className="text-sm font-semibold text-foreground mb-1">{c.title}</div>
@@ -192,7 +192,7 @@ export default function ResearchCollabs() {
               listings.map((l) => {
                 const interests = listCollabInterests(l.id);
                 return (
-                  <Card key={l.id}>
+                  <Card key={l.id} hover>
                     <div className="flex flex-wrap items-start justify-between gap-3 mb-2">
                       <div className="min-w-0 flex-1">
                         <div className="text-sm font-semibold text-foreground">{l.title}</div>
@@ -298,12 +298,13 @@ export default function ResearchCollabs() {
               ) : (
                 <div className="space-y-2">
                   {outputs.map((o) => (
-                    <div key={o.id} className="flex flex-wrap items-start gap-3 border border-border rounded-xl px-4 py-3">
-                      <Badge tone={o.type === "Patent" ? "purple" : "primary"}>{o.type}</Badge>
+                    <div key={o.id} className="flex flex-wrap items-center gap-3 border border-border rounded-xl px-4 py-3 hover:border-primary/30 transition-colors">
+                      <IconTile icon={o.type === "Patent" ? "🏆" : "📄"} tone={o.type === "Patent" ? "purple" : "primary"} size={34} />
                       <div className="min-w-0 flex-1">
                         <div className="text-sm font-medium text-foreground">{o.title}</div>
                         <div className="text-[11px] text-muted-foreground">{o.venue}{o.year ? ` · ${o.year}` : ""}</div>
                       </div>
+                      <Badge tone={o.type === "Patent" ? "purple" : "primary"}>{o.type}</Badge>
                       <button onClick={() => { removeResearchOutput(o.id); bump("Output removed."); }} className="text-xs text-muted-foreground hover:text-red-600">Remove</button>
                     </div>
                   ))}
@@ -369,14 +370,26 @@ function Workspace({ collab, user, onChange }) {
   return (
     <div className="space-y-5">
       <Card>
-        <div className="flex flex-wrap items-start justify-between gap-3">
+        <div className="flex flex-wrap items-center justify-between gap-4">
           <div className="min-w-0">
             <h3 className="text-sm font-semibold text-foreground">{collab.title}</h3>
             <p className="text-xs text-muted-foreground mt-0.5">{collab.initiator} · {collab.type} · deadline {collab.deadline}</p>
           </div>
-          <Badge tone={done === milestones.length && milestones.length > 0 ? "green" : "primary"}>
-            {done}/{milestones.length} milestones done
-          </Badge>
+          {milestones.length > 0 ? (
+            <div className="flex items-center gap-3 flex-shrink-0">
+              <ProgressRing
+                value={done}
+                max={milestones.length}
+                size={54}
+                stroke={6}
+                label={`${done}/${milestones.length}`}
+                tone={done === milestones.length ? "green" : "primary"}
+              />
+              <span className="text-xs text-muted-foreground">milestones done</span>
+            </div>
+          ) : (
+            <Badge tone="primary">No milestones yet</Badge>
+          )}
         </div>
       </Card>
 
@@ -475,8 +488,8 @@ function Workspace({ collab, user, onChange }) {
           ) : (
             <div className="space-y-2">
               {files.map((f) => (
-                <div key={f.id} className="flex items-center gap-3 border border-border rounded-xl px-4 py-2.5">
-                  <span className="text-base">📎</span>
+                <div key={f.id} className="flex items-center gap-3 border border-border rounded-xl px-4 py-2.5 hover:border-primary/30 transition-colors">
+                  <IconTile icon="📎" tone="blue" size={32} />
                   <div className="min-w-0 flex-1">
                     <a href={f.dataUrl} download={f.name} className="text-sm text-primary hover:underline truncate block">{f.name}</a>
                     <div className="text-[10px] text-muted-foreground">
