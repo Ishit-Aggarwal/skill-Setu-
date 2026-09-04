@@ -20,6 +20,8 @@ import {
   listRecruiters,
   recordInternshipView,
   setPostingStatus,
+  listSavedInternships,
+  toggleSavedInternship,
   update,
   PIPELINE_STAGES,
   TERMINAL_STAGES,
@@ -45,7 +47,9 @@ function StudentView({ user }) {
   const [type, setType] = useState("All");
   const [sortBy, setSortBy] = useState("match");
   const [eligibleOnly, setEligibleOnly] = useState(false);
-  const [saved, setSaved] = useState([]);
+  // Bookmarks are persisted, not component state — a saved role has to survive
+  // a reload and show up on the dashboard, otherwise the star does nothing.
+  const [savedIds, setSavedIds] = useState(() => new Set());
   const [applyTarget, setApplyTarget] = useState(null);
   const [recentNewIds, setRecentNewIds] = useState(() => new Set());
   const [flash, setFlash] = useFlash(8000);
@@ -55,6 +59,18 @@ function StudentView({ user }) {
     setAssessment(getAssessment(user.id));
     setPortfolio(getPortfolio(user.id));
     setAppliedIds(new Set(listApplicationsForStudent(user.id).map((a) => a.internshipId)));
+    setSavedIds(new Set(listSavedInternships(user.id).map((s) => s.internshipId)));
+  }
+
+  function handleToggleSave(internship) {
+    const nowSaved = toggleSavedInternship(user.id, internship.id);
+    setSavedIds((prev) => {
+      const next = new Set(prev);
+      if (nowSaved) next.add(internship.id);
+      else next.delete(internship.id);
+      return next;
+    });
+    setFlash(nowSaved ? `Saved "${internship.title}" — it's on your dashboard.` : `Removed "${internship.title}" from saved roles.`);
   }
 
   useEffect(() => { refresh(); }, [user]);
@@ -120,7 +136,7 @@ function StudentView({ user }) {
     setApplyTarget(null);
   }
 
-  // Ordered by the canonical taxonomy (Ayush first), but never drops a domain
+  // Ordered by the canonical taxonomy, but never drops a domain
   // a posting actually uses.
   const domainsInUse = useMemo(() => {
     const used = new Set(internships.map((i) => i.domain).filter(Boolean));
@@ -168,7 +184,7 @@ function StudentView({ user }) {
         <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-4">
           {filtered.map((intern) => {
             const isApplied = appliedIds.has(intern.id);
-            const isSaved = saved.includes(intern.id);
+            const isSaved = savedIds.has(intern.id);
             const gap = computeSkillGap(intern, portfolio);
             const blocked = !intern.eligibility.eligible;
             return (
@@ -184,9 +200,10 @@ function StudentView({ user }) {
                     </div>
                   </div>
                   <button
-                    onClick={() => setSaved(isSaved ? saved.filter((id) => id !== intern.id) : [...saved, intern.id])}
+                    onClick={() => handleToggleSave(intern)}
                     className={`p-1.5 rounded-lg transition-colors flex-shrink-0 ${isSaved ? "text-primary" : "text-muted-foreground hover:text-primary"}`}
                     aria-label={isSaved ? "Unsave" : "Save"}
+                    title={isSaved ? "Remove from saved roles" : "Save for later — shows on your dashboard"}
                   >
                     <svg width="15" height="15" viewBox="0 0 24 24" fill={isSaved ? "currentColor" : "none"} stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
                       <path d="M19 21l-7-5-7 5V5a2 2 0 0 1 2-2h10a2 2 0 0 1 2 2z" />
@@ -576,7 +593,7 @@ function PostingModal({ posting, onClose, onSubmit }) {
         </Field>
 
         <Field label="Required skills" hint="Comma separated — these drive the skill-match score students see.">
-          <TextInput value={form.tags} onChange={(e) => set("tags", e.target.value)} placeholder="Dravyaguna, Quality Control, GMP Compliance" />
+          <TextInput value={form.tags} onChange={(e) => set("tags", e.target.value)} placeholder="React, Financial Modelling, Quality Control" />
         </Field>
 
         <div className="border-t border-border pt-4">

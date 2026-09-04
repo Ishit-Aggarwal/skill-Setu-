@@ -228,7 +228,7 @@ function SlotForm({ onCancel, onSubmit }) {
         </Select>
       </Field>
       <Field label={form.mode === "Online" ? "Meeting link or platform" : "Room / location"}>
-        <TextInput value={form.location} onChange={(e) => set("location", e.target.value)} placeholder={form.mode === "Online" ? "Video call" : "Dravyaguna Dept, Room 204"} />
+        <TextInput value={form.location} onChange={(e) => set("location", e.target.value)} placeholder={form.mode === "Online" ? "Video call" : "Department office, Room 204"} />
       </Field>
       <div className="flex gap-3">
         <Button type="button" variant="outline" className="flex-1" onClick={onCancel}>Cancel</Button>

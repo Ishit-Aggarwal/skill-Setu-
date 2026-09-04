@@ -3,6 +3,7 @@
 import { useEffect, useMemo, useState } from "react";
 import DashboardLayout from "../DashboardLayout";
 import CandidateProfileModal from "../CandidateProfileModal";
+import IssueCredentialModal from "../IssueCredentialModal";
 import { useAuth } from "../../lib/auth";
 import { useNav } from "../../lib/nav";
 import { Avatar, Badge, Button, Card, EmptyState, Field, Flash, IconTile, Modal, PageHeader, ProgressBar, SearchInput, Section, Select, StatGrid, TextInput, useFlash } from "../ui/Kit";
@@ -74,6 +75,9 @@ export default function IndustryDashboard() {
   const [showPostJob, setShowPostJob] = useState(false);
   const [movingId, setMovingId] = useState(null);
   const [selectedApplicant, setSelectedApplicant] = useState(null);
+  const [rejectTarget, setRejectTarget] = useState(null);
+  const [rejectReason, setRejectReason] = useState("");
+  const [certifyTarget, setCertifyTarget] = useState(null);
   const [compareIds, setCompareIds] = useState([]);
   const [showCompare, setShowCompare] = useState(false);
   const [bulkMode, setBulkMode] = useState(false);
@@ -127,13 +131,21 @@ export default function IndustryDashboard() {
     setCompareIds((prev) => (prev.includes(id) ? prev.filter((x) => x !== id) : prev.length < 4 ? [...prev, id] : prev));
   }
 
-  function moveApplicant(id, newStatus) {
+  function moveApplicant(id, newStatus, extra) {
     setMovingId(id);
     setTimeout(() => {
-      updateApplicationStatus(id, newStatus);
+      updateApplicationStatus(id, newStatus, extra);
       refresh();
       setMovingId(null);
     }, 150);
+  }
+
+  function confirmReject() {
+    const target = rejectTarget;
+    setRejectTarget(null);
+    moveApplicant(target.id, "Rejected", rejectReason.trim() ? { rejectionReason: rejectReason.trim() } : undefined);
+    setRejectReason("");
+    setFlash(`${target.studentName} moved to Rejected. They can be restored from the Rejected column.`);
   }
 
   const byStatus = (status) => scoped.filter((a) => a.status === status);
@@ -313,7 +325,13 @@ export default function IndustryDashboard() {
                             </button>
                           )}
 
-                          <div className="mt-2 flex gap-1">
+                          {status === "Rejected" && applicant.rejectionReason && (
+                            <div className="text-[10px] text-red-700 bg-red-50 border border-red-100 rounded-lg px-2 py-1 mb-1">
+                              {applicant.rejectionReason}
+                            </div>
+                          )}
+
+                          <div className="mt-2 flex flex-wrap gap-1">
                             {status === "Rejected" ? (
                               <button
                                 onClick={() => moveApplicant(applicant.id, "Applied")}
@@ -328,7 +346,7 @@ export default function IndustryDashboard() {
                                     onClick={() => moveApplicant(applicant.id, PIPELINE_STAGES[PIPELINE_STAGES.indexOf(status) - 1])}
                                     className="flex-1 text-[10px] py-1 bg-secondary rounded-lg hover:bg-muted text-muted-foreground transition-colors"
                                   >
-                                    ← Move back
+                                    ← Back
                                   </button>
                                 )}
                                 {status !== "Hired" && (
@@ -337,6 +355,22 @@ export default function IndustryDashboard() {
                                     className="flex-1 text-[10px] py-1 bg-primary/10 rounded-lg hover:bg-primary text-primary hover:text-white transition-colors"
                                   >
                                     Advance →
+                                  </button>
+                                )}
+                                {/* Rejecting used to be a bulk-review-only action, so a
+                                    recruiter reviewing one candidate had no way to say no. */}
+                                <button
+                                  onClick={() => { setRejectReason(""); setRejectTarget(applicant); }}
+                                  className="flex-1 text-[10px] py-1 border border-red-200 rounded-lg text-red-600 hover:bg-red-50 transition-colors"
+                                >
+                                  Reject
+                                </button>
+                                {status === "Hired" && (
+                                  <button
+                                    onClick={() => setCertifyTarget(applicant)}
+                                    className="w-full text-[10px] py-1 bg-primary/10 rounded-lg hover:bg-primary text-primary hover:text-white transition-colors"
+                                  >
+                                    🏅 Issue certificate
                                   </button>
                                 )}
                               </>
@@ -417,7 +451,7 @@ export default function IndustryDashboard() {
               <Field label="Stipend / CTC"><TextInput value={form.stipend} onChange={(e) => setForm((f) => ({ ...f, stipend: e.target.value }))} placeholder="₹18,000/mo" /></Field>
               <Field label="Duration"><TextInput value={form.duration} onChange={(e) => setForm((f) => ({ ...f, duration: e.target.value }))} placeholder="6 months" /></Field>
             </div>
-            <Field label="Required skills" hint="Comma separated."><TextInput value={form.tags} onChange={(e) => setForm((f) => ({ ...f, tags: e.target.value }))} placeholder="Dravyaguna, Quality Control" /></Field>
+            <Field label="Required skills" hint="Comma separated."><TextInput value={form.tags} onChange={(e) => setForm((f) => ({ ...f, tags: e.target.value }))} placeholder="React, SQL, Quality Control" /></Field>
             <p className="text-[11px] text-muted-foreground">
               Need eligibility filters and a deadline? Use the full form on the Postings page.
             </p>
@@ -430,7 +464,57 @@ export default function IndustryDashboard() {
       )}
 
       {selectedApplicant && (
-        <CandidateProfileModal application={selectedApplicant} onClose={() => setSelectedApplicant(null)} onUpdated={refresh} />
+        <CandidateProfileModal
+          application={selectedApplicant}
+          onClose={() => setSelectedApplicant(null)}
+          onUpdated={(updated) => {
+            refresh();
+            if (updated) setSelectedApplicant(updated);
+          }}
+        />
+      )}
+
+      {rejectTarget && (
+        <Modal
+          title={`Reject ${rejectTarget.studentName}?`}
+          description="They move to the Rejected column and can be restored at any time."
+          onClose={() => setRejectTarget(null)}
+        >
+          <div className="space-y-4">
+            <Field label="Reason" hint="Optional, but it is shown to the candidate so they know where they stand.">
+              <TextInput
+                value={rejectReason}
+                onChange={(e) => setRejectReason(e.target.value)}
+                placeholder="Looking for stronger backend experience"
+              />
+            </Field>
+            <div className="flex gap-3">
+              <Button type="button" variant="outline" className="flex-1" onClick={() => setRejectTarget(null)}>
+                Cancel
+              </Button>
+              <Button type="button" variant="danger" className="flex-1" onClick={confirmReject}>
+                Reject candidate
+              </Button>
+            </div>
+          </div>
+        </Modal>
+      )}
+
+      {certifyTarget && (
+        <IssueCredentialModal
+          issuer={user}
+          recipients={[
+            {
+              id: certifyTarget.studentId,
+              name: certifyTarget.studentName,
+              email: certifyTarget.studentEmail,
+              subtitle: certifyTarget.studentInstitution,
+            },
+          ]}
+          defaults={{ title: `${certifyTarget.internshipTitle || "Internship"} — Completion`, kind: "Internship" }}
+          onClose={() => setCertifyTarget(null)}
+          onIssued={() => setFlash(`Certificate issued to ${certifyTarget.studentName}.`)}
+        />
       )}
     </DashboardLayout>
   );

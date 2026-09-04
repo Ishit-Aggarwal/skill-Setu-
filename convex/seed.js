@@ -123,7 +123,7 @@ const SEED_SKILL_TESTS = [
   },
   {
     title: "Ayush Pharmacology & Dravyaguna Test",
-    domain: "Ayush Pharmacology & Formulation",
+    domain: "Ayurveda & Panchakarma",
     hostName: "Vanaushadhi Botanicals Pvt. Ltd.",
     mode: "Online",
     duration: "15 mins",
@@ -141,7 +141,7 @@ const SEED_SKILL_TESTS = [
   },
   {
     title: "Clinical Research & GCP Quiz",
-    domain: "Research & Clinical Documentation",
+    domain: "Research & Documentation",
     hostName: "Council for Ayurvedic Sciences Research",
     mode: "Online",
     duration: "15 mins",
@@ -159,7 +159,7 @@ const SEED_SKILL_TESTS = [
   },
   {
     title: "Patient Communication & Counselling Round",
-    domain: "Business & Communication",
+    domain: "Business & Professional Dynamics",
     hostName: "Sanjeevani Wellness Retreats",
     mode: "Offline",
     duration: "60 mins",

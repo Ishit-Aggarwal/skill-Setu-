@@ -12,7 +12,7 @@ import { buildRoster, useInstitutionName } from "./useInstitution";
 const READY_AT = 65;
 
 /**
- * Curriculum alignment for the whole institution: what live Ayush postings are
+ * Curriculum alignment for the whole institution: what live postings are
  * asking for, versus what the institution's own students can currently
  * evidence — either through an assessed skill domain or a portfolio skill.
  * Anything with high demand and low coverage is a curriculum gap.

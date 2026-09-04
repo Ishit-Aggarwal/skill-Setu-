@@ -4,9 +4,8 @@ import { useEffect, useState } from "react";
 import Link from "next/link";
 import { useAuth } from "../lib/auth";
 import { useNav } from "../lib/nav";
-import { listStudentNotifications } from "../lib/store";
-import { subscribeToMutations } from "../lib/sync";
 import EditProfileModal from "./EditProfileModal";
+import NotificationBell from "./NotificationBell";
 import { Avatar, IconTile } from "./ui/Kit";
 
 function Icon({ children }) {
@@ -114,6 +113,7 @@ const NAV = {
     { label: "Placement Drives", short: "Drives", page: "institution-drives", icon: <IconCalendar /> },
     { label: "MOUs & Partners", short: "MOUs", page: "institution-partnerships", icon: <IconHandshake /> },
     { label: "Notice Board", short: "Notices", page: "institution-announcements", icon: <IconMegaphone /> },
+    { label: "Skill Tests", short: "Tests", page: "skill-assessment", icon: <IconTarget /> },
     { label: "Team & Activity", short: "Team", page: "institution-team", icon: <IconUser /> },
     { label: "Institution Profile", short: "Profile", page: "institution-profile", icon: <IconBuilding /> },
   ],
@@ -143,7 +143,6 @@ const ROLE_EMOJI = {
 export default function DashboardLayout({ children, activePage, title }) {
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const [showEditProfile, setShowEditProfile] = useState(false);
-  const [unreadCount, setUnreadCount] = useState(0);
   const { user, logout } = useAuth();
   const navigate = useNav();
 
@@ -156,17 +155,6 @@ export default function DashboardLayout({ children, activePage, title }) {
     document.documentElement.setAttribute("data-role", role);
     return () => document.documentElement.removeAttribute("data-role");
   }, [role]);
-
-  useEffect(() => {
-    if (!user || user.role !== "student") return;
-    const updateUnread = () => {
-      const notifs = listStudentNotifications(user.id);
-      setUnreadCount(notifs.filter((n) => !n.read).length);
-    };
-    updateUnread();
-    const unsub = subscribeToMutations(["studentNotifications"], updateUnread);
-    return unsub;
-  }, [user]);
 
   const navItems = NAV[role] || NAV.student;
   const userName = user?.name || "Guest";
@@ -266,25 +254,7 @@ export default function DashboardLayout({ children, activePage, title }) {
           <div className="flex-1 hidden lg:block min-w-0">{title && <h1 className="text-base font-semibold text-foreground truncate tracking-tight">{title}</h1>}</div>
 
           <div className="ml-auto flex items-center gap-2.5">
-            {role === "student" && (
-              <button
-                onClick={() => navigate("student-dashboard")}
-                className="relative p-2 rounded-xl text-muted-foreground bg-secondary/60 hover:bg-secondary hover:text-foreground transition-colors"
-                title={unreadCount > 0 ? `${unreadCount} unread notification(s)` : "Notifications"}
-                aria-label="Notifications"
-              >
-                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                  <path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9" />
-                  <path d="M13.73 21a2 2 0 0 1-3.46 0" />
-                </svg>
-                {unreadCount > 0 && (
-                  <span className="absolute top-1.5 right-1.5 flex h-2.5 w-2.5">
-                    <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-primary opacity-75"></span>
-                    <span className="relative inline-flex rounded-full h-2.5 w-2.5 bg-primary"></span>
-                  </span>
-                )}
-              </button>
-            )}
+            {role === "student" && <NotificationBell user={user} onOpenInbox={() => navigate("student-dashboard")} />}
             <button onClick={() => setShowEditProfile(true)} aria-label="Edit profile" className="rounded-full hover:ring-2 hover:ring-primary/20 transition-all">
               <Avatar name={userName} size={34} src={user?.avatarDataUrl} />
             </button>

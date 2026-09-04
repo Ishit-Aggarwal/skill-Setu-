@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { findOne, getAssessment, getPortfolio, listRecruiters, updateApplicationRecruiterFields } from "../lib/store";
+import { findOne, getAssessment, getPortfolio, listRecruiters, updateApplicationRecruiterFields, updateApplicationStatus, PIPELINE_STAGES } from "../lib/store";
 import { useAuth } from "../lib/auth";
 import { formatDate } from "../lib/match";
 import { Avatar, Badge, IconTile } from "./ui/Kit";
@@ -29,6 +29,18 @@ export default function CandidateProfileModal({ application, onClose, onUpdated 
   const [interviewAt, setInterviewAt] = useState(application.interviewAt || "");
   const [notes, setNotes] = useState(application.recruiterNotes || "");
   const [saved, setSaved] = useState(false);
+  const [stage, setStage] = useState(application.status || "Applied");
+  const [rejecting, setRejecting] = useState(false);
+  const [rejectReason, setRejectReason] = useState("");
+
+  const stageIndex = PIPELINE_STAGES.indexOf(stage);
+
+  /** Writes the stage change, then hands the updated record back to the caller. */
+  function setStage_(next, extra) {
+    const updated = updateApplicationStatus(application.id, next, extra);
+    setStage(next);
+    onUpdated?.(updated);
+  }
 
   const student = findOne("users", (u) => u.id === application.studentId);
   const assessment = getAssessment(application.studentId);
@@ -39,6 +51,9 @@ export default function CandidateProfileModal({ application, onClose, onUpdated 
     setInterviewMode(application.interviewMode || "");
     setInterviewAt(application.interviewAt || "");
     setNotes(application.recruiterNotes || "");
+    setStage(application.status || "Applied");
+    setRejecting(false);
+    setRejectReason("");
   }, [application.id]);
 
   function save() {
@@ -160,6 +175,81 @@ export default function CandidateProfileModal({ application, onClose, onUpdated 
               <IconTile icon="🔒" size={24} />
               <div className="text-xs font-semibold text-primary uppercase tracking-wider">Recruiter-only</div>
             </div>
+
+            {/* Stage controls live here as well as on the pipeline card, so a
+                recruiter who opens a profile to make the call can act on it
+                without closing the modal first — including saying no. */}
+            <label className="block text-xs font-semibold text-muted-foreground uppercase tracking-wider mb-1.5">Pipeline stage</label>
+            <div className="flex items-center gap-2 mb-2 flex-wrap">
+              <Badge tone={stage === "Rejected" ? "red" : "primary"} dot>{stage}</Badge>
+              {application.rejectionReason && (
+                <span className="text-[11px] text-red-700">Reason: {application.rejectionReason}</span>
+              )}
+            </div>
+
+            {stage === "Rejected" ? (
+              <button
+                onClick={() => setStage_("Applied")}
+                className="w-full py-2 rounded-xl bg-secondary hover:bg-muted text-sm font-medium text-foreground transition-colors mb-4"
+              >
+                Restore to Applied
+              </button>
+            ) : (
+              <div className="flex gap-2 mb-4 flex-wrap">
+                {stageIndex > 0 && (
+                  <button
+                    onClick={() => setStage_(PIPELINE_STAGES[stageIndex - 1])}
+                    className="flex-1 min-w-[7rem] py-2 rounded-xl bg-secondary hover:bg-muted text-sm font-medium text-foreground transition-colors"
+                  >
+                    ← Move back
+                  </button>
+                )}
+                {stageIndex < PIPELINE_STAGES.length - 1 && (
+                  <button
+                    onClick={() => setStage_(PIPELINE_STAGES[stageIndex + 1])}
+                    className="flex-1 min-w-[7rem] py-2 rounded-xl bg-primary hover:bg-accent text-white text-sm font-medium transition-colors"
+                  >
+                    Advance to {PIPELINE_STAGES[stageIndex + 1]}
+                  </button>
+                )}
+                <button
+                  onClick={() => setRejecting(true)}
+                  className="flex-1 min-w-[7rem] py-2 rounded-xl border border-red-200 text-red-600 hover:bg-red-50 text-sm font-medium transition-colors"
+                >
+                  Reject
+                </button>
+              </div>
+            )}
+
+            {rejecting && (
+              <div className="mb-4 rounded-xl border border-red-200 bg-red-50/60 p-3 space-y-2">
+                <label className="block text-xs font-semibold text-red-700 uppercase tracking-wider">Reason (optional)</label>
+                <input
+                  value={rejectReason}
+                  onChange={(e) => setRejectReason(e.target.value)}
+                  placeholder="Shared with the candidate so they know where they stand"
+                  className="w-full bg-card border border-red-200 rounded-xl px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-red-200"
+                />
+                <div className="flex gap-2">
+                  <button
+                    onClick={() => { setRejecting(false); setRejectReason(""); }}
+                    className="flex-1 py-2 rounded-xl bg-card border border-border text-xs font-medium text-muted-foreground hover:bg-secondary transition-colors"
+                  >
+                    Cancel
+                  </button>
+                  <button
+                    onClick={() => {
+                      setStage_("Rejected", rejectReason.trim() ? { rejectionReason: rejectReason.trim() } : undefined);
+                      setRejecting(false);
+                      setRejectReason("");
+                    }}
+                    className="flex-1 py-2 rounded-xl bg-red-600 hover:bg-red-700 text-white text-xs font-medium transition-colors"
+                  >
+                    Confirm rejection
+                  </button>
+                </div>
+              </div>
+            )}
 
             <label className="block text-xs font-semibold text-muted-foreground uppercase tracking-wider mb-1.5">Interview Mode</label>
             <div className="flex gap-2 mb-4">

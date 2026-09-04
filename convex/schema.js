@@ -49,6 +49,20 @@ export default defineSchema({
     emailVerified: v.optional(v.boolean()),
     verifiedAt: v.optional(v.string()),
     createdAt: v.optional(v.string()),
+    // Extended profile fields, editable from the profile modal.
+    headline: v.optional(v.string()),
+    location: v.optional(v.string()),
+    city: v.optional(v.string()),
+    state: v.optional(v.string()),
+    cgpa: v.optional(v.string()),
+    graduationYear: v.optional(v.string()),
+    github: v.optional(v.string()),
+    website: v.optional(v.string()),
+    // Password recovery. The nonce is single-use: resetting clears it, so a
+    // reset link cannot be replayed after the password has changed.
+    resetNonce: v.optional(v.union(v.string(), v.null())),
+    resetRequestedAt: v.optional(v.union(v.string(), v.null())),
+    resetExpiresAt: v.optional(v.union(v.number(), v.null())),
   })
     .index("by_email", ["email"])
     .index("by_role", ["role"]),
@@ -207,8 +221,14 @@ export default defineSchema({
   portfolios: defineTable({
     studentId: v.string(),
     bio: v.optional(v.string()),
+    headline: v.optional(v.string()),
+    location: v.optional(v.string()),
+    links: v.optional(v.any()),
     skillBadges: v.optional(v.any()),
     certifications: v.optional(v.array(v.any())),
+    projects: v.optional(v.array(v.any())),
+    education: v.optional(v.array(v.any())),
+    achievements: v.optional(v.array(v.any())),
     timeline: v.optional(v.array(v.any())),
     documents: v.optional(v.array(v.any())),
   }).index("by_student", ["studentId"]),
@@ -507,4 +527,36 @@ export default defineSchema({
     filters: v.any(),
     savedAt: v.string(),
   }).index("by_owner", ["ownerId"]),
+
+  // Certificates a company / institution / faculty member issues to a student.
+  // Only the issuer writes these; the student's own portfolio certifications
+  // are a separate, self-declared list.
+  credentials: defineTable({
+    id: v.optional(v.string()),
+    studentId: v.string(),
+    studentName: v.string(),
+    studentEmail: v.optional(v.string()),
+    title: v.string(),
+    issuer: v.string(),
+    issuerId: v.optional(v.string()),
+    issuerRole: v.optional(v.string()),
+    kind: v.string(),
+    testId: v.optional(v.union(v.string(), v.null())),
+    score: v.optional(v.union(v.string(), v.null())),
+    grade: v.optional(v.union(v.string(), v.null())),
+    remarks: v.optional(v.string()),
+    certificateNo: v.string(),
+    verifyCode: v.optional(v.string()),
+    issuedAt: v.string(),
+    revokedAt: v.optional(v.union(v.string(), v.null())),
+  })
+    .index("by_student", ["studentId"])
+    .index("by_issuer", ["issuerId"]),
+
+  savedInternships: defineTable({
+    id: v.optional(v.string()),
+    studentId: v.string(),
+    internshipId: v.string(),
+    savedAt: v.string(),
+  }).index("by_student", ["studentId"]),
 });

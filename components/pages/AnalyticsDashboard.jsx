@@ -144,7 +144,7 @@ export default function AnalyticsDashboard({ activePage = "analytics", title = "
       .slice(0, 7);
   }, [assessments]);
 
-  // Demand (applications) vs. supply (postings) per Ayush sector — surfaces
+  // Demand (applications) vs. supply (postings) per sector — surfaces
   // where competition is fiercest rather than just how postings are spread.
   const domainComparison = useMemo(() => {
     const postingCounts = {};

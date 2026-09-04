@@ -6,7 +6,10 @@ import { getProgram, getProgramRegistration } from "../../../../../lib/store";
 import { formatDate } from "../../../../../lib/match";
 
 export default function CertificatePage({ params }) {
-  const unwrappedParams = use(params);
+  // Next 14 hands a client page a plain params object; Next 15 hands it a
+  // promise. Calling use() on the plain object throws "unsupported type", so
+  // only unwrap when it actually is thenable.
+  const unwrappedParams = typeof params?.then === "function" ? use(params) : params;
   const registrationId = unwrappedParams.registrationId;
   const [ready, setReady] = useState(false);
 

@@ -7,6 +7,8 @@ import MyTests from "../skilltests/MyTests";
 import { useAuth } from "../../lib/auth";
 import { SKILL_DOMAINS } from "../../lib/questionBank";
 import {
+  all,
+  findOne,
   listSkillTests,
   listSkillTestsByOwner,
   createSkillTest,
@@ -14,10 +16,13 @@ import {
   startSkillTest,
   listRegistrationsForStudent,
   getAttemptsForStudent,
+  getAttemptForTest,
   getRegistration,
+  hasCredentialForTest,
   checkAndRecordMissedTests,
 } from "../../lib/store";
-import { Badge, Button, Card, EmptyState, Field, Modal, PageHeader, Select, Tabs, TextArea, TextInput } from "../ui/Kit";
+import IssueCredentialModal from "../IssueCredentialModal";
+import { Badge, Button, Card, EmptyState, Field, Flash, Modal, PageHeader, Select, Tabs, TextArea, TextInput, useFlash } from "../ui/Kit";
 
 function StudentView({ user }) {
   const [tab, setTab] = useState("browse");
@@ -97,9 +102,44 @@ function HostView({ user }) {
   const [formError, setFormError] = useState(null);
   const [linkDrafts, setLinkDrafts] = useState({});
   const [linkErrors, setLinkErrors] = useState({});
+  const [certifyTest, setCertifyTest] = useState(null);
+  const [registrations, setRegistrations] = useState([]);
+  const [flash, setFlash] = useFlash();
 
   function refresh() {
     setTests(listSkillTestsByOwner(user.id));
+    setRegistrations(all("skillTestRegistrations"));
+  }
+
+  /**
+   * Registrants for one test, joined to their attempt and to any certificate
+   * they already hold, so the issuer can see the whole cohort — including who
+   * is already covered — rather than a filtered subset.
+   */
+  function recipientsFor(testId) {
+    return registrations
+      .filter((r) => r.testId === testId)
+      .map((r) => {
+        const student = findOne("users", (u) => u.id === r.userId);
+        const attempt = getAttemptForTest(r.userId, testId);
+        return {
+          id: r.userId,
+          name: student?.name || r.name || "Student",
+          email: student?.email || r.email || "",
+          subtitle: student?.institution || "",
+          score: attempt && !attempt.missed ? attempt.score : null,
+          alreadyIssued: hasCredentialForTest(r.userId, testId),
+        };
+      });
+  }
+
+  function registrantStats(testId) {
+    const rows = recipientsFor(testId);
+    return {
+      total: rows.length,
+      completed: rows.filter((r) => r.score != null).length,
+      certified: rows.filter((r) => r.alreadyIssued).length,
+    };
   }
 
   useEffect(() => { refresh(); }, [user]);
@@ -203,17 +243,58 @@ function HostView({ user }) {
                 </div>
               )}
 
-              <button
-                onClick={() => handleStart(test.id)}
-                disabled={test.status === "In Progress"}
-                className="mt-auto w-full text-xs font-medium py-2 rounded-xl bg-primary/10 text-primary hover:bg-primary hover:text-white disabled:opacity-50 disabled:hover:bg-primary/10 disabled:hover:text-primary transition-all duration-150"
-              >
-                {test.status === "In Progress" ? "Test Started" : "Start Test"}
-              </button>
+              {(() => {
+                const stats = registrantStats(test.id);
+                return (
+                  <div className="text-[11px] text-muted-foreground mb-3">
+                    {stats.total} registered · {stats.completed} completed · {stats.certified} certified
+                  </div>
+                );
+              })()}
+
+              <div className="mt-auto space-y-2">
+                <button
+                  onClick={() => handleStart(test.id)}
+                  disabled={test.status === "In Progress"}
+                  className="w-full text-xs font-medium py-2 rounded-xl bg-primary/10 text-primary hover:bg-primary hover:text-white disabled:opacity-50 disabled:hover:bg-primary/10 disabled:hover:text-primary transition-all duration-150"
+                >
+                  {test.status === "In Progress" ? "Test Started" : "Start Test"}
+                </button>
+                {/* Certificates were only ever awarded automatically to students
+                    who scored 50+, and only as a text line in their portfolio.
+                    A host can now issue the real, verifiable article. */}
+                <button
+                  onClick={() => setCertifyTest(test)}
+                  disabled={registrantStats(test.id).total === 0}
+                  className="w-full text-xs font-medium py-2 rounded-xl border border-border text-muted-foreground hover:border-primary/40 hover:text-primary disabled:opacity-40 disabled:cursor-not-allowed transition-all duration-150"
+                >
+                  🏅 Issue certificates
+                </button>
+              </div>
             </Card>
           ))}
         </div>
       )}
+
+      {certifyTest && (
+        <IssueCredentialModal
+          issuer={user}
+          recipients={recipientsFor(certifyTest.id)}
+          defaults={{
+            title: certifyTest.certification || certifyTest.title,
+            kind: "Skill Test",
+            testId: certifyTest.id,
+          }}
+          onClose={() => setCertifyTest(null)}
+          onIssued={(count) => {
+            setCertifyTest(null);
+            refresh();
+            setFlash(`Issued ${count} certificate${count === 1 ? "" : "s"}. Recipients have been notified.`);
+          }}
+        />
+      )}
+
+      <Flash message={flash} />
 
       {showModal && (
         <Modal title="Host a Skill Test" onClose={() => { setShowModal(false); setFormError(null); }} size="lg">
@@ -311,7 +392,7 @@ function HostView({ user }) {
 
 export default function SkillAssessment() {
   const { user } = useAuth();
-  const isHost = user.role === "industry" || user.role === "academician";
+  const isHost = user.role !== "student";
 
   return (
     <DashboardLayout activePage="skill-assessment" title="Skill Tests">

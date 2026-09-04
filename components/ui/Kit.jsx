@@ -328,7 +328,25 @@ export function ProgressBar({ value, max = 100, tone }) {
   );
 }
 
-export function DataTable({ columns, rows, rowKey, empty = "Nothing here yet.", onRowClick, className = "" }) {
+/**
+ * `pageSize` is opt-in and defaults to off, so every existing caller keeps
+ * rendering the full list. Turn it on for tables that can realistically reach
+ * a few hundred rows (rosters, talent pool) — the DOM cost of a 500-row table
+ * is what makes those pages feel slow, not the data.
+ */
+export function DataTable({ columns, rows, rowKey, empty = "Nothing here yet.", onRowClick, className = "", pageSize = null }) {
+  const [page, setPage] = useState(0);
+
+  const totalPages = pageSize ? Math.max(1, Math.ceil(rows.length / pageSize)) : 1;
+  // Filtering can shrink the list under the current page — clamp rather than
+  // rendering an empty table the user has to page back out of.
+  const safePage = Math.min(page, totalPages - 1);
+  useEffect(() => {
+    if (page !== safePage) setPage(safePage);
+  }, [page, safePage]);
+
+  const visible = pageSize ? rows.slice(safePage * pageSize, safePage * pageSize + pageSize) : rows;
+
   if (!rows.length) {
     return <EmptyState icon="📭" title={empty} />;
   }
@@ -346,7 +364,7 @@ export function DataTable({ columns, rows, rowKey, empty = "Nothing here yet.", 
             </tr>
           </thead>
           <tbody>
-            {rows.map((row, i) => (
+            {visible.map((row, i) => (
               <tr
                 key={rowKey ? rowKey(row) : i}
                 onClick={onRowClick ? () => onRowClick(row) : undefined}
@@ -362,6 +380,33 @@ export function DataTable({ columns, rows, rowKey, empty = "Nothing here yet.", 
           </tbody>
         </table>
       </div>
+
+      {pageSize && rows.length > pageSize && (
+        <div className="flex items-center justify-between gap-3 px-4 py-3 border-t border-border bg-secondary/30">
+          <span className="text-xs text-muted-foreground">
+            Showing {safePage * pageSize + 1}–{Math.min((safePage + 1) * pageSize, rows.length)} of {rows.length}
+          </span>
+          <div className="flex items-center gap-2">
+            <button
+              onClick={() => setPage((p) => Math.max(0, p - 1))}
+              disabled={safePage === 0}
+              className="text-xs font-medium px-3 py-1.5 rounded-lg border border-border text-muted-foreground hover:text-foreground hover:bg-secondary disabled:opacity-40 disabled:cursor-not-allowed transition-colors"
+            >
+              ← Previous
+            </button>
+            <span className="text-xs text-muted-foreground">
+              {safePage + 1} / {totalPages}
+            </span>
+            <button
+              onClick={() => setPage((p) => Math.min(totalPages - 1, p + 1))}
+              disabled={safePage >= totalPages - 1}
+              className="text-xs font-medium px-3 py-1.5 rounded-lg border border-border text-muted-foreground hover:text-foreground hover:bg-secondary disabled:opacity-40 disabled:cursor-not-allowed transition-colors"
+            >
+              Next →
+            </button>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

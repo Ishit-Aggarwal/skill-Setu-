@@ -461,7 +461,7 @@ function ProgramForm({ program, onCancel, onSubmit }) {
   const set = (k, v) => setForm((f) => ({ ...f, [k]: v }));
   return (
     <form onSubmit={(e) => { e.preventDefault(); onSubmit({ ...form, seats: Number(form.seats) || 30 }); }} className="space-y-4">
-      <Field label="Programme title"><TextInput required value={form.title} onChange={(e) => set("title", e.target.value)} placeholder="Advances in Panchakarma Standardisation" /></Field>
+      <Field label="Programme title"><TextInput required value={form.title} onChange={(e) => set("title", e.target.value)} placeholder="e.g. Applied Machine Learning for Educators" /></Field>
       <Field label="Dates"><TextInput value={form.dates} onChange={(e) => set("dates", e.target.value)} placeholder="Dec 8–12, 2026" /></Field>
       <div className="grid grid-cols-2 gap-3">
         <Field label="Seats"><TextInput type="number" min="1" value={form.seats} onChange={(e) => set("seats", e.target.value)} /></Field>

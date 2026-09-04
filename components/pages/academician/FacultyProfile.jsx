@@ -178,7 +178,7 @@ export default function FacultyProfile() {
                   value={subjectDraft}
                   onChange={(e) => setSubjectDraft(e.target.value)}
                   onKeyDown={(e) => { if (e.key === "Enter") { e.preventDefault(); addSubject(); } }}
-                  placeholder="Dravyaguna Vigyan"
+                  placeholder="e.g. Data Structures, Operations Management, Dravyaguna Vigyan"
                 />
                 <Button type="button" variant="outline" onClick={addSubject}>Add</Button>
               </div>

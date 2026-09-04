@@ -5,7 +5,7 @@ import SkillAssessment from "../../components/pages/SkillAssessment";
 
 export default function Page() {
   return (
-    <RequireAuth roles={["student", "industry", "academician"]}>
+    <RequireAuth roles={["student", "industry", "academician", "institution"]}>
       <SkillAssessment />
     </RequireAuth>
   );

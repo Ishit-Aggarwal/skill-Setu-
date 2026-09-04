@@ -41,7 +41,7 @@ function isValidEmail(email) {
 function LoginPageInner() {
   const router = useRouter();
   const params = useSearchParams();
-  const { user, loading: authLoading, login, sendSignupOtp, completeSignup } = useAuth();
+  const { user, loading: authLoading, login, sendSignupOtp, completeSignup, requestPasswordReset } = useAuth();
 
   const [role, setRole] = useState(params.get("role") || "student");
   const [mode, setMode] = useState(params.get("mode") === "signup" ? "signup" : "login");
@@ -51,6 +51,7 @@ function LoginPageInner() {
 
   const [loginEmail, setLoginEmail] = useState("");
   const [loginPassword, setLoginPassword] = useState("");
+  const [resetSent, setResetSent] = useState(null);
 
   const [form, setForm] = useState({
     name: "",
@@ -104,6 +105,21 @@ function LoginPageInner() {
     if (key === "teacherCode") setCodeValidation(validateTeacherCode(value));
     if (key === "companyCode") setCodeValidation(validateCompanyCode(value));
     if (key === "instituteCode") setCodeValidation(validateInstituteCode(value));
+  }
+
+  async function handleForgotSubmit(e) {
+    e.preventDefault();
+    setError(null);
+    if (!isValidEmail(loginEmail)) return setError("Enter the email address you registered with.");
+    setLoading(true);
+    try {
+      const outcome = await requestPasswordReset(loginEmail);
+      setResetSent(outcome);
+    } catch (err) {
+      setError(err.message);
+    } finally {
+      setLoading(false);
+    }
   }
 
   async function handleLoginSubmit(e) {
@@ -262,10 +278,18 @@ function LoginPageInner() {
           </button>
 
           <div className="flex items-center justify-between mb-2">
-            <h1 className="text-2xl font-semibold text-foreground">{mode === "login" ? "Welcome back" : step === "otp" ? "Verify your email" : "Create account"}</h1>
+            <h1 className="text-2xl font-semibold text-foreground">
+              {step === "forgot" ? "Reset your password" : mode === "login" ? "Welcome back" : step === "otp" ? "Verify your email" : "Create account"}
+            </h1>
           </div>
           <p className="text-muted-foreground text-sm mb-7">
-            {mode === "login" ? "Sign in to access your dashboard." : step === "otp" ? `Enter the 6-digit code sent to ${form.email}` : "Join the cross-industry skill & placement network."}
+            {step === "forgot"
+              ? "We'll email you a single-use link to set a new one."
+              : mode === "login"
+              ? "Sign in to access your dashboard."
+              : step === "otp"
+              ? `Enter the 6-digit code sent to ${form.email}`
+              : "Join the cross-industry skill & placement network."}
           </p>
 
           {step === "form" && (
@@ -294,7 +318,7 @@ function LoginPageInner() {
             </div>
           )}
 
-          {mode === "login" && (
+          {mode === "login" && step === "form" && (
             <form onSubmit={handleLoginSubmit} className="space-y-4">
               <div>
                 <label className="block text-sm font-medium text-foreground mb-1.5">Email Address</label>
@@ -302,7 +326,16 @@ function LoginPageInner() {
                   className="w-full bg-card border border-border rounded-xl px-4 py-3 text-sm text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-primary/30 focus:border-primary transition-all" />
               </div>
               <div>
-                <label className="block text-sm font-medium text-foreground mb-1.5">Password</label>
+                <div className="flex items-center justify-between mb-1.5">
+                  <label className="block text-sm font-medium text-foreground">Password</label>
+                  <button
+                    type="button"
+                    onClick={() => { setStep("forgot"); setError(null); setResetSent(null); }}
+                    className="text-xs text-primary font-medium hover:underline"
+                  >
+                    Forgot password?
+                  </button>
+                </div>
                 <input type="password" value={loginPassword} onChange={(e) => setLoginPassword(e.target.value)} placeholder="••••••••" required
                   className="w-full bg-card border border-border rounded-xl px-4 py-3 text-sm text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-primary/30 focus:border-primary transition-all" />
               </div>
@@ -311,6 +344,59 @@ function LoginPageInner() {
                 {loading ? <span className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin" /> : "Sign In"}
               </button>
             </form>
+          )}
+
+          {step === "forgot" && (
+            <div className="space-y-4">
+              {resetSent ? (
+                <>
+                  <div className="rounded-xl border border-green-200 bg-green-50 px-4 py-3 text-xs text-green-800 leading-relaxed">
+                    If an account exists for <span className="font-semibold">{loginEmail}</span>, a reset link is on its way.
+                    The link works once and expires in 30 minutes.
+                  </div>
+                  {resetSent.devLink && (
+                    <div className="rounded-xl border border-amber-200 bg-amber-50 px-4 py-3 text-xs text-amber-800 space-y-2">
+                      <p className="font-semibold">Email delivery isn&apos;t configured on this server.</p>
+                      <p>Use the link below to continue — this shortcut only appears in development mode.</p>
+                      <a href={resetSent.devLink} className="block font-medium text-primary hover:underline break-all">
+                        Open the reset link →
+                      </a>
+                    </div>
+                  )}
+                </>
+              ) : (
+                <form onSubmit={handleForgotSubmit} className="space-y-4">
+                  <p className="text-sm text-muted-foreground leading-relaxed">
+                    Enter the email address you registered with and we&apos;ll send you a link to choose a new password.
+                  </p>
+                  <div>
+                    <label className="block text-sm font-medium text-foreground mb-1.5">Registered email</label>
+                    <input
+                      type="email"
+                      value={loginEmail}
+                      onChange={(e) => setLoginEmail(e.target.value)}
+                      placeholder="you@example.com"
+                      required
+                      className="w-full bg-card border border-border rounded-xl px-4 py-3 text-sm text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-primary/30 focus:border-primary transition-all"
+                    />
+                  </div>
+                  <button
+                    type="submit"
+                    disabled={loading}
+                    className="w-full bg-primary hover:bg-accent disabled:opacity-60 text-white py-3.5 rounded-xl font-medium text-sm transition-all duration-150 hover:shadow-md flex items-center justify-center gap-2"
+                  >
+                    {loading ? <span className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin" /> : "Send reset link"}
+                  </button>
+                </form>
+              )}
+              <button
+                type="button"
+                onClick={() => { setStep("form"); setError(null); setResetSent(null); }}
+                className="w-full text-center text-xs text-muted-foreground hover:text-foreground transition-colors"
+              >
+                ← Back to sign in
+              </button>
+            </div>
           )}
 
           {mode === "signup" && step === "form" && (
@@ -344,7 +430,7 @@ function LoginPageInner() {
                   <div className="grid grid-cols-2 gap-3">
                     <div>
                       <label className="block text-sm font-medium text-foreground mb-1.5">Course <span className="text-muted-foreground font-normal">(optional)</span></label>
-                      <input type="text" value={form.course} onChange={(e) => setField("course", e.target.value)} placeholder="BAMS / B.Tech CSE"
+                      <input type="text" value={form.course} onChange={(e) => setField("course", e.target.value)} placeholder="B.Tech CSE / MBA / BAMS"
                         className="w-full bg-card border border-border rounded-xl px-4 py-3 text-sm text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-primary/30 focus:border-primary transition-all" />
                     </div>
                     <div>

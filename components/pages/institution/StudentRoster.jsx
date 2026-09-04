@@ -3,6 +3,7 @@
 import { useEffect, useMemo, useState } from "react";
 import DashboardLayout from "../../DashboardLayout";
 import StudentProfileModal from "../../StudentProfileModal";
+import IssueCredentialModal from "../../IssueCredentialModal";
 import { useAuth } from "../../../lib/auth";
 import {
   Avatar,
@@ -64,6 +65,7 @@ export default function StudentRoster() {
   const [showImport, setShowImport] = useState(false);
   const [showNotify, setShowNotify] = useState(false);
   const [showTag, setShowTag] = useState(false);
+  const [showCertify, setShowCertify] = useState(false);
 
   useEffect(() => setReady(true), []);
 
@@ -280,6 +282,9 @@ export default function StudentRoster() {
             <Button variant="outline" size="sm" disabled={!selected.size} onClick={() => setShowTag(true)}>
               Tag for a drive
             </Button>
+            <Button variant="outline" size="sm" disabled={!selected.size} onClick={() => setShowCertify(true)}>
+              🏅 Issue certificate
+            </Button>
             {selected.size > 0 && (
               <button onClick={() => setSelected(new Set())} className="text-xs text-muted-foreground hover:text-foreground">
                 Clear selection
@@ -292,6 +297,7 @@ export default function StudentRoster() {
           columns={columns}
           rows={filtered}
           rowKey={(r) => r.id}
+          pageSize={25}
           empty={roster.length ? "No students match these filters." : "No students registered under this institution yet — add or import them to get started."}
         />
       </div>
@@ -352,6 +358,27 @@ export default function StudentRoster() {
         />
       )}
 
+      {showCertify && (
+        <IssueCredentialModal
+          issuer={user}
+          recipients={selectedRows.map((r) => ({
+            id: r.id,
+            name: r.name,
+            email: r.email,
+            subtitle: [r.department, r.batch].filter(Boolean).join(" · "),
+          }))}
+          defaults={{ kind: "Training" }}
+          onClose={() => setShowCertify(false)}
+          onIssued={(count) => {
+            setShowCertify(false);
+            setSelected(new Set());
+            setVersion((v) => v + 1);
+            logActivity(instituteName, user?.name, "Issued certificates", `${count} student${count === 1 ? "" : "s"}`);
+            setFlash(`Issued ${count} certificate${count === 1 ? "" : "s"}. Students have been notified.`);
+          }}
+        />
+      )}
+
       {viewingStudent && (
         <StudentProfileModal
           student={viewingStudent}
@@ -382,14 +409,14 @@ function AddStudentModal({ instituteName, actor, onClose, onDone }) {
         <div className="grid sm:grid-cols-2 gap-3">
           <Field label="Full name"><TextInput required value={form.name} onChange={(e) => set("name", e.target.value)} placeholder="Aarav Sharma" /></Field>
           <Field label="Email"><TextInput required type="email" value={form.email} onChange={(e) => set("email", e.target.value)} placeholder="aarav@college.edu.in" /></Field>
-          <Field label="Roll number"><TextInput value={form.rollNo} onChange={(e) => set("rollNo", e.target.value)} placeholder="BAMS/2024/017" /></Field>
+          <Field label="Roll number"><TextInput value={form.rollNo} onChange={(e) => set("rollNo", e.target.value)} placeholder="CSE/2024/017" /></Field>
           <Field label="Phone"><TextInput value={form.phone} onChange={(e) => set("phone", e.target.value)} placeholder="+91 98765 43210" /></Field>
           <Field label="Department">
             <Select value={form.department} onChange={(e) => set("department", e.target.value)}>
               {DEPARTMENTS.map((d) => <option key={d}>{d}</option>)}
             </Select>
           </Field>
-          <Field label="Course"><TextInput value={form.course} onChange={(e) => set("course", e.target.value)} placeholder="BAMS" /></Field>
+          <Field label="Course"><TextInput value={form.course} onChange={(e) => set("course", e.target.value)} placeholder="B.Tech CSE" /></Field>
           <Field label="Batch (year of entry)"><TextInput value={form.batch} onChange={(e) => set("batch", e.target.value)} placeholder="2024" /></Field>
           <Field label="Current year">
             <Select value={form.year} onChange={(e) => set("year", e.target.value)}>

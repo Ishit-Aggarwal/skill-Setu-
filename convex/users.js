@@ -162,3 +162,76 @@ export const updateProfile = mutation({
     return publicUser(await ctx.db.get(user._id));
   },
 });
+
+/**
+ * Step 1 of password recovery: mint a single-use nonce on the account.
+ *
+ * It is stored on the user document rather than being a purely stateless
+ * signed token, because resetting the password must invalidate any link that
+ * was issued earlier — a stateless token cannot be revoked.
+ */
+export const issuePasswordReset = mutation({
+  args: { email: v.string(), ttlMinutes: v.optional(v.number()) },
+  handler: async (ctx, args) => {
+    const email = args.email.trim().toLowerCase();
+    const user = await ctx.db
+      .query("users")
+      .withIndex("by_email", (q) => q.eq("email", email))
+      .first();
+
+    if (!user) return { ok: false, reason: "NOT_FOUND" };
+
+    const nonce = `${Date.now().toString(36)}${Math.random().toString(36).slice(2, 12)}`;
+    const now = new Date();
+    await ctx.db.patch(user._id, {
+      resetNonce: nonce,
+      resetRequestedAt: now.toISOString(),
+      resetExpiresAt: now.getTime() + (args.ttlMinutes || 30) * 60 * 1000,
+    });
+
+    return { ok: true, nonce, name: user.name || null };
+  },
+});
+
+/** Step 2: swap the password hash, then burn the nonce so the link is single-use. */
+export const resetPassword = mutation({
+  args: { email: v.string(), nonce: v.string(), passwordHash: v.string() },
+  handler: async (ctx, args) => {
+    const email = args.email.trim().toLowerCase();
+    const user = await ctx.db
+      .query("users")
+      .withIndex("by_email", (q) => q.eq("email", email))
+      .first();
+
+    if (!user) return { ok: false, reason: "NOT_FOUND" };
+    if (!user.resetNonce || user.resetNonce !== args.nonce) return { ok: false, reason: "BAD_TOKEN" };
+    if (!user.resetExpiresAt || Date.now() > user.resetExpiresAt) return { ok: false, reason: "EXPIRED" };
+
+    await ctx.db.patch(user._id, {
+      passwordHash: args.passwordHash,
+      resetNonce: null,
+      resetRequestedAt: null,
+      resetExpiresAt: null,
+      // Completing a reset proves control of the mailbox, so an account that
+      // somehow never finished verification is verified by this too.
+      emailVerified: true,
+    });
+
+    return { ok: true, user: publicUser(await ctx.db.get(user._id)) };
+  },
+});
+
+/** Account deletion, issued from the profile modal's danger zone. */
+export const deleteUser = mutation({
+  args: { id: v.string() },
+  handler: async (ctx, args) => {
+    const user = await ctx.db
+      .query("users")
+      .filter((q) => q.eq(q.field("id"), args.id))
+      .first();
+
+    if (!user) return { ok: false, reason: "NOT_FOUND" };
+    await ctx.db.delete(user._id);
+    return { ok: true };
+  },
+});
