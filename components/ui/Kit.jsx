@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { forwardRef, useEffect, useState } from "react";
 
 /* Small shared primitives so the role dashboards stay consistent and the
    page files stay about their own logic rather than repeating markup.
@@ -25,21 +25,25 @@ export function PageHeader({ eyebrow, title, subtitle, actions }) {
   );
 }
 
-export function Card({ children, className = "", padded = true, hover = false }) {
+/** `as` lets a card become the interactive element itself (a button, a link)
+    instead of wrapping one, so a whole clickable card stays a single tab stop. */
+export function Card({ children, className = "", padded = true, hover = false, as: Tag = "div", ...rest }) {
   return (
-    <div
+    <Tag
       className={`bg-card border border-border rounded-2xl shadow-[0_1px_2px_rgba(25,25,26,0.04)] transition-all duration-200 ${
         hover ? "hover:shadow-[0_6px_20px_rgba(25,25,26,0.07)] hover:-translate-y-0.5" : ""
       } ${padded ? "p-5" : ""} ${className}`}
+      {...rest}
     >
       {children}
-    </div>
+    </Tag>
   );
 }
 
-export function Section({ title, description, actions, children, className = "" }) {
+/** Forwards a ref so a caller can scroll a section into view. */
+export const Section = forwardRef(function Section({ title, description, actions, children, className = "" }, ref) {
   return (
-    <section className={className}>
+    <section ref={ref} className={className}>
       {(title || actions) && (
         <div className="flex flex-wrap items-start justify-between gap-2 mb-3.5">
           <div className="min-w-0">
@@ -52,7 +56,7 @@ export function Section({ title, description, actions, children, className = "" 
       {children}
     </section>
   );
-}
+});
 
 /* Cycled icon-tile colors for stat tiles that don't specify their own tone —
    purely decorative variety, the semantic accent (role primary) still wins

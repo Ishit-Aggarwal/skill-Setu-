@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import DashboardLayout from "../DashboardLayout";
 import CandidateProfileModal from "../CandidateProfileModal";
 import IssueCredentialModal from "../IssueCredentialModal";
@@ -22,6 +22,9 @@ import { daysUntil, formatDate } from "../../lib/match";
 import { subscribeToMutations } from "../../lib/sync";
 
 const statusCols = [...PIPELINE_STAGES, "Rejected"];
+
+/** Comparison stays readable up to five candidates; past that the columns crush. */
+const COMPARE_LIMIT = 5;
 
 const statusStyle = {
   Applied: "bg-secondary/70",
@@ -127,8 +130,32 @@ export default function IndustryDashboard() {
     [applications, postingFilter]
   );
 
+  const pipelineRef = useRef(null);
+
+  /** Scope the board to one posting and bring it into view. Clicking the
+      already-selected card clears the scope, so the card is a toggle and
+      never leaves the board filtered with no obvious way back. */
+  function focusPosting(postingId) {
+    setPostingFilter((current) => (current === postingId ? "All" : postingId));
+    if (typeof window !== "undefined") {
+      window.requestAnimationFrame(() => pipelineRef.current?.scrollIntoView({ behavior: "smooth", block: "start" }));
+    }
+  }
+
+  /* Candidates currently in the comparison, in the order the board shows them
+     rather than the order they were ticked, and dropped automatically if a
+     selected application disappears from the scoped board. */
+  const compared = useMemo(
+    () => applications.filter((a) => compareIds.includes(a.id)),
+    [applications, compareIds]
+  );
+
+  useEffect(() => {
+    if (showCompare && compared.length < 2) setShowCompare(false);
+  }, [showCompare, compared.length]);
+
   function toggleCompare(id) {
-    setCompareIds((prev) => (prev.includes(id) ? prev.filter((x) => x !== id) : prev.length < 4 ? [...prev, id] : prev));
+    setCompareIds((prev) => (prev.includes(id) ? prev.filter((x) => x !== id) : prev.length < COMPARE_LIMIT ? [...prev, id] : prev));
   }
 
   function moveApplicant(id, newStatus, extra) {
@@ -218,8 +245,21 @@ export default function IndustryDashboard() {
               {postings.slice(0, 3).map((job) => {
                 const apps = applications.filter((a) => a.internshipId === job.id).length;
                 const days = daysUntil(job.deadline);
+                const active = postingFilter === job.id;
                 return (
-                  <Card key={job.id} hover>
+                  <Card
+                    key={job.id}
+                    hover
+                    /* The card is the control that scopes the pipeline below.
+                       It writes the same postingFilter the dropdown reads, so
+                       the two can never describe different postings. */
+                    as="button"
+                    onClick={() => focusPosting(job.id)}
+                    aria-pressed={active}
+                    className={`w-full text-left focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary ${
+                      active ? "border-primary ring-1 ring-primary/40" : ""
+                    }`}
+                  >
                     <div className="flex items-start justify-between mb-3 gap-2">
                       <div className="flex items-start gap-3 min-w-0">
                         <IconTile icon="💼" size={36} />
@@ -235,8 +275,13 @@ export default function IndustryDashboard() {
                       <span>{apps} applicant{apps === 1 ? "" : "s"}</span>
                       <span>👁 {job.views || 0}</span>
                     </div>
-                    <div className="text-[10px] text-muted-foreground">
-                      Due {formatDate(job.deadline)}{job.recruiterName ? ` · ${job.recruiterName}` : ""}
+                    <div className="flex items-center justify-between gap-2">
+                      <span className="text-[10px] text-muted-foreground truncate">
+                        Due {formatDate(job.deadline)}{job.recruiterName ? ` · ${job.recruiterName}` : ""}
+                      </span>
+                      <span className={`text-[10px] font-medium flex-shrink-0 ${active ? "text-primary" : "text-muted-foreground"}`}>
+                        {active ? "✓ Showing below" : "View pipeline →"}
+                      </span>
                     </div>
                   </Card>
                 );
@@ -246,7 +291,8 @@ export default function IndustryDashboard() {
         </Section>
 
         <Section
-          title="Applicant pipeline"
+          ref={pipelineRef}
+          title={postingFilter === "All" ? "Applicant pipeline" : `Applicant pipeline · ${postings.find((p) => p.id === postingFilter)?.title || "Selected posting"}`}
           description={bulkMode ? "Select candidates, then accept, shortlist or reject them together." : "Drag candidates through the stages, or switch on bulk review for high-volume postings."}
           actions={
             <div className="flex flex-wrap items-center gap-2">
@@ -295,8 +341,10 @@ export default function IndustryDashboard() {
                               type="checkbox"
                               checked={compareIds.includes(applicant.id)}
                               onChange={() => toggleCompare(applicant.id)}
-                              className="w-3.5 h-3.5 flex-shrink-0 accent-primary"
+                              disabled={!compareIds.includes(applicant.id) && compareIds.length >= COMPARE_LIMIT}
+                              className="w-3.5 h-3.5 flex-shrink-0 accent-primary disabled:opacity-40 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary"
                               aria-label={`Select ${applicant.studentName} to compare`}
+                              title={!compareIds.includes(applicant.id) && compareIds.length >= COMPARE_LIMIT ? `Compare up to ${COMPARE_LIMIT} candidates at a time` : undefined}
                             />
                             <div className="w-7 h-7 rounded-full flex-shrink-0 flex items-center justify-center text-white text-[10px] font-bold" style={{ backgroundColor: colorFor(applicant.studentName) }}>
                               {initials(applicant.studentName)}
@@ -391,47 +439,15 @@ export default function IndustryDashboard() {
 
       {!bulkMode && compareIds.length >= 2 && (
         <div className="fixed bottom-6 left-1/2 -translate-x-1/2 z-40 bg-card border border-border shadow-xl rounded-2xl px-5 py-3 flex items-center gap-4 animate-fade-slide">
-          <span className="text-sm text-foreground font-medium">{compareIds.length} candidates selected</span>
+          <span className="text-sm text-foreground font-medium">
+            {compareIds.length} of {COMPARE_LIMIT} candidates selected
+          </span>
           <Button size="sm" onClick={() => setShowCompare(true)}>Compare</Button>
           <button onClick={() => setCompareIds([])} className="text-xs text-muted-foreground hover:text-foreground">Clear</button>
         </div>
       )}
 
-      {showCompare && (
-        <Modal title="Compare candidates" onClose={() => setShowCompare(false)} size="lg">
-          <div className="overflow-x-auto">
-            <table className="w-full text-sm border-collapse min-w-[500px]">
-              <tbody>
-                {[
-                  {
-                    label: "",
-                    render: (a) => (
-                      <div className="flex flex-col items-center gap-2">
-                        <div className="w-10 h-10 rounded-full flex items-center justify-center text-white text-xs font-bold" style={{ backgroundColor: colorFor(a.studentName) }}>{initials(a.studentName)}</div>
-                        <span className="font-semibold text-foreground text-center">{a.studentName}</span>
-                      </div>
-                    ),
-                  },
-                  { label: "Institution", render: (a) => a.studentInstitution || "—" },
-                  { label: "Course", render: (a) => a.studentCourse || "—" },
-                  { label: "Skill match", render: (a) => <span className="font-semibold text-primary">{a.match}%</span> },
-                  { label: "Stage", render: (a) => a.status },
-                  { label: "Offer", render: (a) => a.offerStage || "—" },
-                  { label: "Interview mode", render: (a) => a.interviewMode || "Not set" },
-                  { label: "Applied", render: (a) => formatDate(a.appliedAt) },
-                ].map((row, i) => (
-                  <tr key={i} className="border-b border-border last:border-0">
-                    {row.label && <td className="py-3 pr-4 text-xs font-semibold text-muted-foreground uppercase tracking-wider align-top whitespace-nowrap">{row.label}</td>}
-                    {applications.filter((a) => compareIds.includes(a.id)).map((a) => (
-                      <td key={a.id} className={`py-3 px-3 text-center ${!row.label ? "align-bottom" : ""}`}>{row.render(a)}</td>
-                    ))}
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-          </div>
-        </Modal>
-      )}
+      {showCompare && <CompareModal applications={compared} onRemove={(id) => setCompareIds((ids) => ids.filter((x) => x !== id))} onClose={() => setShowCompare(false)} />}
 
       {showPostJob && (
         <Modal title="Post a new opportunity" onClose={() => setShowPostJob(false)}>
@@ -525,6 +541,85 @@ export default function IndustryDashboard() {
  * a single action bar — far faster than dragging cards one at a time when a
  * posting pulls a hundred applications.
  */
+/**
+ * Candidate comparison.
+ *
+ * Laid out as one CSS grid rather than a table whose header row skipped its
+ * own label cell — that off-by-one shifted every candidate column one place
+ * left of the row it belonged to, so the figures under a name were not that
+ * candidate's. The grid uses a single column template for every row, so the
+ * columns cannot drift however many candidates are being compared.
+ */
+function CompareModal({ applications, onRemove, onClose }) {
+  const best = useMemo(() => {
+    const scores = applications.map((a) => a.match || 0);
+    return { match: scores.length ? Math.max(...scores) : null };
+  }, [applications]);
+
+  const rows = [
+    { label: "Institution", render: (a) => a.studentInstitution || "—" },
+    { label: "Course", render: (a) => a.studentCourse || "—" },
+    {
+      label: "Skill match",
+      render: (a) => (
+        <div className="space-y-1">
+          <div className={`font-semibold ${a.match === best.match ? "text-primary" : "text-foreground"}`}>
+            {a.match}%{a.match === best.match && applications.length > 1 ? " · best" : ""}
+          </div>
+          <ProgressBar value={a.match} tone={a.match === best.match ? "bg-primary" : "bg-muted-foreground/40"} />
+        </div>
+      ),
+    },
+    { label: "Stage", render: (a) => <Badge tone={a.status === "Hired" ? "green" : a.status === "Rejected" ? "red" : "neutral"}>{a.status}</Badge> },
+    { label: "Offer", render: (a) => a.offerStage || "—" },
+    { label: "Interview mode", render: (a) => a.interviewMode || "Not set" },
+    { label: "Applied", render: (a) => formatDate(a.appliedAt) },
+  ];
+
+  /* One template for every row — the label column plus an equal column per
+     candidate — so rows cannot drift out of step at any candidate count. */
+  const template = `minmax(6rem, 7.5rem) repeat(${applications.length}, minmax(8rem, 1fr))`;
+
+  return (
+    <Modal title="Compare candidates" description={`${applications.length} candidates side by side.`} onClose={onClose} size="xl">
+      <div className="overflow-x-auto -mx-1 px-1">
+        <div className="min-w-[30rem]">
+          <div className="grid items-end gap-x-3 pb-3 border-b border-border" style={{ gridTemplateColumns: template }}>
+            <div aria-hidden="true" />
+            {applications.map((a) => (
+              <div key={a.id} className="flex flex-col items-center gap-2 text-center">
+                <Avatar name={a.studentName} size={40} />
+                <span className="font-semibold text-foreground text-sm leading-tight">{a.studentName}</span>
+                {applications.length > 2 && (
+                  <button
+                    onClick={() => onRemove(a.id)}
+                    className="text-[11px] text-muted-foreground hover:text-red-600 underline focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary rounded"
+                  >
+                    Remove
+                  </button>
+                )}
+              </div>
+            ))}
+          </div>
+
+          {rows.map((row) => (
+            <div
+              key={row.label}
+              className="grid items-center gap-x-3 py-3 border-b border-border last:border-0"
+              style={{ gridTemplateColumns: template }}
+            >
+              <div className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">{row.label}</div>
+              {applications.map((a) => (
+                <div key={a.id} className="text-center text-sm text-foreground">{row.render(a)}</div>
+              ))}
+            </div>
+          ))}
+        </div>
+      </div>
+    </Modal>
+  );
+}
+
 function BulkReview({ applications, onAction, onOpen }) {
   const [selected, setSelected] = useState(() => new Set());
   const [search, setSearch] = useState("");

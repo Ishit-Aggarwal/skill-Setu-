@@ -3,10 +3,13 @@
 import { useEffect, useMemo, useState } from "react";
 import DashboardLayout from "../../DashboardLayout";
 import { useAuth } from "../../../lib/auth";
-import { Avatar, Badge, Button, Card, DataTable, EmptyState, Field, Flash, Modal, PageHeader, ProgressRing, Section, Select, StatGrid, TextArea, TextInput, useFlash } from "../../ui/Kit";
+import { Avatar, Badge, Button, Card, DataTable, EmptyState, Field, Flash, Modal, PageHeader, ProgressRing, Select, StatGrid, TextArea, TextInput, useFlash } from "../../ui/Kit";
 import { formatDate, relativeTime } from "../../../lib/match";
 import { OFFER_STAGES, downloadFile, listApplicationsForOwner, setOfferStage, toCsv } from "../../../lib/store";
 import StudentProfileModal from "../../StudentProfileModal";
+
+/** Accepted offers that have not converted to a joining yet. */
+const AWAITING_FILTER = "Joining soon";
 
 const STAGE_TONE = {
   "Not sent": "muted",
@@ -39,7 +42,16 @@ export default function OffersAndJoining() {
 
   const rows = useMemo(() => {
     const enriched = hired.map((a) => ({ ...a, offerStage: a.offerStage || "Not sent" }));
-    return filter === "All" ? enriched : enriched.filter((a) => a.offerStage === filter);
+    if (filter === "All") return enriched;
+    // "Joining soon" used to be a second panel below the table repeating rows
+    // the table already showed. It is a view of the same rows, so it is a
+    // filter over them rather than a duplicate list.
+    if (filter === AWAITING_FILTER) {
+      return enriched
+        .filter((a) => a.offerStage === "Offer accepted")
+        .sort((a, b) => new Date(a.joiningDate || 0) - new Date(b.joiningDate || 0));
+    }
+    return enriched.filter((a) => a.offerStage === filter);
   }, [hired, filter]);
 
   const counts = useMemo(() => {
@@ -53,6 +65,16 @@ export default function OffersAndJoining() {
     : null;
 
   const joinRate = counts["Offer accepted"] + counts.Joined ? Math.round((counts.Joined / (counts["Offer accepted"] + counts.Joined)) * 100) : null;
+
+  /** Median-ish signal the table can't show at a glance: offer sent → joined. */
+  const avgDaysToJoin = useMemo(() => {
+    const spans = hired
+      .filter((a) => a.offerStage === "Joined" && a.offerSentAt && a.joiningDate)
+      .map((a) => (new Date(a.joiningDate) - new Date(a.offerSentAt)) / 86400000)
+      .filter((d) => Number.isFinite(d) && d >= 0);
+    if (!spans.length) return null;
+    return Math.round(spans.reduce((sum, d) => sum + d, 0) / spans.length);
+  }, [hired]);
 
   function bump(msg) {
     setVersion((v) => v + 1);
@@ -70,6 +92,7 @@ export default function OffersAndJoining() {
         { label: "Offer stage", value: (r) => r.offerStage },
         { label: "Joining date", value: (r) => r.joiningDate || "" },
         { label: "Offered CTC / stipend", value: (r) => r.offerAmount || "" },
+        { label: "Offer sent", value: (r) => r.offerSentAt || "" },
         { label: "Last updated", value: (r) => r.offerUpdatedAt || "" },
       ])
     );
@@ -125,13 +148,47 @@ export default function OffersAndJoining() {
           <span className="text-[11px] text-muted-foreground">Not set</span>
         ),
     },
-    { key: "amount", header: "Offered", align: "center", hideBelow: "hidden lg:table-cell", render: (a) => <span className="text-xs text-muted-foreground">{a.offerAmount || "—"}</span> },
-    { key: "updated", header: "Updated", align: "center", hideBelow: "hidden lg:table-cell", render: (a) => <span className="text-[11px] text-muted-foreground">{a.offerUpdatedAt ? relativeTime(a.offerUpdatedAt) : "—"}</span> },
+    {
+      key: "amount",
+      header: "Offered",
+      align: "center",
+      hideBelow: "hidden lg:table-cell",
+      render: (a) => (
+        <div className="flex flex-col items-center leading-tight">
+          <span className="text-xs text-foreground">{a.offerAmount || "—"}</span>
+          {a.offerSentAt && <span className="text-[10px] text-muted-foreground">sent {formatDate(a.offerSentAt)}</span>}
+        </div>
+      ),
+    },
+    {
+      key: "updated",
+      header: "Updated",
+      align: "center",
+      hideBelow: "hidden lg:table-cell",
+      render: (a) => (
+        <span className="text-[11px] text-muted-foreground" title={a.offerUpdatedAt ? formatDate(a.offerUpdatedAt) : undefined}>
+          {a.offerUpdatedAt ? relativeTime(a.offerUpdatedAt) : "Not changed yet"}
+        </span>
+      ),
+    },
     {
       key: "actions",
       header: "",
       align: "right",
-      render: (a) => <button onClick={() => setEditing(a)} className="text-xs text-primary hover:underline">Details</button>,
+      render: (a) => (
+        <div className="flex items-center justify-end gap-2 whitespace-nowrap">
+          {/* The one action the old "Awaiting joining" panel existed for, kept
+              on the row it belongs to instead of in a duplicate list. */}
+          {a.offerStage === "Offer accepted" && (
+            <Button size="sm" onClick={() => { setOfferStage(a.id, "Joined"); bump(`${a.studentName} marked as joined.`); }}>
+              Mark joined
+            </Button>
+          )}
+          <button onClick={() => setEditing(a)} className="text-xs text-primary hover:underline focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary rounded">
+            Details
+          </button>
+        </div>
+      ),
     },
   ];
 
@@ -150,28 +207,47 @@ export default function OffersAndJoining() {
           <Card className="flex flex-col items-center justify-center px-8">
             <ProgressRing value={acceptRate ?? 0} label={acceptRate != null ? undefined : "—"} sublabel="Offer acceptance rate" tone="green" />
           </Card>
+          {/* Deliberately not "offers sent" or "hired candidates" — both are
+              already row counts on the tabs and table below. These three are
+              things the table cannot answer at a glance. */}
           <StatGrid
             columns={3}
             stats={[
-              { label: "Hired candidates", value: String(hired.length), icon: "🤝" },
-              { label: "Offers sent", value: String(counts["Offer sent"] + counts["Offer accepted"] + counts.Joined + counts["Offer declined"]), icon: "📨", hint: `${counts["Offer declined"]} declined` },
-              { label: "Joined", value: String(counts.Joined), icon: "🎉", hint: joinRate != null ? `${joinRate}% of accepted offers` : "—" },
+              {
+                label: "Awaiting joining",
+                value: String(counts["Offer accepted"]),
+                icon: "⏳",
+                tone: counts["Offer accepted"] > 0 ? "amber" : undefined,
+                hint: counts["Offer accepted"] ? "Accepted, not joined yet" : "Nothing pending",
+              },
+              { label: "Joined", value: String(counts.Joined), icon: "🎉", hint: joinRate != null ? `${joinRate}% of accepted offers` : "No accepted offers yet" },
+              { label: "Offer → joining", value: avgDaysToJoin != null ? `${avgDaysToJoin}d` : "—", icon: "📅", hint: avgDaysToJoin != null ? "Average across joiners" : "No joiners yet" },
             ]}
           />
         </div>
 
-        <div className="flex flex-wrap gap-2">
-          {["All", ...OFFER_STAGES].map((f) => (
-            <button
-              key={f}
-              onClick={() => setFilter(f)}
-              className={`text-xs px-3 py-1.5 rounded-full border font-medium transition-all duration-150 ${
-                filter === f ? "bg-primary text-white border-transparent" : "bg-card border-border text-muted-foreground hover:border-primary/40"
-              }`}
-            >
-              {f}{f !== "All" && counts[f] ? ` (${counts[f]})` : ""}
-            </button>
-          ))}
+        <div className="flex flex-wrap gap-2" role="group" aria-label="Filter offers by stage">
+          {["All", ...OFFER_STAGES, AWAITING_FILTER].map((f) => {
+            const count = f === AWAITING_FILTER ? counts["Offer accepted"] : counts[f];
+            const active = filter === f;
+            return (
+              <button
+                key={f}
+                onClick={() => setFilter(f)}
+                aria-pressed={active}
+                className={`text-xs px-3 py-1.5 rounded-full border font-medium transition-all duration-150 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary ${
+                  active
+                    ? "bg-primary text-white border-transparent"
+                    : f === AWAITING_FILTER && count > 0
+                    ? "bg-amber-50 border-amber-300 text-amber-800 hover:border-amber-400"
+                    : "bg-card border-border text-muted-foreground hover:border-primary/40"
+                }`}
+              >
+                {f === AWAITING_FILTER ? `⏳ ${f}` : f}
+                {f !== "All" && count ? ` (${count})` : ""}
+              </button>
+            );
+          })}
         </div>
 
         {hired.length === 0 ? (
@@ -179,34 +255,12 @@ export default function OffersAndJoining() {
             Once you move a candidate to “Hired” in the applicant pipeline, they appear here for offer and joining tracking.
           </EmptyState>
         ) : (
-          <DataTable columns={columns} rows={rows} rowKey={(a) => a.id} empty="No candidates in this stage." />
-        )}
-
-        {counts["Offer accepted"] > 0 && (
-          <Card className="border-amber-200 bg-amber-50/40">
-            <Section title="Awaiting joining" description="Accepted offers that haven't converted yet — the drop-off risk worth chasing.">
-              <div className="space-y-2">
-                {hired
-                  .filter((a) => a.offerStage === "Offer accepted")
-                  .map((a) => (
-                    <div key={a.id} className="flex flex-wrap items-center justify-between gap-3 bg-card border border-border rounded-xl px-4 py-3 hover:shadow-sm transition-shadow duration-200">
-                      <div className="flex items-center gap-2.5 min-w-0">
-                        <Avatar name={a.studentName} size={30} />
-                        <div className="min-w-0">
-                          <div className="text-sm font-medium text-foreground truncate">{a.studentName}</div>
-                          <div className="text-xs text-muted-foreground truncate">
-                            {a.internshipTitle} · joining {a.joiningDate ? formatDate(a.joiningDate) : "date not set"}
-                          </div>
-                        </div>
-                      </div>
-                      <Button size="sm" onClick={() => { setOfferStage(a.id, "Joined"); bump(`${a.studentName} marked as joined.`); }}>
-                        Mark joined
-                      </Button>
-                    </div>
-                  ))}
-              </div>
-            </Section>
-          </Card>
+          <DataTable
+            columns={columns}
+            rows={rows}
+            rowKey={(a) => a.id}
+            empty={filter === AWAITING_FILTER ? "No accepted offers are waiting to convert." : "No candidates in this stage."}
+          />
         )}
       </div>
 

@@ -14,6 +14,7 @@ import {
   Line,
   XAxis,
   YAxis,
+  Legend,
 } from "recharts";
 import DashboardLayout from "../DashboardLayout";
 import ApplyConfirmModal from "../ApplyConfirmModal";
@@ -42,12 +43,10 @@ import MentoringPanel from "../MentoringPanel";
 import { computeMatch, daysUntil, formatDate, formatDateTime, relativeTime } from "../../lib/match";
 import { getRegistrationStatus, isLinkRevealWindow, formatScheduled } from "../../lib/testStatus";
 import { profileStrength } from "../../lib/profile";
-import { SKILL_DOMAINS } from "../../lib/questionBank";
+import { scoresFor, taxonomyFor } from "../../lib/taxonomy";
 import { Badge, Flash, Modal, useFlash, PageHeader, Card, Section, StatGrid, ProgressRing, Button, ProgressBar, EmptyState } from "../ui/Kit";
 import { subscribeToMutations } from "../../lib/sync";
 import AiGapAnalysisModal from "../AiGapAnalysisModal";
-
-const RADAR_DOMAINS = SKILL_DOMAINS;
 
 const appStatusTone = {
   Applied: "blue",
@@ -146,9 +145,15 @@ export default function StudentDashboard() {
 
   /* ---------------- Derived data ---------------- */
 
+  /* The radar, the nudges and the "N of M assessed" counter all read the
+     rubric for this student's own stream — a CSE candidate is never charted on
+     clinical axes, and a BAMS candidate is never charted on programming. */
+  const taxonomy = useMemo(() => taxonomyFor(user), [user]);
+  const competency = useMemo(() => scoresFor(user, assessment), [user, assessment]);
+
   const radarData = useMemo(
-    () => RADAR_DOMAINS.map((skill) => ({ skill, value: assessment?.domainScores?.[skill] ?? 0 })),
-    [assessment]
+    () => competency.rows.map(({ skill, score }) => ({ skill, value: score ?? 0 })),
+    [competency]
   );
 
   /* Score over time, so a student can see whether they're actually improving
@@ -160,7 +165,7 @@ export default function StudentDashboard() {
     let runningSum = 0;
     return sorted.map((a, i) => {
       runningSum += a.score;
-      return { n: i + 1, label: formatDate(a.completedAt), average: Math.round(runningSum / (i + 1)), score: a.score };
+      return { n: i + 1, label: formatDate(a.completedAt), domain: a.domain, average: Math.round(runningSum / (i + 1)), score: a.score };
     });
   }, [attempts]);
 
@@ -190,11 +195,12 @@ export default function StudentDashboard() {
 
   const skillGaps = useMemo(() => {
     if (!assessment) return [];
-    return Object.entries(assessment.domainScores || {})
-      .sort((a, b) => a[1] - b[1])
+    return competency.rows
+      .filter((r) => r.score != null)
+      .sort((a, b) => a.score - b.score)
       .slice(0, 4)
-      .map(([skill, score]) => ({ skill, score, priority: score < 55 ? "High" : score < 75 ? "Medium" : "Low" }));
-  }, [assessment]);
+      .map(({ skill, score }) => ({ skill, score, priority: score < 55 ? "High" : score < 75 ? "Medium" : "Low" }));
+  }, [assessment, competency]);
 
   const strength = useMemo(
     () => profileStrength({ assessment, portfolio, applications, credentials }),
@@ -474,7 +480,7 @@ export default function StudentDashboard() {
               {
                 label: "Skill Score",
                 value: assessment ? `${Math.round(assessment.overallScore)}/100` : "—",
-                hint: assessment ? `${Object.keys(assessment.domainScores || {}).length} of ${SKILL_DOMAINS.length} areas assessed` : "Take a skill test",
+                hint: assessment ? `${competency.assessed} of ${competency.total} areas assessed` : "Take a skill test",
                 icon: "🎯",
                 tone: "primary",
               },
@@ -547,8 +553,8 @@ export default function StudentDashboard() {
                   <h3 className="font-semibold text-foreground text-sm">Skill Profile</h3>
                   <p className="text-xs text-muted-foreground">
                     {assessment
-                      ? `${Object.keys(assessment.domainScores || {}).length} of ${SKILL_DOMAINS.length} skill areas assessed`
-                      : "Take a skill test to populate this"}
+                      ? `${competency.assessed} of ${competency.total} skill areas assessed · ${taxonomy.label}`
+                      : `Take a skill test to populate this · ${taxonomy.label}`}
                   </p>
                 </div>
                 <button onClick={() => navigate("skill-assessment")} className="text-xs font-medium text-primary hover:underline flex-shrink-0">Update →</button>
@@ -631,15 +637,22 @@ export default function StudentDashboard() {
 
           {/* ---------- Score trend ---------- */}
           {trendData.length >= 2 && (
-            <Section title="How your score is moving" description="Running average across every test you've completed.">
+            <Section
+              title="How your score is moving"
+              description="Each point is one completed test, on the date you sat it. The solid line is your running average; the dashed line is that test's own score."
+            >
               <Card>
-                <ResponsiveContainer width="100%" height={160}>
-                  <LineChart data={trendData} margin={{ top: 5, right: 10, left: -20, bottom: 0 }}>
-                    <XAxis dataKey="label" tick={{ fontSize: 10, fill: "var(--muted-foreground)" }} tickLine={false} axisLine={false} />
+                <ResponsiveContainer width="100%" height={210}>
+                  <LineChart data={trendData} margin={{ top: 10, right: 12, left: -20, bottom: 0 }}>
+                    <XAxis dataKey="label" tick={{ fontSize: 10, fill: "var(--muted-foreground)" }} tickLine={false} axisLine={false} interval="preserveStartEnd" minTickGap={12} />
                     <YAxis domain={[0, 100]} tick={{ fontSize: 10, fill: "var(--muted-foreground)" }} tickLine={false} axisLine={false} />
-                    <Tooltip contentStyle={{ background: "var(--card)", border: "1px solid var(--border)", borderRadius: 10, fontSize: 12, color: "var(--foreground)" }} />
+                    <Tooltip
+                      contentStyle={{ background: "var(--card)", border: "1px solid var(--border)", borderRadius: 10, fontSize: 12, color: "var(--foreground)" }}
+                      labelFormatter={(label, payload) => payload?.[0]?.payload?.domain ? `${payload[0].payload.domain} · ${label}` : label}
+                    />
+                    <Legend verticalAlign="bottom" height={24} iconType="plainline" wrapperStyle={{ fontSize: 11, color: "var(--muted-foreground)" }} />
                     <Line type="monotone" dataKey="average" name="Running average" stroke="var(--primary)" strokeWidth={2.5} dot={{ r: 3 }} />
-                    <Line type="monotone" dataKey="score" name="Test score" stroke="var(--muted-foreground)" strokeWidth={1.5} strokeDasharray="4 4" dot={false} />
+                    <Line type="monotone" dataKey="score" name="That test's score" stroke="var(--muted-foreground)" strokeWidth={1.5} strokeDasharray="4 4" dot={false} />
                   </LineChart>
                 </ResponsiveContainer>
               </Card>

@@ -4,6 +4,7 @@ import { useEffect, useMemo, useState } from "react";
 import DashboardLayout from "../DashboardLayout";
 import ApplyConfirmModal from "../ApplyConfirmModal";
 import { useAuth } from "../../lib/auth";
+import { useNav } from "../../lib/nav";
 import { Badge, Button, Card, EmptyState, Field, FilterPills, Flash, Modal, PageHeader, ProgressBar, SearchInput, Select, StatGrid, TextArea, TextInput, useFlash } from "../ui/Kit";
 import { ALL_DOMAINS, DEPARTMENTS, DOMAIN_GROUPS, domainColor } from "../../lib/domains";
 import { subscribeToMutations } from "../../lib/sync";
@@ -38,6 +39,7 @@ const typeTone = {
 };
 
 function StudentView({ user }) {
+  const navigate = useNav();
   const [internships, setInternships] = useState([]);
   const [assessment, setAssessment] = useState(null);
   const [portfolio, setPortfolio] = useState(null);
@@ -102,6 +104,11 @@ function StudentView({ user }) {
         eligibility: checkEligibility(i, user, assessment),
       })),
     [internships, assessment, user]
+  );
+
+  const eligibleCount = useMemo(
+    () => enriched.filter((i) => i.status !== "Closed" && i.eligibility.eligible).length,
+    [enriched]
   );
 
   const filtered = useMemo(() => {
@@ -171,15 +178,35 @@ function StudentView({ user }) {
 
         <div className="flex flex-wrap items-center justify-between gap-3 pt-1 border-t border-border">
           <label className="flex items-center gap-2 text-xs text-muted-foreground cursor-pointer pt-3">
-            <input type="checkbox" checked={eligibleOnly} onChange={(e) => setEligibleOnly(e.target.checked)} className="w-3.5 h-3.5 accent-primary" />
-            Only show roles I'm eligible for
+            <input
+              type="checkbox"
+              checked={eligibleOnly}
+              onChange={(e) => setEligibleOnly(e.target.checked)}
+              className="w-3.5 h-3.5 accent-primary focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary"
+            />
+            Only show roles I&apos;m eligible for
+            <span className="text-muted-foreground/70">
+              ({eligibleCount} of {enriched.length} open roles)
+            </span>
           </label>
           {appliedIds.size > 0 && <span className="text-xs text-primary font-medium pt-3">{appliedIds.size} applied</span>}
         </div>
       </Card>
 
       {filtered.length === 0 ? (
-        <EmptyState icon="🔍" title="No results found">Try adjusting your filters or search terms.</EmptyState>
+        eligibleOnly ? (
+          <EmptyState
+            icon="🎯"
+            title="No roles match your current profile yet"
+            action={<Button size="sm" onClick={() => navigate("student-dashboard")}>See what to improve</Button>}
+          >
+            Every open role asks for something you haven&apos;t met yet — a minimum skill score, a department, or a partner
+            institution. Your skill-gap nudges show which areas move the most roles into reach, or switch the filter off to
+            browse everything.
+          </EmptyState>
+        ) : (
+          <EmptyState icon="🔍" title="No results found">Try adjusting your filters or search terms.</EmptyState>
+        )
       ) : (
         <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-4">
           {filtered.map((intern) => {
@@ -247,9 +274,19 @@ function StudentView({ user }) {
                   {gap.missing.length > 0 && <div className="text-[10px] text-amber-600 mt-1.5">You're missing: {gap.missing.join(", ")}</div>}
                 </div>
 
-                {blocked && (
-                  <div className="text-[10px] text-amber-700 bg-amber-50 rounded-lg px-2.5 py-2 mb-3">
-                    {intern.eligibility.reasons[0]}
+                {/* Eligibility is stated on every card, not just the blocked
+                    ones — "why can't I apply" and "can I apply" are the same
+                    question, and a silent card answers neither. */}
+                {blocked ? (
+                  <div className="text-[10px] text-amber-800 bg-amber-50 border border-amber-200 rounded-lg px-2.5 py-2 mb-3 space-y-0.5">
+                    <div className="font-semibold">✕ Not eligible yet</div>
+                    {intern.eligibility.reasons.map((reason) => (
+                      <div key={reason}>{reason}</div>
+                    ))}
+                  </div>
+                ) : (
+                  <div className="text-[10px] font-semibold text-emerald-800 bg-emerald-50 border border-emerald-200 rounded-lg px-2.5 py-2 mb-3">
+                    ✓ You&apos;re eligible for this role
                   </div>
                 )}
 
