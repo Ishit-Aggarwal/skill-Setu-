@@ -159,7 +159,7 @@ export default function DashboardLayout({ children, activePage, title }) {
           <Link href="/" className="flex flex-col items-start gap-1 px-5 py-4 border-b border-border text-left hover:bg-secondary/50 transition-colors cursor-pointer">
             {/* The wordmark is wide (≈3.6:1) — capped by height and allowed to
                 size its own width so it never overflows the 240px rail. */}
-            <img src="/logo.png" alt="Skill Setu" className="h-7 w-auto max-w-[170px] object-contain mix-blend-multiply" />
+            <img src="/logo.png" alt="Skill Setu" className="h-9 w-auto max-w-[190px] object-contain mix-blend-multiply" />
             <div className="text-[11px] text-muted-foreground">Academia–Industry Portal</div>
           </Link>
 
@@ -217,7 +217,7 @@ export default function DashboardLayout({ children, activePage, title }) {
           </button>
 
           <Link href="/" className="lg:hidden flex items-center min-w-0 cursor-pointer">
-            <img src="/logo.png" alt="Skill Setu" className="h-6 w-auto max-w-[130px] object-contain mix-blend-multiply" />
+            <img src="/logo.png" alt="Skill Setu" className="h-8 w-auto max-w-[150px] object-contain mix-blend-multiply" />
           </Link>
 
           <div className="flex-1 hidden lg:block min-w-0">{title && <h1 className="text-base font-semibold text-foreground truncate">{title}</h1>}</div>

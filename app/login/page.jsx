@@ -239,9 +239,9 @@ function LoginPageInner() {
         <img key={role} src={selected.image} alt={selected.label} className="absolute inset-0 w-full h-full object-cover transition-opacity duration-300" />
         <div className="absolute inset-0 bg-gradient-to-br from-olive-900/80 to-olive-700/60" />
         <div className="absolute inset-0 flex flex-col justify-between p-10">
-          <button onClick={() => router.push("/")} className="flex items-center transition-opacity hover:opacity-90">
-            <div className="bg-white rounded-lg px-2.5 py-1.5">
-              <img src="/logo.png" alt="Skill Setu" className="h-6 w-auto object-contain" />
+          <button onClick={() => router.push("/")} className="flex items-center transition-opacity hover:opacity-90" aria-label="Back to home">
+            <div className="bg-white rounded-xl px-3.5 py-2 shadow-sm">
+              <img src="/logo.png" alt="Skill Setu" className="h-8 sm:h-9 w-auto object-contain" />
             </div>
           </button>
           <div>
