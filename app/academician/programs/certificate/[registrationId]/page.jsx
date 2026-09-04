@@ -88,13 +88,13 @@ export default function CertificatePage({ params }) {
       <main className="certificate-container w-full max-w-4xl bg-card border-8 border-double border-primary/40 rounded-3xl p-8 sm:p-14 shadow-xl text-center relative overflow-hidden print:p-10 print:border-4 print:shadow-none print:m-0 print:w-full">
         {/* Subtle Watermark Emblem */}
         <div className="absolute inset-0 flex items-center justify-center opacity-[0.03] pointer-events-none select-none">
-          <img src="/logo.png" alt="" className="w-2/3 max-w-xl object-contain grayscale" />
+          <img src="/logo.png" alt="" className="w-2/3 max-w-xl object-contain grayscale mix-blend-multiply" />
         </div>
 
         {/* Certificate Header */}
         <div className="relative z-10 space-y-3 mb-8">
           <div className="flex items-center justify-center gap-3">
-            <img src="/logo.png" alt="Skill Setu" className="h-9 sm:h-11 w-auto object-contain" />
+            <img src="/logo.png" alt="Skill Setu" className="h-9 sm:h-11 w-auto object-contain mix-blend-multiply" />
           </div>
           <p className="text-[10px] sm:text-xs tracking-[0.25em] text-muted-foreground uppercase font-semibold">
             National Academia–Industry Collaboration Initiative

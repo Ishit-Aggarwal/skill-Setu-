@@ -11,7 +11,7 @@ export default function StaticPageLayout({ title, children }) {
       <nav className="sticky top-0 z-50 bg-background/90 backdrop-blur border-b border-border">
         <div className="max-w-3xl mx-auto px-5 py-3.5 flex items-center justify-between">
           <Link href="/" className="flex items-center cursor-pointer hover:opacity-90 transition-opacity">
-            <img src="/logo.png" alt="Skill Setu" className="h-7 w-auto object-contain" />
+            <img src="/logo.png" alt="Skill Setu" className="h-7 w-auto object-contain mix-blend-multiply" />
           </Link>
           <button onClick={() => router.push("/")} className="text-sm font-medium text-muted-foreground hover:text-foreground transition-colors">
             ← Back to home

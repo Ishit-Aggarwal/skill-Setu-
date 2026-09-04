@@ -107,7 +107,7 @@ export default function LandingPage() {
       <nav className="sticky top-0 z-50 bg-background border-b border-border">
         <div className="max-w-6xl mx-auto px-5 py-3.5 flex items-center justify-between">
           <Link href="/" className="flex items-center gap-2.5 min-w-0 cursor-pointer hover:opacity-90 transition-opacity">
-            <img src="/logo.png" alt="Skill Setu" className="h-8 w-auto object-contain flex-shrink-0" />
+            <img src="/logo.png" alt="Skill Setu" className="h-8 w-auto object-contain flex-shrink-0 mix-blend-multiply" />
             <span className="hidden sm:inline text-xs text-muted-foreground truncate">Academia–Industry Portal</span>
           </Link>
           <div className="flex items-center gap-2">
@@ -364,7 +364,7 @@ export default function LandingPage() {
           <div className="flex flex-col md:flex-row items-start md:items-center justify-between gap-6">
             <div>
               <Link href="/" className="flex items-center mb-2 inline-block cursor-pointer hover:opacity-90 transition-opacity">
-                <img src="/logo.png" alt="Skill Setu" className="h-7 w-auto object-contain" />
+                <img src="/logo.png" alt="Skill Setu" className="h-7 w-auto object-contain mix-blend-multiply" />
               </Link>
               <p className="text-xs text-muted-foreground max-w-xs leading-relaxed">
                 A unified skill-mapping, internship and placement platform bridging academia and industry across engineering, technology, management, healthcare, and allied sectors. Built for SIH26044.
