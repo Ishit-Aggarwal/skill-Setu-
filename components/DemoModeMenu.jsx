@@ -14,6 +14,7 @@ const ROLES = [
 
 export default function DemoModeMenu({ className = "" }) {
   const [open, setOpen] = useState(false);
+  const [busy, setBusy] = useState(null);
   const ref = useRef(null);
   const router = useRouter();
   const { loginAsDemo } = useAuth();
@@ -26,10 +27,18 @@ export default function DemoModeMenu({ className = "" }) {
     return () => document.removeEventListener("mousedown", onClickOutside);
   }, []);
 
-  function enterDemo(role) {
-    const demoUser = loginAsDemo(role);
+  async function enterDemo(role) {
     setOpen(false);
-    router.push(PAGE_PATHS[roleHomePage(demoUser.role)]);
+    setBusy(role);
+    // Demo personas are real server accounts now, so entering demo mode is a
+    // round trip — without a session the graded tests and the mentorship
+    // calendar would both be unavailable to a visitor looking around.
+    try {
+      const demoUser = await loginAsDemo(role);
+      router.push(PAGE_PATHS[roleHomePage(demoUser.role)]);
+    } finally {
+      setBusy(null);
+    }
   }
 
   return (
@@ -38,7 +47,7 @@ export default function DemoModeMenu({ className = "" }) {
         onClick={() => setOpen((v) => !v)}
         className="text-xs font-medium text-primary hover:underline whitespace-nowrap"
       >
-        Demo Mode (Full Access)
+        {busy ? "Starting demo…" : "Demo Mode (Full Access)"}
       </button>
 
       {open && (

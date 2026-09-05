@@ -2,28 +2,26 @@
 
 import { createContext, useContext, useEffect, useState } from "react";
 import { findOne, insert, update, remove, getDemoUser, all, saveAll } from "./store";
-import { hashPassword } from "./hash";
+import { getSessionToken, setSessionToken } from "./session";
 
 const AuthContext = createContext(null);
 const TAB_SESSION_KEY = "ayusetu:tab_session";
 const GLOBAL_SESSION_KEY = "ayusetu:session";
-// Only used by the no-Convex fallback, where there is no server to email from
-// and the reset link has to be handed straight back to the browser.
-const LOCAL_RESET_KEY = "ayusetu:reset:";
-
-function getActiveUserId() {
-  if (typeof window === "undefined") return null;
-  return window.sessionStorage.getItem(TAB_SESSION_KEY) || window.localStorage.getItem(GLOBAL_SESSION_KEY);
-}
 
 /**
  * Accounts are owned by the server (Convex) so they work from any device.
- * The local store is only a per-device cache of the signed-in profile, kept
- * so the rest of the app — which still reads the local store — keeps working.
  *
- * If the server has no account database configured, we fall back to the old
- * device-local behaviour and say so loudly in the console. Email verification
- * is enforced in both modes.
+ * Two things changed here and both matter:
+ *
+ *  - Passwords are sent as plaintext over TLS and hashed with bcrypt on the
+ *    server. The browser used to send a SHA-256 digest, which is not a
+ *    security measure: the digest simply becomes the password, and an
+ *    unsalted digest of a human-chosen password is trivially reversible.
+ *
+ *  - Sign-in returns a session token. That token, not the cached user id, is
+ *    what identifies the caller on every privileged request. The local store
+ *    is now purely a per-device cache of the profile for the parts of the UI
+ *    that still read from it; editing it grants nothing.
  */
 
 let warnedLocalOnly = false;
@@ -31,18 +29,19 @@ function warnLocalOnly(context) {
   if (warnedLocalOnly) return;
   warnedLocalOnly = true;
   console.warn(
-    `[auth] ${context}: falling back to browser-local accounts. ` +
-      "Accounts created in this mode exist ONLY in this browser and cannot be used to sign in " +
-      "from another device. Configure NEXT_PUBLIC_CONVEX_URL to enable cross-device sign-in."
+    `[auth] ${context}: the account database is not configured for this deployment. ` +
+      "Sign-in, graded skill tests and mentorship scheduling all need it. " +
+      "Set NEXT_PUBLIC_CONVEX_URL and redeploy."
   );
 }
 
-async function postJson(url, body) {
-  const res = await fetch(url, {
-    method: "POST",
-    headers: { "Content-Type": "application/json" },
-    body: JSON.stringify(body),
-  });
+async function postJson(url, body, { withSession = false } = {}) {
+  const headers = { "Content-Type": "application/json" };
+  if (withSession) {
+    const token = getSessionToken();
+    if (token) headers.Authorization = `Bearer ${token}`;
+  }
+  const res = await fetch(url, { method: "POST", headers, body: JSON.stringify(body) });
   let data = {};
   try {
     data = await res.json();
@@ -56,13 +55,58 @@ export function AuthProvider({ children }) {
   const [user, setUser] = useState(null);
   const [loading, setLoading] = useState(true);
 
+  /* On load, ask the server who this session belongs to rather than trusting
+     the cached profile. A stale or forged local record is replaced by the
+     server's answer; no session at all signs the browser out. */
   useEffect(() => {
-    const uid = getActiveUserId();
-    if (uid) {
-      const found = findOne("users", (u) => u.id === uid);
-      if (found) setUser(found);
+    let cancelled = false;
+
+    async function restore() {
+      const token = getSessionToken();
+      const cachedId =
+        typeof window === "undefined"
+          ? null
+          : window.sessionStorage.getItem(TAB_SESSION_KEY) || window.localStorage.getItem(GLOBAL_SESSION_KEY);
+
+      // Demo personas are local by design and have no server session.
+      if (!token && cachedId?.startsWith("demo-")) {
+        const demo = findOne("users", (u) => u.id === cachedId);
+        if (demo && !cancelled) setUser(demo);
+        if (!cancelled) setLoading(false);
+        return;
+      }
+
+      if (!token) {
+        if (!cancelled) setLoading(false);
+        return;
+      }
+
+      try {
+        const { data } = await postJson("/api/auth/session", { action: "whoami" }, { withSession: true });
+        if (cancelled) return;
+        if (data?.user) {
+          const record = mirrorUser(data.user);
+          persistSession(record);
+        } else {
+          setSessionToken(null);
+          persistSession(null);
+        }
+      } catch {
+        // Offline: fall back to the cached profile so the app still renders.
+        if (cachedId && !cancelled) {
+          const cached = findOne("users", (u) => u.id === cachedId);
+          if (cached) setUser(cached);
+        }
+      } finally {
+        if (!cancelled) setLoading(false);
+      }
     }
-    setLoading(false);
+
+    restore();
+    return () => {
+      cancelled = true;
+    };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   function persistSession(u) {
@@ -77,33 +121,59 @@ export function AuthProvider({ children }) {
     }
   }
 
-  /** Cache the server-owned profile locally (upsert, so repeat sign-ins don't duplicate). */
+  /**
+   * Cache the server-owned profile locally.
+   *
+   * Matched on id first and then on email, because a student may already exist
+   * in this browser as a placeholder their institution bulk-invited. Matching
+   * on id alone left both rows behind, and that person then showed up twice in
+   * every roster and talent-pool search.
+   */
   function mirrorUser(record) {
-    const existing = findOne("users", (u) => u.id === record.id);
-    if (existing) return update("users", record.id, record);
+    const byId = findOne("users", (u) => u.id === record.id);
+    if (byId) return update("users", record.id, record);
+
+    const email = (record.email || "").trim().toLowerCase();
+    const byEmail = email ? findOne("users", (u) => (u.email || "").trim().toLowerCase() === email) : null;
+    if (byEmail) {
+      // Keep whatever the placeholder knew (roll number, batch) and let the
+      // server's record win wherever the two disagree.
+      const merged = update("users", byEmail.id, { ...record, id: byEmail.id });
+      if (byEmail.id !== record.id) {
+        // Re-key the cached row to the server's id so session lookups match.
+        remove("users", byEmail.id);
+        return insert("users", { ...merged, id: record.id });
+      }
+      return merged;
+    }
+
     return insert("users", record);
   }
 
-  async function login(email, password) {
-    const normalized = email.trim().toLowerCase();
-    const passwordHash = await hashPassword(password);
-
-    const { res, data } = await postJson("/api/auth/login", { email: normalized, passwordHash });
+  /**
+   * `identifier` is an email for students and faculty, and the organisation's
+   * own name for company and institution accounts — which is how those
+   * accounts are named everywhere else in the product.
+   */
+  async function login(identifier, password, { role, byOrganisation = false } = {}) {
+    const trimmed = String(identifier || "").trim();
+    const body = byOrganisation
+      ? { organisation: trimmed, role, password }
+      : { email: trimmed.toLowerCase(), password };
+    const { res, data } = await postJson("/api/auth/login", body);
 
     if (res.ok && data.success) {
+      setSessionToken(data.sessionToken || null);
       const record = mirrorUser(data.user);
       persistSession(record);
       return record;
     }
 
-    // Server has no account database — use the legacy device-local accounts.
     if (data.code === "CONVEX_NOT_CONFIGURED") {
       warnLocalOnly("Sign-in");
-      const found = findOne("users", (u) => u.email.toLowerCase() === normalized);
-      if (!found) throw new Error("No account found for this email. Try creating one instead.");
-      if (found.passwordHash !== passwordHash) throw new Error("Incorrect password. Please try again.");
-      persistSession(found);
-      return found;
+      throw new Error(
+        "Sign-in is unavailable because this deployment has no account database configured. Please contact the administrator."
+      );
     }
 
     throw new Error(data.error || "Could not sign you in. Please try again.");
@@ -112,32 +182,27 @@ export function AuthProvider({ children }) {
   /** Step 1 of signup: email the user a verification code. Creates nothing. */
   async function sendSignupOtp(email) {
     const normalized = email.trim().toLowerCase();
-    // Fast local pre-check; the authoritative duplicate check runs at registration.
-    if (findOne("users", (u) => u.email.toLowerCase() === normalized)) {
-      throw new Error("An account with this email already exists. Try signing in instead.");
-    }
     const { res, data } = await postJson("/api/send-otp", { email: normalized });
     if (!res.ok || !data.success) throw new Error(data.error || "Failed to send verification code.");
     return data;
   }
 
   /**
-   * Step 2 of signup: the server re-checks the OTP and only then creates the
-   * account. The session is established from the record the server returns —
-   * never before verification succeeds.
+   * Step 2 of signup. The server re-checks the OTP *and* the partner
+   * verification code in the same call that creates the account, so neither
+   * check can be skipped by talking to the API directly.
    */
   async function completeSignup(profile, otp, token) {
     const normalized = profile.email.trim().toLowerCase();
-    const passwordHash = await hashPassword(profile.password);
-    const { password, ...safeProfile } = profile;
 
     const { res, data } = await postJson("/api/auth/register", {
-      profile: { ...safeProfile, email: normalized, passwordHash },
+      profile: { ...profile, email: normalized },
       otp,
       token,
     });
 
     if (res.ok && data.success) {
+      setSessionToken(data.sessionToken || null);
       const record = mirrorUser(data.user);
       persistSession(record);
       return record;
@@ -145,130 +210,151 @@ export function AuthProvider({ children }) {
 
     if (data.code === "CONVEX_NOT_CONFIGURED") {
       warnLocalOnly("Registration");
-      // Still verify the OTP before creating anything locally.
-      const verify = await postJson("/api/verify-otp", { email: normalized, otp, token });
-      if (!verify.res.ok || !verify.data.success) {
-        throw new Error(verify.data.error || "Invalid verification code.");
-      }
-      const record = insert("users", {
-        ...safeProfile,
-        email: normalized,
-        passwordHash,
-        emailVerified: true,
-        createdAt: new Date().toISOString(),
-      });
-      persistSession(record);
-      return record;
+      throw new Error(
+        "Registration is unavailable because this deployment has no account database configured. Please contact the administrator."
+      );
     }
 
     throw new Error(data.error || "Invalid verification code.");
   }
 
   /**
-   * Step 1 of password recovery.
-   *
-   * Returns `{ devLink }` when the server is in OTP_DEV_MODE with no mail
-   * transport, so the flow stays usable offline — the same escape hatch the
-   * signup OTP uses. Never reveals whether the address is registered.
+   * Step 1 of password recovery. Never reveals whether the address is
+   * registered; returns `{ devLink }` only in OTP_DEV_MODE, so the flow stays
+   * usable when no mail transport is configured.
    */
   async function requestPasswordReset(email) {
     const normalized = email.trim().toLowerCase();
     const { res, data } = await postJson("/api/auth/forgot-password", { email: normalized });
-
     if (res.ok && data.success) return data;
-
-    if (data.code === "CONVEX_NOT_CONFIGURED") {
-      warnLocalOnly("Password reset");
-      const found = findOne("users", (u) => u.email?.toLowerCase() === normalized);
-      // Still generic on the surface — but a local-only account can be reset
-      // here because there is no server to email from.
-      if (!found) return { success: true, message: "If an account exists for that address, a reset link is on its way." };
-      const token = `${Date.now().toString(36)}${Math.random().toString(36).slice(2, 12)}`;
-      window.localStorage.setItem(
-        LOCAL_RESET_KEY + normalized,
-        JSON.stringify({ token, expiresAt: Date.now() + 30 * 60 * 1000 })
-      );
-      return {
-        success: true,
-        localOnly: true,
-        devLink: `/reset-password?email=${encodeURIComponent(normalized)}&token=${encodeURIComponent(token)}`,
-      };
-    }
-
     throw new Error(data.error || "Could not start a password reset. Please try again.");
   }
 
   /** Step 2: exchange the emailed token for a new password. */
   async function resetPassword(email, token, password) {
     const normalized = email.trim().toLowerCase();
-    const passwordHash = await hashPassword(password);
-    const { res, data } = await postJson("/api/auth/reset-password", { email: normalized, token, passwordHash });
+    const { res, data } = await postJson("/api/auth/reset-password", { email: normalized, token, password });
 
-    // Deliberately does NOT mirror the returned account into the local store.
-    // Whoever opened the reset link is not signed in, and may not even be on
-    // their own device — writing the profile here would overwrite whatever
-    // account this browser is currently cached against. The subsequent sign-in
-    // does the mirroring properly.
+    // Deliberately does NOT mirror any profile into the local store. Whoever
+    // opened the reset link is not signed in, and may not even be on their own
+    // device — the subsequent sign-in does the mirroring properly.
     if (res.ok && data.success) return true;
-
-    if (data.code === "CONVEX_NOT_CONFIGURED") {
-      warnLocalOnly("Password reset");
-      let stored = null;
-      try {
-        stored = JSON.parse(window.localStorage.getItem(LOCAL_RESET_KEY + normalized) || "null");
-      } catch {
-        stored = null;
-      }
-      if (!stored || stored.token !== token) {
-        throw new Error("This reset link is no longer valid. Please request a new one.");
-      }
-      if (Date.now() > stored.expiresAt) {
-        window.localStorage.removeItem(LOCAL_RESET_KEY + normalized);
-        throw new Error("This reset link has expired (30-minute validity). Please request a new one.");
-      }
-      const found = findOne("users", (u) => u.email?.toLowerCase() === normalized);
-      if (!found) throw new Error("No account found for this email address.");
-      update("users", found.id, { passwordHash });
-      window.localStorage.removeItem(LOCAL_RESET_KEY + normalized);
-      return true;
-    }
-
     throw new Error(data.error || "Could not reset your password. Please try again.");
   }
 
-  function loginAsDemo(role) {
-    const demoUser = getDemoUser(role);
+  /** Changing your password while signed in — the current one is required. */
+  async function changePassword(currentPassword, newPassword) {
+    const { res, data } = await postJson(
+      "/api/auth/change-password",
+      { currentPassword, newPassword },
+      { withSession: true }
+    );
+    if (res.ok && data.success) return true;
+    throw new Error(data.error || "Could not change your password.");
+  }
+
+  /**
+   * Enters demo mode.
+   *
+   * The personas are real server accounts whose ids match the sample data
+   * seeded into this browser, so a visitor gets a working tour — graded skill
+   * tests and mentorship scheduling both need a session, and a purely local
+   * persona could use neither. If the server can't provide one we still fall
+   * back to the browser-only persona rather than blocking the tour.
+   */
+  async function loginAsDemo(role) {
+    const demoUser = getDemoUser(role); // seeds this browser's sample data
+    try {
+      const { res, data } = await postJson("/api/auth/demo", { role });
+      if (res.ok && data.success && data.sessionToken) {
+        setSessionToken(data.sessionToken);
+        const record = update("users", demoUser.id, { ...data.user, id: demoUser.id }) || demoUser;
+        persistSession(record);
+        return record;
+      }
+    } catch {
+      /* fall through to the local persona */
+    }
+    warnLocalOnly("Demo mode");
+    setSessionToken(null);
     persistSession(demoUser);
     return demoUser;
   }
 
-  function updateProfile(patch) {
-    if (!user) return;
+  /**
+   * Profile edits write through to the server, which decides whether this
+   * session may touch this account. The local cache is only updated once the
+   * server accepts — otherwise the two would disagree about what was saved.
+   */
+  async function updateProfile(patch) {
+    if (!user) return null;
     const merged = update("users", user.id, patch);
     setUser(merged);
-    // Best-effort sync so the profile follows the user to their other devices.
-    postJson("/api/auth/profile", { id: user.id, patch }).catch((err) =>
-      console.warn("[auth] Could not sync profile to the server:", err)
-    );
+
+    if (!getSessionToken()) return merged; // demo persona: local only
+
+    try {
+      const { res, data } = await postJson("/api/auth/profile", { id: user.id, patch }, { withSession: true });
+      if (res.ok && data.success && data.user) {
+        const authoritative = update("users", user.id, data.user);
+        setUser(authoritative);
+        return authoritative;
+      }
+      if (res.status === 401 || res.status === 403) {
+        console.warn("[auth] The server refused this profile change:", data.error);
+      }
+    } catch (err) {
+      console.warn("[auth] Could not sync profile to the server:", err);
+    }
+    return merged;
   }
 
-  function logout() {
+  async function logout() {
+    try {
+      if (getSessionToken()) await postJson("/api/auth/session", { action: "signout" }, { withSession: true });
+    } catch {
+      /* signing out locally is what matters */
+    }
+    setSessionToken(null);
     persistSession(null);
+  }
+
+  /** Ends every other session on this account. */
+  async function signOutEverywhere() {
+    const { res, data } = await postJson(
+      "/api/auth/session",
+      { action: "signout-everywhere" },
+      { withSession: true }
+    );
+    if (!res.ok || !data.success) throw new Error(data.error || "Could not sign out your other devices.");
+    return data.removed || 0;
   }
 
   async function deleteAccount() {
     if (!user) return;
     const uid = user.id;
-    postJson("/api/auth/delete", { id: uid }).catch(() => {});
+
+    if (getSessionToken()) {
+      const { res, data } = await postJson("/api/auth/delete", { id: uid }, { withSession: true });
+      if (!res.ok || !data.success) {
+        throw new Error(data.error || "Could not delete your account. Please try again.");
+      }
+    }
+
     remove("users", uid);
     if (user.role === "student") {
       try {
-        const remainingApps = all("applications").filter((a) => a.studentId !== uid);
-        saveAll("applications", remainingApps);
+        saveAll(
+          "applications",
+          all("applications").filter((a) => a.studentId !== uid)
+        );
         remove("portfolios", uid);
         remove("assessments", uid);
-      } catch {}
+      } catch {
+        /* the server copy is already gone; a stale local cache is harmless */
+      }
     }
+    setSessionToken(null);
     persistSession(null);
   }
 
@@ -279,13 +365,16 @@ export function AuthProvider({ children }) {
         loading,
         login,
         logout,
+        signOutEverywhere,
         deleteAccount,
         sendSignupOtp,
         completeSignup,
         loginAsDemo,
         updateProfile,
+        changePassword,
         requestPasswordReset,
         resetPassword,
+        hasServerSession: Boolean(getSessionToken()),
       }}
     >
       {children}

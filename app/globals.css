@@ -63,10 +63,121 @@
   --accent-rgb: 122 70 160;
 }
 
+/* ---------------------------------------------------------------------------
+   Dark mode.
+
+   Scoped to the signed-in portals on purpose: DashboardLayout sets
+   data-theme on <html> while a dashboard page is mounted and clears it on
+   unmount, so the marketing pages keep their one intended look while a user
+   who spends their working day inside the portal can turn the lights down.
+
+   Only the tokens are redefined — every component reads them, so nothing
+   needed a dark-specific class. The role accents are re-stated afterwards at
+   higher lightness, because the light-mode accents are too dark to read
+   against a dark surface.
+   --------------------------------------------------------------------------- */
+:root[data-theme="dark"] {
+  --background: #14161a;
+  --foreground: #e9eaec;
+  --card: #1c1f24;
+  --card-foreground: #e9eaec;
+  --primary: #9ab155;
+  --primary-foreground: #14161a;
+  --secondary: #23272e;
+  --secondary-foreground: #c6c9ce;
+  --muted: #2a2f36;
+  --muted-foreground: #9aa0a8;
+  --border: #2f343c;
+  --accent: #b8c97a;
+  --accent-foreground: #14161a;
+
+  --background-rgb: 20 22 26;
+  --foreground-rgb: 233 234 236;
+  --card-rgb: 28 31 36;
+  --card-foreground-rgb: 233 234 236;
+  --primary-rgb: 154 177 85;
+  --primary-foreground-rgb: 20 22 26;
+  --secondary-rgb: 35 39 46;
+  --secondary-foreground-rgb: 198 201 206;
+  --muted-rgb: 42 47 54;
+  --muted-foreground-rgb: 154 160 168;
+  --border-rgb: 47 52 60;
+  --accent-rgb: 184 201 122;
+  --accent-foreground-rgb: 20 22 26;
+
+  color-scheme: dark;
+}
+
+:root[data-theme="dark"][data-role="industry"] {
+  --primary: #5ba3dd;
+  --primary-rgb: 91 163 221;
+  --accent: #7cb9e8;
+  --accent-rgb: 124 185 232;
+}
+
+:root[data-theme="dark"][data-role="academician"] {
+  --primary: #c9a35e;
+  --primary-rgb: 201 163 94;
+  --accent: #d9b877;
+  --accent-rgb: 217 184 119;
+}
+
+:root[data-theme="dark"][data-role="institution"] {
+  --primary: #b18cd9;
+  --primary-rgb: 177 140 217;
+  --accent: #c3a5e4;
+  --accent-rgb: 195 165 228;
+}
+
+/* Tailwind's fixed palette utilities (bg-green-50, text-red-600, …) are used
+   for status tones throughout. Left alone they are near-white blocks on a dark
+   page, so the tinted surfaces are darkened and their text lightened. This is
+   deliberately limited to the tone pairs the app actually uses. */
+:root[data-theme="dark"] .bg-green-50 { background-color: rgb(20 51 39); }
+:root[data-theme="dark"] .bg-emerald-50 { background-color: rgb(20 51 39); }
+:root[data-theme="dark"] .bg-amber-50 { background-color: rgb(61 47 16); }
+:root[data-theme="dark"] .bg-red-50 { background-color: rgb(62 26 26); }
+:root[data-theme="dark"] .bg-blue-50 { background-color: rgb(22 41 66); }
+:root[data-theme="dark"] .bg-purple-50 { background-color: rgb(45 30 62); }
+:root[data-theme="dark"] .bg-red-50\/60 { background-color: rgb(62 26 26 / 0.6); }
+:root[data-theme="dark"] .bg-emerald-50\/50 { background-color: rgb(20 51 39 / 0.5); }
+
+:root[data-theme="dark"] .text-green-600,
+:root[data-theme="dark"] .text-green-700,
+:root[data-theme="dark"] .text-green-800,
+:root[data-theme="dark"] .text-emerald-600,
+:root[data-theme="dark"] .text-emerald-700 { color: rgb(110 214 165); }
+:root[data-theme="dark"] .text-amber-600,
+:root[data-theme="dark"] .text-amber-700,
+:root[data-theme="dark"] .text-amber-800 { color: rgb(232 187 92); }
+:root[data-theme="dark"] .text-red-500,
+:root[data-theme="dark"] .text-red-600,
+:root[data-theme="dark"] .text-red-700 { color: rgb(240 138 138); }
+:root[data-theme="dark"] .text-blue-600,
+:root[data-theme="dark"] .text-blue-700 { color: rgb(126 180 240); }
+:root[data-theme="dark"] .text-purple-600,
+:root[data-theme="dark"] .text-purple-700 { color: rgb(190 154 235); }
+
+:root[data-theme="dark"] .border-green-200 { border-color: rgb(32 79 61); }
+:root[data-theme="dark"] .border-amber-200 { border-color: rgb(92 71 25); }
+:root[data-theme="dark"] .border-red-200 { border-color: rgb(95 42 42); }
+:root[data-theme="dark"] .border-blue-200 { border-color: rgb(34 62 99); }
+
+/* Images and screenshots inside the portal shouldn't glare on a dark page. */
+:root[data-theme="dark"] .mix-blend-multiply {
+  mix-blend-mode: normal;
+  filter: invert(1) hue-rotate(180deg) brightness(1.15);
+}
+
 html,
 body,
 #__next {
   height: 100%;
+}
+
+/* The token change should be felt, not watched. */
+html {
+  transition: background-color 180ms ease, color 180ms ease;
 }
 
 * {
@@ -128,4 +239,24 @@ body {
   animation: skeletonPulse 1.6s ease-in-out infinite;
   background-color: var(--muted);
   border-radius: 6px;
+}
+
+/* "Reduce motion" in Settings, plus the OS-level preference. Transitions are
+   collapsed rather than removed so state changes still land instantly. */
+:root[data-reduce-motion] *,
+:root[data-reduce-motion] *::before,
+:root[data-reduce-motion] *::after {
+  animation-duration: 0.001ms !important;
+  animation-iteration-count: 1 !important;
+  transition-duration: 0.001ms !important;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.001ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.001ms !important;
+  }
 }

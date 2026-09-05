@@ -37,7 +37,6 @@ import {
   PIPELINE_STAGES,
   TERMINAL_STAGES,
 } from "../../lib/store";
-import TalentPoolToggle from "../TalentPoolToggle";
 import StudentInbox from "../StudentInbox";
 import MentoringPanel from "../MentoringPanel";
 import { computeMatch, daysUntil, formatDate, formatDateTime, relativeTime } from "../../lib/match";
@@ -124,6 +123,19 @@ export default function StudentDashboard() {
     refresh();
   }, [user]);
 
+  /* Notification preferences from Settings decide what actually reaches the
+     student here. They default to on, so an account that predates the settings
+     page behaves exactly as it did. */
+  const notify = useMemo(
+    () => ({
+      applications: user?.notifyApplicationUpdates !== false,
+      tests: user?.notifyTestReminders !== false,
+      mentorship: user?.notifyMentorship !== false,
+      announcements: user?.notifyAnnouncements !== false,
+    }),
+    [user]
+  );
+
   useEffect(() => {
     if (!user) return;
     const unsub = subscribeToMutations(
@@ -131,7 +143,7 @@ export default function StudentDashboard() {
       (event) => {
         refresh();
         if (event.collection === "applications" && event.action === "UPDATE" && event.payload) {
-          if (event.payload.studentId === user.id) {
+          if (event.payload.studentId === user.id && notify.applications) {
             setFlash(`Application update: "${event.payload.internshipTitle || "Internship"}" is now "${event.payload.status}"`);
           }
         }
@@ -141,7 +153,7 @@ export default function StudentDashboard() {
       }
     );
     return unsub;
-  }, [user]);
+  }, [user, notify.applications]);
 
   /* ---------------- Derived data ---------------- */
 
@@ -207,6 +219,15 @@ export default function StudentDashboard() {
     [assessment, portfolio, applications, credentials]
   );
 
+  const gradedAttempts = useMemo(() => attempts.filter((a) => !a.missed), [attempts]);
+  const averageScore = useMemo(
+    () =>
+      gradedAttempts.length
+        ? Math.round(gradedAttempts.reduce((sum, a) => sum + a.score, 0) / gradedAttempts.length)
+        : null,
+    [gradedAttempts]
+  );
+
   /** Registrations joined to their test and current status, newest first. */
   const myTests = useMemo(() => {
     return registrations
@@ -265,7 +286,7 @@ export default function StudentDashboard() {
       });
     }
 
-    myTests.forEach(({ test, status, reg }) => {
+    if (notify.tests) myTests.forEach(({ test, status, reg }) => {
       const scheduled = test.scheduledAt ? new Date(`${test.scheduledAt}T${test.scheduledTime || "00:00"}`).getTime() : null;
       if (status === "upcoming" && scheduled && scheduled - now < 48 * 3600 * 1000) {
         items.push({
@@ -290,8 +311,11 @@ export default function StudentDashboard() {
           urgency: "high",
           icon: "📝",
           title: `${test.title} is ready to take`,
-          detail: "Complete it to add the score to your skill profile.",
-          cta: "Take test",
+          detail:
+            test.mode === "Online"
+              ? "A short marked paper — your score is added to your skill profile as soon as you finish."
+              : "Confirm you attended; the host publishes your mark afterwards.",
+          cta: test.mode === "Online" ? "Take test" : "Confirm attendance",
           onClick: () => navigate("skill-assessment"),
         });
       }
@@ -349,7 +373,7 @@ export default function StudentDashboard() {
       });
 
     return items.sort((a, b) => URGENCY[a.urgency] - URGENCY[b.urgency]).slice(0, 5);
-  }, [assessment, myTests, interviews, strength, savedRoles, appliedIds, navigate]);
+  }, [assessment, myTests, interviews, strength, savedRoles, appliedIds, navigate, notify.tests]);
 
   /* ---------------- Actions ---------------- */
 
@@ -360,9 +384,17 @@ export default function StudentDashboard() {
   }
 
   function confirmApply(note) {
-    applyToInternship(applyTarget, user, applyTarget.match, note);
-    setAppliedIds((prev) => new Set([...prev, applyTarget.id]));
-    setApplyTarget(null);
+    // Eligibility is re-decided inside the store from the posting's own
+    // criteria, so an ineligible application is refused here rather than
+    // relying on the button having been hidden.
+    try {
+      applyToInternship(applyTarget, user, null, note);
+      setAppliedIds((prev) => new Set([...prev, applyTarget.id]));
+      setApplyTarget(null);
+    } catch (err) {
+      setApplyTarget(null);
+      setFlash(err.message);
+    }
   }
 
   function handleToggleSave(internship) {
@@ -414,8 +446,6 @@ export default function StudentDashboard() {
           />
 
           <Flash message={flash} />
-
-          <TalentPoolToggle />
 
           {/* ---------- Action centre ---------- */}
           <Section
@@ -474,34 +504,47 @@ export default function StudentDashboard() {
             )}
           </Section>
 
+          {/* Each hint says where the number came from. A tile that shows a
+              figure a student can't explain is worse than no tile — this is the
+              same data the Analytics page breaks down in full. */}
           <StatGrid
             columns={5}
             stats={[
               {
                 label: "Skill Score",
                 value: assessment ? `${Math.round(assessment.overallScore)}/100` : "—",
-                hint: assessment ? `${competency.assessed} of ${competency.total} areas assessed` : "Take a skill test",
+                hint: assessment
+                  ? `${competency.assessed} of ${competency.total} areas assessed`
+                  : "Sit a test to get one",
                 icon: "🎯",
                 tone: "primary",
               },
               {
                 label: "Applications",
                 value: String(applications.length),
-                hint: `${pipeline.live} live · ${pipeline.rejected} closed`,
+                hint: applications.length ? `${pipeline.live} live · ${pipeline.rejected} closed` : "None yet",
                 icon: "📄",
                 tone: "blue",
               },
               {
                 label: "Certificates",
                 value: String(credentials.length + (portfolio?.certifications?.length || 0)),
-                hint: credentials.length ? `${credentials.length} verified` : "None yet",
+                hint: credentials.length
+                  ? `${credentials.length} verified by an issuer`
+                  : portfolio?.certifications?.length
+                  ? "Self-declared"
+                  : "None yet",
                 icon: "🏅",
                 tone: "amber",
               },
               {
                 label: "Tests Taken",
-                value: String(attempts.filter((a) => !a.missed).length),
-                hint: `${upcomingTests.length} upcoming`,
+                value: String(gradedAttempts.length),
+                hint: gradedAttempts.length
+                  ? `Average ${averageScore}%${upcomingTests.length ? ` · ${upcomingTests.length} upcoming` : ""}`
+                  : upcomingTests.length
+                  ? `${upcomingTests.length} upcoming`
+                  : "None yet",
                 icon: "📝",
                 tone: "purple",
               },
@@ -515,11 +558,19 @@ export default function StudentDashboard() {
             ]}
           />
 
-          {/* ---------- Application pipeline ---------- */}
-          {applications.length > 0 && (
+          {/* ---------- Application pipeline ----------
+              A four-stage funnel drawn over one or two applications says
+              nothing, so below three it is skipped entirely and the full
+              breakdown lives on the Analytics page instead. */}
+          {applications.length >= 3 && (
             <Section
               title="Your application pipeline"
               description="Where your live applications stand. Closed applications are counted separately so the numbers add up."
+              actions={
+                <button onClick={() => navigate("analytics")} className="text-xs text-primary font-medium hover:underline">
+                  Full breakdown →
+                </button>
+              }
             >
               <Card>
                 <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
@@ -925,10 +976,12 @@ export default function StudentDashboard() {
 
           <div className="grid lg:grid-cols-2 gap-5">
             <StudentInbox user={user} />
-            <MentoringPanel user={user} />
+            {notify.mentorship && <MentoringPanel user={user} />}
           </div>
 
-          {/* Campus Notice Board Widget */}
+          {/* Campus Notice Board — hidden when the student has turned campus
+              notices off in Settings, rather than shown-but-ignored. */}
+          {notify.announcements && (
           <Section
             title={
               <span className="flex items-center gap-2">
@@ -989,6 +1042,7 @@ export default function StudentDashboard() {
               </div>
             )}
           </Section>
+          )}
 
           <Section title="Upcoming Deadlines">
             {upcomingDeadlines.length === 0 ? (

@@ -6,6 +6,11 @@ import { useAuth } from "../../../lib/auth";
 import { Avatar, Badge, Button, Card, Field, Flash, PageHeader, ProgressRing, Section, Select, StatGrid, TextArea, TextInput, useFlash } from "../../ui/Kit";
 import { COLLAB_EXPERTISE, DEPARTMENTS } from "../../../lib/domains";
 import { listAdvisees, listCollabListingsByOwner, listPrograms, listResearchOutputs } from "../../../lib/store";
+import TagInput from "../../TagInput";
+import { api } from "../../../convex/_generated/api";
+import { backendQuerySafe, isBackendConfigured } from "../../../lib/convexBrowser";
+import { getSessionToken } from "../../../lib/session";
+import { formatDateTime } from "../../../lib/match";
 
 const DESIGNATIONS = ["Professor", "Associate Professor", "Assistant Professor", "Reader", "Lecturer", "Research Officer", "Head of Department", "Dean"];
 
@@ -32,8 +37,8 @@ export default function FacultyProfile() {
     orcid: "",
   });
   const [subjects, setSubjects] = useState([]);
-  const [subjectDraft, setSubjectDraft] = useState("");
   const [interests, setInterests] = useState([]);
+  const [slots, setSlots] = useState([]);
 
   useEffect(() => {
     if (!user) return;
@@ -55,19 +60,23 @@ export default function FacultyProfile() {
     setReady(true);
   }, [user]);
 
+  useEffect(() => {
+    if (!isBackendConfigured() || !getSessionToken()) return undefined;
+    let cancelled = false;
+    backendQuerySafe(api.mentorship.mySlots, {}, []).then((rows) => {
+      if (!cancelled) setSlots(rows || []);
+    });
+    return () => {
+      cancelled = true;
+    };
+  }, [user]);
+
   const outputs = useMemo(() => (ready && user ? listResearchOutputs(user.id) : []), [user, ready]);
   const listings = useMemo(() => (ready && user ? listCollabListingsByOwner(user.id) : []), [user, ready]);
   const advisees = useMemo(() => (ready && user ? listAdvisees(user.id) : []), [user, ready]);
   const programs = useMemo(() => (ready && user ? listPrograms().filter((p) => p.ownerId === user.id) : []), [user, ready]);
 
   const set = (k, v) => setForm((f) => ({ ...f, [k]: v }));
-
-  function addSubject() {
-    const value = subjectDraft.trim();
-    if (!value || subjects.includes(value)) return;
-    setSubjects((s) => [...s, value]);
-    setSubjectDraft("");
-  }
 
   function submit(e) {
     e.preventDefault();
@@ -164,50 +173,76 @@ export default function FacultyProfile() {
 
           <Card>
             <Section title="Subjects taught" description="Helps students find the right faculty member for mentoring.">
-              <div className="flex flex-wrap gap-2 mb-3">
-                {subjects.length === 0 && <span className="text-sm text-muted-foreground">None added yet.</span>}
-                {subjects.map((s) => (
-                  <span key={s} className="inline-flex items-center gap-1.5 bg-primary/8 text-primary rounded-full pl-3 pr-2 py-1.5 text-xs font-medium">
-                    {s}
-                    <button type="button" onClick={() => setSubjects((prev) => prev.filter((x) => x !== s))} aria-label={`Remove ${s}`}>×</button>
-                  </span>
-                ))}
-              </div>
-              <div className="flex gap-2">
-                <TextInput
-                  value={subjectDraft}
-                  onChange={(e) => setSubjectDraft(e.target.value)}
-                  onKeyDown={(e) => { if (e.key === "Enter") { e.preventDefault(); addSubject(); } }}
-                  placeholder="e.g. Data Structures, Operations Management, Dravyaguna Vigyan"
-                />
-                <Button type="button" variant="outline" onClick={addSubject}>Add</Button>
-              </div>
+              <TagInput
+                value={subjects}
+                onChange={setSubjects}
+                placeholder="e.g. Data Structures, Operations Management, Dravyaguna Vigyan"
+                inputLabel="Add a subject you teach"
+                maxTags={25}
+              />
             </Section>
           </Card>
 
           <Card>
             <Section
               title="Research interests"
-              description="This is the matching signal for Research Collabs — listings tagged with an interest you've selected are highlighted as a match for you."
+              description="Type whatever you actually work on. These are the matching signal for Research Collabs — a listing tagged with one of your interests is highlighted as a match."
             >
-              <div className="flex flex-wrap gap-2">
-                {COLLAB_EXPERTISE.map((x) => (
-                  <button
-                    key={x}
-                    type="button"
-                    onClick={() => setInterests((prev) => (prev.includes(x) ? prev.filter((v) => v !== x) : [...prev, x]))}
-                    className={`text-[11px] px-3 py-1.5 rounded-full border font-medium transition-colors ${
-                      interests.includes(x) ? "bg-primary text-white border-transparent" : "bg-card border-border text-muted-foreground hover:border-primary/40"
-                    }`}
-                  >
-                    {x}
-                  </button>
-                ))}
-              </div>
-              {interests.length === 0 && (
+              {/* Free text, not a preset grid. A fixed list of chips could only
+                  describe the fields whoever wrote the list had in mind, and it
+                  left everyone else with no way to describe their own work. */}
+              <TagInput
+                value={interests}
+                onChange={setInterests}
+                placeholder="e.g. Distributed Systems, Operations Research, Dravyaguna"
+                inputLabel="Add a research interest"
+                emptyHint="None added yet — Research Collabs has nothing to match you on."
+                suggestions={COLLAB_EXPERTISE}
+                maxTags={20}
+              />
+              {interests.length > 0 && interests.length < 2 && (
                 <p className="text-xs text-amber-600 mt-3">
-                  No interests selected — Research Collabs has nothing to match you on. Pick at least two.
+                  Add at least one more — matching works better with a couple of interests to compare against.
                 </p>
+              )}
+            </Section>
+          </Card>
+
+          {/* Availability belongs on the profile as well as on the calendar —
+              a student deciding whether to approach this mentor wants to know
+              whether they hold office hours at all. */}
+          <Card>
+            <Section
+              title="Office-hours availability"
+              description="Published slots students can book. Manage them on the Mentorship page."
+            >
+              {slots.length === 0 ? (
+                <p className="text-sm text-muted-foreground">
+                  No availability published. Students can&apos;t book time with you until you add a slot.
+                </p>
+              ) : (
+                <div className="space-y-2">
+                  {slots.slice(0, 4).map((s) => {
+                    const booked = (s.bookings || []).filter((b) => b.status !== "Cancelled").length;
+                    return (
+                      <div key={s.id} className="flex flex-wrap items-center gap-2.5 rounded-xl border border-border px-3.5 py-2.5">
+                        <span className="text-sm flex-shrink-0">📅</span>
+                        <div className="min-w-0 flex-1">
+                          <div className="text-xs font-medium text-foreground truncate">{s.title || "Office hours"}</div>
+                          <div className="text-[11px] text-muted-foreground truncate">
+                            {formatDateTime(s.slot)} · {s.durationMins || 30} min · {s.mode}
+                          </div>
+                        </div>
+                        <Badge tone={booked >= (s.capacity || 1) ? "blue" : booked ? "amber" : "green"}>
+                          {booked}/{s.capacity || 1} booked
+                        </Badge>
+                      </div>
+                    );
+                  })}
+                  {slots.length > 4 && (
+                    <p className="text-[11px] text-muted-foreground">{slots.length - 4} more on your calendar.</p>
+                  )}
+                </div>
               )}
             </Section>
           </Card>

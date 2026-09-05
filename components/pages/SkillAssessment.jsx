@@ -22,6 +22,7 @@ import {
   checkAndRecordMissedTests,
 } from "../../lib/store";
 import IssueCredentialModal from "../IssueCredentialModal";
+import RecordResultsModal from "../skilltests/RecordResultsModal";
 import { Badge, Button, Card, EmptyState, Field, Flash, Modal, PageHeader, Select, Tabs, TextArea, TextInput, useFlash } from "../ui/Kit";
 
 function StudentView({ user }) {
@@ -103,6 +104,7 @@ function HostView({ user }) {
   const [linkDrafts, setLinkDrafts] = useState({});
   const [linkErrors, setLinkErrors] = useState({});
   const [certifyTest, setCertifyTest] = useState(null);
+  const [resultsTest, setResultsTest] = useState(null);
   const [registrations, setRegistrations] = useState([]);
   const [flash, setFlash] = useFlash();
 
@@ -128,6 +130,7 @@ function HostView({ user }) {
           email: student?.email || r.email || "",
           subtitle: student?.institution || "",
           score: attempt && !attempt.missed ? attempt.score : null,
+          attended: Boolean(r.attended),
           alreadyIssued: hasCredentialForTest(r.userId, testId),
         };
       });
@@ -260,6 +263,18 @@ function HostView({ user }) {
                 >
                   {test.status === "In Progress" ? "Test Started" : "Start Test"}
                 </button>
+                {/* Online papers are marked by the server. An in-person test
+                    has no paper here, so its marks are entered by you — that
+                    is the only way an offline score gets recorded. */}
+                {test.mode === "Offline" && (
+                  <button
+                    onClick={() => setResultsTest(test)}
+                    disabled={registrantStats(test.id).total === 0}
+                    className="w-full text-xs font-medium py-2 rounded-xl border border-border text-muted-foreground hover:border-primary/40 hover:text-primary disabled:opacity-40 disabled:cursor-not-allowed transition-all duration-150"
+                  >
+                    ✍️ Record results
+                  </button>
+                )}
                 {/* Certificates were only ever awarded automatically to students
                     who scored 50+, and only as a text line in their portfolio.
                     A host can now issue the real, verifiable article. */}
@@ -274,6 +289,22 @@ function HostView({ user }) {
             </Card>
           ))}
         </div>
+      )}
+
+      {resultsTest && (
+        <RecordResultsModal
+          test={resultsTest}
+          issuer={user}
+          recipients={recipientsFor(resultsTest.id)}
+          onClose={() => {
+            setResultsTest(null);
+            refresh();
+          }}
+          onSaved={(count) => {
+            refresh();
+            setFlash(`Recorded ${count} result${count === 1 ? "" : "s"}. Candidates' skill profiles have been updated.`);
+          }}
+        />
       )}
 
       {certifyTest && (

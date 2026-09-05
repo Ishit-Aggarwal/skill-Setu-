@@ -1,6 +1,47 @@
 import { NextResponse } from "next/server";
 
 /**
+ * Learning ecosystems per track.
+ *
+ * Every sector the platform serves gets its own suggested resources. The
+ * previous version had exactly two branches — AYUSH, and "everyone else" — so a
+ * mechanical engineering student and a finance student were both handed the
+ * same generic link, and only one vertical was actually catered for.
+ */
+const FOUNDATION_RESOURCE = {
+  ayush: "Swayam · Ministry of Ayush national courses",
+  technology: "NPTEL · IIT Madras online track",
+  health: "Swayam · Public health & life sciences track",
+  business: "NPTEL Management · IIM open courseware",
+  engineering: "NPTEL Core Engineering · NITTTR modules",
+  general: "Swayam / NPTEL foundation courses",
+};
+
+const APPLIED_RESOURCE = {
+  ayush: "Pharmacovigilance & GCP guidelines (Ministry of Ayush)",
+  technology: "CDAC & open-source industry modules",
+  health: "ICMR / NABH practice guidelines",
+  business: "NISM & industry certification modules",
+  engineering: "BIS standards & CAD/CAM practice labs",
+  general: "CDAC & open-source industry modules",
+};
+
+const SECTOR_INTERVENTION = {
+  ayush:
+    "Cross-sector bridge: pairs classical therapeutic training with Good Clinical Practice and hospital information systems, which is what clinical-research employers screen for.",
+  technology:
+    "Cross-sector bridge: pairs coursework with a public repository of working code — verifiable proof-of-work is what technical screens actually look at.",
+  health:
+    "Cross-sector bridge: pairs clinical knowledge with documentation, biostatistics and regulatory practice, the parts of the job coursework rarely covers.",
+  business:
+    "Cross-sector bridge: pairs analytical coursework with a live case study and a modelled financial or operational decision, presented as a deliverable.",
+  engineering:
+    "Cross-sector bridge: pairs design fundamentals with tolerancing, quality systems and a fabricated or simulated artefact you can show.",
+  general:
+    "Cross-sector bridge: pairs industry-standard tooling with cross-functional working and something you can point at as evidence.",
+};
+
+/**
  * Deterministic analytical bridge generator used as a live-demo fail-safe.
  * If the Gemini API key is missing, network is severed, or latency spikes at the venue,
  * this function produces an instant, mathematically coherent, domain-tailored analysis.
@@ -13,22 +54,48 @@ function generateDeterministicFallback(scores = {}, targetJob = "General Industr
   const lowest = entries.slice(0, 3);
   const avgScore = entries.length ? Math.round(entries.reduce((acc, curr) => acc + curr[1], 0) / entries.length) : 65;
   
-  // Sector-based weighting
-  const isAyush = /ayush|ayurveda|yoga|unani|siddha|homeopathy|wellness/i.test(sector) || /ayush|ayurveda|clinical|panchakarma/i.test(targetJob);
-  const isTech = /tech|software|data|programming|developer|ai|informatics/i.test(sector) || /developer|engineer|data/i.test(targetJob);
+  /* Which learning ecosystem to point at. This decides *which resources are
+     suggested*, and nothing else — it must not move the score. It used to add
+     +4 to an AYUSH-sector match and +2 to everyone else's, which quietly made
+     the same competency profile worth more in one sector than another. The
+     bonus is now flat, so a match score means the same thing platform-wide. */
+  const haystack = `${sector} ${targetJob}`;
+  const track =
+    /ayush|ayurveda|yoga|unani|siddha|homeopath|panchakarma|wellness/i.test(haystack)
+      ? "ayush"
+      : /tech|software|data|programming|developer|\bai\b|informatics|cloud|cyber/i.test(haystack)
+      ? "technology"
+      : /pharma|biotech|clinical|hospital|health|nursing|medical/i.test(haystack)
+      ? "health"
+      : /finance|bank|account|audit|consult|management|marketing|sales|\bhr\b/i.test(haystack)
+      ? "business"
+      : /mechanical|civil|electrical|manufactur|production|automobile|energy/i.test(haystack)
+      ? "engineering"
+      : "general";
 
-  const matchPercentage = Math.max(45, Math.min(92, Math.round(avgScore * 0.9 + (isAyush ? 4 : 2))));
+  const matchPercentage = Math.max(45, Math.min(92, Math.round(avgScore * 0.9 + 2)));
   const readinessLevel = matchPercentage >= 78 ? "Near-Ready" : matchPercentage >= 60 ? "Intermediate" : "Needs Upskilling";
 
+  /* Why a gap matters, phrased for the student's own sector. These strings
+     used to describe every gap in clinical-compliance terms regardless of who
+     was reading — a computer science student was told their Programming score
+     mattered for "clinical data compliance". */
+  const clinical = track === "ayush" || track === "health";
   const criticalGaps = lowest.map(([skill, score]) => {
     const severity = score < 55 ? "High" : score < 72 ? "Medium" : "Low";
     let impact = `Identified as a critical competency driver for ${targetJob}.`;
     if (skill.includes("Data") || skill.includes("Programming")) {
-      impact = "Key requirement for modern digital reporting, telemetry, and clinical data compliance.";
-    } else if (skill.includes("Research") || skill.includes("Traditional")) {
-      impact = "Essential for regulatory documentation, GCP protocol compliance, and literature reviews.";
+      impact = clinical
+        ? "Underpins digital health records, reporting and clinical data compliance."
+        : "Underpins the day-to-day work in this role — reporting, tooling and automation.";
+    } else if (skill.includes("Research") || skill.includes("Documentation")) {
+      impact = clinical
+        ? "Essential for regulatory documentation, GCP protocol compliance and literature review."
+        : "Essential for specifications, technical writing and evidence-backed decisions.";
     } else if (skill.includes("Quantitative") || skill.includes("Problem")) {
-      impact = "Core benchmark for analytical troubleshooting and industrial operational workflows.";
+      impact = "A core screening benchmark: analytical troubleshooting and structured decision-making.";
+    } else if (skill.includes("Verbal") || skill.includes("Business")) {
+      impact = "How your work is understood by everyone who did not do it — the most commonly under-weighted gap.";
     }
     return { skill, score, severity, impact };
   });
@@ -46,7 +113,7 @@ function generateDeterministicFallback(scores = {}, targetJob = "General Industr
       days_1_30: [
         {
           action: `Foundational Masterclass in ${primaryGap}`,
-          resource: isAyush ? "Swayam / Ayush National Portal" : "NPTEL / IIT Madras Online Track",
+          resource: FOUNDATION_RESOURCE[track],
           type: "Course",
           duration: "Weeks 1–4",
         },
@@ -66,7 +133,7 @@ function generateDeterministicFallback(scores = {}, targetJob = "General Industr
         },
         {
           action: `Bridging Practical Workflows in ${secondaryGap}`,
-          resource: isAyush ? "Pharmacovigilance & GCP Guidelines (MoA)" : "CDAC / Open Source Industry Modules",
+          resource: APPLIED_RESOURCE[track],
           type: "Course",
           duration: "Weeks 7–8",
         },
@@ -86,9 +153,8 @@ function generateDeterministicFallback(scores = {}, targetJob = "General Industr
         },
       ],
     },
-    ayushSpecificIntervention: isAyush
-      ? "Cross-Sector Bridge: Combines classical therapeutic knowledge with modern Good Clinical Practice (GCP) and computerized hospital information systems (HMIS) for fast-track clinical trial roles."
-      : "Mainstream Bridge: Focuses on industry-standard tooling, cross-functional agile dynamics, and verifiable repository proof-of-work.",
+    sectorIntervention: SECTOR_INTERVENTION[track],
+    sectorTrack: track,
     isFallback: true,
   };
 }
@@ -125,7 +191,7 @@ TARGET CAREER OPPORTUNITY:
 
 YOUR TASK:
 Produce a deterministic, highly actionable 30-60-90 Day Skill Bridge Roadmap to elevate the student from their current competency level to industry-ready.
-Focus specifically on Indian national skilling ecosystems: NPTEL, Swayam, MoA (Ministry of Ayush) protocols, CDAC, and practical open-source capstones.
+Draw on Indian national skilling ecosystems relevant to THIS student's sector — NPTEL, Swayam, CDAC, NISM, BIS, ICMR, or Ministry of Ayush protocols as appropriate. Do not default to any one sector.
 
 OUTPUT RULES:
 - Return ONLY valid JSON (no markdown fences, no explanatory text outside the JSON object).
@@ -147,7 +213,7 @@ OUTPUT RULES:
       { "action": string, "resource": string, "type": "Course" | "Project" | "Certification" | "Placement Prep", "duration": string }
     ]
   },
-  "ayushSpecificIntervention": string (interdisciplinary bridge context)
+  "sectorIntervention": string (interdisciplinary bridge context for THIS sector)
 }
 `;
 

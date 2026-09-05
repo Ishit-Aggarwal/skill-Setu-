@@ -63,9 +63,38 @@ export default defineSchema({
     resetNonce: v.optional(v.union(v.string(), v.null())),
     resetRequestedAt: v.optional(v.union(v.string(), v.null())),
     resetExpiresAt: v.optional(v.union(v.number(), v.null())),
+    // Free-text interests the person typed themselves. Students and faculty
+    // both have one; nothing about the list is preset or field-specific.
+    interests: v.optional(v.array(v.string())),
+    // Account-level preferences from the Settings tab.
+    notifyApplicationUpdates: v.optional(v.boolean()),
+    notifyTestReminders: v.optional(v.boolean()),
+    notifyMentorship: v.optional(v.boolean()),
+    notifyAnnouncements: v.optional(v.boolean()),
+    showContactToRecruiters: v.optional(v.boolean()),
+    showScoresToRecruiters: v.optional(v.boolean()),
   })
     .index("by_email", ["email"])
     .index("by_role", ["role"]),
+
+  /**
+   * Server-owned sign-in sessions.
+   *
+   * Every privileged mutation resolves its caller from one of these rows
+   * rather than trusting an id the browser supplied, so "delete this account"
+   * or "change this role" cannot be aimed at somebody else by editing a
+   * request body. Tokens are random, opaque, and expire.
+   */
+  sessions: defineTable({
+    token: v.string(),
+    userId: v.string(),
+    role: v.string(),
+    createdAt: v.number(),
+    expiresAt: v.number(),
+    lastSeenAt: v.optional(v.number()),
+  })
+    .index("by_token", ["token"])
+    .index("by_user", ["userId"]),
 
   internships: defineTable({
     id: v.optional(v.string()),
@@ -206,6 +235,11 @@ export default defineSchema({
     weight: v.number(),
     missed: v.boolean(),
     completedAt: v.string(),
+    // Server-computed marking, so a score can always be explained.
+    correctCount: v.optional(v.number()),
+    totalQuestions: v.optional(v.number()),
+    breakdown: v.optional(v.array(v.any())),
+    gradedBy: v.optional(v.string()), // "server" for real graded attempts
   })
     .index("by_student", ["studentId"])
     .index("by_student_test", ["studentId", "testId"]),
@@ -364,6 +398,18 @@ export default defineSchema({
     status: v.string(),
     eligibleBatches: v.optional(v.array(v.string())),
     createdAt: v.string(),
+    // A drive card is the student's whole brief for the day — it needs to
+    // carry the criteria, the deadline and who to ask, not just a date.
+    description: v.optional(v.string()),
+    eligibilityCriteria: v.optional(v.string()),
+    eligibleDepartments: v.optional(v.array(v.string())),
+    minSkillScore: v.optional(v.union(v.number(), v.null())),
+    registrationDeadline: v.optional(v.string()),
+    capacity: v.optional(v.union(v.number(), v.null())),
+    coordinatorName: v.optional(v.string()),
+    coordinatorEmail: v.optional(v.string()),
+    coordinatorPhone: v.optional(v.string()),
+    tags: v.optional(v.array(v.string())),
   }).index("by_institute", ["instituteName"]),
 
   institutionAdmins: defineTable({
@@ -459,6 +505,10 @@ export default defineSchema({
     location: v.optional(v.string()),
     capacity: v.optional(v.number()),
     createdAt: v.string(),
+    // Calendar blocks need a label and a length to be drawn.
+    title: v.optional(v.string()),
+    durationMins: v.optional(v.number()),
+    notes: v.optional(v.string()),
   }).index("by_faculty", ["facultyId"]),
 
   placementHistory: defineTable({

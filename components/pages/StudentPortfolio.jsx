@@ -16,6 +16,7 @@ import { profileStrength } from "../../lib/profile";
 import { formatDate } from "../../lib/match";
 import { useNav } from "../../lib/nav";
 import { Badge, Button, Card, EmptyState, Field, ProgressRing, Section, Select, StatGrid, Tabs, TextArea, TextInput } from "../ui/Kit";
+import TagInput from "../TagInput";
 
 const levelTone = {
   Advanced: "primary",
@@ -153,6 +154,19 @@ export default function StudentPortfolio() {
   const [eduFile, setEduFile] = useState(null);
   const [timelineForm, setTimelineForm] = useState({ year: "", title: "", org: "", type: "Internship", detail: "" });
   const [docType, setDocType] = useState("Resume");
+
+  /* Interests live on the account rather than in the portfolio document,
+     alongside the faculty `researchInterests` field, so both sides of a mentor
+     match read from the same place. */
+  const [interests, setInterests] = useState([]);
+  useEffect(() => {
+    setInterests(user?.interests || []);
+  }, [user?.interests]);
+
+  function saveInterests(next) {
+    setInterests(next);
+    updateProfile({ interests: next });
+  }
 
   // The bio used to hit localStorage on every keystroke. It is still saved
   // automatically — just once the typing stops.
@@ -573,6 +587,28 @@ export default function StudentPortfolio() {
             )}
           </div>
         </div>
+
+        {/* Free-text interests. Students had no equivalent of the faculty
+            research-interests field at all, so there was no way to say what
+            they care about beyond a skill tag or a test score — and nothing for
+            a mentor or recruiter to start a conversation from. Typed, not
+            picked from a list: a preset list can only describe fields whoever
+            wrote it thought of. */}
+        <Card>
+          <Section
+            title="Interests"
+            description="What you're actually into — subjects, problems, industries. Shown on your profile to recruiters and mentors."
+          >
+            <TagInput
+              value={interests}
+              onChange={saveInterests}
+              placeholder="e.g. Distributed systems, Climate policy, Sports analytics"
+              inputLabel="Add an interest"
+              emptyHint="None added yet — add a few so people know what to talk to you about."
+              maxTags={15}
+            />
+          </Section>
+        </Card>
 
         <Card className="flex flex-wrap items-center gap-5">
           <ProgressRing value={strength.percent} tone="primary" size={92} sublabel="Profile strength" />

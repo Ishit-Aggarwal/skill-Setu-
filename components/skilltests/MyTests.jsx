@@ -1,21 +1,7 @@
 "use client";
 
-import { getRegistrationStatus, formatScheduled } from "../../lib/testStatus";
+import { formatScheduled, getRegistrationStatus, STATUS_LABEL, STATUS_TONE } from "../../lib/testStatus";
 import { Badge, DataTable } from "../ui/Kit";
-
-const statusTone = {
-  upcoming: "blue",
-  available: "primary",
-  completed: "green",
-  missed: "red",
-};
-
-const statusLabel = {
-  upcoming: "Upcoming",
-  available: "Confirm attendance",
-  completed: "Completed",
-  missed: "Missed",
-};
 
 export default function MyTests({ registrations, tests, attempts }) {
   const rows = registrations
@@ -61,13 +47,27 @@ export default function MyTests({ registrations, tests, attempts }) {
           key: "score",
           header: "Score",
           align: "center",
-          render: ({ attempt }) => <span className="text-sm font-semibold text-foreground">{attempt ? `${attempt.score}%` : "—"}</span>,
+          /* The marking is shown alongside the score, so a student can always
+             see what the number was computed from. */
+          render: ({ attempt }) =>
+            attempt ? (
+              <div>
+                <span className="text-sm font-semibold text-foreground">{attempt.score}%</span>
+                {attempt.totalQuestions ? (
+                  <div className="text-[10px] text-muted-foreground">
+                    {attempt.correctCount}/{attempt.totalQuestions} correct
+                  </div>
+                ) : null}
+              </div>
+            ) : (
+              <span className="text-sm text-muted-foreground">—</span>
+            ),
         },
         {
           key: "status",
           header: "Status",
           align: "center",
-          render: ({ status }) => <Badge tone={statusTone[status]}>{statusLabel[status]}</Badge>,
+          render: ({ status }) => <Badge tone={STATUS_TONE[status]}>{STATUS_LABEL[status]}</Badge>,
         },
       ]}
     />

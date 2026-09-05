@@ -2,8 +2,9 @@
 
 import { useState } from "react";
 import RegisterModal from "./RegisterModal";
-import { getRegistrationStatus, formatScheduled, isLinkRevealWindow } from "../../lib/testStatus";
-import { registerForSkillTest, selfReportOfflineAttendance } from "../../lib/store";
+import TakeTestModal from "./TakeTestModal";
+import { getRegistrationStatus, formatScheduled, isLinkRevealWindow, STATUS_LABEL, STATUS_TONE } from "../../lib/testStatus";
+import { registerForSkillTest, confirmOfflineAttendance } from "../../lib/store";
 import { Badge, Button, Card } from "../ui/Kit";
 
 const modeTone = {
@@ -11,22 +12,9 @@ const modeTone = {
   Offline: "amber",
 };
 
-const statusTone = {
-  upcoming: "blue",
-  available: "primary",
-  completed: "green",
-  missed: "red",
-};
-
-const statusLabel = {
-  upcoming: "Upcoming",
-  available: "Confirm attendance",
-  completed: "Completed",
-  missed: "Missed",
-};
-
 export default function TestCard({ test, user, registration, attempt, onRefresh }) {
   const [showRegister, setShowRegister] = useState(false);
+  const [showTest, setShowTest] = useState(false);
 
   const status = registration ? getRegistrationStatus(test, registration, attempt) : null;
 
@@ -36,8 +24,11 @@ export default function TestCard({ test, user, registration, attempt, onRefresh 
     onRefresh();
   }
 
-  function handleSelfReport() {
-    selfReportOfflineAttendance(user.id, test.id, test.domain);
+  /* In-person tests: confirming attendance records attendance and nothing
+     else. The mark is entered by the host afterwards — a candidate scoring
+     their own paper is not an assessment. */
+  function handleConfirmAttendance() {
+    confirmOfflineAttendance(user.id, test.id);
     onRefresh();
   }
 
@@ -46,12 +37,8 @@ export default function TestCard({ test, user, registration, attempt, onRefresh 
       <div className="flex items-center gap-1.5 flex-wrap mb-3">
         <Badge tone={modeTone[test.mode]}>{test.mode}</Badge>
         <Badge tone="neutral">{test.domain}</Badge>
-        {test.price > 0 ? (
-          <Badge tone="muted">₹{test.price}</Badge>
-        ) : (
-          <Badge tone="primary">Free</Badge>
-        )}
-        {status && <Badge tone={statusTone[status]} className="ml-auto">{statusLabel[status]}</Badge>}
+        {test.price > 0 ? <Badge tone="muted">₹{test.price}</Badge> : <Badge tone="primary">Free</Badge>}
+        {status && <Badge tone={STATUS_TONE[status]} className="ml-auto">{STATUS_LABEL[status]}</Badge>}
       </div>
 
       <div className="text-sm font-semibold text-foreground mb-0.5">{test.title}</div>
@@ -81,19 +68,42 @@ export default function TestCard({ test, user, registration, attempt, onRefresh 
 
       {registration && status === "upcoming" && (
         <div className="mt-auto text-center text-xs font-medium text-muted-foreground bg-secondary rounded-xl py-2.5">
-          {test.mode === "Online" ? "Registered — watch for the meeting link" : "Reporting details confirmed"}
+          {test.mode === "Online" ? "Registered — the paper unlocks at the scheduled time" : "Reporting details confirmed"}
         </div>
       )}
 
       {registration && status === "available" && (
-        <button onClick={handleSelfReport} className="mt-auto w-full py-2.5 rounded-xl text-sm font-medium bg-primary/10 text-primary hover:bg-primary hover:text-white transition-all duration-150">
-          {test.mode === "Online" ? "Mark as Completed" : "Mark as Attended"}
-        </button>
+        test.mode === "Online" ? (
+          <button
+            onClick={() => setShowTest(true)}
+            className="mt-auto w-full py-2.5 rounded-xl text-sm font-medium bg-primary text-white hover:bg-accent transition-all duration-150"
+          >
+            Take the test
+          </button>
+        ) : (
+          <button
+            onClick={handleConfirmAttendance}
+            className="mt-auto w-full py-2.5 rounded-xl text-sm font-medium bg-primary/10 text-primary hover:bg-primary hover:text-white transition-all duration-150"
+          >
+            Confirm I attended
+          </button>
+        )
+      )}
+
+      {registration && status === "awaiting-result" && (
+        <div className="mt-auto text-center text-xs font-medium text-amber-700 bg-amber-50 rounded-xl py-2.5 px-3 leading-relaxed">
+          Attendance recorded — {test.hostName} will publish your mark.
+        </div>
       )}
 
       {registration && status === "completed" && (
-        <div className="mt-auto text-center text-xs font-semibold text-green-600 bg-green-50 rounded-xl py-2.5">
-          {attempt?.score != null ? `Completed · ${attempt.score}%` : "Attended (self-reported)"}
+        <div className="mt-auto text-center text-xs font-semibold text-green-700 bg-green-50 rounded-xl py-2.5">
+          Completed · {attempt?.score}%
+          {attempt?.totalQuestions ? (
+            <span className="block font-normal text-[11px] text-green-600 mt-0.5">
+              {attempt.correctCount}/{attempt.totalQuestions} correct
+            </span>
+          ) : null}
         </div>
       )}
 
@@ -104,6 +114,17 @@ export default function TestCard({ test, user, registration, attempt, onRefresh 
       )}
 
       {showRegister && <RegisterModal test={test} user={user} onConfirm={handleConfirmRegister} onClose={() => setShowRegister(false)} />}
+      {showTest && (
+        <TakeTestModal
+          test={test}
+          user={user}
+          onClose={() => {
+            setShowTest(false);
+            onRefresh();
+          }}
+          onGraded={onRefresh}
+        />
+      )}
     </Card>
   );
 }

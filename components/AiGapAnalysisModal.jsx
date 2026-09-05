@@ -237,13 +237,13 @@ export default function AiGapAnalysisModal({ isOpen, onClose, assessment, intern
             </Card>
 
             {/* AYUSH & Cross-Sectoral Bridge Callout */}
-            {analysis.ayushSpecificIntervention && (
+            {(analysis.sectorIntervention || analysis.ayushSpecificIntervention) && (
               <div className="p-4 rounded-2xl bg-olive-50 border border-olive-200 text-olive-900 space-y-1">
                 <div className="flex items-center gap-2 font-semibold text-xs text-olive-800 uppercase tracking-wider">
-                  <span>🌿 Interdisciplinary Integration Bridge</span>
+                  <span>🔗 Interdisciplinary Integration Bridge</span>
                 </div>
                 <p className="text-xs text-olive-700 leading-relaxed">
-                  {analysis.ayushSpecificIntervention}
+                  {(analysis.sectorIntervention || analysis.ayushSpecificIntervention)}
                 </p>
               </div>
             )}

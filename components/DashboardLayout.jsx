@@ -6,6 +6,7 @@ import { useAuth } from "../lib/auth";
 import { useNav } from "../lib/nav";
 import EditProfileModal from "./EditProfileModal";
 import NotificationBell from "./NotificationBell";
+import { useTheme } from "../lib/preferences";
 import { Avatar, IconTile } from "./ui/Kit";
 
 function Icon({ children }) {
@@ -61,6 +62,9 @@ const IconCompass = () => (
 const IconCheckCircle = () => (
   <Icon><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14" /><polyline points="22 4 12 14.01 9 11.01" /></Icon>
 );
+const IconSettings = () => (
+  <Icon><circle cx="12" cy="12" r="3" /><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06A1.65 1.65 0 0 0 9 4.6a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z" /></Icon>
+);
 const IconMenu = () => (
   <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
     <line x1="3" y1="12" x2="21" y2="12" /><line x1="3" y1="6" x2="21" y2="6" /><line x1="3" y1="18" x2="21" y2="18" />
@@ -79,8 +83,10 @@ const NAV = {
     { label: "Dashboard", short: "Home", page: "student-dashboard", icon: <IconGrid /> },
     { label: "Skill Tests", short: "Tests", page: "skill-assessment", icon: <IconTarget /> },
     { label: "Internships", short: "Jobs", page: "internship-listings", icon: <IconBriefcase /> },
+    { label: "Mentorship", short: "Mentor", page: "student-mentorship", icon: <IconCalendar /> },
     { label: "My Portfolio", short: "Profile", page: "student-portfolio", icon: <IconUser /> },
     { label: "Analytics", short: "Insights", page: "analytics", icon: <IconBarChart /> },
+    { label: "Settings", short: "Settings", page: "settings", icon: <IconSettings /> },
   ],
   industry: [
     { label: "Dashboard", short: "Home", page: "industry-dashboard", icon: <IconGrid /> },
@@ -91,6 +97,7 @@ const NAV = {
     { label: "Skill Tests", short: "Tests", page: "skill-assessment", icon: <IconTarget /> },
     { label: "Hiring Team", short: "Team", page: "industry-team", icon: <IconUser /> },
     { label: "Company Profile", short: "Company", page: "company-profile", icon: <IconBuilding /> },
+    { label: "Settings", short: "Settings", page: "settings", icon: <IconSettings /> },
   ],
   academician: [
     { label: "Dashboard", short: "Home", page: "academician-dashboard", icon: <IconGrid /> },
@@ -103,6 +110,7 @@ const NAV = {
     { label: "Analytics", short: "Insights", page: "academician-analytics", icon: <IconBarChart /> },
     { label: "Skill Tests", short: "Tests", page: "skill-assessment", icon: <IconTarget /> },
     { label: "Faculty Profile", short: "Profile", page: "academician-profile", icon: <IconUser /> },
+    { label: "Settings", short: "Settings", page: "settings", icon: <IconSettings /> },
   ],
   institution: [
     { label: "Dashboard", short: "Home", page: "institution-dashboard", icon: <IconGrid /> },
@@ -116,6 +124,7 @@ const NAV = {
     { label: "Skill Tests", short: "Tests", page: "skill-assessment", icon: <IconTarget /> },
     { label: "Team & Activity", short: "Team", page: "institution-team", icon: <IconUser /> },
     { label: "Institution Profile", short: "Profile", page: "institution-profile", icon: <IconBuilding /> },
+    { label: "Settings", short: "Settings", page: "settings", icon: <IconSettings /> },
   ],
 };
 
@@ -147,6 +156,12 @@ export default function DashboardLayout({ children, activePage, title }) {
   const navigate = useNav();
 
   const role = user?.role || "student";
+
+  /* The appearance preference is applied only while a portal page is mounted,
+     and cleared on unmount. That is what keeps dark mode inside the signed-in
+     product: the landing page and the other public pages never carry the
+     attribute, so they always render in the one look they were designed for. */
+  const { resolved: resolvedTheme, theme, setTheme } = useTheme({ active: true });
 
   // Sets data-role on <html> (not just this subtree) so role-accent CSS vars
   // in globals.css also reach modals like ApplyConfirmModal that render as
@@ -254,6 +269,31 @@ export default function DashboardLayout({ children, activePage, title }) {
           <div className="flex-1 hidden lg:block min-w-0">{title && <h1 className="text-base font-semibold text-foreground truncate tracking-tight">{title}</h1>}</div>
 
           <div className="ml-auto flex items-center gap-2.5">
+            {/* A one-click toggle in reach at all times; Settings owns the full
+                choice including "match my device". */}
+            <button
+              onClick={() => setTheme(resolvedTheme === "dark" ? "light" : "dark")}
+              aria-label={resolvedTheme === "dark" ? "Switch to light appearance" : "Switch to dark appearance"}
+              title={
+                theme === "system"
+                  ? "Matching your device — click to override"
+                  : resolvedTheme === "dark"
+                  ? "Dark appearance"
+                  : "Light appearance"
+              }
+              className="p-2 rounded-lg text-muted-foreground hover:bg-secondary hover:text-foreground transition-colors"
+            >
+              {resolvedTheme === "dark" ? (
+                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                  <circle cx="12" cy="12" r="4" />
+                  <path d="M12 2v2M12 20v2M4.9 4.9l1.4 1.4M17.7 17.7l1.4 1.4M2 12h2M20 12h2M4.9 19.1l1.4-1.4M17.7 6.3l1.4-1.4" />
+                </svg>
+              ) : (
+                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                  <path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z" />
+                </svg>
+              )}
+            </button>
             {role === "student" && <NotificationBell user={user} onOpenInbox={() => navigate("student-dashboard")} />}
             <button onClick={() => setShowEditProfile(true)} aria-label="Edit profile" className="rounded-full hover:ring-2 hover:ring-primary/20 transition-all">
               <Avatar name={userName} size={34} src={user?.avatarDataUrl} />

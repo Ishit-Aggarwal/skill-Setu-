@@ -12,13 +12,14 @@ import {
   listCollabInterests,
   listCollabListingsByOwner,
   listCollabMilestones,
-  listMentorBookings,
-  listOfficeHours,
   listProgramRegistrations,
   listPrograms,
   listResearchOutputs,
 } from "../../../lib/store";
 import { FLAG_TONE, PLACEMENT_TONE, averageDomainScores, buildFacultyStudents } from "./useFaculty";
+import { api } from "../../../convex/_generated/api";
+import { backendQuerySafe, isBackendConfigured } from "../../../lib/convexBrowser";
+import { getSessionToken } from "../../../lib/session";
 
 /**
  * A real overview page. Previously "Dashboard" and "Programs (FDPs)" in the
@@ -39,8 +40,19 @@ export default function AcademicianDashboard() {
   const myPrograms = useMemo(() => programs.filter((p) => p.ownerId === user?.id), [programs, user]);
   const listings = useMemo(() => (ready && user ? listCollabListingsByOwner(user.id) : []), [user, ready]);
   const outputs = useMemo(() => (ready && user ? listResearchOutputs(user.id) : []), [user, ready]);
-  const bookings = useMemo(() => (ready && user ? listMentorBookings(user.id) : []), [user, ready]);
-  const slots = useMemo(() => (ready && user ? listOfficeHours(user.id) : []), [user, ready]);
+  /* Office hours live in Convex now, because they are two-sided — a slot
+     published here has to be bookable by a student on another device. */
+  const [slots, setSlots] = useState([]);
+  useEffect(() => {
+    if (!isBackendConfigured() || !getSessionToken()) return;
+    let cancelled = false;
+    backendQuerySafe(api.mentorship.mySlots, {}, []).then((rows) => {
+      if (!cancelled) setSlots(rows || []);
+    });
+    return () => {
+      cancelled = true;
+    };
+  }, [user]);
 
   const pendingCollabs = useMemo(
     () => (ready ? SEED_COLLABS.filter((c) => c.status === "Pending Review" && !getCollabResponse(c.id)) : []),
@@ -59,14 +71,15 @@ export default function AcademicianDashboard() {
     [advisees, students]
   );
 
-  const upcomingBookings = useMemo(() => {
-    const slotById = Object.fromEntries(slots.map((s) => [s.id, s]));
-    return bookings
-      .map((b) => ({ ...b, slot: slotById[b.slotId] }))
-      .filter((b) => b.slot && new Date(b.slot.slot).getTime() > Date.now())
-      .sort((a, b) => new Date(a.slot.slot) - new Date(b.slot.slot))
-      .slice(0, 4);
-  }, [bookings, slots]);
+  const upcomingBookings = useMemo(
+    () =>
+      slots
+        .flatMap((slot) => (slot.bookings || []).map((b) => ({ ...b, slot })))
+        .filter((b) => b.status !== "Cancelled" && new Date(b.slot.slot).getTime() > Date.now())
+        .sort((a, b) => new Date(a.slot.slot) - new Date(b.slot.slot))
+        .slice(0, 4),
+    [slots]
+  );
 
   const seatAlerts = useMemo(
     () =>

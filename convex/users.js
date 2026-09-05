@@ -1,17 +1,33 @@
 import { query, mutation } from "./_generated/server";
 import { v } from "convex/values";
+import {
+  authError,
+  publicUser,
+  requireActor,
+  requireSelfOrAdmin,
+  stripProtectedFields,
+} from "./_lib/authz";
 
 /**
  * Accounts live here (not in browser localStorage) so a registered user can
  * sign in from any device, browser or network. Nothing in this file ties an
  * account to a device, a session count, or an IP address.
+ *
+ * Every write below resolves its caller from a server-issued session before it
+ * touches anything. Passing somebody else's id is not enough to edit, delete or
+ * re-role their account — the id in the request body is checked against the id
+ * behind the session, not trusted on its own.
+ *
+ * Password hashing and verification live in `authNode.js`; nothing here reads
+ * or returns a hash.
  */
 
-/** Never hand a password hash back to a client. */
-function publicUser(doc) {
-  if (!doc) return null;
-  const { passwordHash, ...rest } = doc;
-  return rest;
+async function revokeSessions(ctx, userId) {
+  const rows = await ctx.db
+    .query("sessions")
+    .withIndex("by_user", (q) => q.eq("userId", userId))
+    .collect();
+  for (const row of rows) await ctx.db.delete(row._id);
 }
 
 export const getByEmail = query({
@@ -36,38 +52,14 @@ export const existsByEmail = query({
   },
 });
 
-/**
- * Credential check. The comparison happens here so the stored hash is never
- * returned over the wire. Returns null on any failure so callers can't tell
- * "no such account" from "wrong password" by the shape of the response.
- */
-export const authenticate = query({
-  args: { email: v.string(), passwordHash: v.string() },
-  handler: async (ctx, args) => {
-    const doc = await ctx.db
-      .query("users")
-      .withIndex("by_email", (q) => q.eq("email", args.email.trim().toLowerCase()))
-      .first();
-
-    if (!doc) return { ok: false, reason: "NOT_FOUND" };
-    if (!doc.passwordHash) return { ok: false, reason: "NO_PASSWORD" };
-    if (doc.passwordHash !== args.passwordHash) return { ok: false, reason: "BAD_PASSWORD" };
-    if (doc.emailVerified === false) return { ok: false, reason: "UNVERIFIED" };
-
-    return { ok: true, user: publicUser(doc) };
-  },
-});
-
 export const getById = query({
   args: { id: v.string() },
   handler: async (ctx, args) => {
-    // Check both custom id and Convex _id
     const byCustomId = await ctx.db
       .query("users")
       .filter((q) => q.eq(q.field("id"), args.id))
       .first();
     if (byCustomId) return publicUser(byCustomId);
-
     try {
       return publicUser(await ctx.db.get(args.id));
     } catch {
@@ -76,9 +68,18 @@ export const getById = query({
   },
 });
 
+/**
+ * Directory listing. Bulk access to student records is what a talent-pool
+ * search needs, so it is limited to the roles that legitimately search — a
+ * signed-out caller can no longer pull every student in one request.
+ */
 export const listByRole = query({
-  args: { role: v.string() },
+  args: { role: v.string(), sessionToken: v.optional(v.string()) },
   handler: async (ctx, args) => {
+    const actor = await requireActor(ctx, args.sessionToken);
+    if (args.role === "student" && !["industry", "institution", "academician", "admin"].includes(actor.role)) {
+      throw authError("Only verified recruiters and institutions can browse student records.");
+    }
     const docs = await ctx.db
       .query("users")
       .withIndex("by_role", (q) => q.eq("role", args.role))
@@ -88,78 +89,51 @@ export const listByRole = query({
 });
 
 /**
- * Create a verified account. Callers must have already checked the signup OTP
- * — `emailVerified` is required and must be true, so an unverified account can
- * never be written by this path.
+ * Profile edits. Only the account holder (or an admin) may write, and the
+ * fields that decide identity and privilege — role, email, verification state,
+ * password — are stripped from the patch regardless of who is calling, so a
+ * user cannot promote themselves by editing their own profile.
  */
-export const createUser = mutation({
-  args: {
-    id: v.optional(v.string()),
-    email: v.string(),
-    passwordHash: v.optional(v.union(v.string(), v.null())),
-    role: v.string(),
-    name: v.optional(v.string()),
-    institution: v.optional(v.string()),
-    instituteName: v.optional(v.string()),
-    instituteId: v.optional(v.string()),
-    department: v.optional(v.string()),
-    course: v.optional(v.string()),
-    year: v.optional(v.string()),
-    companyName: v.optional(v.string()),
-    workEmailDomain: v.optional(v.string()),
-    phone: v.optional(v.string()),
-    employeeId: v.optional(v.string()),
-    verifiedCode: v.optional(v.union(v.string(), v.null())),
-    emailVerified: v.boolean(),
-  },
-  handler: async (ctx, args) => {
-    if (args.emailVerified !== true) {
-      throw new Error("Refusing to create an account that has not passed email verification.");
-    }
-
-    const email = args.email.trim().toLowerCase();
-    const existing = await ctx.db
-      .query("users")
-      .withIndex("by_email", (q) => q.eq("email", email))
-      .first();
-
-    if (existing) {
-      throw new Error("User already exists with this email");
-    }
-
-    const now = new Date().toISOString();
-    const id = args.id || `user_${Date.now().toString(36)}_${Math.random().toString(36).slice(2, 8)}`;
-
-    const _id = await ctx.db.insert("users", {
-      ...args,
-      id,
-      email,
-      emailVerified: true,
-      verifiedAt: now,
-      createdAt: now,
-    });
-
-    return publicUser(await ctx.db.get(_id));
-  },
-});
-
 export const updateProfile = mutation({
-  args: {
-    id: v.string(),
-    patch: v.any(),
-  },
+  args: { sessionToken: v.string(), id: v.string(), patch: v.any() },
   handler: async (ctx, args) => {
+    const actor = await requireActor(ctx, args.sessionToken);
+    requireSelfOrAdmin(actor, args.id);
+
     const user = await ctx.db
       .query("users")
       .filter((q) => q.eq(q.field("id"), args.id))
       .first();
-
     if (!user) return null;
 
-    // Guard the fields that must never be client-writable.
-    const { passwordHash, email, emailVerified, verifiedAt, id, ...safe } = args.patch || {};
-    await ctx.db.patch(user._id, safe);
+    await ctx.db.patch(user._id, stripProtectedFields(args.patch));
     return publicUser(await ctx.db.get(user._id));
+  },
+});
+
+/**
+ * Role changes are an admin action. A user cannot change their own role, and
+ * one user cannot change another's — the two ways this was previously open.
+ */
+export const setRole = mutation({
+  args: { sessionToken: v.string(), id: v.string(), role: v.string() },
+  handler: async (ctx, args) => {
+    const actor = await requireActor(ctx, args.sessionToken);
+    if (actor.role !== "admin") throw authError("Only an administrator can change an account's role.");
+    if (!["student", "industry", "academician", "institution", "admin"].includes(args.role)) {
+      throw new Error("Unrecognised role.");
+    }
+
+    const user = await ctx.db
+      .query("users")
+      .filter((q) => q.eq(q.field("id"), args.id))
+      .first();
+    if (!user) return { ok: false, reason: "NOT_FOUND" };
+
+    await ctx.db.patch(user._id, { role: args.role });
+    // Sessions carry the role they were issued with, so invalidate them.
+    await revokeSessions(ctx, args.id);
+    return { ok: true, user: publicUser(await ctx.db.get(user._id)) };
   },
 });
 
@@ -169,6 +143,10 @@ export const updateProfile = mutation({
  * It is stored on the user document rather than being a purely stateless
  * signed token, because resetting the password must invalidate any link that
  * was issued earlier — a stateless token cannot be revoked.
+ *
+ * Deliberately unauthenticated: the whole point is that the caller has lost
+ * access. It returns the nonce only to the API route that emails it, and says
+ * nothing about whether the address is registered beyond `ok`.
  */
 export const issuePasswordReset = mutation({
   args: { email: v.string(), ttlMinutes: v.optional(v.number()) },
@@ -193,44 +171,55 @@ export const issuePasswordReset = mutation({
   },
 });
 
-/** Step 2: swap the password hash, then burn the nonce so the link is single-use. */
-export const resetPassword = mutation({
-  args: { email: v.string(), nonce: v.string(), passwordHash: v.string() },
-  handler: async (ctx, args) => {
-    const email = args.email.trim().toLowerCase();
-    const user = await ctx.db
-      .query("users")
-      .withIndex("by_email", (q) => q.eq("email", email))
-      .first();
-
-    if (!user) return { ok: false, reason: "NOT_FOUND" };
-    if (!user.resetNonce || user.resetNonce !== args.nonce) return { ok: false, reason: "BAD_TOKEN" };
-    if (!user.resetExpiresAt || Date.now() > user.resetExpiresAt) return { ok: false, reason: "EXPIRED" };
-
-    await ctx.db.patch(user._id, {
-      passwordHash: args.passwordHash,
-      resetNonce: null,
-      resetRequestedAt: null,
-      resetExpiresAt: null,
-      // Completing a reset proves control of the mailbox, so an account that
-      // somehow never finished verification is verified by this too.
-      emailVerified: true,
-    });
-
-    return { ok: true, user: publicUser(await ctx.db.get(user._id)) };
-  },
-});
-
-/** Account deletion, issued from the profile modal's danger zone. */
+/**
+ * Account deletion. Previously any caller could delete any account by id; now
+ * the session behind the request has to be that account (or an admin), and the
+ * user's own rows go with it rather than being orphaned.
+ */
 export const deleteUser = mutation({
-  args: { id: v.string() },
+  args: { sessionToken: v.string(), id: v.string() },
   handler: async (ctx, args) => {
+    const actor = await requireActor(ctx, args.sessionToken);
+    requireSelfOrAdmin(actor, args.id);
+
     const user = await ctx.db
       .query("users")
       .filter((q) => q.eq(q.field("id"), args.id))
       .first();
-
     if (!user) return { ok: false, reason: "NOT_FOUND" };
+
+    for (const app of await ctx.db
+      .query("applications")
+      .withIndex("by_student", (q) => q.eq("studentId", args.id))
+      .collect()) {
+      await ctx.db.delete(app._id);
+    }
+    for (const p of await ctx.db
+      .query("portfolios")
+      .withIndex("by_student", (q) => q.eq("studentId", args.id))
+      .collect()) {
+      await ctx.db.delete(p._id);
+    }
+    for (const a of await ctx.db
+      .query("assessments")
+      .withIndex("by_student", (q) => q.eq("studentId", args.id))
+      .collect()) {
+      await ctx.db.delete(a._id);
+    }
+    for (const a of await ctx.db
+      .query("assessmentAttempts")
+      .withIndex("by_student", (q) => q.eq("studentId", args.id))
+      .collect()) {
+      await ctx.db.delete(a._id);
+    }
+    for (const b of await ctx.db
+      .query("mentorBookings")
+      .withIndex("by_student", (q) => q.eq("studentId", args.id))
+      .collect()) {
+      await ctx.db.delete(b._id);
+    }
+
+    await revokeSessions(ctx, args.id);
     await ctx.db.delete(user._id);
     return { ok: true };
   },

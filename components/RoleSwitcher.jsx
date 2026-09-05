@@ -29,14 +29,14 @@ export default function RoleSwitcher({ className = "" }) {
   if (!user) return null;
   const isDemo = user.id?.startsWith("demo-");
 
-  function switchTo(role) {
+  async function switchTo(role) {
     setOpen(false);
     if (role === user.role) {
       router.push(PAGE_PATHS[roleHomePage(role)]);
       return;
     }
     if (isDemo) {
-      const demoUser = loginAsDemo(role);
+      const demoUser = await loginAsDemo(role);
       router.push(PAGE_PATHS[roleHomePage(demoUser.role)]);
     } else {
       router.push(`/login?role=${role}&mode=login`);

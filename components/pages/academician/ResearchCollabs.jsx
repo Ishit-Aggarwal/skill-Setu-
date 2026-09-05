@@ -28,6 +28,7 @@ import {
   updateCollabListing,
 } from "../../../lib/store";
 import { subscribeToMutations } from "../../../lib/sync";
+import TagInput from "../../TagInput";
 
 const TYPE_TONE = { Industry: "blue", Academic: "purple", Govt: "green" };
 const OUTPUT_TYPES = ["Journal Paper", "Conference Paper", "Book Chapter", "Patent", "Technical Report"];
@@ -522,21 +523,19 @@ function ListingForm({ defaultExpertise, onCancel, onSubmit }) {
     >
       <Field label="Title"><TextInput required value={form.title} onChange={(e) => set("title", e.target.value)} placeholder="Standardisation of regional Rasayana formulations" /></Field>
       <Field label="Description"><TextArea required rows={4} value={form.description} onChange={(e) => set("description", e.target.value)} placeholder="What the project involves and what a collaborator would contribute." /></Field>
-      <Field label="Expertise sought" hint="Also used to surface your listing to the right people.">
-        <div className="flex flex-wrap gap-2">
-          {COLLAB_EXPERTISE.map((x) => (
-            <button
-              key={x}
-              type="button"
-              onClick={() => setExpertise((prev) => (prev.includes(x) ? prev.filter((v) => v !== x) : [...prev, x]))}
-              className={`text-[11px] px-2.5 py-1.5 rounded-full border font-medium transition-colors ${
-                expertise.includes(x) ? "bg-primary text-white border-transparent" : "bg-card border-border text-muted-foreground"
-              }`}
-            >
-              {x}
-            </button>
-          ))}
-        </div>
+      {/* Free text, matched against whatever collaborators typed on their own
+          profiles — so a listing can ask for expertise nobody thought to put in
+          a preset list. */}
+      <Field label="Expertise sought" hint="Type what you need. This is what surfaces your listing to the right people.">
+        <TagInput
+          value={expertise}
+          onChange={setExpertise}
+          placeholder="e.g. Finite Element Analysis, Health Economics"
+          inputLabel="Add an expertise you're looking for"
+          suggestions={COLLAB_EXPERTISE}
+          maxTags={12}
+          emptyHint="None yet — add at least one so the right people see this."
+        />
       </Field>
       <div className="grid grid-cols-2 gap-3">
         <Field label="Collaborators needed"><TextInput type="number" min="1" value={form.collaboratorsNeeded} onChange={(e) => set("collaboratorsNeeded", e.target.value)} /></Field>

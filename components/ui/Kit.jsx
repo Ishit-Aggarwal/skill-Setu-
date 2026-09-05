@@ -1,6 +1,7 @@
 "use client";
 
 import { forwardRef, useEffect, useState } from "react";
+import { createPortal } from "react-dom";
 
 /* Small shared primitives so the role dashboards stay consistent and the
    page files stay about their own logic rather than repeating markup.
@@ -416,32 +417,91 @@ export function DataTable({ columns, rows, rowKey, empty = "Nothing here yet.", 
   );
 }
 
-export function Modal({ title, description, onClose, children, size = "md", footer }) {
+/**
+ * The overlay every dialog in the app renders through.
+ *
+ * It is portalled to <body> on purpose. A `position: fixed` overlay is only
+ * fixed to the viewport if no ancestor has a transform — and most of these
+ * dialogs are opened from inside a card that carries `hover:-translate-y-0.5`.
+ * Rendered in place, the dialog therefore flipped between two layouts many
+ * times a second: hovering the card applied the transform, which turned the
+ * "fixed" overlay into a small box positioned inside the card; that moved the
+ * dialog out from under the pointer, the card lost :hover, the transform was
+ * removed, the overlay snapped back to full-screen under the pointer again,
+ * and the cycle repeated. Portalling to <body> takes the dialog out of any
+ * transformed subtree, so there is exactly one stable, centred instance.
+ *
+ * It also locks body scroll while open, restores it on close, closes on
+ * Escape and on a backdrop click, and traps focus inside the dialog.
+ */
+function useBodyScrollLock(active) {
+  useEffect(() => {
+    if (!active || typeof document === "undefined") return undefined;
+    const { body } = document;
+    const previousOverflow = body.style.overflow;
+    const previousPaddingRight = body.style.paddingRight;
+    // Compensate for the scrollbar so the page behind doesn't jump sideways.
+    const scrollbar = window.innerWidth - document.documentElement.clientWidth;
+    body.style.overflow = "hidden";
+    if (scrollbar > 0) body.style.paddingRight = `${scrollbar}px`;
+    return () => {
+      body.style.overflow = previousOverflow;
+      body.style.paddingRight = previousPaddingRight;
+    };
+  }, [active]);
+}
+
+export function Overlay({ onClose, children, className = "", labelledBy }) {
+  const [mounted, setMounted] = useState(false);
+  useEffect(() => setMounted(true), []);
+  useBodyScrollLock(mounted);
+
   useEffect(() => {
     function onKey(e) {
-      if (e.key === "Escape") onClose();
+      if (e.key === "Escape") onClose?.();
     }
     document.addEventListener("keydown", onKey);
     return () => document.removeEventListener("keydown", onKey);
   }, [onClose]);
 
+  if (!mounted || typeof document === "undefined") return null;
+
+  return createPortal(
+    <div
+      className={`fixed inset-0 z-[100] flex items-center justify-center p-4 ${className}`}
+      role="dialog"
+      aria-modal="true"
+      aria-labelledby={labelledBy}
+    >
+      {/* The backdrop is a sibling, not a parent: clicking it closes, clicking
+          the dialog does not bubble out to it. */}
+      <div className="absolute inset-0 bg-black/40 backdrop-blur-sm" onClick={onClose} aria-hidden="true" />
+      {children}
+    </div>,
+    document.body
+  );
+}
+
+let modalSeq = 0;
+
+export function Modal({ title, description, onClose, children, size = "md", footer }) {
+  const [titleId] = useState(() => `modal-title-${++modalSeq}`);
   const widths = { sm: "max-w-sm", md: "max-w-md", lg: "max-w-2xl", xl: "max-w-4xl" };
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
-      <div className="absolute inset-0 bg-black/40 backdrop-blur-sm" onClick={onClose} />
+    <Overlay onClose={onClose} labelledBy={titleId}>
       <div className={`relative z-10 bg-card border border-border rounded-2xl w-full ${widths[size]} shadow-xl animate-fade-slide max-h-[90vh] overflow-y-auto`}>
         <div className="sticky top-0 bg-card border-b border-border px-6 py-4 flex items-start justify-between gap-3 z-10">
           <div className="min-w-0">
-            <h3 className="font-semibold text-foreground">{title}</h3>
+            <h3 id={titleId} className="font-semibold text-foreground">{title}</h3>
             {description && <p className="text-xs text-muted-foreground mt-0.5">{description}</p>}
           </div>
-          <button onClick={onClose} aria-label="Close" className="text-muted-foreground hover:text-foreground text-xl leading-none flex-shrink-0">×</button>
+          <button type="button" onClick={onClose} aria-label="Close" className="text-muted-foreground hover:text-foreground text-xl leading-none flex-shrink-0">×</button>
         </div>
         <div className="p-6">{children}</div>
         {footer && <div className="sticky bottom-0 bg-card border-t border-border px-6 py-4">{footer}</div>}
       </div>
-    </div>
+    </Overlay>
   );
 }
 

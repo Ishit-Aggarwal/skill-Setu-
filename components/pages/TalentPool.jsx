@@ -42,10 +42,14 @@ export default function TalentPool() {
       pool.map((s) => {
         const assessment = getAssessment(s.id);
         const portfolio = getPortfolio(s.id);
+        // A student who has hidden their scores in Settings is still
+        // discoverable — the numbers just aren't shown or filtered on.
+        const scoresVisible = s.showScoresToRecruiters !== false;
         return {
           ...s,
-          score: assessment ? Math.round(assessment.overallScore) : null,
-          domainScores: assessment?.domainScores || {},
+          scoresVisible,
+          score: assessment && scoresVisible ? Math.round(assessment.overallScore) : null,
+          domainScores: scoresVisible ? assessment?.domainScores || {} : {},
           topSkills: Object.values(portfolio?.skillBadges || {}).flat().slice(0, 4).map((sk) => sk.name),
           status: placementStatusFor(s.id),
         };

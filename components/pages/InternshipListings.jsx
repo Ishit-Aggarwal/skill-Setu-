@@ -357,9 +357,17 @@ function StudentView({ user }) {
   }, [filtered]);
 
   function confirmApply(note) {
-    applyToInternship(applyTarget, user, applyTarget.match, note);
-    setAppliedIds((prev) => new Set([...prev, applyTarget.id]));
-    setApplyTarget(null);
+    // Eligibility is re-decided inside the store from the posting's own
+    // criteria, so an ineligible application is refused here rather than
+    // relying on the button having been hidden.
+    try {
+      applyToInternship(applyTarget, user, null, note);
+      setAppliedIds((prev) => new Set([...prev, applyTarget.id]));
+      setApplyTarget(null);
+    } catch (err) {
+      setApplyTarget(null);
+      setFlash(err.message);
+    }
   }
 
   return (

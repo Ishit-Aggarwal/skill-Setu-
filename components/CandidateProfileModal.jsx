@@ -4,7 +4,8 @@ import { useEffect, useState } from "react";
 import { findOne, getAssessment, getPortfolio, listRecruiters, updateApplicationRecruiterFields, updateApplicationStatus, PIPELINE_STAGES } from "../lib/store";
 import { useAuth } from "../lib/auth";
 import { formatDate } from "../lib/match";
-import { Avatar, Badge, IconTile } from "./ui/Kit";
+import { scoresFor } from "../lib/taxonomy";
+import { Avatar, Badge, IconTile, Overlay } from "./ui/Kit";
 
 /**
  * Read-only candidate profile for a recruiter — opened either from an
@@ -47,6 +48,21 @@ export default function CandidateProfileModal({ application, onClose, onUpdated 
   const portfolio = getPortfolio(application.studentId);
   const resumeDoc = portfolio?.documents?.find((d) => d.type === "Resume");
 
+  /* The categories shown are this candidate's own rubric, derived from their
+     department and course — not a fixed list applied to every student. A CSE
+     candidate is never shown clinical axes, and a BAMS candidate is never shown
+     programming ones. */
+  const competency = scoresFor(
+    student || {
+      department: application.studentDepartment,
+      course: application.studentCourse,
+    },
+    assessment
+  );
+
+  const showContact = student?.showContactToRecruiters !== false;
+  const showScores = student?.showScoresToRecruiters !== false;
+
   useEffect(() => {
     setInterviewMode(application.interviewMode || "");
     setInterviewAt(application.interviewAt || "");
@@ -64,8 +80,9 @@ export default function CandidateProfileModal({ application, onClose, onUpdated 
   }
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
-      <div className="absolute inset-0 bg-black/40 backdrop-blur-sm" onClick={onClose} />
+    /* Opened from an applicant card that lifts on hover; without the portal in
+       Overlay the transform on that card would re-anchor this fixed overlay. */
+    <Overlay onClose={onClose}>
       <div className="relative z-10 bg-card border border-border rounded-2xl w-full max-w-lg shadow-xl animate-fade-slide max-h-[88vh] overflow-y-auto">
         <div className="sticky top-0 bg-card border-b border-border p-5 flex items-start justify-between gap-3 z-10">
           <div className="flex items-center gap-3 min-w-0">
@@ -87,12 +104,22 @@ export default function CandidateProfileModal({ application, onClose, onUpdated 
             {hasApplication && <Badge tone="neutral">Applied {formatDate(application.appliedAt)}</Badge>}
           </div>
 
+          {/* The student's own privacy switches decide this. The same rule is
+              enforced in the Convex query that serves a portfolio, so hiding it
+              here is the visible half of a real control, not the whole of it. */}
           <div>
             <div className="text-xs font-semibold text-muted-foreground uppercase tracking-wider mb-2">Contact</div>
-            <div className="text-sm text-foreground space-y-1">
-              <div>{student?.email || "Email not available"}</div>
-              {student?.phone && <div>{student.phone}</div>}
-            </div>
+            {showContact ? (
+              <div className="text-sm text-foreground space-y-1">
+                <div>{student?.email || "Email not available"}</div>
+                {student?.phone && <div>{student.phone}</div>}
+              </div>
+            ) : (
+              <p className="text-sm text-muted-foreground">
+                This candidate has chosen not to share contact details. Reach them by moving their application forward —
+                they&apos;ll be notified.
+              </p>
+            )}
           </div>
 
           {portfolio?.bio && (
@@ -102,19 +129,51 @@ export default function CandidateProfileModal({ application, onClose, onUpdated 
             </div>
           )}
 
-          {assessment && (
+          {/* What they said they're interested in, in their own words — the
+              part of a candidate a score can't tell you. */}
+          {student?.interests?.length > 0 && (
+            <div>
+              <div className="text-xs font-semibold text-muted-foreground uppercase tracking-wider mb-2">Interests</div>
+              <div className="flex flex-wrap gap-1.5">
+                {student.interests.map((interest) => (
+                  <Badge key={interest} tone="primary">{interest}</Badge>
+                ))}
+              </div>
+            </div>
+          )}
+
+          {assessment && !showScores && (
             <div>
               <div className="text-xs font-semibold text-muted-foreground uppercase tracking-wider mb-2">Skill Assessment</div>
-              <div className="flex items-center gap-3 mb-2.5">
+              <p className="text-sm text-muted-foreground">
+                This candidate keeps their test scores private. Their skills, projects and certifications are below.
+              </p>
+            </div>
+          )}
+
+          {assessment && showScores && (
+            <div>
+              <div className="text-xs font-semibold text-muted-foreground uppercase tracking-wider mb-2">Skill Assessment</div>
+              <div className="flex items-center gap-3 mb-1.5">
                 <IconTile icon="📊" size={34} />
                 <div>
                   <span className="text-lg font-bold text-foreground">{Math.round(assessment.overallScore)}</span>
                   <span className="text-xs text-muted-foreground"> / 100 overall</span>
                 </div>
               </div>
+              <p className="text-[11px] text-muted-foreground mb-2.5">
+                {competency.taxonomy.label} · {competency.assessed} of {competency.total} areas assessed
+              </p>
               <div className="flex flex-wrap gap-1.5">
-                {Object.entries(assessment.domainScores || {}).map(([domain, score]) => (
-                  <Badge key={domain} tone="neutral">{domain}: {Math.round(score)}</Badge>
+                {competency.rows.map(({ skill, score }) => (
+                  <Badge key={skill} tone={score == null ? "muted" : "neutral"}>
+                    {skill}: {score == null ? "not assessed" : Math.round(score)}
+                  </Badge>
+                ))}
+                {competency.extra.map(({ skill, score }) => (
+                  <Badge key={skill} tone="blue" title="Assessed outside this candidate's own rubric">
+                    {skill}: {Math.round(score)}
+                  </Badge>
                 ))}
               </div>
             </div>
@@ -294,6 +353,6 @@ export default function CandidateProfileModal({ application, onClose, onUpdated 
           )}
         </div>
       </div>
-    </div>
+    </Overlay>
   );
 }

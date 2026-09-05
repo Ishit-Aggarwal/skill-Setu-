@@ -34,6 +34,20 @@ const roleConfig = {
   },
 };
 
+/**
+ * Company and institution accounts are referred to by their organisation's
+ * name everywhere else in the product — "Hosted by <Company>", "<Institute>
+ * placement cell" — so that is what they sign in with. An individual's email
+ * stays available as a fallback, and is required when one organisation has
+ * more than one account.
+ */
+const ORG_ROLES = {
+  industry: { noun: "company name", label: "Company Name", placeholder: "e.g. Meridian Software Labs" },
+  institution: { noun: "institution name", label: "Institution Name", placeholder: "e.g. Apex University of Technology & Applied Sciences" },
+};
+
+const MIN_PASSWORD_LENGTH = 8;
+
 function isValidEmail(email) {
   return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email);
 }
@@ -51,6 +65,10 @@ function LoginPageInner() {
 
   const [loginEmail, setLoginEmail] = useState("");
   const [loginPassword, setLoginPassword] = useState("");
+  const [loginOrganisation, setLoginOrganisation] = useState("");
+  // Companies and institutions sign in as the organisation by default; email
+  // stays available for the case where one organisation has several accounts.
+  const [useEmailInstead, setUseEmailInstead] = useState(false);
   const [resetSent, setResetSent] = useState(null);
 
   const [form, setForm] = useState({
@@ -122,16 +140,26 @@ function LoginPageInner() {
     }
   }
 
+  /* Whether this role signs in as an organisation rather than as a person. */
+  const orgLogin = ORG_ROLES[role] && !useEmailInstead;
+
   async function handleLoginSubmit(e) {
     e.preventDefault();
     setError(null);
-    if (!loginEmail || !loginPassword) return setError("Please enter your email and password.");
+    if (!loginPassword) return setError("Please enter your password.");
+    if (orgLogin && !loginOrganisation.trim()) return setError(`Please enter your ${ORG_ROLES[role].noun}.`);
+    if (!orgLogin && !loginEmail) return setError("Please enter your email and password.");
+
     setLoading(true);
     try {
-      const found = await login(loginEmail, loginPassword);
+      const found = orgLogin
+        ? await login(loginOrganisation, loginPassword, { role, byOrganisation: true })
+        : await login(loginEmail, loginPassword);
       router.push(PAGE_PATHS[roleHomePage(found.role)]);
     } catch (err) {
       setError(err.message);
+      // "Several accounts under this name" is only actionable by email.
+      if (/work email address instead/i.test(err.message || "")) setUseEmailInstead(true);
     } finally {
       setLoading(false);
     }
@@ -140,7 +168,9 @@ function LoginPageInner() {
   function validateSignupForm() {
     if (!form.name.trim() || form.name.trim().length < 3) return "Please enter your full name (min. 3 characters).";
     if (!form.email || !isValidEmail(form.email)) return "Please enter a valid email address.";
-    if (!form.password || form.password.length < 6) return "Password must be at least 6 characters long.";
+    if (!form.password || form.password.length < MIN_PASSWORD_LENGTH) {
+      return `Password must be at least ${MIN_PASSWORD_LENGTH} characters long.`;
+    }
 
     if (role === "student") {
       if (!form.institution.trim() || form.institution.trim().length < 4) return "Please enter your institution / college name.";
@@ -320,11 +350,39 @@ function LoginPageInner() {
 
           {mode === "login" && step === "form" && (
             <form onSubmit={handleLoginSubmit} className="space-y-4">
-              <div>
-                <label className="block text-sm font-medium text-foreground mb-1.5">Email Address</label>
-                <input type="email" value={loginEmail} onChange={(e) => setLoginEmail(e.target.value)} placeholder="you@example.com" required
-                  className="w-full bg-card border border-border rounded-xl px-4 py-3 text-sm text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-primary/30 focus:border-primary transition-all" />
-              </div>
+              {orgLogin ? (
+                <div>
+                  <label className="block text-sm font-medium text-foreground mb-1.5">{ORG_ROLES[role].label}</label>
+                  <input
+                    type="text"
+                    value={loginOrganisation}
+                    onChange={(e) => setLoginOrganisation(e.target.value)}
+                    placeholder={ORG_ROLES[role].placeholder}
+                    autoComplete="organization"
+                    required
+                    className="w-full bg-card border border-border rounded-xl px-4 py-3 text-sm text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-primary/30 focus:border-primary transition-all"
+                  />
+                  <p className="text-[11px] text-muted-foreground mt-1.5">
+                    Exactly as it appears on your postings.{" "}
+                    <button type="button" onClick={() => setUseEmailInstead(true)} className="text-primary font-medium hover:underline">
+                      Use your work email instead
+                    </button>
+                  </p>
+                </div>
+              ) : (
+                <div>
+                  <label className="block text-sm font-medium text-foreground mb-1.5">Email Address</label>
+                  <input type="email" value={loginEmail} onChange={(e) => setLoginEmail(e.target.value)} placeholder="you@example.com" autoComplete="email" required
+                    className="w-full bg-card border border-border rounded-xl px-4 py-3 text-sm text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-primary/30 focus:border-primary transition-all" />
+                  {ORG_ROLES[role] && (
+                    <p className="text-[11px] text-muted-foreground mt-1.5">
+                      <button type="button" onClick={() => setUseEmailInstead(false)} className="text-primary font-medium hover:underline">
+                        Sign in with your {ORG_ROLES[role].noun} instead
+                      </button>
+                    </p>
+                  )}
+                </div>
+              )}
               <div>
                 <div className="flex items-center justify-between mb-1.5">
                   <label className="block text-sm font-medium text-foreground">Password</label>

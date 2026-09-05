@@ -22,6 +22,7 @@ import {
 } from "../../../lib/store";
 import { subscribeToMutations } from "../../../lib/sync";
 import { buildRoster, useInstitutionName } from "./useInstitution";
+import TagInput from "../../TagInput";
 
 const RSVP_TONE = { Confirmed: "green", Tentative: "amber", Declined: "red", Invited: "muted" };
 const RSVP_OPTIONS = ["Invited", "Tentative", "Confirmed", "Declined"];
@@ -90,21 +91,96 @@ export default function PlacementDrives() {
               {drives.map((d) => {
                 const dInvites = listDriveInvites(d.id);
                 const dConfirmed = dInvites.filter((i) => i.rsvp === "Confirmed").length;
+                const dEligible = listDriveEligibility(d.id).length;
                 const upcoming = d.date >= today;
                 return (
+                  /* A drive card is a student's whole brief for the day, so it
+                     carries the criteria, the registration deadline, who is
+                     coming, remaining capacity and who to ask — not just a
+                     title, a date and two counters. */
                   <button
                     key={d.id}
                     onClick={() => setActiveId(d.id)}
-                    className={`text-left bg-card border rounded-2xl p-4 transition-all duration-150 hover:shadow-md ${active?.id === d.id ? "border-primary" : "border-border"}`}
+                    className={`text-left bg-card border rounded-2xl p-4 flex flex-col transition-all duration-150 hover:shadow-md ${active?.id === d.id ? "border-primary" : "border-border"}`}
                   >
                     <div className="flex items-start justify-between gap-2 mb-1.5">
                       <div className="text-sm font-semibold text-foreground min-w-0">{d.title}</div>
                       <Badge tone={upcoming ? "primary" : "muted"}>{upcoming ? "Upcoming" : "Past"}</Badge>
                     </div>
-                    <div className="text-xs text-muted-foreground mb-3">{formatDate(d.date)} · {d.venue || "Venue TBC"}</div>
-                    <div className="flex items-center gap-4 text-[11px] text-muted-foreground">
+                    <div className="text-xs text-muted-foreground mb-2">{formatDate(d.date)} · {d.venue || "Venue TBC"}</div>
+
+                    {d.description && (
+                      <p className="text-xs text-muted-foreground leading-relaxed mb-2.5 line-clamp-3">{d.description}</p>
+                    )}
+
+                    <dl className="text-[11px] text-muted-foreground space-y-1 mb-2.5">
+                      {(d.eligibilityCriteria || d.eligibleBatches?.length || d.minSkillScore) && (
+                        <div className="flex gap-1.5">
+                          <dt className="flex-shrink-0">🎯</dt>
+                          <dd className="min-w-0">
+                            {d.eligibilityCriteria ||
+                              [
+                                d.eligibleBatches?.length ? `Batches ${d.eligibleBatches.join(", ")}` : null,
+                                d.eligibleDepartments?.length ? d.eligibleDepartments.join(", ") : null,
+                                d.minSkillScore ? `skill score ${d.minSkillScore}+` : null,
+                              ]
+                                .filter(Boolean)
+                                .join(" · ")}
+                          </dd>
+                        </div>
+                      )}
+                      {d.registrationDeadline && (
+                        <div className="flex gap-1.5">
+                          <dt className="flex-shrink-0">⏳</dt>
+                          <dd>
+                            Register by {formatDate(d.registrationDeadline)}
+                            {d.registrationDeadline < today ? " · closed" : ""}
+                          </dd>
+                        </div>
+                      )}
+                      {dInvites.length > 0 && (
+                        <div className="flex gap-1.5">
+                          <dt className="flex-shrink-0">🏢</dt>
+                          <dd className="min-w-0 truncate">
+                            {dInvites
+                              .filter((i) => i.rsvp === "Confirmed")
+                              .slice(0, 2)
+                              .map((i) => i.company)
+                              .join(", ") || "No confirmations yet"}
+                            {dConfirmed > 2 ? ` +${dConfirmed - 2} more` : ""}
+                          </dd>
+                        </div>
+                      )}
+                      {d.coordinatorName && (
+                        <div className="flex gap-1.5">
+                          <dt className="flex-shrink-0">☎️</dt>
+                          <dd className="min-w-0 truncate">
+                            {d.coordinatorName}
+                            {d.coordinatorEmail ? ` · ${d.coordinatorEmail}` : ""}
+                          </dd>
+                        </div>
+                      )}
+                    </dl>
+
+                    {d.tags?.length > 0 && (
+                      <div className="flex flex-wrap gap-1 mb-2.5">
+                        {d.tags.slice(0, 4).map((t) => (
+                          <span key={t} className="text-[10px] px-2 py-0.5 rounded-full bg-secondary text-secondary-foreground">
+                            {t}
+                          </span>
+                        ))}
+                      </div>
+                    )}
+
+                    <div className="mt-auto pt-2 border-t border-border/60 flex items-center gap-4 text-[11px] text-muted-foreground">
                       <span className="flex items-center gap-1.5"><span>🏢</span>{dConfirmed}/{dInvites.length} confirmed</span>
-                      <span className="flex items-center gap-1.5"><span>🎓</span>{listDriveEligibility(d.id).length} eligible</span>
+                      <span className="flex items-center gap-1.5"><span>🎓</span>{dEligible} eligible</span>
+                      {d.capacity ? (
+                        <span className="flex items-center gap-1.5">
+                          <span>🪑</span>
+                          {Math.max(0, d.capacity - dEligible)} of {d.capacity} places left
+                        </span>
+                      ) : null}
                     </div>
                   </button>
                 );
@@ -281,24 +357,51 @@ export default function PlacementDrives() {
 }
 
 function CreateDriveModal({ instituteName, actor, batches, onClose, onDone }) {
-  const [form, setForm] = useState({ title: "", date: "", venue: "", description: "" });
+  const [form, setForm] = useState({
+    title: "",
+    date: "",
+    venue: "",
+    description: "",
+    eligibilityCriteria: "",
+    registrationDeadline: "",
+    minSkillScore: "",
+    capacity: "",
+    coordinatorName: actor || "",
+    coordinatorEmail: "",
+    coordinatorPhone: "",
+  });
   const [selectedBatches, setSelectedBatches] = useState([]);
+  const [tags, setTags] = useState([]);
   const set = (k, v) => setForm((f) => ({ ...f, [k]: v }));
 
   function submit(e) {
     e.preventDefault();
-    const drive = createDrive(instituteName, { ...form, eligibleBatches: selectedBatches });
+    const drive = createDrive(instituteName, {
+      ...form,
+      eligibleBatches: selectedBatches,
+      tags,
+      minSkillScore: form.minSkillScore ? Number(form.minSkillScore) : null,
+      capacity: form.capacity ? Number(form.capacity) : null,
+    });
     logActivity(instituteName, actor || "Admin", "Created placement drive", form.title);
     onDone(drive.id, `“${form.title}” scheduled for ${formatDate(form.date)}.`);
   }
 
   return (
-    <Modal title="Schedule a placement drive" onClose={onClose}>
+    <Modal title="Schedule a placement drive" description="Everything you fill in here shows on the drive card students see." onClose={onClose} size="lg">
       <form onSubmit={submit} className="space-y-4">
         <Field label="Drive title"><TextInput required value={form.title} onChange={(e) => set("title", e.target.value)} placeholder="Annual Campus Placement Drive 2026" /></Field>
         <div className="grid grid-cols-2 gap-3">
           <Field label="Date"><TextInput required type="date" value={form.date} onChange={(e) => set("date", e.target.value)} /></Field>
           <Field label="Venue"><TextInput value={form.venue} onChange={(e) => set("venue", e.target.value)} placeholder="Main Auditorium" /></Field>
+        </div>
+        <div className="grid grid-cols-2 gap-3">
+          <Field label="Registration deadline" hint="Shown as a countdown on the card.">
+            <TextInput type="date" value={form.registrationDeadline} onChange={(e) => set("registrationDeadline", e.target.value)} />
+          </Field>
+          <Field label="Capacity" hint="Total places on the day. Optional.">
+            <TextInput type="number" min="0" value={form.capacity} onChange={(e) => set("capacity", e.target.value)} placeholder="200" />
+          </Field>
         </div>
         {batches.length > 0 && (
           <Field label="Eligible batches" hint="Leave empty to open the drive to every batch.">
@@ -318,7 +421,34 @@ function CreateDriveModal({ instituteName, actor, batches, onClose, onDone }) {
             </div>
           </Field>
         )}
-        <Field label="Notes"><TextArea rows={3} value={form.description} onChange={(e) => set("description", e.target.value)} placeholder="Which sectors, what the day looks like, anything recruiters should know." /></Field>
+        <div className="grid grid-cols-2 gap-3">
+          <Field label="Minimum skill score" hint="Leave blank for no threshold.">
+            <TextInput type="number" min="0" max="100" value={form.minSkillScore} onChange={(e) => set("minSkillScore", e.target.value)} placeholder="60" />
+          </Field>
+          <Field label="Other eligibility" hint="Anything the batch and score filters don't cover.">
+            <TextInput value={form.eligibilityCriteria} onChange={(e) => set("eligibilityCriteria", e.target.value)} placeholder="No active backlogs" />
+          </Field>
+        </div>
+
+        <Field label="Sectors / tags" hint="Helps students see at a glance whether the day is for them.">
+          <TagInput
+            value={tags}
+            onChange={setTags}
+            placeholder="e.g. Software, Core Engineering, Analytics"
+            inputLabel="Add a sector tag"
+            maxTags={8}
+            emptyHint="None yet."
+          />
+        </Field>
+
+        <Field label="Description"><TextArea rows={3} value={form.description} onChange={(e) => set("description", e.target.value)} placeholder="Which sectors, what the day looks like, anything students and recruiters should know." /></Field>
+
+        <div className="grid sm:grid-cols-3 gap-3">
+          <Field label="Coordinator"><TextInput value={form.coordinatorName} onChange={(e) => set("coordinatorName", e.target.value)} placeholder="Pooja Sharma" /></Field>
+          <Field label="Contact email"><TextInput type="email" value={form.coordinatorEmail} onChange={(e) => set("coordinatorEmail", e.target.value)} placeholder="tpo@apex-tech.edu.in" /></Field>
+          <Field label="Contact phone"><TextInput value={form.coordinatorPhone} onChange={(e) => set("coordinatorPhone", e.target.value)} placeholder="+91 80 4123 5500" /></Field>
+        </div>
+
         <div className="flex gap-3">
           <Button type="button" variant="outline" className="flex-1" onClick={onClose}>Cancel</Button>
           <Button type="submit" className="flex-1">Schedule drive</Button>

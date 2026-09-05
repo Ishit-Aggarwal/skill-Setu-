@@ -4,7 +4,7 @@ import { useState } from "react";
 import { useAuth } from "../lib/auth";
 import { DEPARTMENTS } from "../lib/domains";
 import { getPortfolio, savePortfolio } from "../lib/store";
-import { Field, TextInput, TextArea, Select, Button, Tabs } from "./ui/Kit";
+import { Field, TextInput, TextArea, Select, Button, Tabs, Overlay } from "./ui/Kit";
 
 const YEAR_OPTIONS = ["1st Year", "2nd Year", "3rd Year", "4th Year", "5th Year", "Final Year", "Graduated"];
 const COMPANY_SIZES = ["1–10", "11–50", "51–200", "201–500", "501–1000", "1000+"];
@@ -164,8 +164,7 @@ export default function EditProfileModal({ onClose }) {
   const departmentOptions = [...new Set([...DEPARTMENTS, form.department].filter(Boolean))];
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
-      <div className="absolute inset-0 bg-black/40 backdrop-blur-sm" onClick={onClose} />
+    <Overlay onClose={onClose}>
       <div className="relative z-10 bg-card border border-border rounded-2xl w-full max-w-lg shadow-2xl animate-fade-slide max-h-[90vh] overflow-y-auto">
         <div className="sticky top-0 bg-card/95 backdrop-blur border-b border-border px-6 py-4 z-10">
           <h3 className="font-semibold text-foreground text-lg tracking-tight">Edit Profile</h3>
@@ -497,6 +496,6 @@ export default function EditProfileModal({ onClose }) {
           </div>
         )}
       </div>
-    </div>
+    </Overlay>
   );
 }

@@ -34,6 +34,8 @@ export default function CompanyProfile() {
     hqLocation: "",
     companySize: "",
     contactPersonName: "",
+    designation: "",
+    department: "",
     phone: "",
     linkedIn: "",
   });
@@ -54,6 +56,8 @@ export default function CompanyProfile() {
       hqLocation: user.hqLocation || "",
       companySize: user.companySize || "",
       contactPersonName: user.contactPersonName || "",
+      designation: user.designation || "",
+      department: user.department || "",
       phone: user.phone || "",
       linkedIn: user.linkedIn || "",
     });
@@ -249,8 +253,12 @@ export default function CompanyProfile() {
 
           <Card className="space-y-4">
             <div className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">Contact person</div>
+            {/* Who a student is actually talking to. A name with no role or team
+               behind it tells a candidate nothing about who reviewed them. */}
             <div className="grid sm:grid-cols-2 gap-3">
               <Field label="Name"><TextInput value={form.contactPersonName} onChange={(e) => set("contactPersonName", e.target.value)} /></Field>
+              <Field label="Role / title"><TextInput value={form.designation} onChange={(e) => set("designation", e.target.value)} placeholder="Campus Hiring Lead" /></Field>
+              <Field label="Team / department"><TextInput value={form.department} onChange={(e) => set("department", e.target.value)} placeholder="Talent Acquisition" /></Field>
               <Field label="Phone"><TextInput value={form.phone} onChange={(e) => set("phone", e.target.value)} placeholder="+91…" /></Field>
             </div>
             <Field label="LinkedIn"><TextInput value={form.linkedIn} onChange={(e) => set("linkedIn", e.target.value)} placeholder="https://linkedin.com/company/…" /></Field>
