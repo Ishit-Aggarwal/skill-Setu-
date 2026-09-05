@@ -52,6 +52,13 @@ function isValidEmail(email) {
   return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email);
 }
 
+/* A work email domain (e.g. "@meridiansoftware.com") is not a full email
+   address — just the "@domain.tld" part a company would issue addresses
+   under. Only checking it's non-empty let through anything typed. */
+function isValidDomain(value) {
+  return /^@?[^\s@]+\.[a-z]{2,}$/i.test(value.trim());
+}
+
 function LoginPageInner() {
   const router = useRouter();
   const params = useSearchParams();
@@ -195,7 +202,9 @@ function LoginPageInner() {
       if (!form.institution.trim() || form.institution.trim().length < 4) return "Please enter your institution / college name.";
     } else if (role === "industry") {
       if (!form.companyName.trim()) return "Please enter your company / organisation name.";
-      if (!form.workEmailDomain.trim()) return "Please enter your work email domain (e.g. @himalayawellness.com).";
+      if (!form.workEmailDomain.trim() || !isValidDomain(form.workEmailDomain)) {
+        return "Please enter a valid work email domain (e.g. @himalayawellness.com).";
+      }
       const check = validateCompanyCode(form.companyCode);
       if (!check.valid) return check.message;
     } else if (role === "academician") {
@@ -697,7 +706,7 @@ function LoginPageInner() {
                     <label className="block text-sm font-medium text-foreground mb-1.5">Company Partner Code</label>
                     <input type="text" value={form.companyCode} onChange={(e) => setField("companyCode", e.target.value)} placeholder="MERIDIAN-IND-9912"
                       className={`w-full bg-card border rounded-xl px-4 py-3 text-sm text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-primary/30 transition-all uppercase ${codeValidation.valid ? "border-green-400" : form.companyCode ? "border-red-300" : "border-border"}`} />
-                    <p className="text-xs text-muted-foreground mt-1">{codeValidation.valid ? `✓ Verified: ${codeValidation.data?.company}` : "Sample: MERIDIAN-IND-9912, HIMADRI-IND-1902, SHAKTI-IND-1140"}</p>
+                    <p className="text-xs text-muted-foreground mt-1">{codeValidation.valid ? `✓ Verified: ${codeValidation.data?.company}` : "Sample: TCS-IND-1001, ICICI-IND-1005, MERIDIAN-IND-9912"}</p>
                   </div>
                 </>
               )}
