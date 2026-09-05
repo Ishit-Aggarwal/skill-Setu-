@@ -19,6 +19,7 @@ import {
 } from "../../lib/store";
 import { ALL_DOMAINS, DOMAIN_GROUPS } from "../../lib/domains";
 import { daysUntil, formatDate } from "../../lib/match";
+import { STIPEND_MODES, formatStipend } from "../../lib/money";
 import { subscribeToMutations } from "../../lib/sync";
 
 const statusCols = [...PIPELINE_STAGES, "Rejected"];
@@ -88,7 +89,7 @@ export default function IndustryDashboard() {
   const [flash, setFlash] = useFlash();
   const [newApplicantIds, setNewApplicantIds] = useState(() => new Set());
 
-  const [form, setForm] = useState({ title: "", location: "", stipend: "", duration: "", tags: "", domain: ALL_DOMAINS[0] });
+  const [form, setForm] = useState({ title: "", location: "", stipendAmount: "", stipendMode: "monthly", duration: "", tags: "", domain: ALL_DOMAINS[0] });
 
   function refresh() {
     if (!user) return;
@@ -201,12 +202,13 @@ export default function IndustryDashboard() {
       type: "Hybrid",
       domain: form.domain,
       duration: form.duration || "3 months",
-      stipend: form.stipend || "Unpaid",
+      stipendAmount: String(form.stipendAmount).trim() === "" ? null : Number(form.stipendAmount),
+      stipendMode: form.stipendMode,
       tags: form.tags.split(",").map((t) => t.trim()).filter(Boolean),
       deadline: new Date(Date.now() + 30 * 86400000).toISOString().slice(0, 10),
       description: "",
     });
-    setForm({ title: "", location: "", stipend: "", duration: "", tags: "", domain: ALL_DOMAINS[0] });
+    setForm({ title: "", location: "", stipendAmount: "", stipendMode: "monthly", duration: "", tags: "", domain: ALL_DOMAINS[0] });
     setShowPostJob(false);
     refresh();
     setFlash("Posting published.");
@@ -464,9 +466,51 @@ export default function IndustryDashboard() {
             </Field>
             <Field label="Location"><TextInput value={form.location} onChange={(e) => setForm((f) => ({ ...f, location: e.target.value }))} placeholder="Pune / Remote" /></Field>
             <div className="grid grid-cols-2 gap-3">
-              <Field label="Stipend / CTC"><TextInput value={form.stipend} onChange={(e) => setForm((f) => ({ ...f, stipend: e.target.value }))} placeholder="₹18,000/mo" /></Field>
+              {/* The amount only. The "/month" or "total for 6 months" label is
+                  rendered from the mode below, never typed. */}
+              <Field label="Stipend / CTC (₹)">
+                <TextInput
+                  type="number"
+                  min="0"
+                  step="500"
+                  inputMode="numeric"
+                  value={form.stipendAmount}
+                  onChange={(e) => setForm((f) => ({ ...f, stipendAmount: e.target.value }))}
+                  placeholder="18000"
+                />
+              </Field>
               <Field label="Duration"><TextInput value={form.duration} onChange={(e) => setForm((f) => ({ ...f, duration: e.target.value }))} placeholder="6 months" /></Field>
             </div>
+            <Field label="Paid as">
+              <div className="flex gap-1.5">
+                {STIPEND_MODES.map((m) => (
+                  <button
+                    key={m.key}
+                    type="button"
+                    onClick={() => setForm((f) => ({ ...f, stipendMode: m.key }))}
+                    aria-pressed={form.stipendMode === m.key}
+                    title={m.hint}
+                    className={`text-xs px-3 py-1.5 rounded-full border font-medium transition-colors ${
+                      form.stipendMode === m.key
+                        ? "bg-primary text-white border-transparent"
+                        : "bg-card border-border text-muted-foreground hover:border-primary/40"
+                    }`}
+                  >
+                    {m.label}
+                  </button>
+                ))}
+              </div>
+              <p className="text-[11px] text-muted-foreground mt-1.5">
+                Students will see:{" "}
+                <span className="font-medium text-foreground">
+                  {formatStipend({
+                    stipendAmount: form.stipendAmount === "" ? null : Number(form.stipendAmount),
+                    stipendMode: form.stipendMode,
+                    duration: form.duration,
+                  })}
+                </span>
+              </p>
+            </Field>
             <Field label="Required skills" hint="Comma separated."><TextInput value={form.tags} onChange={(e) => setForm((f) => ({ ...f, tags: e.target.value }))} placeholder="React, SQL, Quality Control" /></Field>
             <p className="text-[11px] text-muted-foreground">
               Need eligibility filters and a deadline? Use the full form on the Postings page.

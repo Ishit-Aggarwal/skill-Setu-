@@ -39,16 +39,21 @@ export default function TakeTestModal({ test, user, onClose, onGraded }) {
   const [remaining, setRemaining] = useState(null);
 
   const submittingRef = useRef(false);
+  // When the candidate actually started, so the attempt log can say how long
+  // they took rather than only what they scored.
+  const startedAtRef = useRef(null);
   const durationMins = useMemo(() => parseDurationMinutes(test.duration), [test.duration]);
 
   useEffect(() => {
     let cancelled = false;
 
     async function load() {
+      /* Graded papers genuinely cannot be faked on the device — the answer key
+         is deliberately server-side, which is the whole point. So this one does
+         have to say no. It says it as a state of the service, not as a
+         deployment note with an environment variable in it. */
       if (!isBackendConfigured()) {
-        setError(
-          "Graded tests need the shared database. This deployment has no NEXT_PUBLIC_CONVEX_URL set, so the paper cannot be fetched."
-        );
+        setError("Graded tests aren't available right now. Please try again shortly, or ask the test host to get in touch with support.");
         setPhase("error");
         return;
       }
@@ -88,10 +93,17 @@ export default function TakeTestModal({ test, user, onClose, onGraded }) {
           answers,
           mode: test.mode,
         });
+        const startedAt = startedAtRef.current;
+        const enriched = {
+          ...graded,
+          autoSubmitted: auto,
+          startedAt: startedAt ? new Date(startedAt).toISOString() : null,
+          timeTakenMs: startedAt ? Date.now() - startedAt : null,
+        };
         // Mirror the server's verdict into this device's cache so the radar,
         // the dashboard tiles and the recruiter view all read the same number.
-        recordGradedAttempt(user.id, test, graded);
-        setResult({ ...graded, autoSubmitted: auto });
+        recordGradedAttempt(user.id, test, enriched);
+        setResult(enriched);
         setPhase("result");
         onGraded?.(graded);
       } catch (err) {
@@ -120,6 +132,7 @@ export default function TakeTestModal({ test, user, onClose, onGraded }) {
   }, [phase, deadline, submit]);
 
   function start() {
+    startedAtRef.current = Date.now();
     setDeadline(Date.now() + durationMins * 60 * 1000);
     setRemaining(durationMins * 60 * 1000);
     setPhase("paper");

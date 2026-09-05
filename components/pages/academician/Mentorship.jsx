@@ -4,9 +4,17 @@ import { useCallback, useEffect, useMemo, useState } from "react";
 import DashboardLayout from "../../DashboardLayout";
 import Calendar, { BLOCK_TONES } from "../../mentorship/Calendar";
 import { useAuth } from "../../../lib/auth";
-import { api } from "../../../convex/_generated/api";
-import { backendErrorMessage, backendMutation, backendQuery, isBackendConfigured } from "../../../lib/convexBrowser";
-import { getSessionToken } from "../../../lib/session";
+import { backendErrorMessage } from "../../../lib/convexBrowser";
+import {
+  LOCAL,
+  loadMySlots,
+  publishSlot,
+  schedulingMode,
+  schedulingModeNote,
+  updateBookingStatus,
+  updateSlot,
+  withdrawSlot,
+} from "../../../lib/scheduling";
 import { formatDateTime } from "../../../lib/match";
 import {
   Avatar,
@@ -18,8 +26,10 @@ import {
   Flash,
   Modal,
   PageHeader,
+  SearchInput,
   Select,
   StatGrid,
+  Tabs,
   TextArea,
   TextInput,
   useFlash,
@@ -33,11 +43,16 @@ import {
  * them: nothing showed how long a session ran, when the gaps were, or which
  * day was already full.
  *
- * The slots themselves also moved off browser storage. Mentorship is
- * inherently two-sided — a slot published on a laptop has to be bookable from
- * a student's phone — and local storage could never do that. Every read and
- * write here goes through Convex, which checks that the caller owns the slot
- * before letting them change it.
+ * Where the slots are stored depends on the account. Mentorship is inherently
+ * two-sided — a slot published on a laptop has to be bookable from a student's
+ * phone — so a signed-in account keeps them in the shared database, which
+ * checks that the caller owns a slot before letting them change it. Without
+ * one, they live on this device instead.
+ *
+ * What this screen must never do again is refuse to render. It used to replace
+ * itself with "Scheduling needs the shared database … NEXT_PUBLIC_CONVEX_URL",
+ * which named an environment variable at a member of faculty and turned the
+ * whole feature off. See lib/scheduling.js.
  */
 
 const EMPTY_FORM = {
@@ -74,23 +89,22 @@ export default function Mentorship() {
   const [selected, setSelected] = useState(null); // slot id
   const [busy, setBusy] = useState(false);
 
-  const connected = isBackendConfigured() && Boolean(getSessionToken());
+  /* Scheduling always works. With a session behind a configured deployment,
+     slots are shared across devices; otherwise they are kept on this one.
+     Either way the page is fully usable — it never renders a dead end naming
+     an environment variable at somebody who wanted to book fifteen minutes. */
+  const mode = schedulingMode();
 
   const load = useCallback(async () => {
-    if (!connected) {
-      setLoading(false);
-      return;
-    }
     try {
-      const rows = await backendQuery(api.mentorship.mySlots, {});
-      setSlots(rows || []);
+      setSlots((await loadMySlots(user)) || []);
       setError(null);
     } catch (err) {
       setError(backendErrorMessage(err, "Could not load your office hours."));
     } finally {
       setLoading(false);
     }
-  }, [connected]);
+  }, [user]);
 
   useEffect(() => {
     load();
@@ -123,6 +137,28 @@ export default function Mentorship() {
     0
   );
 
+  const [activeTab, setActiveTab] = useState("calendar");
+  const [sessionSearch, setSessionSearch] = useState("");
+  const [sessionFilter, setSessionFilter] = useState("all");
+
+  const filteredSessions = useMemo(() => {
+    const q = sessionSearch.trim().toLowerCase();
+    return slots
+      .filter((s) => {
+        const isPast = new Date(s.slot).getTime() < now;
+        if (sessionFilter === "upcoming" && isPast) return false;
+        if (sessionFilter === "past" && !isPast) return false;
+        if (!q) return true;
+        const matchTitle = s.title?.toLowerCase().includes(q);
+        const matchMode = s.mode?.toLowerCase().includes(q);
+        const matchStudent = (s.bookings || []).some(
+          (b) => b.studentName?.toLowerCase().includes(q) || b.topic?.toLowerCase().includes(q)
+        );
+        return matchTitle || matchMode || matchStudent;
+      })
+      .sort((a, b) => new Date(a.slot).getTime() - new Date(b.slot).getTime());
+  }, [slots, sessionSearch, sessionFilter, now]);
+
   const selectedSlot = slots.find((s) => s.id === selected) || null;
 
   async function run(fn, successMessage) {
@@ -154,28 +190,11 @@ export default function Mentorship() {
     };
 
     const ok = await run(async () => {
-      if (editing?.id) {
-        await backendMutation(api.mentorship.updateSlot, { slotId: editing.id, patch: payload });
-      } else {
-        await backendMutation(api.mentorship.publishSlot, payload);
-      }
+      if (editing?.id) await updateSlot(editing.id, payload);
+      else await publishSlot(user, payload);
     }, editing?.id ? "Slot updated." : "Slot published — students can book it now.");
 
     if (ok) setEditing(null);
-  }
-
-  if (!connected) {
-    return (
-      <DashboardLayout activePage="academician-mentorship" title="Mentorship">
-        <div className="animate-fade-slide space-y-5">
-          <PageHeader title="Mentorship & Office Hours" subtitle="Publish when you're available; students book directly." />
-          <EmptyState icon="🔌" title="Scheduling needs the shared database">
-            Office hours are two-sided — what you publish here has to reach a student on another device. Sign in with a real
-            account on a deployment that has <code className="text-xs">NEXT_PUBLIC_CONVEX_URL</code> configured to use this.
-          </EmptyState>
-        </div>
-      </DashboardLayout>
-    );
   }
 
   return (
@@ -194,6 +213,14 @@ export default function Mentorship() {
         <Flash message={flash} />
         {error && <div className="rounded-xl border border-red-200 bg-red-50 px-3.5 py-2.5 text-xs text-red-700">{error}</div>}
 
+        {/* Where these bookings live, said plainly. Not a blocker, not an
+            error, and no deployment internals. */}
+        {mode === LOCAL && (
+          <div className="rounded-xl border border-border bg-secondary/50 px-3.5 py-2.5 text-xs text-muted-foreground">
+            <span className="font-medium text-foreground">Saved on this device.</span> {schedulingModeNote(mode)}
+          </div>
+        )}
+
         <StatGrid
           stats={[
             { label: "Upcoming slots", value: String(upcoming.length), icon: "📅" },
@@ -208,48 +235,237 @@ export default function Mentorship() {
           ]}
         />
 
-        {loading ? (
-          <div className="h-96 rounded-2xl skeleton" />
-        ) : (
-          <Calendar
-            events={events}
-            view={view}
-            onViewChange={setView}
-            onSelectEvent={(e) => setSelected(e.id)}
-            onPickEmpty={(slotValue) => setEditing({ form: { ...EMPTY_FORM, slot: slotValue } })}
-            emptyMessage="No availability published yet. Click any empty slot on the calendar to add one."
-          />
-        )}
+        <Tabs
+          tabs={[
+            { key: "calendar", label: "Calendar view" },
+            { key: "roster", label: `All sessions & enrolled students (${slots.length})` },
+          ]}
+          value={activeTab}
+          onChange={setActiveTab}
+        />
 
-        {activeBookings.length > 0 && (
-          <Card>
-            <div className="mb-3">
-              <h3 className="font-semibold text-foreground text-sm">Booking history</h3>
-              <p className="text-xs text-muted-foreground mt-0.5">Every request against your slots, newest first.</p>
-            </div>
-            <div>
-              {[...allBookings]
-                .sort((a, b) => new Date(b.bookedAt) - new Date(a.bookedAt))
-                .slice(0, 10)
-                .map((b) => (
+        {activeTab === "calendar" ? (
+          <>
+            {loading ? (
+              <div className="h-96 rounded-2xl skeleton" />
+            ) : (
+              <Calendar
+                events={events}
+                view={view}
+                onViewChange={setView}
+                onSelectEvent={(e) => setSelected(e.id)}
+                onPickEmpty={(slotValue) => setEditing({ form: { ...EMPTY_FORM, slot: slotValue } })}
+                emptyMessage="No availability published yet. Click any empty slot on the calendar to add one."
+              />
+            )}
+
+            {activeBookings.length > 0 && (
+              <Card>
+                <div className="mb-3">
+                  <h3 className="font-semibold text-foreground text-sm">Booking history</h3>
+                  <p className="text-xs text-muted-foreground mt-0.5">Every request against your slots, newest first.</p>
+                </div>
+                <div>
+                  {[...allBookings]
+                    .sort((a, b) => new Date(b.bookedAt) - new Date(a.bookedAt))
+                    .slice(0, 10)
+                    .map((b) => (
+                      <button
+                        key={b.id || b._id}
+                        onClick={() => setSelected(b.slot.id)}
+                        className="w-full text-left flex items-center gap-3 py-2.5 border-b border-border last:border-0 hover:bg-secondary/40 transition-colors rounded-lg px-1"
+                      >
+                        <Avatar name={b.studentName} size={28} />
+                        <div className="min-w-0 flex-1">
+                          <div className="text-sm text-foreground truncate">{b.studentName}</div>
+                          <div className="text-[11px] text-muted-foreground truncate">{b.topic || "No topic given"}</div>
+                        </div>
+                        <span className="text-[11px] text-muted-foreground whitespace-nowrap hidden sm:block">
+                          {formatDateTime(b.slot.slot)}
+                        </span>
+                        <Badge tone={STATUS_TONE[b.status]}>{b.status}</Badge>
+                      </button>
+                    ))}
+                </div>
+              </Card>
+            )}
+          </>
+        ) : (
+          <div className="space-y-4">
+            <div className="flex flex-wrap gap-3 items-center justify-between">
+              <SearchInput
+                value={sessionSearch}
+                onChange={setSessionSearch}
+                placeholder="Search sessions or student names…"
+                className="flex-1 min-w-[240px]"
+              />
+              <div className="flex gap-2">
+                {[
+                  { key: "all", label: "All" },
+                  { key: "upcoming", label: "Upcoming" },
+                  { key: "past", label: "Past" },
+                ].map((f) => (
                   <button
-                    key={b.id || b._id}
-                    onClick={() => setSelected(b.slot.id)}
-                    className="w-full text-left flex items-center gap-3 py-2.5 border-b border-border last:border-0 hover:bg-secondary/40 transition-colors rounded-lg px-1"
+                    key={f.key}
+                    type="button"
+                    onClick={() => setSessionFilter(f.key)}
+                    className={`px-3 py-1.5 rounded-xl text-xs font-medium border transition-colors ${
+                      sessionFilter === f.key
+                        ? "bg-primary text-white border-transparent shadow-sm"
+                        : "bg-card border-border text-muted-foreground hover:text-foreground"
+                    }`}
                   >
-                    <Avatar name={b.studentName} size={28} />
-                    <div className="min-w-0 flex-1">
-                      <div className="text-sm text-foreground truncate">{b.studentName}</div>
-                      <div className="text-[11px] text-muted-foreground truncate">{b.topic || "No topic given"}</div>
-                    </div>
-                    <span className="text-[11px] text-muted-foreground whitespace-nowrap hidden sm:block">
-                      {formatDateTime(b.slot.slot)}
-                    </span>
-                    <Badge tone={STATUS_TONE[b.status]}>{b.status}</Badge>
+                    {f.label}
                   </button>
                 ))}
+              </div>
             </div>
-          </Card>
+
+            {filteredSessions.length === 0 ? (
+              <EmptyState
+                icon="📅"
+                title="No mentorship sessions found"
+                action={
+                  <Button size="sm" onClick={() => setEditing({ form: { ...EMPTY_FORM } })}>
+                    Publish availability
+                  </Button>
+                }
+              >
+                No mentorship sessions match your search or filter criteria.
+              </EmptyState>
+            ) : (
+              <div className="space-y-4">
+                {filteredSessions.map((s) => {
+                  const active = (s.bookings || []).filter((b) => b.status !== "Cancelled");
+                  const isPast = new Date(s.slot).getTime() < now;
+                  return (
+                    <Card key={s.id} className="space-y-4">
+                      <div className="flex flex-wrap items-start justify-between gap-3 border-b border-border pb-3">
+                        <div>
+                          <div className="flex items-center gap-2 flex-wrap">
+                            <h3 className="font-semibold text-foreground text-sm">{s.title || "Office hours"}</h3>
+                            <Badge tone={isPast ? "muted" : active.length >= s.capacity ? "blue" : active.length ? "amber" : "green"}>
+                              {isPast ? "Past" : active.length >= s.capacity ? "Full" : `${active.length} / ${s.capacity} Booked`}
+                            </Badge>
+                            <Badge tone="neutral">{s.mode}</Badge>
+                          </div>
+                          <div className="text-xs text-muted-foreground mt-1 flex flex-wrap gap-x-3 gap-y-1">
+                            <span>📅 {formatDateTime(s.slot)}</span>
+                            <span>⏱ {s.durationMins} minutes</span>
+                            {s.mode === "Online" ? (
+                              s.meetingUrl ? (
+                                <a href={s.meetingUrl} target="_blank" rel="noreferrer" className="text-primary font-medium hover:underline">
+                                  🔗 Join Link
+                                </a>
+                              ) : (
+                                <span className="text-amber-600">⚠ No link added</span>
+                              )
+                            ) : (
+                              <span>📍 {s.location || "Room / Venue TBD"}</span>
+                            )}
+                          </div>
+                          {s.notes && (
+                            <p className="text-xs text-muted-foreground mt-1.5 italic">Note: {s.notes}</p>
+                          )}
+                        </div>
+
+                        <div className="flex items-center gap-2">
+                          <Button
+                            size="sm"
+                            variant="outline"
+                            onClick={() => {
+                              setEditing({
+                                id: s.id,
+                                form: {
+                                  slot: String(s.slot).slice(0, 16),
+                                  title: s.title || "Office hours",
+                                  durationMins: String(s.durationMins || 30),
+                                  capacity: String(s.capacity || 1),
+                                  mode: s.mode || "In person",
+                                  location: s.location || "",
+                                  meetingUrl: s.meetingUrl || "",
+                                  notes: s.notes || "",
+                                },
+                              });
+                            }}
+                          >
+                            Edit
+                          </Button>
+                          <Button
+                            size="sm"
+                            variant="danger"
+                            onClick={async () => {
+                              if (
+                                active.length === 0 ||
+                                window.confirm(
+                                  `${active.length} student${active.length === 1 ? " has" : "s have"} booked this session. Withdrawing it cancels their bookings. Continue?`
+                                )
+                              ) {
+                                run(() => withdrawSlot(s.id), "Session withdrawn.");
+                              }
+                            }}
+                          >
+                            Withdraw
+                          </Button>
+                        </div>
+                      </div>
+
+                      {/* Enrolled Students list */}
+                      <div>
+                        <div className="text-xs font-semibold text-muted-foreground uppercase tracking-wider mb-2">
+                          Enrolled Students ({s.bookings?.length || 0})
+                        </div>
+                        {(!s.bookings || s.bookings.length === 0) ? (
+                          <div className="text-xs text-muted-foreground bg-secondary/30 rounded-xl p-3">
+                            No students have booked this session yet.
+                          </div>
+                        ) : (
+                          <div className="space-y-2">
+                            {s.bookings.map((b) => (
+                              <div
+                                key={b.id || b._id}
+                                className="flex flex-wrap items-center justify-between gap-3 p-3 rounded-xl border border-border bg-card/60 hover:bg-secondary/20 transition-colors"
+                              >
+                                <div className="flex items-center gap-3 min-w-0">
+                                  <Avatar name={b.studentName} size={32} />
+                                  <div className="min-w-0">
+                                    <div className="text-sm font-medium text-foreground truncate">{b.studentName}</div>
+                                    <div className="text-xs text-muted-foreground truncate">
+                                      {b.topic ? `Topic: “${b.topic}”` : "No topic specified"}
+                                    </div>
+                                    <div className="text-[10px] text-muted-foreground mt-0.5">
+                                      Booked on {formatDateTime(b.bookedAt)}
+                                    </div>
+                                  </div>
+                                </div>
+
+                                <div className="flex items-center gap-2">
+                                  <Badge tone={STATUS_TONE[b.status] || "neutral"}>{b.status}</Badge>
+                                  <Select
+                                    value={b.status}
+                                    disabled={busy}
+                                    onChange={(e) =>
+                                      run(() => updateBookingStatus(b.id || b._id, e.target.value), `Marked as ${e.target.value.toLowerCase()}.`)
+                                    }
+                                    className="!w-auto text-xs py-1"
+                                    aria-label={`Status for ${b.studentName}`}
+                                  >
+                                    {["Booked", "Completed", "No show", "Cancelled"].map((st) => (
+                                      <option key={st}>{st}</option>
+                                    ))}
+                                  </Select>
+                                </div>
+                              </div>
+                            ))}
+                          </div>
+                        )}
+                      </div>
+                    </Card>
+                  );
+                })}
+              </div>
+            )}
+          </div>
         )}
       </div>
 
@@ -293,14 +509,11 @@ export default function Mentorship() {
             setSelected(null);
           }}
           onSetBookingStatus={(bookingId, status) =>
-            run(
-              () => backendMutation(api.mentorship.setBookingStatus, { bookingId, status }),
-              `Marked as ${status.toLowerCase()}.`
-            )
+            run(() => updateBookingStatus(bookingId, status), `Marked as ${status.toLowerCase()}.`)
           }
           onWithdraw={async () => {
             const ok = await run(
-              () => backendMutation(api.mentorship.withdrawSlot, { slotId: selectedSlot.id }),
+              () => withdrawSlot(selectedSlot.id),
               "Slot withdrawn — anyone who had booked it has been notified."
             );
             if (ok) setSelected(null);

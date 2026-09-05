@@ -144,10 +144,32 @@ export default function SettingsPage() {
   const [pwBusy, setPwBusy] = useState(false);
   const [deleteConfirm, setDeleteConfirm] = useState("");
   const [deleting, setDeleting] = useState(false);
+  const [recoveryPhone, setRecoveryPhone] = useState(user?.recoveryPhone || "");
+  const [deanName, setDeanName] = useState(user?.deanName || "");
 
   useEffect(() => {
     setReduceMotionState(getReduceMotion());
   }, []);
+
+  useEffect(() => {
+    setRecoveryPhone(user?.recoveryPhone || "");
+  }, [user?.recoveryPhone]);
+
+  useEffect(() => {
+    setDeanName(user?.deanName || "");
+  }, [user?.deanName]);
+
+  async function handleSaveRecoveryPhone(e) {
+    e?.preventDefault();
+    await updateProfile({ recoveryPhone: recoveryPhone.trim() });
+    setFlash("Recovery phone number saved.");
+  }
+
+  async function handleSaveDeanName(e) {
+    e?.preventDefault();
+    await updateProfile({ deanName: deanName.trim() });
+    setFlash("Dean's full name saved.");
+  }
 
   const isDemo = Boolean(user?.id?.startsWith("demo-"));
   const hasServerSession = Boolean(getSessionToken());
@@ -424,7 +446,9 @@ export default function SettingsPage() {
                   {[
                     ["Name", user?.name],
                     orgName ? [user?.role === "industry" ? "Company name" : "Institution name", orgName] : null,
+                    user?.role === "institution" ? ["Dean's full name", user?.deanName || "Not configured"] : null,
                     ["Email", user?.email],
+                    ["Recovery phone (WhatsApp)", user?.recoveryPhone || "Not configured"],
                     ["Account type", user?.role],
                     user?.institution && user?.role === "student" ? ["Institution", user.institution] : null,
                     user?.department ? ["Department", user.department] : null,
@@ -467,6 +491,69 @@ export default function SettingsPage() {
                 </div>
               </Section>
             </Card>
+
+            <Card>
+              <Section
+                title="Account Recovery"
+                description="Keep a backup contact so you never lose access to your profile, assessments, and applications."
+              >
+                <form onSubmit={handleSaveRecoveryPhone} className="space-y-3">
+                  <Field
+                    label="Recovery phone number (WhatsApp-enabled)"
+                    hint="Optional but encouraged. Used to recover your account if you lose access to your registered email. Never shown to recruiters, peers, or students."
+                  >
+                    <div className="flex flex-col sm:flex-row gap-2 max-w-md">
+                      <TextInput
+                        type="tel"
+                        value={recoveryPhone}
+                        onChange={(e) => setRecoveryPhone(e.target.value)}
+                        placeholder="+91 98765 43210"
+                        className="flex-1"
+                      />
+                      <Button
+                        type="submit"
+                        size="sm"
+                        disabled={recoveryPhone.trim() === (user?.recoveryPhone || "")}
+                      >
+                        Save number
+                      </Button>
+                    </div>
+                  </Field>
+                </form>
+              </Section>
+            </Card>
+
+            {user?.role === "institution" && (
+              <Card>
+                <Section
+                  title="Dean / Head of Institution"
+                  description="Explicitly scoped institutional leadership field. Kept distinct from your administrator sign-in name so verified institutional records carry the correct authority."
+                >
+                  <form onSubmit={handleSaveDeanName} className="space-y-3">
+                    <Field
+                      label="Dean's full name"
+                      hint="The full name and academic title of the Dean or Principal (e.g. 'Prof. Rajesh Nair, Dean of Academics')."
+                    >
+                      <div className="flex flex-col sm:flex-row gap-2 max-w-md">
+                        <TextInput
+                          value={deanName}
+                          onChange={(e) => setDeanName(e.target.value)}
+                          placeholder="e.g. Prof. Rajesh Nair, Dean of Academics"
+                          className="flex-1"
+                        />
+                        <Button
+                          type="submit"
+                          size="sm"
+                          disabled={deanName.trim() === (user?.deanName || "")}
+                        >
+                          Save Dean name
+                        </Button>
+                      </div>
+                    </Field>
+                  </form>
+                </Section>
+              </Card>
+            )}
 
             <Card className="border-red-200">
               <Section title="Delete this account" description="Permanent. Your profile, applications, results and bookings go with it.">

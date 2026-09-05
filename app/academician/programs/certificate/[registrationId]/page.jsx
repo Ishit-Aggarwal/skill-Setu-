@@ -97,7 +97,7 @@ export default function CertificatePage({ params }) {
         {/* Certificate Header */}
         <div className="relative z-10 space-y-3 mb-8">
           <div className="flex items-center justify-center gap-3">
-            <img src="/logo.png" alt="Skill Setu" className="h-9 sm:h-11 w-auto object-contain mix-blend-multiply" />
+            <img src="/logo.png" alt="Skill Setu" className="h-9 sm:h-11 w-auto brand-logo" />
           </div>
           <p className="text-[10px] sm:text-xs tracking-[0.25em] text-muted-foreground uppercase font-semibold">
             National Academia–Industry Collaboration Initiative

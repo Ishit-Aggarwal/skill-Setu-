@@ -23,6 +23,7 @@ import {
 } from "../../../lib/store";
 import { subscribeToMutations } from "../../../lib/sync";
 import { DEPARTMENTS } from "../../../lib/domains";
+import { hasFile, openStoredFile, readFileAsDataUrl } from "../../../lib/files";
 import { PLACEMENT_TONE, buildRoster, useInstitutionName } from "./useInstitution";
 
 const STAGE_ORDER = PIPELINE_STAGES;
@@ -560,6 +561,25 @@ export default function InstitutionAnalytics() {
                       { key: "stipend", header: "Median stipend", align: "center", hideBelow: "hidden sm:table-cell", render: (r) => <span className="text-muted-foreground">₹{(r.medianStipend || 0).toLocaleString("en-IN")}</span> },
                       { key: "top", header: "Top recruiter", hideBelow: "hidden lg:table-cell", render: (r) => <span className="text-xs text-muted-foreground">{r.topRecruiter || "—"}</span> },
                       {
+                        key: "doc",
+                        header: "Verification",
+                        align: "center",
+                        hideBelow: "hidden md:table-cell",
+                        render: (r) =>
+                          r.document ? (
+                            <button
+                              type="button"
+                              onClick={() => openStoredFile({ dataUrl: r.document, fileName: r.documentName })}
+                              className="text-xs text-primary hover:underline font-medium inline-flex items-center gap-1"
+                              title="Open verified proof"
+                            >
+                              📎 Proof
+                            </button>
+                          ) : (
+                            <span className="text-[11px] text-muted-foreground italic">Optional</span>
+                          ),
+                      },
+                      {
                         key: "actions",
                         header: "Actions",
                         align: "right",
@@ -640,7 +660,29 @@ function BatchRecordModal({ record, onClose, onSave, departments, instituteName 
   const [placed, setPlaced] = useState(record ? String(record.placed) : "");
   const [medianStipend, setMedianStipend] = useState(record ? String(record.medianStipend || "") : "");
   const [topRecruiter, setTopRecruiter] = useState(record ? record.topRecruiter || "" : "");
+  const [document, setDocument] = useState(record?.document || null);
+  const [documentName, setDocumentName] = useState(record?.documentName || "");
+  const [uploadingDoc, setUploadingDoc] = useState(false);
   const [error, setError] = useState(null);
+
+  async function handleDocChange(e) {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    if (file.size > 5 * 1024 * 1024) {
+      setError("Supporting document must be under 5MB.");
+      return;
+    }
+    setUploadingDoc(true);
+    try {
+      const dataUrl = await readFileAsDataUrl(file);
+      setDocument(dataUrl);
+      setDocumentName(file.name);
+    } catch {
+      setError("Could not read document file.");
+    } finally {
+      setUploadingDoc(false);
+    }
+  }
 
   function handleSubmit(e) {
     e.preventDefault();
@@ -684,6 +726,8 @@ function BatchRecordModal({ record, onClose, onSave, departments, instituteName 
       placed: p,
       medianStipend: m,
       topRecruiter: topRecruiter.trim(),
+      document: document || undefined,
+      documentName: documentName || undefined,
     };
 
     if (record?.id) {
@@ -770,6 +814,36 @@ function BatchRecordModal({ record, onClose, onSave, departments, instituteName 
             />
           </Field>
         </div>
+
+        <Field
+          label="Supporting Verification Document (Optional)"
+          hint="Attach an NIRF disclosure, placement audit report, or official placement list as a credibility signal. Kept strictly optional."
+        >
+          <div className="space-y-2">
+            <input
+              type="file"
+              accept=".pdf,application/pdf"
+              onChange={handleDocChange}
+              className="text-xs text-muted-foreground file:mr-2.5 file:py-1.5 file:px-3 file:rounded-lg file:border-0 file:text-xs file:font-medium file:bg-primary/10 file:text-primary hover:file:bg-primary/20 cursor-pointer"
+            />
+            {uploadingDoc && <div className="text-xs text-muted-foreground">Uploading document...</div>}
+            {documentName && !uploadingDoc && (
+              <div className="flex items-center gap-2 text-xs text-foreground bg-secondary/50 px-2.5 py-1.5 rounded-lg">
+                <span>📎 {documentName}</span>
+                <button
+                  type="button"
+                  onClick={() => {
+                    setDocument(null);
+                    setDocumentName("");
+                  }}
+                  className="text-xs text-red-500 hover:underline ml-auto"
+                >
+                  Remove document
+                </button>
+              </div>
+            )}
+          </div>
+        </Field>
 
         <div className="flex items-center justify-end gap-2 pt-2 border-t border-border">
           <Button type="button" variant="outline" size="sm" onClick={onClose}>

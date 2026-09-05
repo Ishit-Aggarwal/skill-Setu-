@@ -73,7 +73,7 @@ function StudentView({ user }) {
         </>
       )}
 
-      {tab === "mine" && <MyTests registrations={registrations} tests={tests} attempts={attempts} />}
+      {tab === "mine" && <MyTests registrations={registrations} tests={tests} attempts={attempts} user={user} onRefresh={refresh} />}
     </div>
   );
 }

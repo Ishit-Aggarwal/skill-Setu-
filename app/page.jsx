@@ -41,7 +41,7 @@ const highlights = [
   {
     emoji: "🌐",
     title: "Cross-Industry Scale & Sector Depth",
-    desc: "Software, Engineering, Data Science, Healthcare, Finance, Management, and Traditional Disciplines each feature dedicated recruitment pipelines, verified skill assessments, and institutional alignment.",
+    desc: "Software, Engineering, Data Science, Healthcare, Finance, Management, and Applied Sciences each feature dedicated recruitment pipelines, verified skill assessments, and institutional alignment.",
   },
   {
     emoji: "📋",
@@ -107,7 +107,7 @@ export default function LandingPage() {
       <nav className="sticky top-0 z-50 bg-background border-b border-border">
         <div className="max-w-6xl mx-auto px-5 py-3.5 flex items-center justify-between">
           <Link href="/" className="flex items-center gap-2.5 min-w-0 cursor-pointer hover:opacity-90 transition-opacity">
-            <img src="/logo.png" alt="Skill Setu" className="h-9 sm:h-10 w-auto object-contain flex-shrink-0 mix-blend-multiply" />
+            <img src="/logo.png" alt="Skill Setu" className="h-9 sm:h-10 w-auto flex-shrink-0 brand-logo" />
             <span className="hidden sm:inline text-xs text-muted-foreground truncate">Academia–Industry Portal</span>
           </Link>
           <div className="flex items-center gap-2">
@@ -314,7 +314,7 @@ export default function LandingPage() {
         <div className="text-center mb-10">
           <div className="text-xs font-semibold text-primary uppercase tracking-widest mb-3">Network</div>
           <h2 className="text-2xl font-semibold text-foreground mb-2">Every Sector, One Portal</h2>
-          <p className="text-muted-foreground text-sm">From engineering, software, and finance to healthcare, traditional medicine, and creative arts — one unified platform connecting academia with industry.</p>
+          <p className="text-muted-foreground text-sm">From engineering, software, and finance to healthcare, sciences, and creative arts — one unified platform connecting academia with industry.</p>
         </div>
 
         <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-4">
@@ -331,7 +331,7 @@ export default function LandingPage() {
           ))}
         </div>
         <p className="text-center text-xs text-muted-foreground mt-6">
-          Representative cross-section of industry sectors across Technology, Engineering, Management, Healthcare, and Traditional Disciplines.
+          Representative cross-section of industry sectors across Technology, Engineering, Management, Healthcare, and Applied Sciences.
         </p>
       </section>
 
@@ -345,7 +345,7 @@ export default function LandingPage() {
           <div className="space-y-4">
             {[
               { q: "Is Skill Setu free to use?", a: "Yes. Creating an account and using every feature — skill tests, internship listings, portfolios, drives and analytics — is free." },
-              { q: "Which sectors does the platform support?", a: "All major industries. Software & AI, Core Engineering, Manufacturing, Finance & Banking, Design, Healthcare & Life Sciences, Biotechnology, Management, and Traditional Disciplines all collaborate on the same platform. Every sector has dedicated skill tests, eligible departments, and custom talent filters." },
+              { q: "Which sectors does the platform support?", a: "All major industries. Software & AI, Core Engineering, Manufacturing, Finance & Banking, Design, Healthcare & Life Sciences, Biotechnology, Management, and Applied Sciences all collaborate on the same platform. Every sector has dedicated skill tests, eligible departments, and custom talent filters." },
               { q: "How do industry, academician, and institution accounts get verified?", a: "Signup for those roles asks for a short partner verification code, similar to how many campus placement portals confirm an organisation before granting posting access." },
               { q: "Is my data safe?", a: "Your account and activity are stored server-side in our Convex database (with your device's local storage as an offline fallback) — see the Privacy Policy for the full picture, including how passwords and OTPs are handled." },
               { q: "What's Demo Mode?", a: "A one-click way to explore a fully populated Student, Industry, Academician, or Institution dashboard without creating an account first." },
@@ -364,7 +364,7 @@ export default function LandingPage() {
           <div className="flex flex-col md:flex-row items-start md:items-center justify-between gap-6">
             <div>
               <Link href="/" className="flex items-center mb-2 inline-block cursor-pointer hover:opacity-90 transition-opacity">
-                <img src="/logo.png" alt="Skill Setu" className="h-8 sm:h-9 w-auto object-contain mix-blend-multiply" />
+                <img src="/logo.png" alt="Skill Setu" className="h-8 sm:h-9 w-auto brand-logo" />
               </Link>
               <p className="text-xs text-muted-foreground max-w-xs leading-relaxed">
                 A unified skill-mapping, internship and placement platform bridging academia and industry across engineering, technology, management, healthcare, and allied sectors. Built for SIH26044.

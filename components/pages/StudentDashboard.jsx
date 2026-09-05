@@ -40,6 +40,7 @@ import {
 import StudentInbox from "../StudentInbox";
 import MentoringPanel from "../MentoringPanel";
 import { computeMatch, daysUntil, formatDate, formatDateTime, relativeTime } from "../../lib/match";
+import { formatStipendShort } from "../../lib/money";
 import { getRegistrationStatus, isLinkRevealWindow, formatScheduled } from "../../lib/testStatus";
 import { profileStrength } from "../../lib/profile";
 import { scoresFor, taxonomyFor } from "../../lib/taxonomy";
@@ -822,6 +823,11 @@ export default function StudentDashboard() {
                 </span>
               }
               description="Postings you bookmarked. Deadlines shown first."
+              actions={
+                <button onClick={() => navigate("saved-internships")} className="text-xs text-primary font-medium hover:underline">
+                  All saved roles →
+                </button>
+              }
             >
               <Card padded={false}>
                 <div className="divide-y divide-border">
@@ -832,7 +838,7 @@ export default function StudentDashboard() {
                         <div className="min-w-0 flex-1">
                           <div className="text-sm font-semibold text-foreground truncate">{r.title}</div>
                           <div className="text-xs text-muted-foreground mt-0.5 truncate">
-                            {r.company} · {r.location} · {r.stipend}
+                            {r.company} · {r.location} · {formatStipendShort(r)}
                           </div>
                         </div>
                         <span className="text-xs font-semibold text-primary flex-shrink-0">{r.match}% match</span>
@@ -872,8 +878,8 @@ export default function StudentDashboard() {
             }
             description="Live status and progression across your internship applications"
             actions={
-              <button onClick={() => navigate("internship-listings")} className="text-xs text-primary font-medium hover:underline">
-                Explore more roles →
+              <button onClick={() => navigate("applied-internships")} className="text-xs text-primary font-medium hover:underline">
+                All applications →
               </button>
             }
           >
@@ -951,7 +957,7 @@ export default function StudentDashboard() {
 
                     <div className="flex items-center justify-between text-xs text-muted-foreground mb-3">
                       <span>{intern.location}</span>
-                      <span>{intern.stipend}</span>
+                      <span>{formatStipendShort(intern)}</span>
                     </div>
 
                     <div className="mb-3">

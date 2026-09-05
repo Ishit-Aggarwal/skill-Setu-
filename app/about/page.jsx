@@ -7,9 +7,8 @@ export default function AboutPage() {
     <StaticPageLayout title="About Skill Setu">
       <p>
         Skill Setu ("bridge") is a unified platform connecting students, academicians, industry partners, and
-        institutions across every sector — built for Smart India Hackathon, Problem Statement SIH26044,
-        issued by the Ministry of Ayush: "Portal for Academia–Industry Collaboration for Skill Mapping,
-        Internships and Placement."
+        institutions across every sector — built for Smart India Hackathon, Problem Statement SIH26044:
+        "Portal for Academia–Industry Collaboration for Skill Mapping, Internships and Placement."
       </p>
       <p>
         The gap between what students learn and what industry needs is real. Students often don't know
@@ -21,7 +20,7 @@ export default function AboutPage() {
       <h2>Unified Cross-Industry & Interdisciplinary Framework</h2>
       <p>
         Skill Setu brings together engineering, technology, computer science, data & AI, core manufacturing,
-        management, healthcare, and traditional disciplines under a single interoperable talent-mapping framework.
+        management, healthcare, and applied sciences under a single interoperable talent-mapping framework.
         Rather than forcing institutions to use siloed portals for technical and non-technical fields, the platform
         provides standardized competency assessments, role-specific eligibility filters, and unified placement
         reporting across all departments.

@@ -57,7 +57,7 @@ function ResetPasswordInner() {
     <div className="min-h-screen bg-background flex items-center justify-center p-4">
       <div className="w-full max-w-md bg-card border border-border rounded-2xl shadow-sm p-7 space-y-5">
         <Link href="/" className="inline-flex">
-          <img src="/logo.png" alt="Skill Setu" className="h-9 w-auto max-w-[180px] object-contain mix-blend-multiply" />
+          <img src="/logo.png" alt="Skill Setu" className="h-9 w-auto max-w-[180px] brand-logo" />
         </Link>
 
         {!linkIsUsable ? (

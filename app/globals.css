@@ -169,6 +169,38 @@
   filter: invert(1) hue-rotate(180deg) brightness(1.15);
 }
 
+/* ---------------------------------------------------------------------------
+   The wordmark.
+
+   logo.png is a flat white-background PNG, so it needs help to sit on a page
+   that isn't white. In light mode `multiply` is enough: white multiplied with
+   the off-white page is the page, and the teal and navy come through exactly.
+
+   Dark mode used to reuse the generic screenshot rule above, which inverts and
+   hue-rotates — and inverting a brand mark is not a neutral operation. The
+   navy became pale blue, the teal became a muddy orange-brown, and the white
+   plate became a black slab. The brand colours were, literally, wrong.
+
+   So instead of transforming the artwork, the artwork is given the surface it
+   was drawn for: a small white plate behind it. Both themes then render the
+   same, correct, unmodified colours. `filter: none` is stated explicitly
+   because these elements no longer carry .mix-blend-multiply, and a future
+   blanket image rule shouldn't quietly reach them either.
+   --------------------------------------------------------------------------- */
+.brand-logo {
+  object-fit: contain;
+  mix-blend-mode: multiply;
+}
+
+:root[data-theme="dark"] .brand-logo {
+  mix-blend-mode: normal;
+  filter: none;
+  background-color: #ffffff;
+  border-radius: 7px;
+  padding: 3px 7px;
+  box-shadow: 0 0 0 1px rgb(255 255 255 / 0.08);
+}
+
 html,
 body,
 #__next {

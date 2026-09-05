@@ -4,11 +4,18 @@ import { useCallback, useEffect, useMemo, useState } from "react";
 import DashboardLayout from "../DashboardLayout";
 import Calendar from "../mentorship/Calendar";
 import { useAuth } from "../../lib/auth";
-import { api } from "../../convex/_generated/api";
-import { backendErrorMessage, backendMutation, backendQuery, isBackendConfigured } from "../../lib/convexBrowser";
-import { getSessionToken } from "../../lib/session";
+import { backendErrorMessage } from "../../lib/convexBrowser";
+import {
+  LOCAL,
+  bookSlot,
+  cancelMyBooking,
+  loadAvailableSlots,
+  loadMyBookings,
+  schedulingMode,
+} from "../../lib/scheduling";
+import { isMentorshipSaved, toggleSavedMentorship } from "../../lib/store";
 import { formatDateTime, relativeTime } from "../../lib/match";
-import { Badge, Button, Card, EmptyState, Field, Flash, Modal, PageHeader, Section, StatGrid, Tabs, TextInput, useFlash } from "../ui/Kit";
+import { Badge, Button, Card, Field, Flash, Modal, PageHeader, Section, StatGrid, Tabs, TextInput, useFlash } from "../ui/Kit";
 
 /**
  * The student half of office hours.
@@ -43,27 +50,33 @@ export default function StudentMentorship() {
   const [booking, setBooking] = useState(null);
   const [busy, setBusy] = useState(false);
 
-  const connected = isBackendConfigured() && Boolean(getSessionToken());
+  const [savedIds, setSavedIds] = useState(() => new Set());
+  const mode = schedulingMode();
 
   const load = useCallback(async () => {
-    if (!connected) {
-      setLoading(false);
-      return;
-    }
     try {
-      const [slots, bookings] = await Promise.all([
-        backendQuery(api.mentorship.availableForStudent, {}),
-        backendQuery(api.mentorship.myBookings, {}),
-      ]);
+      const [slots, bookings] = await Promise.all([loadAvailableSlots(user), loadMyBookings(user)]);
       setAvailable(slots || []);
       setMine(bookings || []);
+      setSavedIds(new Set([...(slots || []), ...(bookings || [])].filter((s) => isMentorshipSaved(user?.id, s.id)).map((s) => s.id)));
       setError(null);
     } catch (err) {
       setError(backendErrorMessage(err, "Could not load mentorship slots."));
     } finally {
       setLoading(false);
     }
-  }, [connected]);
+  }, [user]);
+
+  function handleToggleSave(slot) {
+    const nowSaved = toggleSavedMentorship(user.id, slot);
+    setSavedIds((prev) => {
+      const next = new Set(prev);
+      if (nowSaved) next.add(slot.id);
+      else next.delete(slot.id);
+      return next;
+    });
+    setFlash(nowSaved ? "Saved — it's under Saved Mentorships." : "Removed from your saved mentorships.");
+  }
 
   useEffect(() => {
     load();
@@ -113,21 +126,6 @@ export default function StudentMentorship() {
     }
   }
 
-  if (!connected) {
-    return (
-      <DashboardLayout activePage="student-mentorship" title="Mentorship">
-        <div className="animate-fade-slide space-y-5">
-          <PageHeader title="Mentorship" subtitle="Book time with faculty at your institution." />
-          <EmptyState icon="🔌" title="Mentorship needs the shared database">
-            A mentor publishes slots from their own device; for those to reach you, the deployment needs
-            <code className="text-xs"> NEXT_PUBLIC_CONVEX_URL</code> configured and you need to be signed in with a real
-            account.
-          </EmptyState>
-        </div>
-      </DashboardLayout>
-    );
-  }
-
   return (
     <DashboardLayout activePage="student-mentorship" title="Mentorship">
       <div className="animate-fade-slide space-y-5">
@@ -139,6 +137,13 @@ export default function StudentMentorship() {
 
         <Flash message={flash} />
         {error && <div className="rounded-xl border border-red-200 bg-red-50 px-3.5 py-2.5 text-xs text-red-700">{error}</div>}
+
+        {mode === LOCAL && (
+          <div className="rounded-xl border border-border bg-secondary/50 px-3.5 py-2.5 text-xs text-muted-foreground">
+            <span className="font-medium text-foreground">You&apos;re browsing this device&apos;s calendar.</span> Sign in with a
+            full account to see office hours your mentors publish from theirs.
+          </div>
+        )}
 
         <StatGrid
           columns={3}
@@ -225,7 +230,7 @@ export default function StudentMentorship() {
                   onClick={async () => {
                     if (!window.confirm("Cancel this session? The slot goes back into the pool for other students.")) return;
                     const ok = await run(
-                      () => backendMutation(api.mentorship.cancelMyBooking, { slotId: selectedSlot.id }),
+                      () => cancelMyBooking(user, selectedSlot.id),
                       "Booking cancelled."
                     );
                     if (ok) setSelected(null);
@@ -252,7 +257,7 @@ export default function StudentMentorship() {
           }
         >
           <div className="space-y-4">
-            <div className="flex flex-wrap gap-2">
+            <div className="flex flex-wrap items-center gap-2">
               <Badge tone="neutral">{selectedSlot.mode}</Badge>
               {myIds.has(selectedSlot.id) ? (
                 <Badge tone="green" dot>
@@ -263,6 +268,19 @@ export default function StudentMentorship() {
                   {selectedSlot.remaining > 0 ? `${selectedSlot.remaining} of ${selectedSlot.capacity} free` : "Full"}
                 </Badge>
               )}
+              {/* Bookmarking a slot is not the same as booking it — a student
+                  shortlisting three mentors needs somewhere to keep them. */}
+              <button
+                type="button"
+                onClick={() => handleToggleSave(selectedSlot)}
+                className={`ml-auto inline-flex items-center gap-1.5 text-xs font-medium px-2.5 py-1 rounded-full border transition-colors ${
+                  savedIds.has(selectedSlot.id)
+                    ? "border-primary text-primary bg-primary/10"
+                    : "border-border text-muted-foreground hover:border-primary/40"
+                }`}
+              >
+                {savedIds.has(selectedSlot.id) ? "★ Saved" : "☆ Save for later"}
+              </button>
             </div>
 
             <dl className="divide-y divide-border text-sm">
@@ -332,7 +350,7 @@ export default function StudentMentorship() {
             onCancel={() => setBooking(null)}
             onSubmit={async (topic) => {
               const ok = await run(
-                () => backendMutation(api.mentorship.bookSlot, { slotId: booking.id, topic }),
+                () => bookSlot(user, booking, topic),
                 `Slot booked with ${booking.mentorName}.`
               );
               if (ok) setBooking(null);

@@ -8,8 +8,8 @@
  *
  * Ten domains, assessed the same way for every student: eight general
  * employability competencies screened across technology, engineering,
- * consulting, management, design and health sciences, plus two AYUSH-specific
- * domains for the clinical streams. Which of these a given student is actually
+ * consulting, management, design and health sciences, plus two faculty-specific
+ * domains for the science and design streams. Which of these a given student is actually
  * charted and scored on is decided by lib/taxonomy.js from their own
  * department — no student is assessed on a rubric that isn't theirs.
  */
@@ -75,20 +75,20 @@ export const QUESTION_BANK = {
     { question: "What is the primary purpose of peer review in scientific publishing?", options: ["To delay publication", "To independently evaluate validity, methodology, and originality", "To market the paper to news outlets", "To check typography only"], correct: 1 },
   ],
 
-  /* ---------- AYUSH domains — assessed by default, not an opt-in track ---------- */
-  "Ayurveda & Panchakarma": [
-    { question: "The three doshas described in Ayurveda are:", options: ["Vata, Pitta, Kapha", "Rasa, Rakta, Mamsa", "Sattva, Rajas, Tamas", "Prana, Udana, Samana"], correct: 0 },
-    { question: "Which classical text is attributed primarily to surgical practice (Shalya Tantra)?", options: ["Charaka Samhita", "Sushruta Samhita", "Ashtanga Hridaya", "Madhava Nidana"], correct: 1 },
-    { question: "Which of these is NOT one of the five classical Panchakarma procedures?", options: ["Vamana", "Virechana", "Abhyanga", "Basti"], correct: 2 },
-    { question: "Snehana and Swedana are performed as part of:", options: ["Purvakarma (preparatory)", "Pradhanakarma (main)", "Paschatkarma (post-therapy)", "Rasayana"], correct: 0 },
-    { question: "'Agni' in Ayurvedic physiology most closely refers to:", options: ["Body temperature", "Digestive and metabolic capacity", "Circulatory force", "Mental clarity"], correct: 1 },
+  /* ---------- Faculty-specific domains ---------- */
+  "Health & Life Sciences": [
+    { question: "Which organ system is primarily responsible for gas exchange in the human body?", options: ["Respiratory system", "Endocrine system", "Lymphatic system", "Integumentary system"], correct: 0 },
+    { question: "In a controlled clinical study, the purpose of a placebo group is to:", options: ["Increase the size of the treatment effect", "Separate the effect of the intervention from expectation and natural recovery", "Reduce the cost of the trial", "Guarantee statistical significance"], correct: 1 },
+    { question: "Incidence and prevalence differ in that incidence measures:", options: ["Total existing cases at one point in time", "New cases arising over a period of time", "Deaths attributable to a disease", "Cases per hospital bed"], correct: 1 },
+    { question: "Which practice is the single most effective way to limit infection transmission in a clinical setting?", options: ["Hand hygiene", "Wearing a lab coat", "Keeping windows open", "Daily temperature checks"], correct: 0 },
+    { question: "Enzymes increase the rate of a biochemical reaction by:", options: ["Raising the reaction temperature", "Lowering the activation energy", "Shifting the equilibrium position", "Consuming the substrate directly"], correct: 1 },
   ],
-  "Yoga, Unani, Siddha & Homeopathy": [
-    { question: "In Patanjali's Ashtanga Yoga, 'Pratyahara' means:", options: ["Breath regulation", "Withdrawal of the senses", "Ethical restraint", "Meditative absorption"], correct: 1 },
-    { question: "Which pranayama is generally indicated for cooling the body?", options: ["Bhastrika", "Kapalabhati", "Sheetali", "Surya Bhedana"], correct: 2 },
-    { question: "The four humours (Akhlat) in Unani medicine are:", options: ["Dam, Balgham, Safra, Sauda", "Vata, Pitta, Kapha, Rakta", "Prithvi, Ap, Tejas, Vayu", "Ojas, Tejas, Prana, Rasa"], correct: 0 },
-    { question: "In Siddha, the 96 Thathuvas describe:", options: ["Herbal formulations", "Constituent principles of the human being", "Surgical instruments", "Pulse types"], correct: 1 },
-    { question: "The central principle of homeopathy is:", options: ["Contraria contrariis curentur", "Similia similibus curentur", "Primum non nocere", "Ars longa, vita brevis"], correct: 1 },
+  "Design & Visual Thinking": [
+    { question: "Visual hierarchy on a screen is established primarily through:", options: ["Alphabetical ordering", "Contrast, scale and spacing", "Using as many colours as possible", "Centring every element"], correct: 1 },
+    { question: "A wireframe is best described as:", options: ["A final, pixel-accurate design", "A low-fidelity layout that settles structure and priority before styling", "The production front-end code", "A colour palette specification"], correct: 1 },
+    { question: "Which pairing is most likely to fail an accessibility contrast check?", options: ["Near-black text on white", "Light grey text on a white background", "White text on a dark navy background", "Dark green text on a pale background"], correct: 1 },
+    { question: "In user research, the point of a usability test is to:", options: ["Confirm that the team's design is correct", "Observe where real users struggle to complete a task", "Collect testimonials for marketing", "Measure page load time"], correct: 1 },
+    { question: "Whitespace in a layout is best understood as:", options: ["Wasted area waiting to be filled", "An active tool for grouping, separation and emphasis", "A printing constraint only", "Another name for a white background"], correct: 1 },
   ],
 };
 
@@ -125,13 +125,20 @@ export function gradeSubmission(domain, answers) {
   if (!questions.length) return null;
 
   const responses = Array.isArray(answers) ? answers : [];
+  /* The options travel with the breakdown so a review can name what the
+     candidate actually picked, rather than "you chose option 3". This is only
+     ever returned to the person who has just submitted that paper, whose own
+     answers it is; the key stays out of anything served before submission. */
   const breakdown = questions.map((q, index) => {
     const chosen = Number.isInteger(responses[index]) ? responses[index] : null;
     return {
       index,
       question: q.question,
+      options: q.options,
       chosen,
+      chosenText: chosen == null ? null : q.options[chosen] ?? null,
       correctOption: q.correct,
+      correctText: q.options[q.correct] ?? null,
       correct: chosen === q.correct,
     };
   });

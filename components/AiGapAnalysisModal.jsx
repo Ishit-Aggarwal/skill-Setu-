@@ -15,7 +15,7 @@ export default function AiGapAnalysisModal({ isOpen, onClose, assessment, intern
   const candidateRoles = [
     ...applications.map((a) => ({ title: a.internshipTitle, domain: a.company || "Industry Partner" })),
     ...internships.slice(0, 6).map((i) => ({ title: i.title, domain: i.domain || "Industry" })),
-    { title: "Clinical Research Associate (AYUSH & Pharmacovigilance)", domain: "Ayush Clinical Research" },
+    { title: "Clinical Research Associate", domain: "Research & Development" },
     { title: "Full Stack & Cloud Systems Engineer", domain: "Information Technology & Software" },
     { title: "Healthcare Data Analyst & Biostatistician", domain: "Digital Health & Health Informatics" },
   ];
@@ -115,7 +115,7 @@ export default function AiGapAnalysisModal({ isOpen, onClose, assessment, intern
               Evaluating Radar Vectors Against Job Requirements...
             </div>
             <p className="text-xs text-muted-foreground max-w-sm mx-auto">
-              Scanning NPTEL, Swayam, and national AYUSH competency frameworks for optimal bridge pathways.
+              Scanning NPTEL, Swayam and national competency frameworks for optimal bridge pathways.
             </p>
           </div>
         ) : analysis ? (
@@ -236,14 +236,14 @@ export default function AiGapAnalysisModal({ isOpen, onClose, assessment, intern
               </div>
             </Card>
 
-            {/* AYUSH & Cross-Sectoral Bridge Callout */}
-            {(analysis.sectorIntervention || analysis.ayushSpecificIntervention) && (
+            {/* Cross-sector bridge callout */}
+            {analysis.sectorIntervention && (
               <div className="p-4 rounded-2xl bg-olive-50 border border-olive-200 text-olive-900 space-y-1">
                 <div className="flex items-center gap-2 font-semibold text-xs text-olive-800 uppercase tracking-wider">
                   <span>🔗 Interdisciplinary Integration Bridge</span>
                 </div>
                 <p className="text-xs text-olive-700 leading-relaxed">
-                  {(analysis.sectorIntervention || analysis.ayushSpecificIntervention)}
+                  {analysis.sectorIntervention}
                 </p>
               </div>
             )}
@@ -256,7 +256,7 @@ export default function AiGapAnalysisModal({ isOpen, onClose, assessment, intern
             {savedSuccess ? (
               <span className="text-green-600 font-medium">✓ Roadmap added to student milestones</span>
             ) : (
-              "Grounded in Ministry of Ayush & NPTEL open skilling standards"
+              "Grounded in NPTEL and national open-skilling standards"
             )}
           </div>
 

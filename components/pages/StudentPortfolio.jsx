@@ -831,10 +831,10 @@ export default function StudentPortfolio() {
                     ) : (
                       <Badge tone="muted" dot>No degree proof</Badge>
                     )}
-                    {ed.dataUrl && (
-                      <a href={ed.dataUrl} target="_blank" rel="noreferrer" className="text-[11px] text-primary hover:underline">
+                    {hasFile(ed) && (
+                      <button type="button" onClick={() => openStoredFile(ed)} className="text-[11px] text-primary hover:underline">
                         View {ed.fileName ? `(${formatBytes(ed.fileSize)})` : "proof"}
-                      </a>
+                      </button>
                     )}
                   </div>
                 </div>
@@ -974,16 +974,14 @@ export default function StudentPortfolio() {
                       </div>
                     </div>
                     {cert.score && <Badge tone="primary">{cert.score}</Badge>}
-                    {cert.dataUrl && (
-                      <a
-                        href={cert.dataUrl}
-                        download={cert.fileName}
-                        target="_blank"
-                        rel="noreferrer"
+                    {hasFile(cert) && (
+                      <button
+                        type="button"
+                        onClick={() => openStoredFile(cert)}
                         className="px-3 py-1.5 rounded-lg bg-primary/10 text-primary text-xs font-medium hover:bg-primary hover:text-white transition-colors flex-shrink-0"
                       >
                         Open PDF
-                      </a>
+                      </button>
                     )}
                     {!cert.dataUrl && cert.credentialUrl && (
                       <a href={cert.credentialUrl} target="_blank" rel="noreferrer" className="text-xs text-primary hover:underline flex-shrink-0">
@@ -1120,7 +1118,7 @@ export default function StudentPortfolio() {
           <div className="space-y-3 animate-fade-slide">
             {(portfolio.documents || []).length === 0 && (
               <EmptyState icon="📁" title="No documents uploaded yet">
-                Your résumé is the one recruiters open from every application — start there.
+                Your resume is the one recruiters open from every application — start there.
               </EmptyState>
             )}
 
@@ -1133,15 +1131,20 @@ export default function StudentPortfolio() {
                     {doc.type} · {formatBytes(doc.size)} · Uploaded {formatDate(doc.uploadedAt)}
                   </div>
                 </div>
-                <a href={doc.dataUrl} target="_blank" rel="noreferrer" className="text-xs font-medium text-primary hover:underline flex-shrink-0">View</a>
-                <a href={doc.dataUrl} download={doc.fileName} className="text-xs font-medium text-primary hover:underline flex-shrink-0">Download</a>
+                {/* Both routed through lib/files: a data: URL in an anchor is
+                    refused by the browser as a top-level navigation, so these
+                    links used to do nothing at all. */}
+                <button type="button" onClick={() => openStoredFile(doc)} disabled={!hasFile(doc)} className="text-xs font-medium text-primary hover:underline flex-shrink-0 disabled:text-muted-foreground disabled:no-underline">
+                  {hasFile(doc) ? "View" : "No file"}
+                </button>
+                <button type="button" onClick={() => downloadStoredFile(doc)} disabled={!hasFile(doc)} className="text-xs font-medium text-primary hover:underline flex-shrink-0 disabled:text-muted-foreground disabled:no-underline">Download</button>
                 <RemoveButton onClick={() => removeDoc(doc.id)} label={`Remove ${doc.fileName}`} />
               </Card>
             ))}
 
             <Card className="space-y-3">
               <div className="text-sm font-semibold text-foreground">Upload a document</div>
-              <p className="text-xs text-muted-foreground">Résumé, degree certificate, transcript or ID proof. PDF or image, under 2MB.</p>
+              <p className="text-xs text-muted-foreground">Resume, degree certificate, transcript or ID proof. PDF or image, under 2MB.</p>
               <div className="grid sm:grid-cols-2 gap-3">
                 <Select value={docType} onChange={(e) => setDocType(e.target.value)}>
                   {DOC_TYPES.map((t) => <option key={t}>{t}</option>)}

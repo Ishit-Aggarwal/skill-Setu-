@@ -60,24 +60,41 @@ export const listForStudent = query({
   },
 });
 
+/**
+ * Publishes a posting.
+ *
+ * `id` is the client's own record id, and it is what makes this shared at all.
+ * A posting used to be written only into the publishing browser's local store,
+ * so a recruiter could publish a role, see it in their own list, and have it
+ * never reach a student on another device — the posting existed, but only on
+ * one laptop. The browser now writes locally *and* mirrors here under the same
+ * id, so the row can be matched on both sides instead of being duplicated.
+ *
+ * Re-publishing the same id updates the existing row rather than inserting a
+ * second copy, which makes the mirror safe to retry.
+ */
 export const create = mutation({
   args: {
     sessionToken: v.string(),
+    id: v.optional(v.string()),
     title: v.string(),
     company: v.string(),
     location: v.string(),
     type: v.string(),
     domain: v.string(),
     duration: v.string(),
-    stipend: v.string(),
+    stipendAmount: v.optional(v.union(v.number(), v.null())),
+    stipendMode: v.optional(v.string()),
+    stipend: v.optional(v.string()),
     tags: v.array(v.string()),
     deadline: v.string(),
     description: v.string(),
     color: v.optional(v.string()),
     hot: v.optional(v.boolean()),
+    status: v.optional(v.string()),
+    postedAt: v.optional(v.string()),
     minSkillScore: v.optional(v.union(v.number(), v.null())),
     eligibleDepartments: v.optional(v.array(v.string())),
-    eligibleInstitutions: v.optional(v.array(v.string())),
   },
   handler: async (ctx, args) => {
     const actor = await requireActor(ctx, args.sessionToken);
@@ -86,16 +103,33 @@ export const create = mutation({
     }
 
     const { sessionToken, ...fields } = args;
-    return await ctx.db.insert("internships", {
+    const row = {
       ...fields,
       // The company name on a posting is the caller's own, not free text.
       company: actor.user.companyName || actor.user.instituteName || actor.user.institution || fields.company,
       ownerId: actor.id,
-      status: "Open",
-      postedAt: new Date().toISOString(),
+      status: fields.status || "Open",
+      postedAt: fields.postedAt || new Date().toISOString(),
       views: 0,
       uniqueViews: 0,
-    });
+    };
+
+    if (fields.id) {
+      const existing = await ctx.db
+        .query("internships")
+        .filter((q) => q.eq(q.field("id"), fields.id))
+        .first();
+      if (existing) {
+        if (existing.ownerId !== actor.id && actor.role !== "admin") {
+          throw authError("That posting belongs to another organisation.");
+        }
+        const { views, uniqueViews, ...safe } = row;
+        await ctx.db.patch(existing._id, safe);
+        return existing._id;
+      }
+    }
+
+    return await ctx.db.insert("internships", row);
   },
 });
 
@@ -109,6 +143,24 @@ export const update = mutation({
     const { ownerId, _id, _creationTime, ...safe } = args.patch || {};
     await ctx.db.patch(args.id, safe);
     return await ctx.db.get(args.id);
+  },
+});
+
+/** Same as `update`, addressed by the client-side record id. */
+export const updateByClientId = mutation({
+  args: { sessionToken: v.string(), id: v.string(), patch: v.any() },
+  handler: async (ctx, args) => {
+    const actor = await requireActor(ctx, args.sessionToken);
+    const doc = await ctx.db
+      .query("internships")
+      .filter((q) => q.eq(q.field("id"), args.id))
+      .first();
+    if (!doc) return { ok: false, reason: "NOT_FOUND" };
+    requireOwner(actor, doc, { what: "this posting" });
+
+    const { ownerId, id, _id, _creationTime, ...safe } = args.patch || {};
+    await ctx.db.patch(doc._id, safe);
+    return { ok: true };
   },
 });
 

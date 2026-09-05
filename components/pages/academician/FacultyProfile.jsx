@@ -3,9 +3,10 @@
 import { useEffect, useMemo, useState } from "react";
 import DashboardLayout from "../../DashboardLayout";
 import { useAuth } from "../../../lib/auth";
-import { Avatar, Badge, Button, Card, Field, Flash, PageHeader, ProgressRing, Section, Select, StatGrid, TextArea, TextInput, useFlash } from "../../ui/Kit";
+import { Avatar, Badge, Button, Card, Field, Flash, Modal, PageHeader, ProgressRing, Section, Select, StatGrid, TextArea, TextInput, useFlash } from "../../ui/Kit";
 import { COLLAB_EXPERTISE, DEPARTMENTS } from "../../../lib/domains";
-import { listAdvisees, listCollabListingsByOwner, listPrograms, listResearchOutputs } from "../../../lib/store";
+import { addResearchOutput, listAdvisees, listCollabListingsByOwner, listPrograms, listResearchOutputs, removeResearchOutput, updateResearchOutput } from "../../../lib/store";
+import { hasFile, openStoredFile, readFileAsDataUrl } from "../../../lib/files";
 import TagInput from "../../TagInput";
 import { api } from "../../../convex/_generated/api";
 import { backendQuerySafe, isBackendConfigured } from "../../../lib/convexBrowser";
@@ -71,7 +72,10 @@ export default function FacultyProfile() {
     };
   }, [user]);
 
-  const outputs = useMemo(() => (ready && user ? listResearchOutputs(user.id) : []), [user, ready]);
+  const [pubVersion, setPubVersion] = useState(0);
+  const [editingPub, setEditingPub] = useState(null);
+
+  const outputs = useMemo(() => (ready && user ? listResearchOutputs(user.id) : []), [user, ready, pubVersion]);
   const listings = useMemo(() => (ready && user ? listCollabListingsByOwner(user.id) : []), [user, ready]);
   const advisees = useMemo(() => (ready && user ? listAdvisees(user.id) : []), [user, ready]);
   const programs = useMemo(() => (ready && user ? listPrograms().filter((p) => p.ownerId === user.id) : []), [user, ready]);
@@ -176,7 +180,7 @@ export default function FacultyProfile() {
               <TagInput
                 value={subjects}
                 onChange={setSubjects}
-                placeholder="e.g. Data Structures, Operations Management, Dravyaguna Vigyan"
+                placeholder="e.g. Data Structures, Operations Management, Constitutional Law"
                 inputLabel="Add a subject you teach"
                 maxTags={25}
               />
@@ -194,7 +198,7 @@ export default function FacultyProfile() {
               <TagInput
                 value={interests}
                 onChange={setInterests}
-                placeholder="e.g. Distributed Systems, Operations Research, Dravyaguna"
+                placeholder="e.g. Distributed Systems, Operations Research, Structural Dynamics"
                 inputLabel="Add a research interest"
                 emptyHint="None added yet — Research Collabs has nothing to match you on."
                 suggestions={COLLAB_EXPERTISE}
@@ -257,27 +261,220 @@ export default function FacultyProfile() {
             </Section>
           </Card>
 
-          {outputs.length > 0 && (
-            <Card>
-              <Section title="Publication record" description="Logged from the Research Collabs page — shown here as your credibility summary.">
-                <div className="space-y-2">
+          <Card>
+            <Section
+              title="Publication record"
+              description="Logged from your research activities — shown on your profile and directory listing as your credibility summary."
+              action={
+                <Button size="sm" variant="outline" onClick={() => setEditingPub({ isNew: true })}>
+                  + Add publication
+                </Button>
+              }
+            >
+              {outputs.length === 0 ? (
+                <div className="text-center py-6 border border-dashed border-border rounded-xl">
+                  <p className="text-sm text-muted-foreground mb-3">No publications or patents added yet.</p>
+                  <Button size="sm" onClick={() => setEditingPub({ isNew: true })}>
+                    Add your first publication
+                  </Button>
+                </div>
+              ) : (
+                <div className="space-y-2.5">
                   {outputs.map((o) => (
-                    <div key={o.id} className="flex items-start gap-3 border border-border rounded-xl px-3.5 py-2.5">
+                    <div key={o.id} className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 border border-border rounded-xl p-3.5 bg-card">
                       <div className="min-w-0 flex-1">
-                        <div className="text-sm text-foreground">{o.title}</div>
-                        <div className="text-[11px] text-muted-foreground mt-0.5">{o.venue}{o.year ? ` · ${o.year}` : ""}</div>
+                        <div className="flex items-center gap-2 flex-wrap">
+                          <span className="text-sm font-medium text-foreground">{o.title}</span>
+                          <Badge tone={o.type === "Patent" ? "purple" : "primary"}>{o.type}</Badge>
+                        </div>
+                        <div className="text-[11px] text-muted-foreground mt-0.5">
+                          {o.venue || o.journalOrConference || "Independent"}
+                          {o.year ? ` · ${o.year}` : ""}
+                        </div>
+                        {(o.url || hasFile({ dataUrl: o.fileDataUrl })) && (
+                          <button
+                            type="button"
+                            onClick={() => openStoredFile({ dataUrl: o.fileDataUrl, url: o.url, fileName: o.fileName })}
+                            className="inline-flex items-center gap-1 text-[11px] text-primary hover:underline font-medium mt-1.5"
+                          >
+                            {o.fileDataUrl ? `📄 ${o.fileName || "View PDF"}` : "🔗 View publication ↗"}
+                          </button>
+                        )}
                       </div>
-                      <Badge tone={o.type === "Patent" ? "purple" : "primary"}>{o.type}</Badge>
+                      <div className="flex items-center gap-2 flex-shrink-0 self-end sm:self-center">
+                        <Button size="xs" variant="outline" onClick={() => setEditingPub(o)}>
+                          Edit
+                        </Button>
+                        <Button
+                          size="xs"
+                          variant="danger"
+                          onClick={() => {
+                            removeResearchOutput(o.id);
+                            setPubVersion((v) => v + 1);
+                            setFlash(`Removed "${o.title}".`);
+                          }}
+                        >
+                          Remove
+                        </Button>
+                      </div>
                     </div>
                   ))}
                 </div>
-              </Section>
-            </Card>
-          )}
+              )}
+            </Section>
+          </Card>
 
           <Button type="submit" className="w-full" size="lg">Save profile</Button>
         </form>
       </div>
+
+      {editingPub && (
+        <PublicationModal
+          pub={editingPub.isNew ? null : editingPub}
+          onCancel={() => setEditingPub(null)}
+          onSave={(data) => {
+            if (editingPub.id) {
+              updateResearchOutput(editingPub.id, data);
+              setFlash("Publication updated.");
+            } else {
+              addResearchOutput(user.id, data);
+              setFlash("Publication added.");
+            }
+            setPubVersion((v) => v + 1);
+            setEditingPub(null);
+          }}
+        />
+      )}
     </DashboardLayout>
+  );
+}
+
+function PublicationModal({ pub, onCancel, onSave }) {
+  const [title, setTitle] = useState(pub?.title || "");
+  const [type, setType] = useState(pub?.type || "Journal Article");
+  const [venue, setVenue] = useState(pub?.venue || pub?.journalOrConference || "");
+  const [year, setYear] = useState(pub?.year ? String(pub.year) : "");
+  const [url, setUrl] = useState(pub?.url || "");
+  const [fileName, setFileName] = useState(pub?.fileName || "");
+  const [fileDataUrl, setFileDataUrl] = useState(pub?.fileDataUrl || "");
+  const [uploading, setUploading] = useState(false);
+
+  async function handleFileChange(e) {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    setUploading(true);
+    try {
+      const dataUrl = await readFileAsDataUrl(file);
+      setFileName(file.name);
+      setFileDataUrl(dataUrl);
+    } catch {
+      // ignore
+    } finally {
+      setUploading(false);
+    }
+  }
+
+  function handleSubmit(e) {
+    e.preventDefault();
+    if (!title.trim()) return;
+    onSave({
+      title: title.trim(),
+      type,
+      venue: venue.trim(),
+      year: year.trim(),
+      url: url.trim() || undefined,
+      fileName: fileName || undefined,
+      fileDataUrl: fileDataUrl || undefined,
+    });
+  }
+
+  return (
+    <Modal
+      title={pub?.id ? "Edit publication" : "Add publication"}
+      description="Attach a DOI/URL link or upload a PDF document."
+      onClose={onCancel}
+    >
+      <form onSubmit={handleSubmit} className="space-y-4">
+        <Field label="Title" required>
+          <TextInput
+            required
+            value={title}
+            onChange={(e) => setTitle(e.target.value)}
+            placeholder="e.g. Resilient Transformer Architectures for Multimodal Perception"
+          />
+        </Field>
+
+        <div className="grid grid-cols-2 gap-3">
+          <Field label="Type">
+            <Select value={type} onChange={(e) => setType(e.target.value)}>
+              {["Journal Article", "Conference Proceeding", "Book Chapter", "Patent", "Technical Report", "Working Paper"].map((t) => (
+                <option key={t}>{t}</option>
+              ))}
+            </Select>
+          </Field>
+          <Field label="Year">
+            <TextInput
+              type="number"
+              value={year}
+              onChange={(e) => setYear(e.target.value)}
+              placeholder="e.g. 2025"
+            />
+          </Field>
+        </div>
+
+        <Field label="Journal / Conference / Venue">
+          <TextInput
+            value={venue}
+            onChange={(e) => setVenue(e.target.value)}
+            placeholder="e.g. IEEE Transactions on Neural Networks"
+          />
+        </Field>
+
+        <Field label="Publication URL / DOI link" hint="Optional web link to publisher or preprint repository">
+          <TextInput
+            type="url"
+            value={url}
+            onChange={(e) => setUrl(e.target.value)}
+            placeholder="https://doi.org/..."
+          />
+        </Field>
+
+        <Field label="Upload publication document (PDF)" hint="Attach a copy directly for viewers to read">
+          <div className="space-y-2">
+            <input
+              type="file"
+              accept=".pdf,application/pdf"
+              onChange={handleFileChange}
+              className="text-xs text-muted-foreground file:mr-2.5 file:py-1.5 file:px-3 file:rounded-lg file:border-0 file:text-xs file:font-medium file:bg-primary/10 file:text-primary hover:file:bg-primary/20"
+            />
+            {uploading && <div className="text-xs text-muted-foreground">Reading file...</div>}
+            {fileName && !uploading && (
+              <div className="flex items-center gap-2 text-xs text-foreground bg-secondary/50 px-2.5 py-1.5 rounded-lg">
+                <span>📄 {fileName}</span>
+                <button
+                  type="button"
+                  onClick={() => {
+                    setFileName("");
+                    setFileDataUrl("");
+                  }}
+                  className="text-xs text-red-500 hover:underline ml-auto"
+                >
+                  Remove file
+                </button>
+              </div>
+            )}
+          </div>
+        </Field>
+
+        <div className="flex gap-3 pt-2">
+          <Button type="button" variant="outline" className="flex-1" onClick={onCancel}>
+            Cancel
+          </Button>
+          <Button type="submit" className="flex-1">
+            {pub?.id ? "Save changes" : "Add publication"}
+          </Button>
+        </div>
+      </form>
+    </Modal>
   );
 }

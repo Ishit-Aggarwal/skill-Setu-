@@ -511,9 +511,9 @@ export default function AnalyticsDashboard({ activePage = "analytics", title = "
                     {visibleInstitutions.map((c, i) => (
                       <div key={c.name}>
                         <div className="flex items-start justify-between text-xs mb-1 gap-2">
-                          {/* Institution names run long ("All India Institute of
-                              Integrated Medical & Ayush Sciences, New Delhi"),
-                              so they wrap rather than being cut mid-word. */}
+                          {/* Institution names run long ("Deccan College of Architecture
+                              & Planning, Hyderabad"), so they wrap rather than
+                              being cut mid-word. */}
                           <span className="font-medium text-foreground break-words leading-snug min-w-0">{i + 1}. {c.name}</span>
                           <span className="text-muted-foreground flex-shrink-0">{c.applications}</span>
                         </div>

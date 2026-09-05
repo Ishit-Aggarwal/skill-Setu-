@@ -22,31 +22,33 @@ import {
   recordInternshipView,
   setPostingStatus,
   listSavedInternships,
+  patchInternship,
   toggleSavedInternship,
-  update,
   PIPELINE_STAGES,
   TERMINAL_STAGES,
 } from "../../lib/store";
 import { checkEligibility, computeMatch, computeSkillGap, daysUntil, formatDate } from "../../lib/match";
+import { STIPEND_MODES, formatStipend, monthlyEquivalent, parseDurationMonths, parseLegacyStipend } from "../../lib/money";
 
 const typeFilters = ["All", "Remote", "Hybrid", "Onsite"];
 const STAGE_ORDER = PIPELINE_STAGES;
 
 /* ---------- Listing filter vocabulary ----------
-   Stipend and duration are stored as the human strings an employer typed
-   ("₹35,000/mo", "6 months"), so filtering parses them rather than assuming a
-   numeric column exists. Anything unparseable is kept rather than dropped —
-   a filter should never silently hide a posting because its stipend was
-   written as "Negotiable". */
+   Pay is now a number plus a mode (see lib/money.js), so filtering compares
+   real values instead of parsing prose. A "total for the duration" posting is
+   compared on its monthly equivalent, so it is ranked against monthly roles
+   rather than being excluded from every band. Anything with no number at all
+   ("Unpaid", "Negotiable") is kept rather than dropped — a filter should never
+   silently hide a posting because its pay was written in words. */
 
 /* Minimum thresholds rather than closed ranges: a candidate filtering for
    "₹35,000+" expects a ₹35,000 role to appear, which an exclusive upper bound
    on the band below would have hidden. */
 const STIPEND_BANDS = [
   { key: "any", label: "Any stipend", test: () => true },
-  { key: "gte15", label: "₹15,000+", test: (v) => v != null && v >= 15000 },
-  { key: "gte25", label: "₹25,000+", test: (v) => v != null && v >= 25000 },
-  { key: "gte35", label: "₹35,000+", test: (v) => v != null && v >= 35000 },
+  { key: "gte15", label: "₹15,000+ / month", test: (v) => v != null && v >= 15000 },
+  { key: "gte25", label: "₹25,000+ / month", test: (v) => v != null && v >= 25000 },
+  { key: "gte35", label: "₹35,000+ / month", test: (v) => v != null && v >= 35000 },
 ];
 
 const DURATION_BANDS = [
@@ -63,20 +65,6 @@ const POSTED_WINDOWS = [
   { key: "30", label: "Last month", days: 30 },
 ];
 
-function parseStipend(value) {
-  const digits = String(value || "").replace(/[^0-9]/g, "");
-  return digits ? Number(digits) : null;
-}
-
-function parseDurationMonths(value) {
-  const text = String(value || "").toLowerCase();
-  const n = parseFloat(text);
-  if (Number.isNaN(n)) return null;
-  if (text.includes("week")) return n / 4.345;
-  if (text.includes("year")) return n * 12;
-  return n;
-}
-
 function bandOf(bands, key) {
   return bands.find((b) => b.key === key) || bands[0];
 }
@@ -91,8 +79,8 @@ const typeTone = {
  * Sector picker.
  *
  * Was a single flat row of every sector in use — around two dozen pills, of
- * which eleven were AYUSH sub-sectors, so the densest control on the page also
- * implied AYUSH was the platform's main subject. Now five equal clusters that
+ * which eleven belonged to one industry, so the densest control on the page
+ * implied that industry was the platform's subject. Now five equal clusters that
  * expand on demand, each showing how many live roles sit inside it, plus a
  * type-ahead for going straight to a sub-sector without opening its cluster.
  */
@@ -287,7 +275,7 @@ function StudentView({ user }) {
         const matchesDomain = domain === "All" || i.domain === domain;
         const matchesType = type === "All" || i.type === type;
         const matchesLocation = location === "All" || i.location === location;
-        const matchesStipend = stipend.test(parseStipend(i.stipend));
+        const matchesStipend = stipend.test(monthlyEquivalent(i));
         const matchesDuration = duration.test(parseDurationMonths(i.duration));
         const matchesPosted = !cutoff || (i.postedAt ? new Date(i.postedAt).getTime() >= cutoff : true);
         const matchesEligibility = !eligibleOnly || i.eligibility.eligible;
@@ -522,8 +510,11 @@ function StudentView({ user }) {
                 <div className="grid grid-cols-2 gap-x-2 gap-y-1 text-xs text-muted-foreground mb-3">
                   <div className="truncate">📍 {intern.location}</div>
                   <div>⏱ {intern.duration}</div>
-                  <div>💰 {intern.stipend}</div>
-                  <div>📅 Due {formatDate(intern.deadline)}</div>
+                  {/* A total-for-the-duration figure is shown as the recruiter
+                      entered it and never divided into a monthly number — the
+                      two are different promises. */}
+                  <div className="col-span-2 truncate" title={formatStipend(intern)}>💰 {formatStipend(intern)}</div>
+                  <div className="col-span-2">📅 Due {formatDate(intern.deadline)}</div>
                 </div>
 
                 <div className="mb-4">
@@ -583,13 +574,13 @@ const EMPTY_POSTING = {
   type: "Hybrid",
   domain: ALL_DOMAINS[0],
   duration: "",
-  stipend: "",
+  stipendAmount: "",
+  stipendMode: "monthly",
   tags: "",
   deadline: "",
   description: "",
   minSkillScore: "",
   eligibleDepartments: [],
-  eligibleInstitutions: "",
 };
 
 function IndustryView({ user }) {
@@ -643,26 +634,31 @@ function IndustryView({ user }) {
   }, [postings, applications, search, domainFilter, statusFilter, sortBy]);
 
   function handleSubmit(data) {
+    const amount = String(data.stipendAmount ?? "").trim();
     const payload = {
       title: data.title,
       location: data.location || "Remote",
       type: data.type,
       domain: data.domain,
       duration: data.duration || "3 months",
-      stipend: data.stipend || "Unpaid",
+      // A number and a mode. The unit label is rendered, never typed.
+      stipendAmount: amount === "" ? null : Number(amount),
+      stipendMode: data.stipendMode === "total" ? "total" : "monthly",
+      // Legacy free-text pay is cleared once a posting is saved through this
+      // form, so the two can never disagree on the same record.
+      stipend: null,
       tags: data.tags.split(",").map((t) => t.trim()).filter(Boolean),
       deadline: data.deadline || new Date(Date.now() + 30 * 86400000).toISOString().slice(0, 10),
       description: data.description,
       minSkillScore: data.minSkillScore ? Number(data.minSkillScore) : null,
       eligibleDepartments: data.eligibleDepartments,
-      eligibleInstitutions: data.eligibleInstitutions.split(",").map((t) => t.trim()).filter(Boolean),
     };
     if (editing) {
-      update("internships", editing.id, payload);
+      patchInternship(editing.id, payload);
       setFlash("Posting updated.");
     } else {
       createInternship(user.id, user.companyName || user.name, payload);
-      setFlash("Posting published.");
+      setFlash("Posting published — students can see it now.");
     }
     setShowModal(false);
     setEditing(null);
@@ -846,11 +842,25 @@ function PostingModal({ posting, onClose, onSubmit }) {
           tags: (posting.tags || []).join(", "),
           minSkillScore: posting.minSkillScore ? String(posting.minSkillScore) : "",
           eligibleDepartments: posting.eligibleDepartments || [],
-          eligibleInstitutions: (posting.eligibleInstitutions || []).join(", "),
+          // A posting written before pay became structured still has its number
+          // inside a string like "₹18,000/mo" — pull it out so editing it does
+          // not silently wipe the figure.
+          stipendAmount:
+            posting.stipendAmount != null
+              ? String(posting.stipendAmount)
+              : String(parseLegacyStipend(posting.stipend) ?? ""),
+          stipendMode: posting.stipendMode || "monthly",
         }
       : EMPTY_POSTING
   );
   const set = (k, v) => setForm((f) => ({ ...f, [k]: v }));
+
+  const previewMonths = parseDurationMonths(form.duration);
+  const stipendPreview = formatStipend({
+    stipendAmount: form.stipendAmount === "" ? null : Number(form.stipendAmount),
+    stipendMode: form.stipendMode,
+    duration: form.duration,
+  });
 
   return (
     <Modal
@@ -881,10 +891,52 @@ function PostingModal({ posting, onClose, onSubmit }) {
 
         <Field label="Location"><TextInput value={form.location} onChange={(e) => set("location", e.target.value)} placeholder="Pune / Remote" /></Field>
 
-        <div className="grid grid-cols-2 gap-3">
-          <Field label="Stipend / CTC"><TextInput value={form.stipend} onChange={(e) => set("stipend", e.target.value)} placeholder="₹18,000/mo" /></Field>
-          <Field label="Duration"><TextInput value={form.duration} onChange={(e) => set("duration", e.target.value)} placeholder="6 months" /></Field>
-        </div>
+        <Field label="Duration" hint="Used to work out what a total figure comes to per month.">
+          <TextInput value={form.duration} onChange={(e) => set("duration", e.target.value)} placeholder="6 months" />
+        </Field>
+
+        {/* Pay: a number and a choice. The unit is never typed — it used to be,
+            which is how "₹18,000/mo", "18000 per month" and "18k monthly" all
+            ended up meaning the same thing in a column nothing could sort. */}
+        <Field label="Stipend / CTC">
+          <div className="flex gap-1.5 mb-2">
+            {STIPEND_MODES.map((m) => (
+              <button
+                key={m.key}
+                type="button"
+                onClick={() => set("stipendMode", m.key)}
+                aria-pressed={form.stipendMode === m.key}
+                title={m.hint}
+                className={`text-xs px-3 py-1.5 rounded-full border font-medium transition-colors ${
+                  form.stipendMode === m.key
+                    ? "bg-primary text-white border-transparent"
+                    : "bg-card border-border text-muted-foreground hover:border-primary/40"
+                }`}
+              >
+                {m.label}
+              </button>
+            ))}
+          </div>
+          <div className="relative">
+            <span className="absolute left-3.5 top-1/2 -translate-y-1/2 text-sm text-muted-foreground pointer-events-none">₹</span>
+            <TextInput
+              type="number"
+              min="0"
+              step="500"
+              inputMode="numeric"
+              value={form.stipendAmount}
+              onChange={(e) => set("stipendAmount", e.target.value)}
+              placeholder={form.stipendMode === "total" ? "120000" : "18000"}
+              className="pl-7"
+            />
+          </div>
+          <p className="text-[11px] text-muted-foreground mt-1.5">
+            Students will see: <span className="font-medium text-foreground">{stipendPreview}</span>
+            {form.stipendMode === "total" && form.stipendAmount && !previewMonths && (
+              <span className="text-amber-600"> — add a duration so this reads as a period, not a bare number.</span>
+            )}
+          </p>
+        </Field>
 
         <Field label="Application deadline" hint="The posting closes itself once this date passes; you can reopen it manually.">
           <TextInput type="date" value={form.deadline} onChange={(e) => set("deadline", e.target.value)} />
@@ -901,7 +953,13 @@ function PostingModal({ posting, onClose, onSubmit }) {
             <TextInput type="number" min="0" max="100" value={form.minSkillScore} onChange={(e) => set("minSkillScore", e.target.value)} placeholder="60" />
           </Field>
 
-          <Field label="Eligible departments" hint="Leave empty to accept every department." className="mb-3">
+          {/* There was an "Eligible institutions" box here. It let a posting be
+              limited to a hand-typed list of campus names, which mostly worked
+              as a spelling test: a student was shown "restricted to specific
+              partner institutions" because the recruiter typed the name with a
+              comma in it. Departments and a score floor express the same intent
+              without excluding people by accident. */}
+          <Field label="Eligible departments" hint="Leave empty to accept every department — the role stays open to every institution either way.">
             <div className="flex flex-wrap gap-2">
               {DEPARTMENTS.map((d) => (
                 <button
@@ -918,10 +976,6 @@ function PostingModal({ posting, onClose, onSubmit }) {
                 </button>
               ))}
             </div>
-          </Field>
-
-          <Field label="Eligible institutions" hint="Comma separated. Leave empty to open the role to every institution.">
-            <TextInput value={form.eligibleInstitutions} onChange={(e) => set("eligibleInstitutions", e.target.value)} placeholder="Apex University of Technology & Applied Sciences" />
           </Field>
         </div>
 

@@ -1,9 +1,8 @@
 "use client";
 
 import { useCallback, useEffect, useState } from "react";
-import { api } from "../convex/_generated/api";
-import { backendErrorMessage, backendQuery, isBackendConfigured } from "../lib/convexBrowser";
-import { getSessionToken } from "../lib/session";
+import { backendErrorMessage } from "../lib/convexBrowser";
+import { loadAvailableSlots, loadMyBookings } from "../lib/scheduling";
 import { useNav } from "../lib/nav";
 import { formatDateTime } from "../lib/match";
 import { Badge, Button, Card, Section } from "./ui/Kit";
@@ -11,10 +10,10 @@ import { Badge, Button, Card, Section } from "./ui/Kit";
 /**
  * The dashboard summary of a student's mentoring.
  *
- * It reads the same server-held slots as the full Mentorship page rather than
- * this browser's local storage — which is what made the old version useless in
- * practice: a mentor publishing office hours on their own laptop wrote to their
- * own localStorage, so no student on any other device could ever see a slot.
+ * It reads the same slots as the full Mentorship page, through lib/scheduling —
+ * shared across devices when the account has a session, on this device
+ * otherwise. Either way it renders something rather than telling the reader to
+ * go and configure a deployment.
  *
  * Booking and cancelling live on the Mentorship page; this is the glance.
  */
@@ -25,18 +24,9 @@ export default function MentoringPanel({ user }) {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
 
-  const connected = isBackendConfigured() && Boolean(getSessionToken());
-
   const load = useCallback(async () => {
-    if (!connected) {
-      setLoading(false);
-      return;
-    }
     try {
-      const [mine, available] = await Promise.all([
-        backendQuery(api.mentorship.myBookings, {}),
-        backendQuery(api.mentorship.availableForStudent, {}),
-      ]);
+      const [mine, available] = await Promise.all([loadMyBookings(user), loadAvailableSlots(user)]);
       const now = Date.now();
       const mineIds = new Set((mine || []).map((m) => m.id));
       setBookings((mine || []).filter((m) => new Date(m.slot).getTime() >= now && m.booking?.status !== "Cancelled"));
@@ -49,7 +39,7 @@ export default function MentoringPanel({ user }) {
     } finally {
       setLoading(false);
     }
-  }, [connected]);
+  }, [user]);
 
   useEffect(() => {
     load();
@@ -66,11 +56,7 @@ export default function MentoringPanel({ user }) {
           </Button>
         }
       >
-        {!connected ? (
-          <p className="text-sm text-muted-foreground py-4 text-center">
-            Sign in with a real account to see office hours your mentors have published.
-          </p>
-        ) : loading ? (
+        {loading ? (
           <div className="space-y-2">
             {[...Array(2)].map((_, i) => (
               <div key={i} className="h-12 rounded-xl skeleton" />

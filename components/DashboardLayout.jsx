@@ -7,6 +7,13 @@ import { useNav } from "../lib/nav";
 import EditProfileModal from "./EditProfileModal";
 import NotificationBell from "./NotificationBell";
 import { useTheme } from "../lib/preferences";
+import {
+  listApplicationsForStudent,
+  listSavedInternships,
+  listSavedMentorships,
+  listStudentNotifications,
+} from "../lib/store";
+import { subscribeToMutations } from "../lib/sync";
 import { Avatar, IconTile } from "./ui/Kit";
 
 function Icon({ children }) {
@@ -71,12 +78,29 @@ const IconMenu = () => (
   </svg>
 );
 
+const IconBookmark = () => (
+  <Icon><path d="M19 21l-7-5-7 5V5a2 2 0 0 1 2-2h10a2 2 0 0 1 2 2z" /></Icon>
+);
+const IconInbox = () => (
+  <Icon><polyline points="22 12 16 12 14 15 10 15 8 12 2 12" /><path d="M5.45 5.11 2 12v6a2 2 0 0 0 2 2h16a2 2 0 0 0 2-2v-6l-3.45-6.89A2 2 0 0 0 16.76 4H7.24a2 2 0 0 0-1.79 1.11z" /></Icon>
+);
+const IconSend = () => (
+  <Icon><line x1="22" y1="2" x2="11" y2="13" /><polygon points="22 2 15 22 11 13 2 9 22 2" /></Icon>
+);
+const IconGauge = () => (
+  <Icon><path d="M12 20a8 8 0 1 1 8-8" /><path d="m12 12 5-3" /></Icon>
+);
+
 /**
  * Every nav item points at its own route. An earlier version pointed several
  * academician entries at the same page with only a `?tab=` difference, so
  * "Dashboard" and "Programs (FDPs)" rendered identical content and the active
  * marker lit up on all of them at once — each destination now has a real,
  * separately-populated page behind it.
+ *
+ * `section` starts a labelled group. The student rail has grown past the point
+ * where a flat list of fourteen entries is scannable, and grouping is what
+ * keeps "where do I find the roles I applied to" answerable at a glance.
  */
 const NAV = {
   student: [
@@ -84,7 +108,19 @@ const NAV = {
     { label: "Skill Tests", short: "Tests", page: "skill-assessment", icon: <IconTarget /> },
     { label: "Internships", short: "Jobs", page: "internship-listings", icon: <IconBriefcase /> },
     { label: "Mentorship", short: "Mentor", page: "student-mentorship", icon: <IconCalendar /> },
-    { label: "My Portfolio", short: "Profile", page: "student-portfolio", icon: <IconUser /> },
+    { label: "Directory", short: "Browse", page: "directory", icon: <IconCompass /> },
+
+    /* Applied and Saved were sub-tabs nested under Internships and Mentorship.
+       Nesting the two lists a student checks most often one level down made
+       them the hardest things on the portal to reach. */
+    { section: "My activity", label: "Applied Internships", short: "Applied", page: "applied-internships", icon: <IconSend /> },
+    { label: "Saved Internships", short: "Saved", page: "saved-internships", icon: <IconBookmark /> },
+    { label: "Applied Mentorships", short: "Sessions", page: "applied-mentorships", icon: <IconHandshake /> },
+    { label: "Saved Mentorships", short: "Saved", page: "saved-mentorships", icon: <IconBookmark /> },
+    { label: "Notifications", short: "Inbox", page: "notifications", icon: <IconInbox /> },
+
+    { section: "My profile", label: "My Portfolio", short: "Profile", page: "student-portfolio", icon: <IconUser /> },
+    { label: "Placement Readiness", short: "Ready", page: "placement-readiness", icon: <IconGauge /> },
     { label: "Analytics", short: "Insights", page: "analytics", icon: <IconBarChart /> },
     { label: "Settings", short: "Settings", page: "settings", icon: <IconSettings /> },
   ],
@@ -149,6 +185,39 @@ const ROLE_EMOJI = {
   institution: "🏫",
 };
 
+/**
+ * Live counts beside the student's activity entries.
+ *
+ * Kept here rather than inside each page so the rail is accurate wherever you
+ * are standing — a new application or an incoming notice updates the number
+ * you can see without navigating to it. Non-student roles get nothing; their
+ * counts belong on their own dashboards.
+ */
+function useNavBadges(user, role) {
+  const [badges, setBadges] = useState({});
+
+  useEffect(() => {
+    if (role !== "student" || !user?.id) return undefined;
+
+    function recount() {
+      setBadges({
+        "applied-internships": listApplicationsForStudent(user.id).filter((a) => !["Rejected", "Withdrawn"].includes(a.status)).length,
+        "saved-internships": listSavedInternships(user.id).length,
+        "saved-mentorships": listSavedMentorships(user.id).length,
+        notifications: listStudentNotifications(user.id).filter((n) => !n.read).length,
+      });
+    }
+
+    recount();
+    return subscribeToMutations(
+      ["applications", "savedInternships", "savedMentorships", "studentNotifications"],
+      recount
+    );
+  }, [user?.id, role]);
+
+  return badges;
+}
+
 export default function DashboardLayout({ children, activePage, title }) {
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const [showEditProfile, setShowEditProfile] = useState(false);
@@ -172,6 +241,7 @@ export default function DashboardLayout({ children, activePage, title }) {
   }, [role]);
 
   const navItems = NAV[role] || NAV.student;
+  const badges = useNavBadges(user, role);
   const userName = user?.name || "Guest";
   const userSub = `${ROLE_LABEL[role]} · ${user?.institution || user?.companyName || user?.instituteName || ""}`;
 
@@ -200,7 +270,7 @@ export default function DashboardLayout({ children, activePage, title }) {
           <Link href="/" className="flex flex-col items-start gap-1 px-5 py-4 border-b border-border text-left hover:bg-secondary/50 transition-colors cursor-pointer">
             {/* The wordmark is wide (≈3.6:1) — capped by height and allowed to
                 size its own width so it never overflows the 240px rail. */}
-            <img src="/logo.png" alt="Skill Setu" className="h-9 w-auto max-w-[190px] object-contain mix-blend-multiply" />
+            <img src="/logo.png" alt="Skill Setu" className="h-9 w-auto max-w-[190px] brand-logo" />
             <div className="text-[11px] text-muted-foreground">Academia–Industry Portal</div>
           </Link>
 
@@ -214,21 +284,35 @@ export default function DashboardLayout({ children, activePage, title }) {
           <nav className="flex-1 px-3 py-4 space-y-0.5 overflow-y-auto">
             {navItems.map((item) => {
               const isActive = activePage === item.page;
+              const badge = badges[item.page];
               return (
-                <button
-                  key={item.label}
-                  onClick={() => {
-                    navigate(item.page, item.query);
-                    setSidebarOpen(false);
-                  }}
-                  className={`relative w-full flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm font-medium transition-all duration-150 ${
-                    isActive ? "bg-primary/10 text-primary shadow-[0_1px_2px_rgba(25,25,26,0.03)]" : "text-muted-foreground hover:bg-secondary hover:text-foreground"
-                  }`}
-                >
-                  {isActive && <span className="absolute left-0 top-1/2 -translate-y-1/2 w-1 h-5 rounded-r-full bg-primary" />}
-                  <span className={isActive ? "text-primary" : ""}>{item.icon}</span>
-                  <span className="truncate">{item.label}</span>
-                </button>
+                <div key={item.label}>
+                  {item.section && (
+                    <div className="px-3 pt-4 pb-1.5 text-[10px] font-semibold uppercase tracking-widest text-muted-foreground/70">
+                      {item.section}
+                    </div>
+                  )}
+                  <button
+                    onClick={() => {
+                      navigate(item.page, item.query);
+                      setSidebarOpen(false);
+                    }}
+                    className={`relative w-full flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm font-medium transition-all duration-150 ${
+                      isActive ? "bg-primary/10 text-primary shadow-[0_1px_2px_rgba(25,25,26,0.03)]" : "text-muted-foreground hover:bg-secondary hover:text-foreground"
+                    }`}
+                  >
+                    {isActive && <span className="absolute left-0 top-1/2 -translate-y-1/2 w-1 h-5 rounded-r-full bg-primary" />}
+                    <span className={isActive ? "text-primary" : ""}>{item.icon}</span>
+                    <span className="truncate flex-1 text-left">{item.label}</span>
+                    {/* A count is only worth showing when it is actionable —
+                        unread notices, live applications, saved roles. */}
+                    {badge > 0 && (
+                      <span className={`text-[10px] font-semibold px-1.5 py-0.5 rounded-full flex-shrink-0 ${isActive ? "bg-primary text-white" : "bg-secondary text-secondary-foreground"}`}>
+                        {badge > 99 ? "99+" : badge}
+                      </span>
+                    )}
+                  </button>
+                </div>
               );
             })}
           </nav>
@@ -263,7 +347,7 @@ export default function DashboardLayout({ children, activePage, title }) {
           </button>
 
           <Link href="/" className="lg:hidden flex items-center min-w-0 cursor-pointer">
-            <img src="/logo.png" alt="Skill Setu" className="h-8 w-auto max-w-[150px] object-contain mix-blend-multiply" />
+            <img src="/logo.png" alt="Skill Setu" className="h-8 w-auto max-w-[150px] brand-logo" />
           </Link>
 
           <div className="flex-1 hidden lg:block min-w-0">{title && <h1 className="text-base font-semibold text-foreground truncate tracking-tight">{title}</h1>}</div>
@@ -294,7 +378,7 @@ export default function DashboardLayout({ children, activePage, title }) {
                 </svg>
               )}
             </button>
-            {role === "student" && <NotificationBell user={user} onOpenInbox={() => navigate("student-dashboard")} />}
+            {role === "student" && <NotificationBell user={user} onOpenInbox={() => navigate("notifications")} />}
             <button onClick={() => setShowEditProfile(true)} aria-label="Edit profile" className="rounded-full hover:ring-2 hover:ring-primary/20 transition-all">
               <Avatar name={userName} size={34} src={user?.avatarDataUrl} />
             </button>

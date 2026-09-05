@@ -204,10 +204,10 @@ export default function MyStudents() {
 
         <StatGrid
           stats={[
-            { label: "My advisees", value: String(adviseeCount), icon: "🎓" },
-            { label: "Department cohort", value: String(students.filter((s) => s.department === user?.department).length), icon: "🏛" },
-            { label: "Flagged promising", value: String(students.filter((s) => s.flag === "Promising").length), icon: "⭐" },
-            { label: "Needing support", value: String(students.filter((s) => s.flag === "Needs support" || (s.score != null && s.score < 60)).length), icon: "🩺" },
+            { label: "Mentored advisees", value: String(adviseeCount), icon: "🎓", hint: `${scoped.length} in current view` },
+            { label: "Students flagged", value: String(students.filter((s) => Boolean(s.flag)).length), icon: "🚩", hint: `${students.filter((s) => s.flag === "Promising").length} promising` },
+            { label: "Private notes saved", value: String(students.filter((s) => Boolean(s.note && s.note.trim())).length), icon: "📝", hint: "Confidential guidance logs" },
+            { label: "Department cohort", value: String(students.filter((s) => s.department === user?.department).length), icon: "🏛", hint: user?.department || "Campus-wide" },
           ]}
         />
 

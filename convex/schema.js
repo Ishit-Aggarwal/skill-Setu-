@@ -30,6 +30,14 @@ export default defineSchema({
     companyName: v.optional(v.string()),
     workEmailDomain: v.optional(v.string()),
     phone: v.optional(v.string()),
+    /* Optional recovery number, offered on every role's account settings. Used
+       only to get someone back into their account when the registered email is
+       gone; never shown to recruiters or students. */
+    recoveryPhone: v.optional(v.string()),
+    /* Institution accounts only, and deliberately its own field: the Dean's
+       name is not the same person as the signing-in admin, and reusing one
+       "name" box for both is how the wrong name ends up on published records. */
+    deanName: v.optional(v.string()),
     avatar: v.optional(v.string()),
     avatarDataUrl: v.optional(v.union(v.string(), v.null())),
     employeeId: v.optional(v.string()),
@@ -104,7 +112,13 @@ export default defineSchema({
     type: v.string(), // "Hybrid" | "Remote" | "Onsite"
     domain: v.string(),
     duration: v.string(),
-    stipend: v.string(),
+    /* Pay is a number plus a mode, not a hand-typed string: the recruiter
+       enters 18000 and picks "per month" or "total for the duration", and the
+       unit label is rendered by the UI. `stipend` is kept for postings written
+       before that change so they still display. */
+    stipendAmount: v.optional(v.union(v.number(), v.null())),
+    stipendMode: v.optional(v.string()), // "monthly" | "total"
+    stipend: v.optional(v.string()),
     tags: v.array(v.string()),
     deadline: v.string(),
     description: v.string(),
@@ -115,6 +129,9 @@ export default defineSchema({
     // Minimum qualifications, so applications arrive pre-filtered.
     minSkillScore: v.optional(v.union(v.number(), v.null())),
     eligibleDepartments: v.optional(v.array(v.string())),
+    /* Retired: postings are no longer restricted to a named list of
+       institutions. Kept in the schema only so rows written before the field
+       was removed still validate; nothing reads it. */
     eligibleInstitutions: v.optional(v.array(v.string())),
     recruiterId: v.optional(v.union(v.string(), v.null())),
     recruiterName: v.optional(v.union(v.string(), v.null())),
@@ -142,10 +159,19 @@ export default defineSchema({
     status: v.string(), // "Applied" | "Shortlisted" | "Interview" | "Hired" | "Rejected"
     appliedAt: v.string(),
     statusHistory: v.optional(v.array(v.any())),
+    /* The resume the candidate attached when they applied. An application with
+       no resume behind it is not a real application, so this is captured at
+       submission rather than looked up later. */
+    resumeFileName: v.optional(v.string()),
+    resumeDataUrl: v.optional(v.union(v.string(), v.null())),
+    /* Structured feedback the reviewer leaves — visible to the candidate,
+       unlike recruiterNotes. */
+    feedback: v.optional(v.any()),
     // Recruiter-only fields — never surfaced to the candidate.
     interviewMode: v.optional(v.string()), // "Physical" | "Online"
     interviewAt: v.optional(v.string()),
     recruiterNotes: v.optional(v.string()),
+    rejectionReason: v.optional(v.string()),
     // Post-hire tracking: the pipeline doesn't end at "Hired".
     offerStage: v.optional(v.string()),
     offerUpdatedAt: v.optional(v.string()),
@@ -160,7 +186,13 @@ export default defineSchema({
     id: v.optional(v.string()),
     title: v.string(),
     organiser: v.string(),
-    dates: v.string(),
+    /* Dates are structured. `dates` was a free-text box someone typed
+       "Dec 8-12, 2026" into, which could not be sorted, validated or drawn on
+       a calendar; it survives only as a display fallback for older rows. */
+    startDate: v.optional(v.string()), // YYYY-MM-DD
+    endDate: v.optional(v.string()), // YYYY-MM-DD
+    startTime: v.optional(v.string()), // HH:mm
+    dates: v.optional(v.string()),
     seats: v.number(),
     enrolled: v.number(),
     mode: v.string(),
@@ -168,6 +200,13 @@ export default defineSchema({
     status: v.string(),
     description: v.optional(v.string()),
     venue: v.optional(v.string()),
+    /* Online programmes need a joining link. If it is still missing a day
+       before the start, the session is pushed back a day and the host is
+       reminded; three pushes with no link cancels it. */
+    meetingUrl: v.optional(v.string()),
+    linkPushCount: v.optional(v.number()),
+    lastPushedAt: v.optional(v.string()),
+    cancelledReason: v.optional(v.string()),
     createdAt: v.optional(v.string()),
     certificatesIssuedAt: v.optional(v.string()),
   }).index("by_owner", ["ownerId"]),
@@ -509,6 +548,12 @@ export default defineSchema({
     title: v.optional(v.string()),
     durationMins: v.optional(v.number()),
     notes: v.optional(v.string()),
+    /* Online slots with no joining link get pushed back a day at a time and
+       cancelled on the third push. Both counters live on the slot so the
+       escalation can be replayed from the record itself. */
+    linkPushCount: v.optional(v.number()),
+    lastPushedAt: v.optional(v.string()),
+    cancelledReason: v.optional(v.string()),
   }).index("by_faculty", ["facultyId"]),
 
   placementHistory: defineTable({
@@ -520,6 +565,12 @@ export default defineSchema({
     placed: v.number(),
     medianStipend: v.optional(v.number()),
     topRecruiter: v.optional(v.string()),
+    /* Supporting proof is encouraged but never required — making it mandatory
+       would keep institutions from publishing their record at all. */
+    document: v.optional(v.union(v.string(), v.null())),
+    documentName: v.optional(v.string()),
+    notes: v.optional(v.string()),
+    updatedAt: v.optional(v.string()),
   }).index("by_institute", ["instituteName"]),
 
   programFeedback: defineTable({
@@ -552,9 +603,14 @@ export default defineSchema({
     title: v.string(),
     type: v.string(),
     journalOrConference: v.optional(v.string()),
+    venue: v.optional(v.string()),
     year: v.optional(v.string()),
     doi: v.optional(v.string()),
+    /* Either a link or an uploaded PDF — a publication nobody can open is
+       just a claim. */
     url: v.optional(v.string()),
+    fileName: v.optional(v.string()),
+    fileDataUrl: v.optional(v.union(v.string(), v.null())),
     collaborators: v.optional(v.array(v.string())),
     addedAt: v.string(),
   }).index("by_faculty", ["facultyId"]),
@@ -607,6 +663,17 @@ export default defineSchema({
     id: v.optional(v.string()),
     studentId: v.string(),
     internshipId: v.string(),
+    savedAt: v.string(),
+  }).index("by_student", ["studentId"]),
+
+  /* Office-hour slots a student has bookmarked but not booked — the mentorship
+     equivalent of savedInternships, so "Saved Mentorships" has something real
+     behind it rather than being a filtered view of bookings. */
+  savedMentorships: defineTable({
+    id: v.optional(v.string()),
+    studentId: v.string(),
+    slotId: v.string(),
+    facultyId: v.optional(v.string()),
     savedAt: v.string(),
   }).index("by_student", ["studentId"]),
 });

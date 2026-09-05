@@ -48,6 +48,7 @@ export default function InstitutionProfile() {
   const [form, setForm] = useState(EMPTY);
   const [name, setName] = useState("");
   const [instituteId, setInstituteId] = useState("");
+  const [deanName, setDeanName] = useState("");
   const [flash, setFlash] = useFlash();
   const [error, setError] = useState(null);
 
@@ -62,6 +63,7 @@ export default function InstitutionProfile() {
     setForm({ ...EMPTY, ...(stored || {}), placementCell: { ...EMPTY.placementCell, ...(stored?.placementCell || {}) } });
     setName(instituteName);
     setInstituteId(user?.instituteId || "");
+    setDeanName(user?.deanName || stored?.deanName || "");
     if (instituteName) {
       setDocs(listInstitutionDocs(instituteName));
     }
@@ -152,11 +154,9 @@ export default function InstitutionProfile() {
 
   function submit(e) {
     e.preventDefault();
-    saveInstitutionProfile(instituteName, form);
-    if (name !== instituteName || instituteId !== user?.instituteId) {
-      updateProfile({ instituteName: name, instituteId });
-      if (name !== instituteName) saveInstitutionProfile(name, form);
-    }
+    saveInstitutionProfile(instituteName, { ...form, deanName });
+    updateProfile({ instituteName: name, instituteId, deanName });
+    if (name !== instituteName) saveInstitutionProfile(name, { ...form, deanName });
     logActivity(instituteName, user?.name || "Admin", "Updated institution profile");
     setFlash("Institution profile saved.");
   }
@@ -232,6 +232,16 @@ export default function InstitutionProfile() {
                 <Field label="AISHE / Institution ID"><TextInput value={instituteId} onChange={(e) => setInstituteId(e.target.value)} placeholder="AISHE-U-0417" /></Field>
                 <Field label="Website"><TextInput value={form.website} onChange={(e) => set("website", e.target.value)} placeholder="https://…" /></Field>
               </div>
+              <Field
+                label="Dean's full name"
+                hint="Dean or Head of Institution. Explicitly scoped and stored separately from the account administrator so verified institutional records carry the correct leadership identity."
+              >
+                <TextInput
+                  value={deanName}
+                  onChange={(e) => setDeanName(e.target.value)}
+                  placeholder="e.g. Prof. Rajesh Nair, Dean of Academics"
+                />
+              </Field>
               <Field label="About" hint="Shown to students and recruiters browsing your institution.">
                 <TextArea rows={4} value={form.about} onChange={(e) => set("about", e.target.value)} placeholder="Programmes offered, hospital and pharmacy facilities, research focus." />
               </Field>

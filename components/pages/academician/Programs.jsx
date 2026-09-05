@@ -23,6 +23,18 @@ import {
   updateProgram,
 } from "../../../lib/store";
 import { subscribeToMutations } from "../../../lib/sync";
+import {
+  MONTH_NAMES,
+  WEEKDAY_NAMES,
+  datesCovered,
+  extractDatesFromLegacy,
+  formatDateRange,
+  monthGrid,
+  parseIsoDate,
+  programmeDates,
+  todayIso,
+  validateDateRange,
+} from "../../../lib/dates";
 
 const MODE_TONE = { Hybrid: "blue", Online: "green", Onsite: "amber" };
 const STATUS_TONE = { Open: "green", Completed: "muted", Cancelled: "red" };
@@ -37,6 +49,9 @@ export default function Programs() {
   const [editing, setEditing] = useState(null);
   const [manageId, setManageId] = useState(null);
   const [feedbackFor, setFeedbackFor] = useState(null);
+  const [calView, setCalView] = useState("month");
+  const [calDate, setCalDate] = useState(() => new Date(2026, 11, 1));
+  const [selectedProgram, setSelectedProgram] = useState(null);
 
   useEffect(() => setReady(true), []);
 
@@ -58,12 +73,51 @@ export default function Programs() {
     if (msg) setFlash(msg);
   }
 
+  function handleDuplicate(prog) {
+    const { id, _id, createdAt, status, enrolled, ...rest } = prog;
+    createProgram(user.id, user.institution || user.name, {
+      ...rest,
+      title: `${prog.title} (Copy)`,
+      linkPushCount: 0,
+      lastPushedAt: undefined,
+    });
+    bump(`Duplicated "${prog.title}".`);
+  }
+
+  function handleCancelProgram(prog) {
+    cancelProgram(prog.id, "Cancelled by host");
+    bump(`"${prog.title}" has been cancelled.`);
+  }
+
+  function handleCancelRegistration(prog) {
+    cancelProgramRegistration(prog.id, user.id);
+    bump(`Withdrawn from "${prog.title}".`);
+  }
+
   const calendar = useMemo(
     () =>
       [...hosting.map((p) => ({ ...p, role: "Hosting" })), ...attending.map((p) => ({ ...p, role: "Attending" }))]
         .filter((p) => p.status !== "Cancelled")
         .sort((a, b) => (a.dates || "").localeCompare(b.dates || "")),
     [hosting, attending]
+  );
+
+  const enrichedCalendar = useMemo(
+    () =>
+      calendar.map((p) => {
+        const legacy = extractDatesFromLegacy(p.dates);
+        const startIso = p.startDate || legacy.startDate || "";
+        const endIso = p.endDate || legacy.endDate || startIso;
+        const covered = datesCovered(startIso, endIso);
+        return {
+          ...p,
+          startIso,
+          endIso,
+          covered,
+          displayDates: programmeDates(p),
+        };
+      }),
+    [calendar]
   );
 
   const totalRegistrations = hosting.reduce((s, p) => s + listProgramRegistrations(p.id).length, 0);
@@ -207,28 +261,226 @@ export default function Programs() {
         )}
 
         {tab === "calendar" && (
-          <Section title="Upcoming programmes" description="Everything you're hosting or attending, in date order.">
-            {calendar.length === 0 ? (
-              <EmptyState icon="📅" title="Nothing on the calendar">Register for a programme, or host your own.</EmptyState>
-            ) : (
-              <div className="space-y-2">
-                {calendar.map((p) => (
-                  <div key={`${p.id}-${p.role}`} className="flex flex-wrap items-center gap-3 bg-card border border-border rounded-xl px-4 py-3">
-                    <div className="w-12 text-center flex-shrink-0">
-                      <div className="text-[10px] text-muted-foreground uppercase">{(p.dates || "").split(" ")[0]}</div>
-                      <div className="text-base font-bold text-foreground">{(p.dates || "").split(" ")[1]?.split("–")[0] || "—"}</div>
-                    </div>
-                    <div className="min-w-0 flex-1">
-                      <div className="text-sm font-medium text-foreground truncate">{p.title}</div>
-                      <div className="text-[11px] text-muted-foreground truncate">{p.organiser} · {p.dates}</div>
-                    </div>
-                    <Badge tone={p.role === "Hosting" ? "primary" : "green"}>{p.role}</Badge>
-                    <Badge tone={MODE_TONE[p.mode] || "muted"}>{p.mode}</Badge>
-                  </div>
+          <div className="space-y-4">
+            <div className="flex flex-wrap items-center justify-between gap-3 bg-card border border-border rounded-xl p-3.5">
+              <div className="flex items-center gap-2">
+                <button
+                  type="button"
+                  onClick={() =>
+                    calView === "week"
+                      ? setCalDate((d) => new Date(d.getFullYear(), d.getMonth(), d.getDate() - 7))
+                      : setCalDate((d) => new Date(d.getFullYear(), d.getMonth() - 1, 1))
+                  }
+                  aria-label="Previous"
+                  className="px-2.5 py-1.5 rounded-lg border border-border text-xs font-semibold hover:bg-muted transition-colors"
+                >
+                  ←
+                </button>
+                <div className="text-sm font-semibold text-foreground min-w-[140px] text-center">
+                  {MONTH_NAMES[calDate.getMonth()]} {calDate.getFullYear()}
+                </div>
+                <button
+                  type="button"
+                  onClick={() =>
+                    calView === "week"
+                      ? setCalDate((d) => new Date(d.getFullYear(), d.getMonth(), d.getDate() + 7))
+                      : setCalDate((d) => new Date(d.getFullYear(), d.getMonth() + 1, 1))
+                  }
+                  aria-label="Next"
+                  className="px-2.5 py-1.5 rounded-lg border border-border text-xs font-semibold hover:bg-muted transition-colors"
+                >
+                  →
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setCalDate(new Date())}
+                  className="text-xs px-2.5 py-1.5 rounded-lg border border-border hover:bg-muted text-muted-foreground font-medium transition-colors ml-1"
+                >
+                  Today
+                </button>
+              </div>
+
+              <div className="flex items-center gap-1.5 bg-secondary/50 p-1 rounded-xl border border-border text-xs">
+                {["month", "week", "list"].map((v) => (
+                  <button
+                    key={v}
+                    type="button"
+                    onClick={() => setCalView(v)}
+                    className={`px-3 py-1 rounded-lg capitalize font-medium transition-colors ${
+                      calView === v
+                        ? "bg-primary text-white shadow-sm"
+                        : "text-muted-foreground hover:text-foreground"
+                    }`}
+                  >
+                    {v}
+                  </button>
                 ))}
               </div>
+            </div>
+
+            {calView === "month" && (
+              <Card className="p-3 sm:p-4">
+                <div className="grid grid-cols-7 gap-1 text-center font-semibold text-xs text-muted-foreground mb-2">
+                  {WEEKDAY_NAMES.map((w) => (
+                    <div key={w} className="py-1">
+                      {w}
+                    </div>
+                  ))}
+                </div>
+                <div className="grid grid-cols-7 gap-1.5">
+                  {monthGrid(calDate.getFullYear(), calDate.getMonth()).map((cell, idx) => {
+                    const dayProgs = enrichedCalendar.filter((p) => p.covered.includes(cell.iso));
+                    return (
+                      <div
+                        key={idx}
+                        className={`min-h-[85px] sm:min-h-[105px] border rounded-xl p-1.5 flex flex-col justify-between transition-colors ${
+                          cell.inMonth
+                            ? cell.isToday
+                              ? "bg-primary/5 border-primary/40 font-semibold"
+                              : "bg-background border-border"
+                            : "bg-secondary/20 border-transparent opacity-40 text-muted-foreground"
+                        }`}
+                      >
+                        <div className="flex items-center justify-between">
+                          <span
+                            className={`text-xs ${
+                              cell.isToday
+                                ? "w-5 h-5 rounded-full bg-primary text-white flex items-center justify-center font-bold"
+                                : "text-muted-foreground font-medium"
+                            }`}
+                          >
+                            {cell.date.getDate()}
+                          </span>
+                          {dayProgs.length > 0 && (
+                            <span className="text-[10px] text-muted-foreground hidden sm:inline">
+                              {dayProgs.length}
+                            </span>
+                          )}
+                        </div>
+                        <div className="space-y-1 mt-1 overflow-y-auto max-h-[70px]">
+                          {dayProgs.map((p) => (
+                            <button
+                              key={p.id}
+                              type="button"
+                              onClick={() => setSelectedProgram(p)}
+                              title={`${p.title} (${p.mode}) — Click for options`}
+                              className={`w-full text-left truncate text-[10px] sm:text-[11px] px-1.5 py-0.5 rounded font-medium transition-all ${
+                                p.role === "Hosting"
+                                  ? "bg-primary/10 text-primary hover:bg-primary/20 border border-primary/20"
+                                  : "bg-emerald-50 text-emerald-800 dark:bg-emerald-950 dark:text-emerald-300 hover:opacity-80 border border-emerald-300/40"
+                              }`}
+                            >
+                              {p.title}
+                            </button>
+                          ))}
+                        </div>
+                      </div>
+                    );
+                  })}
+                </div>
+              </Card>
             )}
-          </Section>
+
+            {calView === "week" && (
+              <Card className="p-3 sm:p-4 space-y-3">
+                <div className="grid grid-cols-1 sm:grid-cols-7 gap-2">
+                  {(() => {
+                    const curr = new Date(calDate);
+                    const dayOfWeek = (curr.getDay() + 6) % 7;
+                    const monday = new Date(curr.getFullYear(), curr.getMonth(), curr.getDate() - dayOfWeek);
+                    return Array.from({ length: 7 }, (_, i) => {
+                      const d = new Date(monday.getFullYear(), monday.getMonth(), monday.getDate() + i);
+                      const pad = (n) => String(n).padStart(2, "0");
+                      const iso = `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}`;
+                      const isToday = iso === todayIso();
+                      const progs = enrichedCalendar.filter((p) => p.covered.includes(iso));
+                      return (
+                        <div
+                          key={iso}
+                          className={`border rounded-xl p-2.5 min-h-[140px] flex flex-col ${
+                            isToday ? "bg-primary/5 border-primary/50" : "bg-background border-border"
+                          }`}
+                        >
+                          <div className="text-xs font-semibold text-muted-foreground mb-1">
+                            {WEEKDAY_NAMES[i]} <span className="text-foreground">{d.getDate()}</span>
+                          </div>
+                          <div className="space-y-1.5 flex-1">
+                            {progs.length === 0 ? (
+                              <div className="text-[11px] text-muted-foreground italic mt-2">Free</div>
+                            ) : (
+                              progs.map((p) => (
+                                <button
+                                  key={p.id}
+                                  type="button"
+                                  onClick={() => setSelectedProgram(p)}
+                                  className="w-full text-left p-1.5 rounded-lg border border-border bg-card hover:border-primary/40 transition-colors space-y-1"
+                                >
+                                  <div className="text-xs font-medium text-foreground truncate">{p.title}</div>
+                                  <div className="flex items-center gap-1">
+                                    <Badge size="xs" tone={p.role === "Hosting" ? "primary" : "green"}>
+                                      {p.role}
+                                    </Badge>
+                                    <Badge size="xs" tone={MODE_TONE[p.mode] || "muted"}>
+                                      {p.mode}
+                                    </Badge>
+                                  </div>
+                                </button>
+                              ))
+                            )}
+                          </div>
+                        </div>
+                      );
+                    });
+                  })()}
+                </div>
+              </Card>
+            )}
+
+            {calView === "list" && (
+              <Section title="Upcoming programmes" description="Everything you're hosting or attending, in date order.">
+                {enrichedCalendar.length === 0 ? (
+                  <EmptyState icon="📅" title="Nothing on the calendar">Register for a programme, or host your own.</EmptyState>
+                ) : (
+                  <div className="space-y-2">
+                    {enrichedCalendar.map((p) => (
+                      <div
+                        key={`${p.id}-${p.role}`}
+                        onClick={() => setSelectedProgram(p)}
+                        className="flex flex-wrap items-center gap-3 bg-card border border-border rounded-xl px-4 py-3 hover:border-primary/40 cursor-pointer transition-all"
+                      >
+                        <div className="w-14 text-center flex-shrink-0">
+                          <div className="text-[10px] text-muted-foreground uppercase">
+                            {p.displayDates.split(" ")[0]}
+                          </div>
+                          <div className="text-sm font-bold text-foreground truncate">
+                            {p.displayDates.split(" ")[1]?.split("–")[0] || "—"}
+                          </div>
+                        </div>
+                        <div className="min-w-0 flex-1">
+                          <div className="text-sm font-medium text-foreground truncate">{p.title}</div>
+                          <div className="text-[11px] text-muted-foreground truncate">
+                            {p.organiser} · {p.displayDates}
+                          </div>
+                        </div>
+                        <Badge tone={p.role === "Hosting" ? "primary" : "green"}>{p.role}</Badge>
+                        <Badge tone={MODE_TONE[p.mode] || "muted"}>{p.mode}</Badge>
+                        <Button
+                          size="xs"
+                          variant="outline"
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            setSelectedProgram(p);
+                          }}
+                        >
+                          Actions
+                        </Button>
+                      </div>
+                    ))}
+                  </div>
+                )}
+              </Section>
+            )}
+          </div>
         )}
       </div>
 
@@ -278,6 +530,139 @@ export default function Programs() {
               bump("Thanks — your feedback has been recorded.");
             }}
           />
+        </Modal>
+      )}
+      {selectedProgram && (
+        <Modal
+          title={selectedProgram.title}
+          description={`${selectedProgram.role} · ${selectedProgram.displayDates || selectedProgram.dates}`}
+          onClose={() => setSelectedProgram(null)}
+        >
+          <div className="space-y-4">
+            <div className="flex flex-wrap items-center gap-2">
+              <Badge tone={MODE_TONE[selectedProgram.mode] || "muted"}>{selectedProgram.mode}</Badge>
+              <Badge tone={STATUS_TONE[selectedProgram.status] || "green"}>{selectedProgram.status || "Open"}</Badge>
+              <span className="text-xs text-muted-foreground">{selectedProgram.organiser}</span>
+            </div>
+
+            {selectedProgram.description && (
+              <p className="text-xs text-muted-foreground leading-relaxed">
+                {selectedProgram.description}
+              </p>
+            )}
+
+            <div className="grid grid-cols-2 gap-3 p-3 bg-secondary/30 rounded-xl text-xs">
+              <div>
+                <span className="text-muted-foreground block text-[10px] uppercase font-semibold">Dates</span>
+                <span className="font-medium text-foreground">{selectedProgram.displayDates || selectedProgram.dates}</span>
+              </div>
+              <div>
+                <span className="text-muted-foreground block text-[10px] uppercase font-semibold">Capacity</span>
+                <span className="font-medium text-foreground">{selectedProgram.seats || 30} seats</span>
+              </div>
+              {selectedProgram.venue && (
+                <div className="col-span-2">
+                  <span className="text-muted-foreground block text-[10px] uppercase font-semibold">Venue</span>
+                  <span className="font-medium text-foreground">📍 {selectedProgram.venue}</span>
+                </div>
+              )}
+              {selectedProgram.mode === "Online" && (
+                <div className="col-span-2">
+                  <span className="text-muted-foreground block text-[10px] uppercase font-semibold">Online Meeting Link</span>
+                  {selectedProgram.meetingUrl ? (
+                    <a
+                      href={selectedProgram.meetingUrl}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="text-primary hover:underline font-medium break-all flex items-center gap-1 mt-0.5"
+                    >
+                      🔗 {selectedProgram.meetingUrl}
+                    </a>
+                  ) : (
+                    <div className="text-amber-600 dark:text-amber-400 mt-0.5 font-medium">
+                      ⚠️ No meeting link provided yet. (Required at least 1 day before start)
+                    </div>
+                  )}
+                </div>
+              )}
+            </div>
+
+            <div className="flex flex-wrap gap-2 pt-2 border-t border-border">
+              {selectedProgram.role === "Hosting" ? (
+                <>
+                  <Button
+                    size="sm"
+                    onClick={() => {
+                      const prog = selectedProgram;
+                      setSelectedProgram(null);
+                      setManageId(prog.id);
+                    }}
+                  >
+                    Manage attendees
+                  </Button>
+                  <Button
+                    size="sm"
+                    variant="outline"
+                    onClick={() => {
+                      const prog = selectedProgram;
+                      setSelectedProgram(null);
+                      setEditing(prog);
+                    }}
+                  >
+                    Edit details
+                  </Button>
+                  <Button
+                    size="sm"
+                    variant="outline"
+                    onClick={() => {
+                      handleDuplicate(selectedProgram);
+                      setSelectedProgram(null);
+                    }}
+                  >
+                    Duplicate
+                  </Button>
+                  {selectedProgram.status !== "Cancelled" && (
+                    <Button
+                      size="sm"
+                      variant="danger"
+                      onClick={() => {
+                        handleCancelProgram(selectedProgram);
+                        setSelectedProgram(null);
+                      }}
+                    >
+                      Cancel programme
+                    </Button>
+                  )}
+                </>
+              ) : (
+                <>
+                  {selectedProgram.status !== "Cancelled" && (
+                    <Button
+                      size="sm"
+                      variant="danger"
+                      onClick={() => {
+                        handleCancelRegistration(selectedProgram);
+                        setSelectedProgram(null);
+                      }}
+                    >
+                      Withdraw registration
+                    </Button>
+                  )}
+                  <Button
+                    size="sm"
+                    variant="outline"
+                    onClick={() => {
+                      const prog = selectedProgram;
+                      setSelectedProgram(null);
+                      setFeedbackFor(prog);
+                    }}
+                  >
+                    Give feedback
+                  </Button>
+                </>
+              )}
+            </div>
+          </div>
         </Modal>
       )}
     </DashboardLayout>
@@ -450,32 +835,158 @@ function AttendeesModal({ program, onClose, onChange }) {
 }
 
 function ProgramForm({ program, onCancel, onSubmit }) {
+  const legacyDates = extractDatesFromLegacy(program?.dates);
   const [form, setForm] = useState({
     title: program?.title || "",
-    dates: program?.dates || "",
+    startDate: program?.startDate || legacyDates.startDate || "",
+    endDate: program?.endDate || legacyDates.endDate || "",
     seats: String(program?.seats || 30),
     mode: program?.mode || "Hybrid",
     venue: program?.venue || "",
+    meetingUrl: program?.meetingUrl || "",
     description: program?.description || "",
   });
+  const [dateError, setDateError] = useState("");
+
   const set = (k, v) => setForm((f) => ({ ...f, [k]: v }));
+
+  function handleSubmit(e) {
+    e.preventDefault();
+    const err = validateDateRange(form.startDate, form.endDate, { allowPast: !!program });
+    if (err) {
+      setDateError(err);
+      return;
+    }
+    setDateError("");
+    const formattedDates = formatDateRange(form.startDate, form.endDate);
+    onSubmit({
+      ...form,
+      dates: formattedDates || program?.dates || "",
+      seats: Number(form.seats) || 30,
+    });
+  }
+
   return (
-    <form onSubmit={(e) => { e.preventDefault(); onSubmit({ ...form, seats: Number(form.seats) || 30 }); }} className="space-y-4">
-      <Field label="Programme title"><TextInput required value={form.title} onChange={(e) => set("title", e.target.value)} placeholder="e.g. Applied Machine Learning for Educators" /></Field>
-      <Field label="Dates"><TextInput value={form.dates} onChange={(e) => set("dates", e.target.value)} placeholder="Dec 8–12, 2026" /></Field>
+    <form onSubmit={handleSubmit} className="space-y-4">
+      <Field label="Programme title">
+        <TextInput
+          required
+          value={form.title}
+          onChange={(e) => set("title", e.target.value)}
+          placeholder="e.g. Applied Machine Learning for Educators"
+        />
+      </Field>
+
+      <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+        <Field label="Start date" required>
+          <TextInput
+            type="date"
+            required
+            min={program ? undefined : todayIso()}
+            value={form.startDate}
+            onChange={(e) => {
+              const val = e.target.value;
+              set("startDate", val);
+              setDateError("");
+              if (!form.endDate || form.endDate < val) set("endDate", val);
+            }}
+          />
+        </Field>
+        <Field label="End date">
+          <TextInput
+            type="date"
+            min={form.startDate || (program ? undefined : todayIso())}
+            value={form.endDate}
+            onChange={(e) => {
+              set("endDate", e.target.value);
+              setDateError("");
+            }}
+          />
+        </Field>
+      </div>
+      {dateError && <p className="text-xs text-red-500 font-medium -mt-2">{dateError}</p>}
+
       <div className="grid grid-cols-2 gap-3">
-        <Field label="Seats"><TextInput type="number" min="1" value={form.seats} onChange={(e) => set("seats", e.target.value)} /></Field>
+        <Field label="Seats">
+          <TextInput
+            type="number"
+            min="1"
+            value={form.seats}
+            onChange={(e) => set("seats", e.target.value)}
+          />
+        </Field>
         <Field label="Mode">
           <Select value={form.mode} onChange={(e) => set("mode", e.target.value)}>
-            {["Hybrid", "Online", "Onsite"].map((m) => <option key={m}>{m}</option>)}
+            {["Hybrid", "Online", "Onsite"].map((m) => (
+              <option key={m}>{m}</option>
+            ))}
           </Select>
         </Field>
       </div>
-      <Field label="Venue / platform"><TextInput value={form.venue} onChange={(e) => set("venue", e.target.value)} placeholder="Central Instrumentation Lab" /></Field>
-      <Field label="Description"><TextArea rows={3} value={form.description} onChange={(e) => set("description", e.target.value)} placeholder="What the programme covers and who it's for." /></Field>
+
+      {form.mode === "Online" && (
+        <Field
+          label="Online Meeting Link (Google Meet / Zoom / Teams)"
+          required
+          hint="Required for online mode. Can be added or edited up to 1 day before the session. If missing by T-1 day, the session will be postponed automatically."
+        >
+          <TextInput
+            type="url"
+            required
+            value={form.meetingUrl}
+            onChange={(e) => set("meetingUrl", e.target.value)}
+            placeholder="https://meet.google.com/xyz-abcd-efg"
+          />
+        </Field>
+      )}
+
+      {form.mode === "Onsite" && (
+        <Field label="Venue" required hint="Campus building, hall, or room number.">
+          <TextInput
+            required
+            value={form.venue}
+            onChange={(e) => set("venue", e.target.value)}
+            placeholder="e.g. Central Instrumentation Lab, Room 204"
+          />
+        </Field>
+      )}
+
+      {form.mode === "Hybrid" && (
+        <div className="space-y-3">
+          <Field label="Venue (Onsite location)">
+            <TextInput
+              value={form.venue}
+              onChange={(e) => set("venue", e.target.value)}
+              placeholder="e.g. Auditorium Hall B"
+            />
+          </Field>
+          <Field label="Meeting Link (Online livestream / stream link)">
+            <TextInput
+              type="url"
+              value={form.meetingUrl}
+              onChange={(e) => set("meetingUrl", e.target.value)}
+              placeholder="https://meet.google.com/xyz-abcd-efg"
+            />
+          </Field>
+        </div>
+      )}
+
+      <Field label="Description">
+        <TextArea
+          rows={3}
+          value={form.description}
+          onChange={(e) => set("description", e.target.value)}
+          placeholder="What the programme covers and who it's for."
+        />
+      </Field>
+
       <div className="flex gap-3">
-        <Button type="button" variant="outline" className="flex-1" onClick={onCancel}>Cancel</Button>
-        <Button type="submit" className="flex-1">{program ? "Save changes" : "Publish programme"}</Button>
+        <Button type="button" variant="outline" className="flex-1" onClick={onCancel}>
+          Cancel
+        </Button>
+        <Button type="submit" className="flex-1">
+          {program ? "Save changes" : "Publish programme"}
+        </Button>
       </div>
     </form>
   );

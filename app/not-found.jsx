@@ -59,7 +59,7 @@ export default function NotFound() {
       </main>
 
       <footer className="max-w-5xl mx-auto w-full pt-8 border-t border-border text-center text-xs text-muted-foreground">
-        Skill Setu · Smart India Hackathon Grand Finale (SIH26044) · Ministry of Ayush & Partner Industries
+        Skill Setu · Smart India Hackathon Grand Finale (SIH26044) · Academia & Industry Partners
       </footer>
     </div>
   );

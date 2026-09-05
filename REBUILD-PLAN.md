@@ -122,7 +122,7 @@ Keep the hydration pattern and the `subscribeToMutations` refresh. Restructure i
    - a registered test starting within 48h → "Join <test> · <when>" (+ meeting link when in reveal window)
    - a missed test → "You missed <test> — it scored 0"
    - an interview scheduled → "Interview with <company> on <date>"
-   - profile completion < 100 → the specific missing piece (bio / certifications / résumé / timeline)
+   - profile completion < 100 → the specific missing piece (bio / certifications / resume / timeline)
    - application deadline within 7 days for a saved role
    Empty state: "You're all caught up."
 3. **StatGrid** — Skill Score, Applications, Certificates (portfolio + issued credentials), Profile Complete.
@@ -146,7 +146,7 @@ percentage) instead of the current opaque arithmetic, so the number is explainab
 - **Header**: avatar, name, editable *headline*, location, contact row, links row
   (LinkedIn / GitHub / website), "Open to opportunities" toggle wired to the real
   `openToOpportunities` user flag (currently only the separate `TalentPoolToggle` sets it),
-  Generate ATS Résumé, Print.
+  Generate ATS Resume, Print.
 - **Profile strength card** with the same itemised checklist as the dashboard.
 - **Tabs**: About · Skills · Projects · Education · Certifications · Experience · Documents.
   - *Skills*: categories are no longer three hard-coded strings. Default set spans industries

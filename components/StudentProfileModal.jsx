@@ -3,6 +3,7 @@
 import { useEffect, useState } from "react";
 import { findOne, getAssessment, getPortfolio } from "../lib/store";
 import { scoresFor } from "../lib/taxonomy";
+import { downloadStoredFile, hasFile, openStoredFile } from "../lib/files";
 import { Badge, IconTile, Overlay } from "./ui/Kit";
 
 function initials(name) {
@@ -46,7 +47,7 @@ export default function StudentProfileModal({ studentId, student: propStudent, a
   const rollNo = student?.rollNo || "—";
   const year = student?.year || application?.studentYear || "";
   const batch = student?.batch || "";
-  const resumeDoc = portfolio?.documents?.find((d) => d.type === "Resume" || d.fileName?.endsWith(".pdf"));
+  const resumeDoc = portfolio?.documents?.find((d) => (d.type === "Resume" || d.fileName?.endsWith(".pdf")) && hasFile(d)) || null;
 
   /* Categories come from this student's own department/course rubric and the
      tests they have actually sat — never a fixed list applied to everybody. */
@@ -248,15 +249,26 @@ export default function StudentProfileModal({ studentId, student: propStudent, a
                     <div className="text-[10px] text-muted-foreground">PDF Document · Verified on Setu</div>
                   </div>
                 </div>
-                <a
-                  href={resumeDoc.dataUrl || "#"}
-                  download={resumeDoc.fileName || "Resume.pdf"}
-                  target="_blank"
-                  rel="noreferrer"
-                  className="px-3 py-1.5 rounded-lg bg-primary text-white text-xs font-medium hover:bg-accent transition-colors flex-shrink-0"
-                >
-                  Download PDF
-                </a>
+                {/* Both go through lib/files. `href={dataUrl}` with target
+                    _blank is refused by the browser, and `href="#"` — which is
+                    what a document with no file behind it produced — navigated
+                    to the top of the page and looked like a reload. */}
+                <div className="flex items-center gap-2 flex-shrink-0">
+                  <button
+                    type="button"
+                    onClick={() => openStoredFile(resumeDoc)}
+                    className="px-3 py-1.5 rounded-lg bg-primary text-white text-xs font-medium hover:bg-accent transition-colors"
+                  >
+                    View
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => downloadStoredFile(resumeDoc)}
+                    className="px-3 py-1.5 rounded-lg bg-secondary text-foreground text-xs font-medium hover:bg-muted transition-colors"
+                  >
+                    Download
+                  </button>
+                </div>
               </div>
             ) : (
               /* This used to offer a "Download Profile PDF" button that only
@@ -265,7 +277,7 @@ export default function StudentProfileModal({ studentId, student: propStudent, a
               <div className="flex items-center gap-3 bg-background border border-border rounded-xl p-3.5">
                 <IconTile icon="📄" size={34} tone="amber" />
                 <div className="min-w-0">
-                  <div className="text-xs font-semibold text-foreground">No résumé on file</div>
+                  <div className="text-xs font-semibold text-foreground">No resume on file</div>
                   <div className="text-[11px] text-muted-foreground">
                     {name.split(" ")[0]} hasn&apos;t uploaded one yet. The profile above is the full record Skill Setu holds.
                   </div>
