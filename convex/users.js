@@ -224,3 +224,31 @@ export const deleteUser = mutation({
     return { ok: true };
   },
 });
+
+/**
+ * Account recovery: lookup account by registered or recovery phone number.
+ * Used when a user has forgotten or lost access to their registered email.
+ */
+export const lookupByPhone = query({
+  args: { phone: v.string() },
+  handler: async (ctx, args) => {
+    const raw = args.phone.replace(/\D/g, "");
+    if (raw.length < 7) return null;
+    const allUsers = await ctx.db.query("users").collect();
+    const match = allUsers.find((u) => {
+      const uPhone = (u.phone || "").replace(/\D/g, "");
+      const uRec = (u.recoveryPhone || "").replace(/\D/g, "");
+      return (
+        (uPhone && (uPhone.endsWith(raw) || raw.endsWith(uPhone))) ||
+        (uRec && (uRec.endsWith(raw) || raw.endsWith(uRec)))
+      );
+    });
+    if (!match) return null;
+    return {
+      name: match.name || "Account Holder",
+      role: match.role,
+      email: match.email,
+    };
+  },
+});
+

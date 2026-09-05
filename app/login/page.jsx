@@ -55,7 +55,7 @@ function isValidEmail(email) {
 function LoginPageInner() {
   const router = useRouter();
   const params = useSearchParams();
-  const { user, loading: authLoading, login, sendSignupOtp, completeSignup, requestPasswordReset } = useAuth();
+  const { user, loading: authLoading, login, sendSignupOtp, completeSignup, requestPasswordReset, recoverEmailByPhone } = useAuth();
 
   const [role, setRole] = useState(params.get("role") || "student");
   const [mode, setMode] = useState(params.get("mode") === "signup" ? "signup" : "login");
@@ -70,6 +70,9 @@ function LoginPageInner() {
   // stays available for the case where one organisation has several accounts.
   const [useEmailInstead, setUseEmailInstead] = useState(false);
   const [resetSent, setResetSent] = useState(null);
+  const [forgotTab, setForgotTab] = useState("password"); // "password" | "email"
+  const [recoveryPhone, setRecoveryPhone] = useState("");
+  const [recoveredAccount, setRecoveredAccount] = useState(null);
 
   const [form, setForm] = useState({
     name: "",
@@ -133,6 +136,22 @@ function LoginPageInner() {
     try {
       const outcome = await requestPasswordReset(loginEmail);
       setResetSent(outcome);
+    } catch (err) {
+      setError(err.message);
+    } finally {
+      setLoading(false);
+    }
+  }
+
+  async function handleRecoverEmail(e) {
+    e.preventDefault();
+    setError(null);
+    setRecoveredAccount(null);
+    if (!recoveryPhone.trim()) return setError("Please enter your registered phone or recovery number.");
+    setLoading(true);
+    try {
+      const data = await recoverEmailByPhone(recoveryPhone);
+      setRecoveredAccount(data);
     } catch (err) {
       setError(err.message);
     } finally {
@@ -309,12 +328,22 @@ function LoginPageInner() {
 
           <div className="flex items-center justify-between mb-2">
             <h1 className="text-2xl font-semibold text-foreground">
-              {step === "forgot" ? "Reset your password" : mode === "login" ? "Welcome back" : step === "otp" ? "Verify your email" : "Create account"}
+              {step === "forgot"
+                ? forgotTab === "email"
+                  ? "Recover your email"
+                  : "Reset your password"
+                : mode === "login"
+                ? "Welcome back"
+                : step === "otp"
+                ? "Verify your email"
+                : "Create account"}
             </h1>
           </div>
           <p className="text-muted-foreground text-sm mb-7">
             {step === "forgot"
-              ? "We'll email you a single-use link to set a new one."
+              ? forgotTab === "email"
+                ? "Look up your registered account using your phone or WhatsApp recovery number."
+                : "Enter your registered email address to receive a secure password reset link."
               : mode === "login"
               ? "Sign in to access your dashboard."
               : step === "otp"
@@ -406,51 +435,182 @@ function LoginPageInner() {
 
           {step === "forgot" && (
             <div className="space-y-4">
-              {resetSent ? (
-                <>
-                  <div className="rounded-xl border border-green-200 bg-green-50 px-4 py-3 text-xs text-green-800 leading-relaxed">
-                    If an account exists for <span className="font-semibold">{loginEmail}</span>, a reset link is on its way.
-                    The link works once and expires in 30 minutes.
-                  </div>
-                  {resetSent.devLink && (
-                    <div className="rounded-xl border border-amber-200 bg-amber-50 px-4 py-3 text-xs text-amber-800 space-y-2">
-                      <p className="font-semibold">Email delivery isn&apos;t configured on this server.</p>
-                      <p>Use the link below to continue — this shortcut only appears in development mode.</p>
-                      <a href={resetSent.devLink} className="block font-medium text-primary hover:underline break-all">
-                        Open the reset link →
-                      </a>
+              <div className="flex bg-secondary rounded-xl p-1 mb-2">
+                <button
+                  type="button"
+                  onClick={() => {
+                    setForgotTab("password");
+                    setError(null);
+                    setResetSent(null);
+                    setRecoveredAccount(null);
+                  }}
+                  className={`flex-1 py-2 rounded-lg text-xs font-medium transition-all duration-150 ${
+                    forgotTab === "password"
+                      ? "bg-card text-foreground shadow-sm"
+                      : "text-muted-foreground hover:text-foreground"
+                  }`}
+                >
+                  Reset Password (Email)
+                </button>
+                <button
+                  type="button"
+                  onClick={() => {
+                    setForgotTab("email");
+                    setError(null);
+                    setResetSent(null);
+                    setRecoveredAccount(null);
+                  }}
+                  className={`flex-1 py-2 rounded-lg text-xs font-medium transition-all duration-150 ${
+                    forgotTab === "email"
+                      ? "bg-card text-foreground shadow-sm"
+                      : "text-muted-foreground hover:text-foreground"
+                  }`}
+                >
+                  Forgot Email? (Phone)
+                </button>
+              </div>
+
+              {forgotTab === "password" ? (
+                resetSent ? (
+                  <div className="space-y-3">
+                    <div className="rounded-xl border border-green-200 bg-green-50 px-4 py-3 text-xs text-green-800 leading-relaxed">
+                      Reset link sent for <span className="font-semibold">{loginEmail}</span>. The link works once and expires in 30 minutes.
                     </div>
-                  )}
-                </>
-              ) : (
-                <form onSubmit={handleForgotSubmit} className="space-y-4">
-                  <p className="text-sm text-muted-foreground leading-relaxed">
-                    Enter the email address you registered with and we&apos;ll send you a link to choose a new password.
-                  </p>
-                  <div>
-                    <label className="block text-sm font-medium text-foreground mb-1.5">Registered email</label>
-                    <input
-                      type="email"
-                      value={loginEmail}
-                      onChange={(e) => setLoginEmail(e.target.value)}
-                      placeholder="you@example.com"
-                      required
-                      className="w-full bg-card border border-border rounded-xl px-4 py-3 text-sm text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-primary/30 focus:border-primary transition-all"
-                    />
+                    {resetSent.devLink && (
+                      <div className="rounded-xl border border-amber-200 bg-amber-50 px-4 py-3 text-xs text-amber-800 space-y-2">
+                        <p className="font-semibold">Email delivery isn&apos;t configured on this server.</p>
+                        <p>Use the link below to continue — this shortcut only appears in development mode.</p>
+                        <a href={resetSent.devLink} className="block font-medium text-primary hover:underline break-all">
+                          Open the reset link →
+                        </a>
+                      </div>
+                    )}
                   </div>
-                  <button
-                    type="submit"
-                    disabled={loading}
-                    className="w-full bg-primary hover:bg-accent disabled:opacity-60 text-white py-3.5 rounded-xl font-medium text-sm transition-all duration-150 hover:shadow-md flex items-center justify-center gap-2"
-                  >
-                    {loading ? <span className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin" /> : "Send reset link"}
-                  </button>
-                </form>
+                ) : (
+                  <form onSubmit={handleForgotSubmit} className="space-y-4">
+                    <p className="text-sm text-muted-foreground leading-relaxed">
+                      Enter the email address you registered with. Only registered accounts can request a password reset.
+                    </p>
+                    <div>
+                      <label className="block text-sm font-medium text-foreground mb-1.5">Registered email</label>
+                      <input
+                        type="email"
+                        value={loginEmail}
+                        onChange={(e) => setLoginEmail(e.target.value)}
+                        placeholder="you@example.com"
+                        required
+                        className="w-full bg-card border border-border rounded-xl px-4 py-3 text-sm text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-primary/30 focus:border-primary transition-all"
+                      />
+                    </div>
+                    <button
+                      type="submit"
+                      disabled={loading}
+                      className="w-full bg-primary hover:bg-accent disabled:opacity-60 text-white py-3.5 rounded-xl font-medium text-sm transition-all duration-150 hover:shadow-md flex items-center justify-center gap-2"
+                    >
+                      {loading ? <span className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin" /> : "Send reset link"}
+                    </button>
+                    <div className="text-center">
+                      <button
+                        type="button"
+                        onClick={() => {
+                          setForgotTab("email");
+                          setError(null);
+                        }}
+                        className="text-xs text-primary font-medium hover:underline"
+                      >
+                        Forgot your registered email? Find account by phone →
+                      </button>
+                    </div>
+                  </form>
+                )
+              ) : (
+                recoveredAccount ? (
+                  <div className="rounded-xl border border-primary/20 bg-primary/5 p-4 space-y-3">
+                    <div className="flex items-center gap-2">
+                      <span className="text-base">✅</span>
+                      <span className="text-sm font-semibold text-foreground">Registered Account Found</span>
+                    </div>
+                    <div className="text-xs text-muted-foreground space-y-1 bg-card border border-border rounded-lg p-3">
+                      <div><span className="font-medium text-foreground">Name:</span> {recoveredAccount.name}</div>
+                      <div><span className="font-medium text-foreground">Role:</span> {recoveredAccount.role}</div>
+                      <div><span className="font-medium text-foreground">Registered Email:</span> <span className="font-semibold text-primary">{recoveredAccount.rawEmail}</span></div>
+                    </div>
+                    <div className="space-y-2 pt-1">
+                      <button
+                        type="button"
+                        onClick={() => {
+                          setLoginEmail(recoveredAccount.rawEmail);
+                          setForgotTab("password");
+                          setRecoveredAccount(null);
+                          setError(null);
+                        }}
+                        className="w-full py-2.5 rounded-xl bg-primary hover:bg-accent text-white text-xs font-medium transition-all"
+                      >
+                        Use this email to reset password →
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => {
+                          setLoginEmail(recoveredAccount.rawEmail);
+                          setStep("form");
+                          setMode("login");
+                          setRecoveredAccount(null);
+                          setError(null);
+                        }}
+                        className="w-full py-2.5 rounded-xl bg-secondary hover:bg-muted text-foreground text-xs font-medium transition-all"
+                      >
+                        Sign in with this email →
+                      </button>
+                    </div>
+                  </div>
+                ) : (
+                  <form onSubmit={handleRecoverEmail} className="space-y-4">
+                    <p className="text-sm text-muted-foreground leading-relaxed">
+                      Enter the mobile or WhatsApp recovery phone number linked to your account to retrieve your registered email.
+                    </p>
+                    <div>
+                      <label className="block text-sm font-medium text-foreground mb-1.5">Phone or WhatsApp number</label>
+                      <input
+                        type="tel"
+                        value={recoveryPhone}
+                        onChange={(e) => setRecoveryPhone(e.target.value)}
+                        placeholder="e.g. +91 98765 43210"
+                        required
+                        className="w-full bg-card border border-border rounded-xl px-4 py-3 text-sm text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-primary/30 focus:border-primary transition-all"
+                      />
+                    </div>
+                    <button
+                      type="submit"
+                      disabled={loading}
+                      className="w-full bg-primary hover:bg-accent disabled:opacity-60 text-white py-3.5 rounded-xl font-medium text-sm transition-all duration-150 hover:shadow-md flex items-center justify-center gap-2"
+                    >
+                      {loading ? <span className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin" /> : "Find my account"}
+                    </button>
+                    <div className="text-center">
+                      <button
+                        type="button"
+                        onClick={() => {
+                          setForgotTab("password");
+                          setError(null);
+                        }}
+                        className="text-xs text-primary font-medium hover:underline"
+                      >
+                        Remember your email? Reset password instead →
+                      </button>
+                    </div>
+                  </form>
+                )
               )}
+
               <button
                 type="button"
-                onClick={() => { setStep("form"); setError(null); setResetSent(null); }}
-                className="w-full text-center text-xs text-muted-foreground hover:text-foreground transition-colors"
+                onClick={() => {
+                  setStep("form");
+                  setError(null);
+                  setResetSent(null);
+                  setRecoveredAccount(null);
+                }}
+                className="w-full text-center text-xs text-muted-foreground hover:text-foreground transition-colors pt-1"
               >
                 ← Back to sign in
               </button>

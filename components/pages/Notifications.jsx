@@ -29,11 +29,11 @@ import { Badge, Button, Card, EmptyState, FilterPills, IconTile, PageHeader, Sec
  * would have to be cleaned up to manage that.
  */
 
-const KINDS = ["All", "Unread", "Applications", "Deadlines", "Campus"];
+const KINDS = ["All", "Unread", "Applications", "Mentorship", "Deadlines", "Campus"];
 
 function classify(message = "") {
   if (/applicat|shortlist|interview|hired|offer|not taken forward/i.test(message)) return "Applications";
-  if (/mentor|session|office hours|programme|programme|cancelled/i.test(message)) return "Mentorship";
+  if (/mentor|session|office hours|programme|workshop|webinar|cancelled/i.test(message)) return "Mentorship";
   return "Campus";
 }
 
@@ -77,6 +77,7 @@ export default function Notifications() {
     if (filter === "All") return notifications;
     if (filter === "Deadlines") return [];
     if (filter === "Campus") return notifications.filter((n) => classify(n.message) === "Campus");
+    if (filter === "Mentorship") return notifications.filter((n) => classify(n.message) === "Mentorship");
     return notifications.filter((n) => classify(n.message) === "Applications");
   }, [notifications, unread, filter]);
 

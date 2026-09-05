@@ -219,15 +219,89 @@ export function AuthProvider({ children }) {
   }
 
   /**
-   * Step 1 of password recovery. Never reveals whether the address is
-   * registered; returns `{ devLink }` only in OTP_DEV_MODE, so the flow stays
-   * usable when no mail transport is configured.
+   * Step 1 of password recovery. Only registered accounts can reset their password;
+   * returns `{ devLink }` in OTP_DEV_MODE or demo mode so the flow stays usable.
    */
   async function requestPasswordReset(email) {
     const normalized = email.trim().toLowerCase();
-    const { res, data } = await postJson("/api/auth/forgot-password", { email: normalized });
-    if (res.ok && data.success) return data;
-    throw new Error(data.error || "Could not start a password reset. Please try again.");
+    try {
+      const { res, data } = await postJson("/api/auth/forgot-password", { email: normalized });
+      if (res.ok && data.success) return data;
+      if (data.error && res.status !== 503) {
+        throw new Error(data.error);
+      }
+    } catch (err) {
+      if (err.message && !err.message.includes("unavailable") && !err.message.includes("503") && !err.message.includes("fetch")) {
+        throw err;
+      }
+    }
+
+    // Local / demo fallback check
+    const localUser = findOne("users", (u) => (u.email || "").trim().toLowerCase() === normalized);
+    if (!localUser) {
+      throw new Error("This email address is not registered with Skill Setu. Please check the spelling or sign up.");
+    }
+    return {
+      success: true,
+      devMode: true,
+      devLink: `/reset-password?email=${encodeURIComponent(normalized)}&token=local-demo-token`,
+      message: "Registered account verified. Use the reset link below to choose a new password.",
+    };
+  }
+
+  /**
+   * Account recovery: lookup registered email by phone or WhatsApp recovery number.
+   */
+  async function recoverEmailByPhone(phone) {
+    const rawDigits = (phone || "").replace(/\D/g, "");
+    if (rawDigits.length < 7) {
+      throw new Error("Please enter a valid phone number with at least 7 digits.");
+    }
+
+    try {
+      const { res, data } = await postJson("/api/auth/forgot-email", { phone });
+      if (res.ok && data.success) return data;
+      if (res.status === 404) {
+        throw new Error(data.error || "No registered account found matching this phone number.");
+      }
+      if (data.error && res.status !== 503) {
+        throw new Error(data.error);
+      }
+    } catch (err) {
+      if (err.message && !err.message.includes("unavailable") && !err.message.includes("503") && !err.message.includes("fetch")) {
+        throw err;
+      }
+    }
+
+    // Local / demo fallback
+    const allUsers = all("users") || [];
+    const match = allUsers.find((u) => {
+      const uPhone = (u.phone || "").replace(/\D/g, "");
+      const uRec = (u.recoveryPhone || "").replace(/\D/g, "");
+      return (
+        (uPhone && (uPhone.endsWith(rawDigits) || rawDigits.endsWith(uPhone))) ||
+        (uRec && (uRec.endsWith(rawDigits) || rawDigits.endsWith(uRec)))
+      );
+    });
+
+    if (!match) {
+      throw new Error("No registered account found matching this phone number. Please verify the number or contact your institute/admin.");
+    }
+
+    const email = match.email;
+    const atIdx = email.indexOf("@");
+    const namePart = atIdx > 0 ? email.slice(0, atIdx) : email;
+    const domainPart = atIdx > 0 ? email.slice(atIdx) : "";
+    const masked = namePart.length <= 3 ? `${namePart[0]}***${domainPart}` : `${namePart.slice(0, 2)}***${namePart.slice(-1)}${domainPart}`;
+
+    return {
+      success: true,
+      found: true,
+      name: match.name || "Account Holder",
+      role: match.role || "student",
+      rawEmail: match.email,
+      maskedEmail: masked,
+    };
   }
 
   /** Step 2: exchange the emailed token for a new password. */
@@ -374,6 +448,7 @@ export function AuthProvider({ children }) {
         changePassword,
         requestPasswordReset,
         resetPassword,
+        recoverEmailByPhone,
         hasServerSession: Boolean(getSessionToken()),
       }}
     >

@@ -83,8 +83,11 @@ export default async function handler(req, res) {
   }
 
   if (!outcome?.ok) {
-    console.warn(`[forgot-password] No account for ${maskEmail(normalized)} — responding generically.`);
-    return res.status(200).json(genericSuccess);
+    console.warn(`[forgot-password] No account for ${maskEmail(normalized)}.`);
+    return res.status(404).json({
+      success: false,
+      error: "This email address is not registered with Skill Setu. Please check the spelling or sign up.",
+    });
   }
 
   const link = `${originOf(req)}/reset-password?email=${encodeURIComponent(normalized)}&token=${encodeURIComponent(outcome.nonce)}`;
