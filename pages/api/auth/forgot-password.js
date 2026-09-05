@@ -82,12 +82,15 @@ export default async function handler(req, res) {
     return res.status(500).json({ success: false, error: "Could not start a password reset right now. Please try again." });
   }
 
+  /* An unknown address gets the same answer a known one does.
+     Replying "this email is not registered" is friendlier for exactly one
+     person — the one probing the endpoint to find out which addresses have
+     accounts here. The response is identical either way; the reason it failed
+     goes to the server log, where the account holder's attacker can't read
+     it. */
   if (!outcome?.ok) {
-    console.warn(`[forgot-password] No account for ${maskEmail(normalized)}.`);
-    return res.status(404).json({
-      success: false,
-      error: "This email address is not registered with Skill Setu. Please check the spelling or sign up.",
-    });
+    console.warn(`[forgot-password] No account for ${maskEmail(normalized)} — responding generically.`);
+    return res.status(200).json(genericSuccess);
   }
 
   const link = `${originOf(req)}/reset-password?email=${encodeURIComponent(normalized)}&token=${encodeURIComponent(outcome.nonce)}`;

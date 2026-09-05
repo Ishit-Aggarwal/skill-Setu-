@@ -236,16 +236,16 @@ export function AuthProvider({ children }) {
       }
     }
 
-    // Local / demo fallback check
-    const localUser = findOne("users", (u) => (u.email || "").trim().toLowerCase() === normalized);
-    if (!localUser) {
-      throw new Error("This email address is not registered with Skill Setu. Please check the spelling or sign up.");
-    }
+    /* Local / demo fallback. Answers the same way whether or not the address
+       is known here — telling the caller "that email isn't registered" is an
+       account-existence oracle wherever it is said, and saying it in the
+       browser instead of on the server doesn't make it not one. The reset page
+       is what refuses an address it can't match. */
     return {
       success: true,
       devMode: true,
       devLink: `/reset-password?email=${encodeURIComponent(normalized)}&token=local-demo-token`,
-      message: "Registered account verified. Use the reset link below to choose a new password.",
+      message: "If an account exists for that address, you can continue from the link below.",
     };
   }
 
@@ -253,17 +253,19 @@ export function AuthProvider({ children }) {
    * Account recovery: lookup registered email by phone or WhatsApp recovery number.
    */
   async function recoverEmailByPhone(phone) {
-    const rawDigits = (phone || "").replace(/\D/g, "");
-    if (rawDigits.length < 7) {
-      throw new Error("Please enter a valid phone number with at least 7 digits.");
+    const nationalDigits = (value) => {
+      const digits = String(value || "").replace(/\D/g, "");
+      return digits.length >= 10 ? digits.slice(-10) : "";
+    };
+
+    const target = nationalDigits(phone);
+    if (!target) {
+      throw new Error("Please enter the full 10-digit mobile number.");
     }
 
     try {
       const { res, data } = await postJson("/api/auth/forgot-email", { phone });
       if (res.ok && data.success) return data;
-      if (res.status === 404) {
-        throw new Error(data.error || "No registered account found matching this phone number.");
-      }
       if (data.error && res.status !== 503) {
         throw new Error(data.error);
       }
@@ -273,35 +275,25 @@ export function AuthProvider({ children }) {
       }
     }
 
-    // Local / demo fallback
-    const allUsers = all("users") || [];
-    const match = allUsers.find((u) => {
-      const uPhone = (u.phone || "").replace(/\D/g, "");
-      const uRec = (u.recoveryPhone || "").replace(/\D/g, "");
-      return (
-        (uPhone && (uPhone.endsWith(rawDigits) || rawDigits.endsWith(uPhone))) ||
-        (uRec && (uRec.endsWith(rawDigits) || rawDigits.endsWith(uRec)))
-      );
-    });
+    /* Local / demo fallback. Same contract as the server: a masked address at
+       most, the same answer whether or not a number matches, and never the
+       account holder's name, role or actual address. */
+    const match = (all("users") || []).find(
+      (u) => nationalDigits(u.phone) === target || nationalDigits(u.recoveryPhone) === target
+    );
 
-    if (!match) {
-      throw new Error("No registered account found matching this phone number. Please verify the number or contact your institute/admin.");
+    if (!match?.email) {
+      return { success: true, found: false, maskedEmail: null };
     }
 
-    const email = match.email;
-    const atIdx = email.indexOf("@");
-    const namePart = atIdx > 0 ? email.slice(0, atIdx) : email;
-    const domainPart = atIdx > 0 ? email.slice(atIdx) : "";
-    const masked = namePart.length <= 3 ? `${namePart[0]}***${domainPart}` : `${namePart.slice(0, 2)}***${namePart.slice(-1)}${domainPart}`;
+    const [local = "", domain = ""] = match.email.split("@");
+    const masked = !domain
+      ? ""
+      : local.length <= 2
+      ? `${local[0] || "*"}***@${domain}`
+      : `${local.slice(0, 2)}${"*".repeat(Math.min(Math.max(local.length - 3, 1), 6))}${local.slice(-1)}@${domain}`;
 
-    return {
-      success: true,
-      found: true,
-      name: match.name || "Account Holder",
-      role: match.role || "student",
-      rawEmail: match.email,
-      maskedEmail: masked,
-    };
+    return { success: true, found: true, maskedEmail: masked };
   }
 
   /** Step 2: exchange the emailed token for a new password. */

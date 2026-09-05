@@ -226,29 +226,51 @@ export const deleteUser = mutation({
 });
 
 /**
- * Account recovery: lookup account by registered or recovery phone number.
- * Used when a user has forgotten or lost access to their registered email.
+ * Account recovery: which email did I sign up with?
+ *
+ * This endpoint is unauthenticated by necessity — the whole point is that the
+ * caller has lost access to their account. So it is built to be useless to
+ * anyone except the person holding that phone:
+ *
+ *  - It returns a MASKED address and nothing else. Someone who owns the number
+ *    recognises "aa****v@gmail.com" instantly; someone enumerating numbers
+ *    learns a domain. No name, no role, no raw address ever leaves here — an
+ *    earlier version returned all three, which turned a recovery form into a
+ *    phone-to-identity lookup for the whole user table.
+ *
+ *  - Matching is on the national 10-digit number, exactly. It used to be
+ *    `endsWith` in BOTH directions with a 7-digit floor, so a 7-digit probe
+ *    matched any account whose number happened to end that way, and a short
+ *    stored number matched almost anything.
  */
+
+/** Last ten digits, which is what identifies an Indian mobile number whether
+    it was typed with +91, 0, spaces or none of those. */
+function nationalDigits(value) {
+  const digits = String(value || "").replace(/\D/g, "");
+  return digits.length >= 10 ? digits.slice(-10) : "";
+}
+
+function maskAddress(email) {
+  const [local = "", domain = ""] = String(email || "").split("@");
+  if (!domain) return "";
+  if (local.length <= 2) return `${local[0] || "*"}***@${domain}`;
+  return `${local.slice(0, 2)}${"*".repeat(Math.min(Math.max(local.length - 3, 1), 6))}${local.slice(-1)}@${domain}`;
+}
+
 export const lookupByPhone = query({
   args: { phone: v.string() },
   handler: async (ctx, args) => {
-    const raw = args.phone.replace(/\D/g, "");
-    if (raw.length < 7) return null;
+    const target = nationalDigits(args.phone);
+    if (!target) return null;
+
     const allUsers = await ctx.db.query("users").collect();
-    const match = allUsers.find((u) => {
-      const uPhone = (u.phone || "").replace(/\D/g, "");
-      const uRec = (u.recoveryPhone || "").replace(/\D/g, "");
-      return (
-        (uPhone && (uPhone.endsWith(raw) || raw.endsWith(uPhone))) ||
-        (uRec && (uRec.endsWith(raw) || raw.endsWith(uRec)))
-      );
-    });
-    if (!match) return null;
-    return {
-      name: match.name || "Account Holder",
-      role: match.role,
-      email: match.email,
-    };
+    const match = allUsers.find(
+      (u) => nationalDigits(u.phone) === target || nationalDigits(u.recoveryPhone) === target
+    );
+    if (!match?.email) return null;
+
+    return { maskedEmail: maskAddress(match.email) };
   },
 });
 

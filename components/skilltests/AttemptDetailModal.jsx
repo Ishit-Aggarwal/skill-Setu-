@@ -1,15 +1,27 @@
 "use client";
 
-import { useMemo } from "react";
 import { Badge, Button, Modal, ProgressBar } from "../ui/Kit";
 import { formatDateTime } from "../../lib/match";
-import { QUESTION_BANK } from "../../convex/_lib/questionBank";
+import { formatScheduled, STATUS_LABEL, STATUS_TONE } from "../../lib/testStatus";
 
 /**
  * One attempt, opened from the attempt log.
  *
- * Shows full question-by-question review: questions answered right (✓)
- * and wrong (✕) with chosen vs. correct answers and explanations.
+ * Shows the score, how long it took, when it was sat, and — for a
+ * server-marked paper — the real question-by-question review.
+ *
+ * Two things this deliberately does NOT do:
+ *
+ *  - It does not import the question bank. That module holds the marking
+ *    scheme, and a "use client" component importing it puts every question and
+ *    its `correct:` index into a JavaScript chunk any candidate can open in
+ *    devtools before sitting the test. The bank lives under convex/_lib for
+ *    exactly that reason.
+ *
+ *  - It does not synthesise a breakdown when one wasn't recorded. Deriving
+ *    "you got the first three right" from a percentage produces a specific,
+ *    confident claim about answers the student never gave. An attempt with no
+ *    stored marking says so instead.
  */
 
 function formatDuration(ms) {
@@ -24,34 +36,8 @@ function formatDuration(ms) {
 export default function AttemptDetailModal({ test, registration, attempt, status, onClose, onRetake }) {
   const scoreTone = attempt ? (attempt.score >= 70 ? "green" : attempt.score >= 50 ? "amber" : "red") : "muted";
 
-  const breakdown = useMemo(() => {
-    if (attempt?.breakdown && attempt.breakdown.length > 0) return attempt.breakdown;
-    if (!attempt || attempt.gradedBy === "host") return [];
-    // Dynamically generate question-by-question breakdown matching the score
-    const domain = test?.domain || attempt.domain || "Programming & Digital Fundamentals";
-    const domainQuestions = QUESTION_BANK[domain] || QUESTION_BANK["Programming & Digital Fundamentals"] || [];
-    if (!domainQuestions.length) return [];
-    const questions = domainQuestions.slice(0, 5);
-    const total = questions.length;
-    const score = Number(attempt.score) || 0;
-    const correctCount = Math.round((score / 100) * total);
-
-    return questions.map((q, idx) => {
-      const isCorrect = idx < correctCount;
-      const chosen = isCorrect ? q.correct : (q.correct + 1) % (q.options?.length || 4);
-      return {
-        index: idx + 1,
-        question: q.question,
-        options: q.options,
-        correct: isCorrect,
-        correctOption: q.correct,
-        correctText: q.options?.[q.correct] || `Option ${q.correct + 1}`,
-        chosen,
-        chosenText: q.options?.[chosen] || `Option ${chosen + 1}`,
-        explanation: q.explanation || "",
-      };
-    });
-  }, [attempt, test]);
+  /* The marking as the server recorded it, or nothing. */
+  const breakdown = attempt?.breakdown || [];
 
   const displayCorrectCount = attempt?.correctCount ?? breakdown.filter((b) => b.correct).length;
   const displayTotalQuestions = attempt?.totalQuestions ?? (breakdown.length || null);
@@ -157,7 +143,8 @@ export default function AttemptDetailModal({ test, registration, attempt, status
                       </span>
                       <div className="min-w-0 flex-1">
                         <div className="text-xs font-semibold text-foreground leading-relaxed">
-                          <span className="text-muted-foreground font-normal mr-1.5">Q{row.index}:</span>
+                          {/* The server numbers questions from zero. */}
+                          <span className="text-muted-foreground font-normal mr-1.5">Q{row.index + 1}:</span>
                           {row.question}
                         </div>
                         <div className="text-[11px] mt-1.5 space-y-1">
@@ -182,10 +169,13 @@ export default function AttemptDetailModal({ test, registration, attempt, status
               </div>
             )}
 
-            {breakdown.length === 0 && attempt.totalQuestions == null && (
+            {/* Two different reasons there's no marking to show, and they are
+                not the same thing to the person reading. */}
+            {breakdown.length === 0 && (
               <p className="text-xs text-muted-foreground leading-relaxed">
-                This was an in-person assessment, so there is no question-by-question marking to show — the host
-                published the mark directly.
+                {attempt.totalQuestions == null
+                  ? "This was an in-person assessment, so there is no question-by-question marking to show — the host published the mark directly."
+                  : "The question-by-question marking for this attempt wasn't kept. Sitting the test again will record it."}
               </p>
             )}
           </>

@@ -256,24 +256,37 @@ export function Field({ label, hint, children, className = "" }) {
   );
 }
 
+/**
+ * A native date input accepts years up to 275760, so typing into one is an
+ * easy way to end up storing "20261-05-12" — which then formats as a date
+ * eight thousand years out, or as nothing at all.
+ *
+ * The bound is expressed as a window around the current year rather than a
+ * fixed calendar date. A hard-coded ceiling silently rejects legitimate input
+ * the moment it goes stale (an MOU running to 2040, a graduation year for a
+ * student who has just enrolled), and it does so by making the picker refuse
+ * to accept the value, with nothing on screen saying why.
+ */
+const DATE_WINDOW_YEARS_BACK = 80;
+const DATE_WINDOW_YEARS_FORWARD = 25;
+
+function defaultDateBounds(type) {
+  const year = new Date().getFullYear();
+  const min = `${year - DATE_WINDOW_YEARS_BACK}-01-01`;
+  const max = `${year + DATE_WINDOW_YEARS_FORWARD}-12-31`;
+  return type === "datetime-local" ? { min: `${min}T00:00`, max: `${max}T23:59` } : { min, max };
+}
+
 export function TextInput({ type, min, max, onChange, ...props }) {
   const isDate = type === "date" || type === "datetime-local";
-  const safeMin = isDate ? (min || "1950-01-01") : min;
-  const safeMax = isDate ? (max || (type === "date" ? "2035-12-31" : "2035-12-31T23:59")) : max;
+  const bounds = isDate ? defaultDateBounds(type) : null;
 
   const handleChange = (e) => {
     if (!onChange) return;
+    // A five-digit year is always a typo, whatever the field is for.
     if (isDate && e.target.value) {
-      // In date inputs (YYYY-MM-DD or YYYY-MM-DDTHH:mm), clamp year to 4 digits
-      const parts = e.target.value.split("-");
-      if (parts[0] && parts[0].length > 4) {
-        parts[0] = parts[0].slice(0, 4);
-        e.target.value = parts.join("-");
-      }
-    } else if (type === "number" && (props.name === "year" || props.placeholder?.includes("202") || props.placeholder?.toLowerCase().includes("year"))) {
-      if (e.target.value && e.target.value.length > 4) {
-        e.target.value = e.target.value.slice(0, 4);
-      }
+      const [year, ...rest] = e.target.value.split("-");
+      if (year && year.length > 4) e.target.value = [year.slice(0, 4), ...rest].join("-");
     }
     onChange(e);
   };
@@ -281,8 +294,8 @@ export function TextInput({ type, min, max, onChange, ...props }) {
   return (
     <input
       type={type}
-      min={safeMin}
-      max={safeMax}
+      min={isDate ? min || bounds.min : min}
+      max={isDate ? max || bounds.max : max}
       onChange={handleChange}
       {...props}
       className={`${inputBase} ${props.className || ""}`}

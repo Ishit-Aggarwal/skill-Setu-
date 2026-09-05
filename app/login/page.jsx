@@ -474,7 +474,7 @@ function LoginPageInner() {
                 resetSent ? (
                   <div className="space-y-3">
                     <div className="rounded-xl border border-green-200 bg-green-50 px-4 py-3 text-xs text-green-800 leading-relaxed">
-                      Reset link sent for <span className="font-semibold">{loginEmail}</span>. The link works once and expires in 30 minutes.
+                      If <span className="font-semibold">{loginEmail}</span> has an account, a reset link is on its way. The link works once and expires in 30 minutes.
                     </div>
                     {resetSent.devLink && (
                       <div className="rounded-xl border border-amber-200 bg-amber-50 px-4 py-3 text-xs text-amber-800 space-y-2">
@@ -489,7 +489,7 @@ function LoginPageInner() {
                 ) : (
                   <form onSubmit={handleForgotSubmit} className="space-y-4">
                     <p className="text-sm text-muted-foreground leading-relaxed">
-                      Enter the email address you registered with. Only registered accounts can request a password reset.
+                      Enter the email address you registered with. If we have an account for it, a reset link is on its way.
                     </p>
                     <div>
                       <label className="block text-sm font-medium text-foreground mb-1.5">Registered email</label>
@@ -525,33 +525,51 @@ function LoginPageInner() {
                 )
               ) : (
                 recoveredAccount ? (
+                  /* A hint, not a handout. The masked address is enough for the
+                     person who owns the number to recognise which of their
+                     addresses they signed up with; it is close to worthless to
+                     anyone else. The full address is never sent to the browser,
+                     so the buttons below can't prefill it — the reader types
+                     the address they have just recognised. */
                   <div className="rounded-xl border border-primary/20 bg-primary/5 p-4 space-y-3">
-                    <div className="flex items-center gap-2">
-                      <span className="text-base">✅</span>
-                      <span className="text-sm font-semibold text-foreground">Registered Account Found</span>
-                    </div>
-                    <div className="text-xs text-muted-foreground space-y-1 bg-card border border-border rounded-lg p-3">
-                      <div><span className="font-medium text-foreground">Name:</span> {recoveredAccount.name}</div>
-                      <div><span className="font-medium text-foreground">Role:</span> {recoveredAccount.role}</div>
-                      <div><span className="font-medium text-foreground">Registered Email:</span> <span className="font-semibold text-primary">{recoveredAccount.rawEmail}</span></div>
-                    </div>
+                    {recoveredAccount.found ? (
+                      <>
+                        <div className="flex items-center gap-2">
+                          <span className="text-base">✅</span>
+                          <span className="text-sm font-semibold text-foreground">Account found</span>
+                        </div>
+                        <div className="text-xs text-muted-foreground bg-card border border-border rounded-lg p-3">
+                          <div className="text-[11px] uppercase tracking-wider font-semibold text-muted-foreground mb-1">
+                            Registered email
+                          </div>
+                          <div className="text-sm font-semibold text-primary tracking-wide">{recoveredAccount.maskedEmail}</div>
+                          <p className="text-[11px] text-muted-foreground mt-2 leading-relaxed">
+                            Part of the address is hidden. Enter it in full on the next step to continue.
+                          </p>
+                        </div>
+                      </>
+                    ) : (
+                      <div className="text-xs text-muted-foreground leading-relaxed">
+                        If an account is registered to that number, its address looks like the one you were expecting.
+                        Continue below and enter it in full, or try a different number.
+                      </div>
+                    )}
+
                     <div className="space-y-2 pt-1">
                       <button
                         type="button"
                         onClick={() => {
-                          setLoginEmail(recoveredAccount.rawEmail);
                           setForgotTab("password");
                           setRecoveredAccount(null);
                           setError(null);
                         }}
                         className="w-full py-2.5 rounded-xl bg-primary hover:bg-accent text-white text-xs font-medium transition-all"
                       >
-                        Use this email to reset password →
+                        Continue to password reset →
                       </button>
                       <button
                         type="button"
                         onClick={() => {
-                          setLoginEmail(recoveredAccount.rawEmail);
                           setStep("form");
                           setMode("login");
                           setRecoveredAccount(null);
@@ -559,7 +577,7 @@ function LoginPageInner() {
                         }}
                         className="w-full py-2.5 rounded-xl bg-secondary hover:bg-muted text-foreground text-xs font-medium transition-all"
                       >
-                        Sign in with this email →
+                        Back to sign in →
                       </button>
                     </div>
                   </div>
