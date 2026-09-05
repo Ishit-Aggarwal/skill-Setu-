@@ -256,8 +256,38 @@ export function Field({ label, hint, children, className = "" }) {
   );
 }
 
-export function TextInput(props) {
-  return <input {...props} className={`${inputBase} ${props.className || ""}`} />;
+export function TextInput({ type, min, max, onChange, ...props }) {
+  const isDate = type === "date" || type === "datetime-local";
+  const safeMin = isDate ? (min || "1950-01-01") : min;
+  const safeMax = isDate ? (max || (type === "date" ? "2035-12-31" : "2035-12-31T23:59")) : max;
+
+  const handleChange = (e) => {
+    if (!onChange) return;
+    if (isDate && e.target.value) {
+      // In date inputs (YYYY-MM-DD or YYYY-MM-DDTHH:mm), clamp year to 4 digits
+      const parts = e.target.value.split("-");
+      if (parts[0] && parts[0].length > 4) {
+        parts[0] = parts[0].slice(0, 4);
+        e.target.value = parts.join("-");
+      }
+    } else if (type === "number" && (props.name === "year" || props.placeholder?.includes("202") || props.placeholder?.toLowerCase().includes("year"))) {
+      if (e.target.value && e.target.value.length > 4) {
+        e.target.value = e.target.value.slice(0, 4);
+      }
+    }
+    onChange(e);
+  };
+
+  return (
+    <input
+      type={type}
+      min={safeMin}
+      max={safeMax}
+      onChange={handleChange}
+      {...props}
+      className={`${inputBase} ${props.className || ""}`}
+    />
+  );
 }
 
 export function TextArea(props) {

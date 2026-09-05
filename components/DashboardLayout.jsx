@@ -379,9 +379,6 @@ export default function DashboardLayout({ children, activePage, title }) {
               )}
             </button>
             {role === "student" && <NotificationBell user={user} onOpenInbox={() => navigate("notifications")} />}
-            <button onClick={() => setShowEditProfile(true)} aria-label="Edit profile" className="rounded-full hover:ring-2 hover:ring-primary/20 transition-all">
-              <Avatar name={userName} size={34} src={user?.avatarDataUrl} />
-            </button>
           </div>
         </header>
 

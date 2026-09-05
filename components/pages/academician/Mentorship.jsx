@@ -34,6 +34,8 @@ import {
   TextInput,
   useFlash,
 } from "../../ui/Kit";
+import IssueCredentialModal from "../../IssueCredentialModal";
+import { listUsersByRole } from "../../../lib/store";
 
 /**
  * Office hours, as a calendar.
@@ -55,13 +57,20 @@ import {
  * whole feature off. See lib/scheduling.js.
  */
 
+const DEMO_VENUES = [
+  "Department of Computer Science & Engineering, IIT Delhi, Hauz Khas, New Delhi 110016",
+  "Indian Institute of Science (IISc), CV Raman Rd, Bengaluru, Karnataka 560012",
+  "Apex University, Electronic City Phase 1, Hosur Road, Bengaluru, Karnataka 560100",
+];
+
 const EMPTY_FORM = {
   slot: "",
   title: "Office hours",
   durationMins: "30",
   capacity: "2",
   mode: "In person",
-  location: "",
+  audience: "all",
+  location: "Department of Computer Science & Engineering, IIT Delhi, Hauz Khas, New Delhi 110016",
   meetingUrl: "",
   notes: "",
 };
@@ -177,6 +186,22 @@ export default function Mentorship() {
     }
   }
 
+  const [certifyModal, setCertifyModal] = useState(false);
+
+  const mentorRecipients = useMemo(() => {
+    const students = listUsersByRole("student");
+    const bookedIds = new Set(allBookings.map((b) => b.studentId).filter(Boolean));
+    return students.map((s) => ({
+      id: s.id,
+      name: s.name,
+      email: s.email,
+      subtitle: bookedIds.has(s.id) ? "Enrolled Mentee" : s.institution || "Student",
+      score: s.assessment?.score ?? null,
+      attended: bookedIds.has(s.id),
+      alreadyIssued: false,
+    }));
+  }, [allBookings]);
+
   async function submitSlot(form) {
     const payload = {
       slot: form.slot,
@@ -184,15 +209,16 @@ export default function Mentorship() {
       durationMins: Number(form.durationMins) || 30,
       capacity: Number(form.capacity) || 1,
       mode: form.mode,
+      audience: form.audience || "all",
       location: form.mode === "Online" ? "" : form.location.trim(),
-      meetingUrl: form.mode === "Online" ? form.meetingUrl.trim() : "",
+      meetingUrl: form.mode === "In person" ? "" : form.meetingUrl.trim(),
       notes: form.notes.trim(),
     };
 
     const ok = await run(async () => {
       if (editing?.id) await updateSlot(editing.id, payload);
       else await publishSlot(user, payload);
-    }, editing?.id ? "Slot updated." : "Slot published — students can book it now.");
+    }, editing?.id ? "Slot updated — enrolled students have been notified." : "Slot published — students can book it now.");
 
     if (ok) setEditing(null);
   }
@@ -204,9 +230,14 @@ export default function Mentorship() {
           title="Mentorship & Office Hours"
           subtitle="Publish availability as calendar blocks. Students see and book the same blocks from their own dashboard."
           actions={
-            <Button size="sm" onClick={() => setEditing({ form: { ...EMPTY_FORM } })}>
-              Publish availability
-            </Button>
+            <div className="flex items-center gap-2">
+              <Button variant="outline" size="sm" onClick={() => setCertifyModal(true)}>
+                🏅 Issue Certificates
+              </Button>
+              <Button size="sm" onClick={() => setEditing({ form: { ...EMPTY_FORM } })}>
+                Publish availability
+              </Button>
+            </div>
           }
         />
 
@@ -352,7 +383,26 @@ export default function Mentorship() {
                           <div className="text-xs text-muted-foreground mt-1 flex flex-wrap gap-x-3 gap-y-1">
                             <span>📅 {formatDateTime(s.slot)}</span>
                             <span>⏱ {s.durationMins} minutes</span>
-                            {s.mode === "Online" ? (
+                            {s.audience === "all" ? (
+                              <Badge tone="purple" className="text-[10px]">Platform-wide</Badge>
+                            ) : (
+                              <Badge tone="neutral" className="text-[10px]">Campus only</Badge>
+                            )}
+                            {(s.mode === "In person" || s.mode === "Hybrid") && (
+                              s.location ? (
+                                <a
+                                  href={`https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(s.location)}`}
+                                  target="_blank"
+                                  rel="noreferrer"
+                                  className="text-primary hover:underline inline-flex items-center gap-1 font-medium"
+                                >
+                                  📍 {s.location} <span className="text-[10px]">↗ (Google Maps)</span>
+                                </a>
+                              ) : (
+                                <span>📍 Room / Venue TBD</span>
+                              )
+                            )}
+                            {(s.mode === "Online" || s.mode === "Hybrid") && (
                               s.meetingUrl ? (
                                 <a href={s.meetingUrl} target="_blank" rel="noreferrer" className="text-primary font-medium hover:underline">
                                   🔗 Join Link
@@ -360,8 +410,6 @@ export default function Mentorship() {
                               ) : (
                                 <span className="text-amber-600">⚠ No link added</span>
                               )
-                            ) : (
-                              <span>📍 {s.location || "Room / Venue TBD"}</span>
                             )}
                           </div>
                           {s.notes && (
@@ -382,6 +430,7 @@ export default function Mentorship() {
                                   durationMins: String(s.durationMins || 30),
                                   capacity: String(s.capacity || 1),
                                   mode: s.mode || "In person",
+                                  audience: s.audience || "all",
                                   location: s.location || "",
                                   meetingUrl: s.meetingUrl || "",
                                   notes: s.notes || "",
@@ -501,6 +550,7 @@ export default function Mentorship() {
                 durationMins: String(selectedSlot.durationMins || 30),
                 capacity: String(selectedSlot.capacity || 1),
                 mode: selectedSlot.mode || "In person",
+                audience: selectedSlot.audience || "all",
                 location: selectedSlot.location || "",
                 meetingUrl: selectedSlot.meetingUrl || "",
                 notes: selectedSlot.notes || "",
@@ -517,6 +567,22 @@ export default function Mentorship() {
               "Slot withdrawn — anyone who had booked it has been notified."
             );
             if (ok) setSelected(null);
+          }}
+        />
+      )}
+
+      {certifyModal && (
+        <IssueCredentialModal
+          issuer={user}
+          recipients={mentorRecipients}
+          defaults={{
+            title: "Mentorship Completion Certificate",
+            kind: "Mentorship Completion",
+          }}
+          onClose={() => setCertifyModal(false)}
+          onIssued={(count) => {
+            setCertifyModal(false);
+            setFlash(`Issued ${count} certificate${count === 1 ? "" : "s"}. Recipients have been notified.`);
           }}
         />
       )}
@@ -565,15 +631,23 @@ function SlotForm({ initial, onSubmit, onCancel, busy }) {
         </Field>
       </div>
 
-      <Field label="Where">
-        <Select value={form.mode} onChange={(e) => set("mode", e.target.value)}>
-          {["In person", "Online"].map((m) => (
-            <option key={m}>{m}</option>
-          ))}
-        </Select>
-      </Field>
+      <div className="grid sm:grid-cols-2 gap-3">
+        <Field label="Audience">
+          <Select value={form.audience || "all"} onChange={(e) => set("audience", e.target.value)}>
+            <option value="all">Platform-wide · Open to all students</option>
+            <option value="institution">Campus only · My institution</option>
+          </Select>
+        </Field>
+        <Field label="Mode">
+          <Select value={form.mode} onChange={(e) => set("mode", e.target.value)}>
+            {["In person", "Online", "Hybrid"].map((m) => (
+              <option key={m}>{m}</option>
+            ))}
+          </Select>
+        </Field>
+      </div>
 
-      {form.mode === "Online" ? (
+      {(form.mode === "Online" || form.mode === "Hybrid") && (
         <Field label="Meeting link" hint="Paste a Meet, Zoom or Teams link. Only students who book the slot can see it.">
           <TextInput
             type="url"
@@ -582,13 +656,29 @@ function SlotForm({ initial, onSubmit, onCancel, busy }) {
             placeholder="https://meet.google.com/abc-defg-hij"
           />
         </Field>
-      ) : (
-        <Field label="Room / location">
+      )}
+
+      {(form.mode === "In person" || form.mode === "Hybrid") && (
+        <Field label="Venue address (Google Maps verified)" hint="Students will get a direct Google Maps directions link to this venue.">
           <TextInput
             value={form.location}
             onChange={(e) => set("location", e.target.value)}
-            placeholder="Department office, Room 204"
+            placeholder="e.g. Department of Computer Science & Engineering, IIT Delhi, Hauz Khas, New Delhi 110016"
           />
+          <div className="flex items-center gap-1.5 flex-wrap mt-2">
+            <span className="text-[10px] text-muted-foreground font-medium">Quick presets:</span>
+            {DEMO_VENUES.map((v) => (
+              <button
+                key={v}
+                type="button"
+                onClick={() => set("location", v)}
+                className="text-[10px] px-2 py-0.5 rounded-full border border-border bg-secondary/50 hover:bg-secondary hover:text-foreground text-muted-foreground transition-colors truncate max-w-[220px]"
+                title={v}
+              >
+                {v.split(",")[0]}
+              </button>
+            ))}
+          </div>
         </Field>
       )}
 
@@ -656,7 +746,7 @@ function SlotDetail({ slot, onClose, onEdit, onWithdraw, onSetBookingStatus, bus
           <Badge tone="neutral">
             {bookings.length} of {slot.capacity} booked
           </Badge>
-          {slot.mode === "Online" ? (
+          {(slot.mode === "Online" || slot.mode === "Hybrid") && (
             slot.meetingUrl ? (
               <a href={slot.meetingUrl} target="_blank" rel="noreferrer" className="text-xs text-primary font-medium hover:underline">
                 Open meeting link →
@@ -664,8 +754,20 @@ function SlotDetail({ slot, onClose, onEdit, onWithdraw, onSetBookingStatus, bus
             ) : (
               <span className="text-xs text-amber-600">No meeting link yet — students will need one.</span>
             )
-          ) : (
-            <span className="text-xs text-muted-foreground">{slot.location || "Location to be confirmed"}</span>
+          )}
+          {(slot.mode === "In person" || slot.mode === "Hybrid") && (
+            slot.location ? (
+              <a
+                href={`https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(slot.location)}`}
+                target="_blank"
+                rel="noreferrer"
+                className="text-xs text-primary font-medium hover:underline inline-flex items-center gap-1"
+              >
+                📍 {slot.location} <span className="text-[10px]">↗ (Google Maps)</span>
+              </a>
+            ) : (
+              <span className="text-xs text-muted-foreground">Location to be confirmed</span>
+            )
           )}
         </div>
 

@@ -20,6 +20,8 @@ import {
   getRegistration,
   hasCredentialForTest,
   checkAndRecordMissedTests,
+  listUsersByRole,
+  rescheduleSkillTest,
 } from "../../lib/store";
 import IssueCredentialModal from "../IssueCredentialModal";
 import RecordResultsModal from "../skilltests/RecordResultsModal";
@@ -30,6 +32,7 @@ function StudentView({ user }) {
   const [tests, setTests] = useState([]);
   const [registrations, setRegistrations] = useState([]);
   const [attempts, setAttempts] = useState([]);
+  const [searchQuery, setSearchQuery] = useState("");
 
   function refresh() {
     checkAndRecordMissedTests(user.id);
@@ -39,6 +42,17 @@ function StudentView({ user }) {
   }
 
   useEffect(() => { refresh(); }, [user]);
+
+  const filteredTests = tests.filter((t) => {
+    const q = searchQuery.trim().toLowerCase();
+    if (!q) return true;
+    return (
+      t.title?.toLowerCase().includes(q) ||
+      t.domain?.toLowerCase().includes(q) ||
+      t.hostName?.toLowerCase().includes(q) ||
+      t.description?.toLowerCase().includes(q)
+    );
+  });
 
   return (
     <div className="animate-fade-slide space-y-5">
@@ -55,21 +69,42 @@ function StudentView({ user }) {
 
       {tab === "browse" && (
         <>
-          <p className="text-sm text-muted-foreground">
-            Tests hosted by industry partners and academic institutions. Register first — for online tests, the meeting link appears here 1 day before the scheduled time; offline tests confirm your reporting details.
-          </p>
-          <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-4">
-            {tests.map((test) => (
-              <TestCard
-                key={test.id}
-                test={test}
-                user={user}
-                registration={getRegistration(test.id, user.id)}
-                attempt={attempts.find((a) => a.testId === test.id)}
-                onRefresh={refresh}
+          <div className="flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-3">
+            <p className="text-sm text-muted-foreground flex-1">
+              Tests hosted by industry partners and academic institutions. Register first — for online tests, the meeting link appears here 1 day before the scheduled time; offline tests confirm your reporting details.
+            </p>
+            <div className="relative min-w-[260px]">
+              <span className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground text-xs">🔍</span>
+              <input
+                type="text"
+                value={searchQuery}
+                onChange={(e) => setSearchQuery(e.target.value)}
+                placeholder="Search tests by name, domain, host..."
+                className="w-full pl-8 pr-3 py-1.5 bg-background border border-border rounded-xl text-xs focus:outline-none focus:ring-2 focus:ring-primary/20"
               />
-            ))}
+              {searchQuery && (
+                <button onClick={() => setSearchQuery("")} className="absolute right-2.5 top-1/2 -translate-y-1/2 text-[10px] text-muted-foreground hover:text-foreground">✕</button>
+              )}
+            </div>
           </div>
+          {filteredTests.length === 0 ? (
+            <EmptyState icon="🔍" title="No tests match your search">
+              Try a different keyword or domain to find skill tests.
+            </EmptyState>
+          ) : (
+            <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-4">
+              {filteredTests.map((test) => (
+                <TestCard
+                  key={test.id}
+                  test={test}
+                  user={user}
+                  registration={getRegistration(test.id, user.id)}
+                  attempt={attempts.find((a) => a.testId === test.id)}
+                  onRefresh={refresh}
+                />
+              ))}
+            </div>
+          )}
         </>
       )}
 
@@ -105,6 +140,9 @@ function HostView({ user }) {
   const [linkErrors, setLinkErrors] = useState({});
   const [certifyTest, setCertifyTest] = useState(null);
   const [resultsTest, setResultsTest] = useState(null);
+  const [rescheduleModalTest, setRescheduleModalTest] = useState(null);
+  const [rescheduleForm, setRescheduleForm] = useState({ scheduledAt: "", scheduledTime: "10:00", reportingTime: "09:30 AM" });
+  const [rescheduleError, setRescheduleError] = useState(null);
   const [registrations, setRegistrations] = useState([]);
   const [flash, setFlash] = useFlash();
 
@@ -115,25 +153,45 @@ function HostView({ user }) {
 
   /**
    * Registrants for one test, joined to their attempt and to any certificate
-   * they already hold, so the issuer can see the whole cohort — including who
-   * is already covered — rather than a filtered subset.
+   * they already hold. If test has no registrations yet or in global mode,
+   * falls back to all enrolled students with their completed scores so the host
+   * can always issue certificates with pre-filled scores.
    */
   function recipientsFor(testId) {
-    return registrations
-      .filter((r) => r.testId === testId)
-      .map((r) => {
-        const student = findOne("users", (u) => u.id === r.userId);
-        const attempt = getAttemptForTest(r.userId, testId);
-        return {
-          id: r.userId,
-          name: student?.name || r.name || "Student",
-          email: student?.email || r.email || "",
-          subtitle: student?.institution || "",
-          score: attempt && !attempt.missed ? attempt.score : null,
-          attended: Boolean(r.attended),
-          alreadyIssued: hasCredentialForTest(r.userId, testId),
-        };
-      });
+    if (testId && testId !== "global") {
+      const specific = registrations
+        .filter((r) => r.testId === testId)
+        .map((r) => {
+          const student = findOne("users", (u) => u.id === r.userId);
+          const attempt = getAttemptForTest(r.userId, testId);
+          return {
+            id: r.userId,
+            name: student?.name || r.name || "Student",
+            email: student?.email || r.email || "",
+            subtitle: student?.institution || "",
+            score: attempt && !attempt.missed ? attempt.score : (r.score != null ? r.score : null),
+            attended: Boolean(r.attended),
+            alreadyIssued: hasCredentialForTest(r.userId, testId),
+          };
+        });
+      if (specific.length > 0) return specific;
+    }
+
+    const students = listUsersByRole("student");
+    return students.map((s) => {
+      const specificAttempt = testId && testId !== "global" ? getAttemptForTest(s.id, testId) : null;
+      const sAttempts = getAttemptsForStudent(s.id);
+      const score = specificAttempt?.score ?? (sAttempts.length > 0 ? sAttempts[0].score : (s.assessment?.score ?? null));
+      return {
+        id: s.id,
+        name: s.name,
+        email: s.email,
+        subtitle: s.institution || s.degree || "Student",
+        score: score,
+        attended: true,
+        alreadyIssued: testId && testId !== "global" ? hasCredentialForTest(s.id, testId) : false,
+      };
+    });
   }
 
   function registrantStats(testId) {
@@ -187,14 +245,63 @@ function HostView({ user }) {
       setSkillTestMeetingLink(testId, (linkDrafts[testId] || "").trim());
       setLinkErrors((e) => ({ ...e, [testId]: null }));
       refresh();
+      setFlash("Meeting link saved successfully.");
     } catch (err) {
       setLinkErrors((e) => ({ ...e, [testId]: err.message }));
     }
   }
 
   function handleStart(testId) {
-    startSkillTest(testId);
-    refresh();
+    const targetTest = tests.find((t) => t.id === testId);
+    if (targetTest?.mode === "Online" && !targetTest?.meetingLink?.trim()) {
+      setFlash("⚠️ Cannot start online test: Please add and save a valid meeting link first.");
+      return;
+    }
+    try {
+      startSkillTest(testId);
+      refresh();
+      setFlash("Test is now live! Registered students can now join.");
+    } catch (err) {
+      setFlash(`⚠️ ${err.message}`);
+    }
+  }
+
+  function openReschedule(test) {
+    setRescheduleModalTest(test);
+    setRescheduleForm({
+      scheduledAt: test.scheduledAt || "",
+      scheduledTime: test.scheduledTime || "10:00",
+      reportingTime: test.reportingTime || "09:30 AM",
+    });
+    setRescheduleError(null);
+  }
+
+  function handleRescheduleSubmit(e) {
+    e.preventDefault();
+    if (!rescheduleModalTest) return;
+
+    if (rescheduleModalTest.mode === "Offline") {
+      const scheduledTimestamp = rescheduleModalTest.scheduledAt
+        ? new Date(`${rescheduleModalTest.scheduledAt}T${rescheduleModalTest.scheduledTime || rescheduleModalTest.reportingTime || "10:00"}`).getTime()
+        : null;
+      if (scheduledTimestamp && scheduledTimestamp - Date.now() < 24 * 60 * 60 * 1000 && scheduledTimestamp > Date.now()) {
+        setRescheduleError("Cannot reschedule an on-site test within 24 hours of its scheduled start time.");
+        return;
+      }
+    }
+
+    try {
+      rescheduleSkillTest(rescheduleModalTest.id, {
+        scheduledAt: rescheduleForm.scheduledAt,
+        scheduledTime: rescheduleModalTest.mode === "Online" ? rescheduleForm.scheduledTime : undefined,
+        reportingTime: rescheduleModalTest.mode === "Offline" ? rescheduleForm.reportingTime : undefined,
+      });
+      setRescheduleModalTest(null);
+      refresh();
+      setFlash(`Test rescheduled to ${rescheduleForm.scheduledAt}. Registered students have been notified.`);
+    } catch (err) {
+      setRescheduleError(err.message);
+    }
   }
 
   return (
@@ -203,7 +310,23 @@ function HostView({ user }) {
         eyebrow="Test Hosting"
         title="Your Skill Tests"
         subtitle={`${tests.length} test${tests.length === 1 ? "" : "s"} hosted`}
-        actions={<Button onClick={() => setShowModal(true)}>+ Host a Skill Test</Button>}
+        actions={
+          <div className="flex items-center gap-2">
+            <Button
+              variant="outline"
+              onClick={() =>
+                setCertifyTest({
+                  id: "global",
+                  title: "Skill Assessment Certificate",
+                  certification: "Skill Assessment Certificate",
+                })
+              }
+            >
+              🏅 Issue Certificates
+            </Button>
+            <Button onClick={() => setShowModal(true)}>+ Host a Skill Test</Button>
+          </div>
+        }
       />
 
       {tests.length === 0 ? (
@@ -217,7 +340,7 @@ function HostView({ user }) {
               <div className="flex items-center gap-1.5 flex-wrap mb-3">
                 <Badge tone="neutral">{test.mode}</Badge>
                 <Badge tone="neutral">{test.domain}</Badge>
-                {test.status === "In Progress" && <Badge tone="primary">In Progress</Badge>}
+                {test.status === "In Progress" && <Badge tone="green">In Progress · Live</Badge>}
                 <Badge tone="primary" className="ml-auto">{test.price > 0 ? `₹${test.price}` : "Free"}</Badge>
               </div>
               <div className="text-sm font-semibold text-foreground mb-1">{test.title}</div>
@@ -250,38 +373,41 @@ function HostView({ user }) {
                 const stats = registrantStats(test.id);
                 return (
                   <div className="text-[11px] text-muted-foreground mb-3">
-                    {stats.total} registered · {stats.completed} completed · {stats.certified} certified
+                    {stats.total} eligible/registered · {stats.completed} completed · {stats.certified} certified
                   </div>
                 );
               })()}
 
               <div className="mt-auto space-y-2">
+                {test.mode === "Online" && !test.meetingLink?.trim() && (
+                  <div className="text-[11px] text-amber-700 bg-amber-50 border border-amber-200 rounded-lg p-2 text-center">
+                    ⚠️ Add a meeting link above before starting this online test
+                  </div>
+                )}
                 <button
                   onClick={() => handleStart(test.id)}
-                  disabled={test.status === "In Progress"}
+                  disabled={test.status === "In Progress" || (test.mode === "Online" && !test.meetingLink?.trim())}
                   className="w-full text-xs font-medium py-2 rounded-xl bg-primary/10 text-primary hover:bg-primary hover:text-white disabled:opacity-50 disabled:hover:bg-primary/10 disabled:hover:text-primary transition-all duration-150"
                 >
-                  {test.status === "In Progress" ? "Test Started" : "Start Test"}
+                  {test.status === "In Progress" ? "Test Started (Live)" : "Start Test"}
                 </button>
-                {/* Online papers are marked by the server. An in-person test
-                    has no paper here, so its marks are entered by you — that
-                    is the only way an offline score gets recorded. */}
+                <button
+                  onClick={() => openReschedule(test)}
+                  className="w-full text-xs font-medium py-2 rounded-xl border border-border text-muted-foreground hover:border-primary/40 hover:text-primary transition-all duration-150"
+                >
+                  🗓️ Reschedule Test
+                </button>
                 {test.mode === "Offline" && (
                   <button
                     onClick={() => setResultsTest(test)}
-                    disabled={registrantStats(test.id).total === 0}
-                    className="w-full text-xs font-medium py-2 rounded-xl border border-border text-muted-foreground hover:border-primary/40 hover:text-primary disabled:opacity-40 disabled:cursor-not-allowed transition-all duration-150"
+                    className="w-full text-xs font-medium py-2 rounded-xl border border-border text-muted-foreground hover:border-primary/40 hover:text-primary transition-all duration-150"
                   >
                     ✍️ Record results
                   </button>
                 )}
-                {/* Certificates were only ever awarded automatically to students
-                    who scored 50+, and only as a text line in their portfolio.
-                    A host can now issue the real, verifiable article. */}
                 <button
                   onClick={() => setCertifyTest(test)}
-                  disabled={registrantStats(test.id).total === 0}
-                  className="w-full text-xs font-medium py-2 rounded-xl border border-border text-muted-foreground hover:border-primary/40 hover:text-primary disabled:opacity-40 disabled:cursor-not-allowed transition-all duration-150"
+                  className="w-full text-xs font-medium py-2 rounded-xl border border-border text-muted-foreground hover:border-primary/40 hover:text-primary transition-all duration-150"
                 >
                   🏅 Issue certificates
                 </button>
@@ -323,6 +449,81 @@ function HostView({ user }) {
             setFlash(`Issued ${count} certificate${count === 1 ? "" : "s"}. Recipients have been notified.`);
           }}
         />
+      )}
+
+      {rescheduleModalTest && (
+        <Modal
+          title={`Reschedule "${rescheduleModalTest.title}"`}
+          description="Set a new date and time for this test. Registered students will automatically receive a schedule update notification."
+          onClose={() => setRescheduleModalTest(null)}
+        >
+          <form onSubmit={handleRescheduleSubmit} className="space-y-4">
+            {(() => {
+              const scheduledTimestamp = rescheduleModalTest.scheduledAt
+                ? new Date(`${rescheduleModalTest.scheduledAt}T${rescheduleModalTest.scheduledTime || rescheduleModalTest.reportingTime || "10:00"}`).getTime()
+                : null;
+              const isWithin24Hours = rescheduleModalTest.mode === "Offline" && scheduledTimestamp && (scheduledTimestamp - Date.now() < 24 * 60 * 60 * 1000) && (scheduledTimestamp > Date.now());
+              return isWithin24Hours ? (
+                <div className="p-3 bg-red-50 border border-red-200 rounded-xl text-xs text-red-700">
+                  ⚠️ <strong>Rescheduling Locked:</strong> On-site / offline tests cannot be rescheduled within 24 hours of start time.
+                </div>
+              ) : null;
+            })()}
+
+            <Field label="New Test Date">
+              <TextInput
+                required
+                type="date"
+                value={rescheduleForm.scheduledAt}
+                onChange={(e) => setRescheduleForm((f) => ({ ...f, scheduledAt: e.target.value }))}
+              />
+            </Field>
+
+            {rescheduleModalTest.mode === "Online" ? (
+              <Field label="New Test Time">
+                <TextInput
+                  required
+                  type="time"
+                  value={rescheduleForm.scheduledTime}
+                  onChange={(e) => setRescheduleForm((f) => ({ ...f, scheduledTime: e.target.value }))}
+                />
+              </Field>
+            ) : (
+              <Field label="New Reporting Time">
+                <TextInput
+                  required
+                  value={rescheduleForm.reportingTime}
+                  onChange={(e) => setRescheduleForm((f) => ({ ...f, reportingTime: e.target.value }))}
+                  placeholder="09:30 AM"
+                />
+              </Field>
+            )}
+
+            {rescheduleError && (
+              <div className="p-2.5 bg-red-50 border border-red-200 rounded-xl text-xs text-red-700">
+                ⚠️ {rescheduleError}
+              </div>
+            )}
+
+            <div className="flex gap-3 pt-2">
+              <Button type="button" variant="outline" className="flex-1" onClick={() => setRescheduleModalTest(null)}>
+                Cancel
+              </Button>
+              <Button
+                type="submit"
+                className="flex-1"
+                disabled={
+                  rescheduleModalTest.mode === "Offline" &&
+                  rescheduleModalTest.scheduledAt &&
+                  new Date(`${rescheduleModalTest.scheduledAt}T${rescheduleModalTest.scheduledTime || rescheduleModalTest.reportingTime || "10:00"}`).getTime() - Date.now() < 24 * 60 * 60 * 1000 &&
+                  new Date(`${rescheduleModalTest.scheduledAt}T${rescheduleModalTest.scheduledTime || rescheduleModalTest.reportingTime || "10:00"}`).getTime() > Date.now()
+                }
+              >
+                Confirm & Notify Students
+              </Button>
+            </div>
+          </form>
+        </Modal>
       )}
 
       <Flash message={flash} />

@@ -15,7 +15,7 @@ import { subscribeToMutations } from "../../lib/sync";
 import { profileStrength } from "../../lib/profile";
 import { formatDate } from "../../lib/match";
 import { useNav } from "../../lib/nav";
-import { Badge, Button, Card, EmptyState, Field, ProgressRing, Section, Select, StatGrid, Tabs, TextArea, TextInput } from "../ui/Kit";
+import { Badge, Button, Card, EmptyState, Field, Modal, ProgressRing, Section, Select, StatGrid, Tabs, TextArea, TextInput } from "../ui/Kit";
 import TagInput from "../TagInput";
 import { hasFile, openStoredFile, downloadStoredFile } from "../../lib/files";
 
@@ -134,6 +134,20 @@ function RemoveButton({ onClick, label }) {
   );
 }
 
+function EditButton({ onClick, label }) {
+  return (
+    <button
+      type="button"
+      onClick={onClick}
+      aria-label={label}
+      title={label}
+      className="text-xs text-muted-foreground hover:text-primary transition-colors flex-shrink-0 px-1 font-medium"
+    >
+      Edit
+    </button>
+  );
+}
+
 export default function StudentPortfolio() {
   const { user, updateProfile } = useAuth();
   const navigate = useNav();
@@ -146,6 +160,12 @@ export default function StudentPortfolio() {
   const [showAdd, setShowAdd] = useState(null);
   const [error, setError] = useState(null);
   const [uploading, setUploading] = useState(false);
+
+  const [editingCert, setEditingCert] = useState(null); // { index, data, file }
+  const [editingDoc, setEditingDoc] = useState(null); // { id, data, file }
+  const [editingEdu, setEditingEdu] = useState(null); // { id, data, file }
+  const [editingProject, setEditingProject] = useState(null); // { id, data }
+  const [editingTimeline, setEditingTimeline] = useState(null); // { index, data }
 
   const [skillForm, setSkillForm] = useState({ category: DEFAULT_SKILL_CATEGORIES[0], customCategory: "", name: "", level: "Proficient" });
   const [certForm, setCertForm] = useState({ name: "", issuer: "", year: "", score: "", credentialUrl: "" });
@@ -423,6 +443,66 @@ export default function StudentPortfolio() {
 
   function removeDoc(id) {
     persist({ documents: (portfolio.documents || []).filter((d) => d.id !== id) });
+  }
+
+  function updateCert(index, data, file) {
+    const list = [...(portfolio.certifications || [])];
+    list[index] = {
+      ...list[index],
+      ...data,
+      ...(file ? { fileName: file.fileName, fileSize: file.size, dataUrl: file.dataUrl } : {}),
+    };
+    persist({ certifications: list });
+    setEditingCert(null);
+  }
+
+  function updateProject(id, data) {
+    const list = (portfolio.projects || []).map((p) =>
+      p.id === id
+        ? {
+            ...p,
+            ...data,
+            tags: typeof data.tags === "string" ? data.tags.split(",").map((t) => t.trim()).filter(Boolean) : data.tags,
+          }
+        : p
+    );
+    persist({ projects: list });
+    setEditingProject(null);
+  }
+
+  function updateEducation(id, data, file) {
+    const list = (portfolio.education || []).map((ed) =>
+      ed.id === id
+        ? {
+            ...ed,
+            ...data,
+            ...(file ? { fileName: file.fileName, fileSize: file.size, dataUrl: file.dataUrl } : {}),
+          }
+        : ed
+    );
+    persist({ education: list });
+    setEditingEdu(null);
+  }
+
+  function updateTimeline(index, data) {
+    const list = [...(portfolio.timeline || [])];
+    list[index] = { ...list[index], ...data };
+    persist({ timeline: list });
+    setEditingTimeline(null);
+  }
+
+  function updateDoc(id, data, file) {
+    const list = (portfolio.documents || []).map((doc) =>
+      doc.id === id
+        ? {
+            ...doc,
+            ...data,
+            ...(file ? { fileName: file.fileName, size: file.size, dataUrl: file.dataUrl } : {}),
+          }
+        : doc
+    );
+    persist({ documents: list });
+    setEditingDoc(null);
   }
 
   /* ---------------- Derived ---------------- */
@@ -767,7 +847,10 @@ export default function StudentPortfolio() {
                       </a>
                     )}
                   </div>
-                  <RemoveButton onClick={() => removeProject(p.id)} label={`Remove ${p.title}`} />
+                  <div className="flex items-center gap-1 flex-shrink-0">
+                    <EditButton onClick={() => setEditingProject({ id: p.id, data: { ...p, tags: (p.tags || []).join(", ") } })} label={`Edit ${p.title}`} />
+                    <RemoveButton onClick={() => removeProject(p.id)} label={`Remove ${p.title}`} />
+                  </div>
                 </div>
               </Card>
             ))}
@@ -840,7 +923,10 @@ export default function StudentPortfolio() {
                   </div>
                 </div>
                 {ed.score && <Badge tone="primary">{ed.score}</Badge>}
-                <RemoveButton onClick={() => removeEducation(ed.id)} label={`Remove ${ed.degree}`} />
+                <div className="flex items-center gap-1 flex-shrink-0">
+                  <EditButton onClick={() => setEditingEdu({ id: ed.id, data: { ...ed }, file: null })} label={`Edit ${ed.degree}`} />
+                  <RemoveButton onClick={() => removeEducation(ed.id)} label={`Remove ${ed.degree}`} />
+                </div>
               </Card>
             ))}
 
@@ -989,7 +1075,10 @@ export default function StudentPortfolio() {
                         Verify ↗
                       </a>
                     )}
-                    <RemoveButton onClick={() => removeCert(i)} label={`Remove ${cert.name}`} />
+                    <div className="flex items-center gap-1 flex-shrink-0">
+                      <EditButton onClick={() => setEditingCert({ index: i, data: { ...cert }, file: null })} label={`Edit ${cert.name}`} />
+                      <RemoveButton onClick={() => removeCert(i)} label={`Remove ${cert.name}`} />
+                    </div>
                   </Card>
                 ))}
 
@@ -1070,6 +1159,7 @@ export default function StudentPortfolio() {
                           <div className="flex items-center gap-2 flex-shrink-0">
                             <Badge tone={typeTone[item.type] ?? "muted"}>{item.type}</Badge>
                             <span className="text-xs font-semibold text-muted-foreground">{item.year}</span>
+                            <EditButton onClick={() => setEditingTimeline({ index, data: { ...item } })} label={`Edit ${item.title}`} />
                             <RemoveButton onClick={() => removeTimeline(index)} label={`Remove ${item.title}`} />
                           </div>
                         </div>
@@ -1139,7 +1229,10 @@ export default function StudentPortfolio() {
                   {hasFile(doc) ? "View" : "No file"}
                 </button>
                 <button type="button" onClick={() => downloadStoredFile(doc)} disabled={!hasFile(doc)} className="text-xs font-medium text-primary hover:underline flex-shrink-0 disabled:text-muted-foreground disabled:no-underline">Download</button>
-                <RemoveButton onClick={() => removeDoc(doc.id)} label={`Remove ${doc.fileName}`} />
+                <div className="flex items-center gap-1 flex-shrink-0">
+                  <EditButton onClick={() => setEditingDoc({ id: doc.id, data: { fileName: doc.fileName, type: doc.type }, file: null })} label={`Edit ${doc.fileName}`} />
+                  <RemoveButton onClick={() => removeDoc(doc.id)} label={`Remove ${doc.fileName}`} />
+                </div>
               </Card>
             ))}
 
@@ -1159,6 +1252,330 @@ export default function StudentPortfolio() {
           </div>
         )}
       </div>
+
+      {/* Edit Modals for Portfolio Items */}
+      {editingEdu && (
+        <Modal title="Edit Education" onClose={() => setEditingEdu(null)} size="md">
+          <form
+            onSubmit={(e) => {
+              e.preventDefault();
+              if (!editingEdu.data.degree?.trim()) return;
+              updateEducation(editingEdu.id, editingEdu.data, editingEdu.file);
+            }}
+            className="space-y-3"
+          >
+            <Field label="Degree / Programme">
+              <TextInput
+                required
+                value={editingEdu.data.degree || ""}
+                onChange={(e) => setEditingEdu((prev) => ({ ...prev, data: { ...prev.data, degree: e.target.value } }))}
+              />
+            </Field>
+            <Field label="Institution / Board">
+              <TextInput
+                value={editingEdu.data.institution || ""}
+                onChange={(e) => setEditingEdu((prev) => ({ ...prev, data: { ...prev.data, institution: e.target.value } }))}
+              />
+            </Field>
+            <div className="grid grid-cols-3 gap-3">
+              <Field label="From">
+                <TextInput
+                  value={editingEdu.data.startYear || ""}
+                  onChange={(e) => setEditingEdu((prev) => ({ ...prev, data: { ...prev.data, startYear: e.target.value } }))}
+                />
+              </Field>
+              <Field label={editingEdu.data.pursuing ? "Expected completion" : "To"}>
+                <TextInput
+                  value={editingEdu.data.endYear || ""}
+                  onChange={(e) => setEditingEdu((prev) => ({ ...prev, data: { ...prev.data, endYear: e.target.value } }))}
+                />
+              </Field>
+              <Field label="Score">
+                <TextInput
+                  value={editingEdu.data.score || ""}
+                  onChange={(e) => setEditingEdu((prev) => ({ ...prev, data: { ...prev.data, score: e.target.value } }))}
+                />
+              </Field>
+            </div>
+            <label className="flex items-center gap-2 text-xs text-foreground cursor-pointer">
+              <input
+                type="checkbox"
+                checked={Boolean(editingEdu.data.pursuing)}
+                onChange={(e) => setEditingEdu((prev) => ({ ...prev, data: { ...prev.data, pursuing: e.target.checked } }))}
+                className="w-3.5 h-3.5 accent-primary"
+              />
+              I am currently pursuing this
+            </label>
+            <Field label="Replace Certificate / Proof (Optional)" hint="Attach a new PDF or image under 2MB to replace current file.">
+              <label className="flex items-center gap-2 text-xs cursor-pointer border border-dashed border-border rounded-lg px-3 py-2 hover:border-primary/50 transition-colors">
+                <span>📎</span>
+                <span className="text-muted-foreground truncate">
+                  {editingEdu.file ? `${editingEdu.file.fileName} (${formatBytes(editingEdu.file.size)})` : editingEdu.data.fileName ? `Keep current: ${editingEdu.data.fileName}` : "Choose replacement file"}
+                </span>
+                <input
+                  type="file"
+                  accept={PROOF_TYPES.join(",")}
+                  onChange={async (e) => {
+                    const file = e.target.files?.[0];
+                    if (!file) return;
+                    const problem = validateFile(file, { allowed: PROOF_TYPES, maxBytes: MAX_DOC_BYTES, label: "Degree proof" });
+                    if (problem) return setError(problem);
+                    const dataUrl = await readFileAsDataUrl(file);
+                    setEditingEdu((prev) => ({ ...prev, file: { fileName: file.name, size: file.size, dataUrl } }));
+                  }}
+                  className="sr-only"
+                />
+              </label>
+            </Field>
+            <div className="flex gap-2 pt-2">
+              <Button type="button" variant="outline" className="flex-1" onClick={() => setEditingEdu(null)}>Cancel</Button>
+              <Button type="submit" className="flex-1">Save changes</Button>
+            </div>
+          </form>
+        </Modal>
+      )}
+
+      {editingCert && (
+        <Modal title="Edit Certification" onClose={() => setEditingCert(null)} size="md">
+          <form
+            onSubmit={(e) => {
+              e.preventDefault();
+              if (!editingCert.data.name?.trim()) return;
+              updateCert(editingCert.index, editingCert.data, editingCert.file);
+            }}
+            className="space-y-3"
+          >
+            <Field label="Certification name">
+              <TextInput
+                required
+                value={editingCert.data.name || ""}
+                onChange={(e) => setEditingCert((prev) => ({ ...prev, data: { ...prev.data, name: e.target.value } }))}
+              />
+            </Field>
+            <Field label="Issuing body">
+              <TextInput
+                value={editingCert.data.issuer || ""}
+                onChange={(e) => setEditingCert((prev) => ({ ...prev, data: { ...prev.data, issuer: e.target.value } }))}
+              />
+            </Field>
+            <div className="grid grid-cols-2 gap-3">
+              <Field label="Year">
+                <TextInput
+                  value={editingCert.data.year || ""}
+                  onChange={(e) => setEditingCert((prev) => ({ ...prev, data: { ...prev.data, year: e.target.value } }))}
+                />
+              </Field>
+              <Field label="Score / Grade">
+                <TextInput
+                  value={editingCert.data.score || ""}
+                  onChange={(e) => setEditingCert((prev) => ({ ...prev, data: { ...prev.data, score: e.target.value } }))}
+                />
+              </Field>
+            </div>
+            <Field label="Verification link (optional)">
+              <TextInput
+                value={editingCert.data.credentialUrl || ""}
+                onChange={(e) => setEditingCert((prev) => ({ ...prev, data: { ...prev.data, credentialUrl: e.target.value } }))}
+              />
+            </Field>
+            <Field label="Replace Certificate File (Optional)">
+              <label className="flex items-center gap-2 text-xs cursor-pointer border border-dashed border-border rounded-lg px-3 py-2 hover:border-primary/50 transition-colors">
+                <span>📎</span>
+                <span className="text-muted-foreground truncate">
+                  {editingCert.file ? `${editingCert.file.fileName} (${formatBytes(editingCert.file.size)})` : editingCert.data.fileName ? `Keep current: ${editingCert.data.fileName}` : "Choose replacement file"}
+                </span>
+                <input
+                  type="file"
+                  accept={PROOF_TYPES.join(",")}
+                  onChange={async (e) => {
+                    const file = e.target.files?.[0];
+                    if (!file) return;
+                    const problem = validateFile(file, { allowed: PROOF_TYPES, maxBytes: MAX_DOC_BYTES, label: "Certificate file" });
+                    if (problem) return setError(problem);
+                    const dataUrl = await readFileAsDataUrl(file);
+                    setEditingCert((prev) => ({ ...prev, file: { fileName: file.name, size: file.size, dataUrl } }));
+                  }}
+                  className="sr-only"
+                />
+              </label>
+            </Field>
+            <div className="flex gap-2 pt-2">
+              <Button type="button" variant="outline" className="flex-1" onClick={() => setEditingCert(null)}>Cancel</Button>
+              <Button type="submit" className="flex-1">Save changes</Button>
+            </div>
+          </form>
+        </Modal>
+      )}
+
+      {editingProject && (
+        <Modal title="Edit Project" onClose={() => setEditingProject(null)} size="md">
+          <form
+            onSubmit={(e) => {
+              e.preventDefault();
+              if (!editingProject.data.title?.trim()) return;
+              updateProject(editingProject.id, editingProject.data);
+            }}
+            className="space-y-3"
+          >
+            <Field label="Project title">
+              <TextInput
+                required
+                value={editingProject.data.title || ""}
+                onChange={(e) => setEditingProject((prev) => ({ ...prev, data: { ...prev.data, title: e.target.value } }))}
+              />
+            </Field>
+            <Field label="What you built and why">
+              <TextArea
+                rows={3}
+                value={editingProject.data.description || ""}
+                onChange={(e) => setEditingProject((prev) => ({ ...prev, data: { ...prev.data, description: e.target.value } }))}
+              />
+            </Field>
+            <div className="grid sm:grid-cols-2 gap-3">
+              <Field label="Skills used (comma separated)">
+                <TextInput
+                  value={editingProject.data.tags || ""}
+                  onChange={(e) => setEditingProject((prev) => ({ ...prev, data: { ...prev.data, tags: e.target.value } }))}
+                />
+              </Field>
+              <Field label="Year">
+                <TextInput
+                  value={editingProject.data.year || ""}
+                  onChange={(e) => setEditingProject((prev) => ({ ...prev, data: { ...prev.data, year: e.target.value } }))}
+                />
+              </Field>
+            </div>
+            <Field label="Link (repository or live demo)">
+              <TextInput
+                value={editingProject.data.link || ""}
+                onChange={(e) => setEditingProject((prev) => ({ ...prev, data: { ...prev.data, link: e.target.value } }))}
+              />
+            </Field>
+            <div className="flex gap-2 pt-2">
+              <Button type="button" variant="outline" className="flex-1" onClick={() => setEditingProject(null)}>Cancel</Button>
+              <Button type="submit" className="flex-1">Save changes</Button>
+            </div>
+          </form>
+        </Modal>
+      )}
+
+      {editingTimeline && (
+        <Modal title="Edit Experience Entry" onClose={() => setEditingTimeline(null)} size="md">
+          <form
+            onSubmit={(e) => {
+              e.preventDefault();
+              if (!editingTimeline.data.title?.trim()) return;
+              updateTimeline(editingTimeline.index, editingTimeline.data);
+            }}
+            className="space-y-3"
+          >
+            <Field label="Title">
+              <TextInput
+                required
+                value={editingTimeline.data.title || ""}
+                onChange={(e) => setEditingTimeline((prev) => ({ ...prev, data: { ...prev.data, title: e.target.value } }))}
+              />
+            </Field>
+            <Field label="Organisation">
+              <TextInput
+                value={editingTimeline.data.org || ""}
+                onChange={(e) => setEditingTimeline((prev) => ({ ...prev, data: { ...prev.data, org: e.target.value } }))}
+              />
+            </Field>
+            <div className="grid grid-cols-2 gap-3">
+              <Field label="Year">
+                <TextInput
+                  value={editingTimeline.data.year || ""}
+                  onChange={(e) => setEditingTimeline((prev) => ({ ...prev, data: { ...prev.data, year: e.target.value } }))}
+                />
+              </Field>
+              <Field label="Type">
+                <Select
+                  value={editingTimeline.data.type || "Internship"}
+                  onChange={(e) => setEditingTimeline((prev) => ({ ...prev, data: { ...prev.data, type: e.target.value } }))}
+                >
+                  {Object.keys(typeTone).map((t) => (
+                    <option key={t}>{t}</option>
+                  ))}
+                </Select>
+              </Field>
+            </div>
+            <Field label="What you did">
+              <TextArea
+                rows={2}
+                value={editingTimeline.data.detail || ""}
+                onChange={(e) => setEditingTimeline((prev) => ({ ...prev, data: { ...prev.data, detail: e.target.value } }))}
+              />
+            </Field>
+            <div className="flex gap-2 pt-2">
+              <Button type="button" variant="outline" className="flex-1" onClick={() => setEditingTimeline(null)}>Cancel</Button>
+              <Button type="submit" className="flex-1">Save changes</Button>
+            </div>
+          </form>
+        </Modal>
+      )}
+
+      {editingDoc && (
+        <Modal title="Edit Document" onClose={() => setEditingDoc(null)} size="md">
+          <form
+            onSubmit={(e) => {
+              e.preventDefault();
+              if (!editingDoc.data.fileName?.trim()) return;
+              updateDoc(editingDoc.id, editingDoc.data, editingDoc.file);
+            }}
+            className="space-y-3"
+          >
+            <Field label="Document name / Title">
+              <TextInput
+                required
+                value={editingDoc.data.fileName || ""}
+                onChange={(e) => setEditingDoc((prev) => ({ ...prev, data: { ...prev.data, fileName: e.target.value } }))}
+              />
+            </Field>
+            <Field label="Document category / Type">
+              <Select
+                value={editingDoc.data.type || "Resume"}
+                onChange={(e) => setEditingDoc((prev) => ({ ...prev, data: { ...prev.data, type: e.target.value } }))}
+              >
+                {DOC_TYPES.map((t) => (
+                  <option key={t}>{t}</option>
+                ))}
+              </Select>
+            </Field>
+            <Field label="Replace File (Optional)" hint="PDF or image, under 2MB.">
+              <label className="flex items-center gap-2 text-xs cursor-pointer border border-dashed border-border rounded-lg px-3 py-2 hover:border-primary/50 transition-colors">
+                <span>📎</span>
+                <span className="text-muted-foreground truncate">
+                  {editingDoc.file ? `${editingDoc.file.fileName} (${formatBytes(editingDoc.file.size)})` : `Keep current document file`}
+                </span>
+                <input
+                  type="file"
+                  accept=".pdf,image/*"
+                  onChange={async (e) => {
+                    const file = e.target.files?.[0];
+                    if (!file) return;
+                    if (file.size > MAX_DOC_BYTES) {
+                      setError("Please choose a file under 2MB.");
+                      return;
+                    }
+                    const dataUrl = await readFileAsDataUrl(file);
+                    setEditingDoc((prev) => ({
+                      ...prev,
+                      data: { ...prev.data, fileName: prev.data.fileName || file.name },
+                      file: { fileName: file.name, size: file.size, dataUrl },
+                    }));
+                  }}
+                  className="sr-only"
+                />
+              </label>
+            </Field>
+            <div className="flex gap-2 pt-2">
+              <Button type="button" variant="outline" className="flex-1" onClick={() => setEditingDoc(null)}>Cancel</Button>
+              <Button type="submit" className="flex-1">Save changes</Button>
+            </div>
+          </form>
+        </Modal>
+      )}
     </DashboardLayout>
   );
 }

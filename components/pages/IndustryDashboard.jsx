@@ -243,8 +243,8 @@ export default function IndustryDashboard() {
               Publish an opportunity to start receiving applicants.
             </EmptyState>
           ) : (
-            <div className="grid sm:grid-cols-3 gap-4">
-              {postings.slice(0, 3).map((job) => {
+            <div className="flex gap-4 overflow-x-auto pb-3 pt-1 px-1 snap-x scrollbar-thin">
+              {postings.map((job) => {
                 const apps = applications.filter((a) => a.internshipId === job.id).length;
                 const days = daysUntil(job.deadline);
                 const active = postingFilter === job.id;
@@ -258,8 +258,8 @@ export default function IndustryDashboard() {
                     as="button"
                     onClick={() => focusPosting(job.id)}
                     aria-pressed={active}
-                    className={`w-full text-left focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary ${
-                      active ? "border-primary ring-1 ring-primary/40" : ""
+                    className={`min-w-[280px] sm:min-w-[320px] max-w-[340px] flex-shrink-0 snap-start text-left focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary transition-all ${
+                      active ? "border-primary ring-2 ring-primary/40 bg-primary/5" : ""
                     }`}
                   >
                     <div className="flex items-start justify-between mb-3 gap-2">
@@ -281,8 +281,8 @@ export default function IndustryDashboard() {
                       <span className="text-[10px] text-muted-foreground truncate">
                         Due {formatDate(job.deadline)}{job.recruiterName ? ` · ${job.recruiterName}` : ""}
                       </span>
-                      <span className={`text-[10px] font-medium flex-shrink-0 ${active ? "text-primary" : "text-muted-foreground"}`}>
-                        {active ? "✓ Showing below" : "View pipeline →"}
+                      <span className={`text-[10px] font-medium flex-shrink-0 ${active ? "text-primary font-semibold" : "text-muted-foreground"}`}>
+                        {active ? "✓ Showing funnel below" : "View funnel →"}
                       </span>
                     </div>
                   </Card>

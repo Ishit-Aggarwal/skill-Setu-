@@ -32,6 +32,7 @@ import {
 import { scoresFor, taxonomyIdFor } from "../../lib/taxonomy";
 import { formatDate } from "../../lib/match";
 import { Badge, Card, EmptyState, PageHeader, ProgressBar, Section, StatGrid, Tabs } from "../ui/Kit";
+import AttemptDetailModal from "../skilltests/AttemptDetailModal";
 
 /**
  * Analytics for a student, about that student.
@@ -72,6 +73,7 @@ export default function StudentAnalytics() {
   const navigate = useNav();
   const [ready, setReady] = useState(false);
   const [tab, setTab] = useState("skills");
+  const [selectedAttempt, setSelectedAttempt] = useState(null);
 
   useEffect(() => setReady(true), []);
 
@@ -147,13 +149,22 @@ export default function StudentAnalytics() {
     let running = 0;
     return graded.map((a, i) => {
       running += a.score;
+      const test = tests.find((t) => t.id === a.testId) || {
+        id: a.testId,
+        title: a.domain,
+        domain: a.domain,
+        mode: a.gradedBy === "host" ? "Offline" : "Online",
+        hostName: "Skill Setu Platform",
+      };
       return {
         label: formatDate(a.completedAt),
         domain: a.domain,
         score: a.score,
         average: Math.round(running / (i + 1)),
         missed: a.missed,
-        title: tests.find((t) => t.id === a.testId)?.title || a.domain,
+        title: test.title || a.domain,
+        attempt: a,
+        test,
       };
     });
   }, [attempts, tests]);
@@ -430,13 +441,20 @@ export default function StudentAnalytics() {
                 <Card padded={false}>
                   <div className="px-5 pt-5 pb-3">
                     <h3 className="font-semibold text-foreground text-sm">Attempt log</h3>
-                    <p className="text-xs text-muted-foreground mt-0.5">Newest first, with the marking behind each score.</p>
+                    <p className="text-xs text-muted-foreground mt-0.5">Newest first, with the marking behind each score. Click any row to review questions and answers.</p>
                   </div>
                   <div className="divide-y divide-border">
                     {[...history].reverse().map((h, i) => (
-                      <div key={`${h.label}-${i}`} className="flex flex-wrap items-center gap-3 px-5 py-3">
+                      <div
+                        key={`${h.label}-${i}`}
+                        onClick={() => setSelectedAttempt(h)}
+                        className="flex flex-wrap items-center gap-3 px-5 py-3.5 cursor-pointer hover:bg-secondary/40 transition-colors group"
+                      >
                         <div className="min-w-0 flex-1">
-                          <div className="text-sm text-foreground truncate">{h.title}</div>
+                          <div className="text-sm font-medium text-foreground group-hover:text-primary transition-colors truncate flex items-center gap-2">
+                            <span>{h.title}</span>
+                            <span className="text-xs text-primary font-normal opacity-0 group-hover:opacity-100 transition-opacity">View review →</span>
+                          </div>
                           <div className="text-[11px] text-muted-foreground">
                             {h.domain} · {h.label}
                           </div>
@@ -449,6 +467,15 @@ export default function StudentAnalytics() {
                   </div>
                 </Card>
               </div>
+            )}
+
+            {selectedAttempt && (
+              <AttemptDetailModal
+                test={selectedAttempt.test}
+                attempt={selectedAttempt.attempt}
+                status={selectedAttempt.attempt?.missed ? "missed" : "completed"}
+                onClose={() => setSelectedAttempt(null)}
+              />
             )}
 
             {/* ---------------- applications ---------------- */}

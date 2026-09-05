@@ -19,13 +19,20 @@ export default function IssueCredentialModal({ issuer, recipients = [], defaults
   const eligible = useMemo(() => recipients.filter((r) => !r.alreadyIssued), [recipients]);
 
   const [selected, setSelected] = useState(() => new Set(eligible.map((r) => r.id)));
+  const [search, setSearch] = useState("");
   const [title, setTitle] = useState(defaults.title || "");
   const [kind, setKind] = useState(defaults.kind || "Participation");
   const [grade, setGrade] = useState("");
   const [remarks, setRemarks] = useState(defaults.remarks || "");
-  const [includeScores, setIncludeScores] = useState(recipients.some((r) => r.score != null));
+  const [includeScores, setIncludeScores] = useState(true);
   const [error, setError] = useState(null);
   const [issuing, setIssuing] = useState(false);
+
+  const displayedRecipients = useMemo(() => {
+    if (!search.trim()) return recipients;
+    const q = search.trim().toLowerCase();
+    return recipients.filter((r) => r.name?.toLowerCase().includes(q) || r.email?.toLowerCase().includes(q) || r.subtitle?.toLowerCase().includes(q));
+  }, [recipients, search]);
 
   const allSelected = eligible.length > 0 && eligible.every((r) => selected.has(r.id));
 
@@ -125,13 +132,24 @@ export default function IssueCredentialModal({ issuer, recipients = [], defaults
             )}
           </div>
 
+          {recipients.length > 3 && (
+            <div className="mb-2">
+              <TextInput
+                value={search}
+                onChange={(e) => setSearch(e.target.value)}
+                placeholder="Search candidates by name or college…"
+                className="text-xs py-1.5"
+              />
+            </div>
+          )}
+
           {recipients.length === 0 ? (
             <p className="text-sm text-muted-foreground bg-secondary/40 border border-border rounded-xl px-3.5 py-3">
               Nobody has registered for this yet, so there is nobody to certify.
             </p>
           ) : (
             <div className="max-h-60 overflow-y-auto space-y-1.5 pr-1">
-              {recipients.map((r) => (
+              {displayedRecipients.map((r) => (
                 <label
                   key={r.id}
                   className={`flex items-center gap-3 rounded-xl border px-3 py-2.5 transition-colors ${
