@@ -47,7 +47,6 @@ import { profileStrength } from "../../lib/profile";
 import { scoresFor, taxonomyFor } from "../../lib/taxonomy";
 import { Badge, Flash, Modal, useFlash, PageHeader, Card, Section, StatGrid, ProgressRing, Button, ProgressBar, EmptyState } from "../ui/Kit";
 import { subscribeToMutations } from "../../lib/sync";
-import AiGapAnalysisModal from "../AiGapAnalysisModal";
 
 const appStatusTone = {
   Applied: "blue",
@@ -97,7 +96,6 @@ export default function StudentDashboard() {
   const [credentials, setCredentials] = useState([]);
   const [savedIds, setSavedIds] = useState(new Set());
   const [viewAllNotices, setViewAllNotices] = useState(false);
-  const [showAiGapModal, setShowAiGapModal] = useState(false);
   const [flash, setFlash] = useFlash(6000);
 
   function refresh() {
@@ -659,12 +657,6 @@ export default function StudentDashboard() {
                     <h3 className="font-semibold text-foreground text-sm">Skill Gap Nudges</h3>
                     <p className="text-xs text-muted-foreground mt-0.5">Your weakest areas, mapped against industry demand</p>
                   </div>
-                  <button
-                    onClick={() => setShowAiGapModal(true)}
-                    className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-primary/10 hover:bg-primary/20 text-primary text-xs font-semibold transition-colors border border-primary/20 shadow-sm flex-shrink-0"
-                  >
-                    <span>✨ AI Roadmap</span>
-                  </button>
                 </div>
                 {skillGaps.length === 0 ? (
                   <p className="text-sm text-muted-foreground">Take a skill test to see personalised gap analysis here.</p>
@@ -1126,14 +1118,6 @@ export default function StudentDashboard() {
           </div>
         </Modal>
       )}
-
-      <AiGapAnalysisModal
-        isOpen={showAiGapModal}
-        onClose={() => setShowAiGapModal(false)}
-        assessment={assessment}
-        internships={internships}
-        applications={applications}
-      />
     </>
   );
 }
