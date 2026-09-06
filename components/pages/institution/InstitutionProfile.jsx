@@ -8,6 +8,7 @@ import { ACCREDITATION_BODIES, DEPARTMENTS, INSTITUTION_TYPES } from "../../../l
 import { formatDate } from "../../../lib/match";
 import { getInstitutionProfile, logActivity, saveInstitutionProfile, listInstitutionDocs, addInstitutionDoc, removeInstitutionDoc } from "../../../lib/store";
 import { useInstitutionName } from "./useInstitution";
+import { downloadStoredFile } from "../../../lib/files";
 
 const MAX_FILE_BYTES = 1.5 * 1024 * 1024;
 
@@ -145,7 +146,7 @@ export default function InstitutionProfile() {
   }
 
   function addDepartment() {
-    setForm((f) => ({ ...f, departments: [...f.departments, { name: DEPARTMENTS[0], hod: "", seats: "" }] }));
+    setForm((f) => ({ ...f, departments: [...f.departments, { name: DEPARTMENTS[0], hod: "", facultyCount: "" }] }));
   }
 
   function removeDepartment(index) {
@@ -312,13 +313,28 @@ export default function InstitutionProfile() {
                 <p className="text-sm text-muted-foreground py-4">No departments recorded yet.</p>
               ) : (
                 <div className="space-y-2">
+                  {/* Three unlabelled boxes in a row read as a form, not a
+                      table — nothing said the middle one was the head or what
+                      the number counted. */}
+                  <div className="hidden sm:grid sm:grid-cols-[2fr_1.4fr_0.7fr_auto] gap-2 px-1">
+                    {["Department", "Head of department", "Faculty", ""].map((h, i) => (
+                      <span key={i} className="text-[10px] font-semibold uppercase tracking-wider text-muted-foreground">{h}</span>
+                    ))}
+                  </div>
                   {form.departments.map((d, i) => (
                     <div key={i} className="grid sm:grid-cols-[2fr_1.4fr_0.7fr_auto] gap-2 items-center">
-                      <Select value={d.name} onChange={(e) => updateDepartment(i, { name: e.target.value })}>
+                      <Select value={d.name} onChange={(e) => updateDepartment(i, { name: e.target.value })} aria-label="Department">
                         {[...new Set([...DEPARTMENTS, d.name].filter(Boolean))].map((n) => <option key={n}>{n}</option>)}
                       </Select>
-                      <TextInput value={d.hod || ""} onChange={(e) => updateDepartment(i, { hod: e.target.value })} placeholder="Head of department" />
-                      <TextInput type="number" min="0" value={d.seats ?? ""} onChange={(e) => updateDepartment(i, { seats: e.target.value })} placeholder="Seats" />
+                      <TextInput value={d.hod || ""} onChange={(e) => updateDepartment(i, { hod: e.target.value })} placeholder="Head of department" aria-label="Head of department" />
+                      <TextInput
+                        type="number"
+                        min="0"
+                        value={d.facultyCount ?? d.seats ?? ""}
+                        onChange={(e) => updateDepartment(i, { facultyCount: e.target.value })}
+                        placeholder="No. of faculty"
+                        aria-label="Number of faculty"
+                      />
                       <button type="button" onClick={() => removeDepartment(i)} className="text-xs text-muted-foreground hover:text-red-600 px-2">Remove</button>
                     </div>
                   ))}
@@ -400,15 +416,16 @@ export default function InstitutionProfile() {
                         </div>
                       </div>
                       <div className="flex items-center gap-3 flex-shrink-0">
-                        <a
-                          href={d.dataUrl || "#"}
-                          download={d.fileName}
-                          target="_blank"
-                          rel="noreferrer"
+                        {/* lib/files rather than an <a href={dataUrl} download>:
+                            browsers block top-level navigation to a data: URL,
+                            which is why these saved but would not open. */}
+                        <button
+                          type="button"
+                          onClick={() => downloadStoredFile({ dataUrl: d.dataUrl, fileName: d.fileName })}
                           className="px-3 py-1.5 rounded-lg bg-primary text-white text-xs font-medium hover:bg-accent transition-colors"
                         >
                           Download PDF
-                        </a>
+                        </button>
                         <button
                           type="button"
                           onClick={() => handleRemoveDoc(d.id)}

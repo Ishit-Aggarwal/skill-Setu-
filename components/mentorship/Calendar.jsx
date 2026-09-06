@@ -60,6 +60,28 @@ export const BLOCK_TONES = {
     block: "bg-red-50 border-red-200 text-red-700 line-through hover:bg-red-100",
     chip: "bg-red-400",
   },
+  /* Everything else a faculty member is committed to on a given day. Office
+     hours were the only thing the calendar knew about, so the programmes,
+     tests and deadlines listed under "Upcoming" on the dashboard appeared
+     nowhere on the calendar that dashboard linked to. */
+  programme: {
+    label: "Programme",
+    bar: "bg-indigo-500",
+    block: "bg-indigo-50 border-indigo-300 text-indigo-900 hover:bg-indigo-100",
+    chip: "bg-indigo-500",
+  },
+  test: {
+    label: "Skill test",
+    bar: "bg-purple-500",
+    block: "bg-purple-50 border-purple-300 text-purple-900 hover:bg-purple-100",
+    chip: "bg-purple-500",
+  },
+  deadline: {
+    label: "Deadline",
+    bar: "bg-orange-500",
+    block: "bg-orange-50 border-orange-300 text-orange-900 hover:bg-orange-100",
+    chip: "bg-orange-500",
+  },
 };
 
 /* ---------------- date helpers (local time, no library) ---------------- */
@@ -313,7 +335,11 @@ export default function Calendar({
 
       {legend && (
         <div className="flex flex-wrap items-center gap-x-4 gap-y-1.5 px-4 py-2.5 border-t border-border bg-secondary/30">
-          {["open", "partial", "full", "booked", "past"].map((key) => (
+          {/* Only the tones actually on screen — a fixed legend listing
+              "Programme" on a calendar with no programmes is noise. */}
+          {["open", "partial", "full", "booked", "programme", "test", "deadline", "past"]
+            .filter((key) => items.some((e) => e.tone === key) || ["open", "partial", "full", "booked", "past"].includes(key))
+            .map((key) => (
             <span key={key} className="flex items-center gap-1.5 text-[11px] text-muted-foreground">
               <span className={`w-2.5 h-2.5 rounded-sm ${BLOCK_TONES[key].chip}`} />
               {BLOCK_TONES[key].label}

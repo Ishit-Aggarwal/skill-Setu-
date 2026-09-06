@@ -5,6 +5,7 @@ import DashboardLayout from "../../DashboardLayout";
 import { useAuth } from "../../../lib/auth";
 import { Badge, Button, Card, EmptyState, Field, Flash, IconTile, Modal, PageHeader, Section, Select, StatGrid, TextArea, TextInput, useFlash } from "../../ui/Kit";
 import { relativeTime } from "../../../lib/match";
+import { downloadStoredFile, hasFile } from "../../../lib/files";
 import {
   createAnnouncement,
   deleteAnnouncement,
@@ -96,15 +97,20 @@ export default function NoticeBoard() {
                 {n.attachment.size && <span className="text-[10px] text-muted-foreground block">{n.attachment.size}</span>}
               </div>
             </div>
-            <a
-              href={n.attachment.dataUrl || n.attachment.url || "#"}
-              download={n.attachment.name}
-              target="_blank"
-              rel="noreferrer"
-              className="px-2.5 py-1 rounded-lg bg-primary text-white text-[11px] font-medium hover:bg-accent transition-colors flex-shrink-0"
-            >
-              Download PDF
-            </a>
+            {/* Through lib/files, not an <a href={dataUrl} download>. Chrome
+                and Edge refuse top-level navigation to a data: URL, so the
+                file saved but opened as a broken document. */}
+            {hasFile(n.attachment) ? (
+              <button
+                type="button"
+                onClick={() => downloadStoredFile({ dataUrl: n.attachment.dataUrl, url: n.attachment.url, fileName: n.attachment.name })}
+                className="px-2.5 py-1 rounded-lg bg-primary text-white text-[11px] font-medium hover:bg-accent transition-colors flex-shrink-0"
+              >
+                Download PDF
+              </button>
+            ) : (
+              <span className="text-[11px] text-muted-foreground flex-shrink-0">Not uploaded</span>
+            )}
           </div>
         )}
 

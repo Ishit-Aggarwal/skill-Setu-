@@ -23,6 +23,7 @@ import {
   updateProgram,
 } from "../../../lib/store";
 import { subscribeToMutations } from "../../../lib/sync";
+import IssueCredentialModal from "../../IssueCredentialModal";
 import {
   MONTH_NAMES,
   WEEKDAY_NAMES,
@@ -515,6 +516,7 @@ export default function Programs() {
       {manageId && (
         <AttendeesModal
           program={programs.find((p) => p.id === manageId)}
+          issuer={user}
           onClose={() => setManageId(null)}
           onChange={bump}
         />
@@ -669,9 +671,10 @@ export default function Programs() {
   );
 }
 
-function AttendeesModal({ program, onClose, onChange }) {
+function AttendeesModal({ program, issuer, onClose, onChange }) {
   const [version, setVersion] = useState(0);
   const [flash, setFlash] = useFlash();
+  const [certifying, setCertifying] = useState(false);
   if (!program) return null;
 
   const regs = listProgramRegistrations(program.id);
@@ -779,15 +782,24 @@ function AttendeesModal({ program, onClose, onChange }) {
         </div>
 
         <div className="flex flex-wrap gap-2">
+          {/* Issuing used to be one unlabelled click that stamped a serial
+              number onto each attendance row and stopped there: nothing was
+              named, nobody was told, and nothing reached the recipient's own
+              profile. It now goes through the same dialog every other
+              certificate on the platform does — a title has to be entered, and
+              each recipient gets a verifiable credential plus a notification. */}
           <Button
             size="sm"
-            onClick={() => {
-              const issued = issueProgramCertificates(program.id);
-              refresh(issued ? `${issued} certificate${issued === 1 ? "" : "s"} issued.` : "Mark attendees present first — certificates go only to those who attended.");
-            }}
+            disabled={attended === 0}
+            onClick={() => setCertifying(true)}
           >
             Issue certificates
           </Button>
+          {attended === 0 && (
+            <span className="text-[11px] text-muted-foreground self-center">
+              Mark attendees present first — certificates go only to those who attended.
+            </span>
+          )}
           <Button
             size="sm"
             variant="outline"
@@ -830,6 +842,31 @@ function AttendeesModal({ program, onClose, onChange }) {
           </Section>
         )}
       </div>
+
+      {certifying && (
+        <IssueCredentialModal
+          issuer={issuer}
+          recipients={regs
+            .filter((r) => r.attended)
+            .map((r) => ({
+              id: r.userId,
+              name: r.name || "Attendee",
+              email: r.email || "",
+              subtitle: r.institution || r.designation || "",
+              score: null,
+              alreadyIssued: Boolean(r.certificateNo),
+            }))}
+          defaults={{ title: program.title, kind: "Training" }}
+          onClose={() => setCertifying(false)}
+          onIssued={(count) => {
+            setCertifying(false);
+            // Keep the serial number on the attendance row too: it is what the
+            // printable FDP certificate and the exported roster read from.
+            issueProgramCertificates(program.id);
+            refresh(`${count} certificate${count === 1 ? "" : "s"} issued. Recipients have been notified.`);
+          }}
+        />
+      )}
     </Modal>
   );
 }

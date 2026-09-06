@@ -35,7 +35,17 @@ import {
   useFlash,
 } from "../../ui/Kit";
 import IssueCredentialModal from "../../IssueCredentialModal";
-import { listUsersByRole } from "../../../lib/store";
+import {
+  SEED_COLLABS,
+  getCollabResponse,
+  getScheduledTimestamp,
+  listCollabMilestones,
+  listPrograms,
+  listSkillTestsByOwner,
+  listUsersByRole,
+  testDurationMinutes,
+} from "../../../lib/store";
+import { parseIsoDate, programmeStartMs } from "../../../lib/dates";
 
 /**
  * Office hours, as a calendar.
@@ -90,6 +100,9 @@ export default function Mentorship() {
   const { user } = useAuth();
   const [slots, setSlots] = useState([]);
   const [loading, setLoading] = useState(true);
+  // The store reads localStorage, so the commitments below are only assembled
+  // once we are actually in the browser.
+  const [ready, setReady] = useState(false);
   const [error, setError] = useState(null);
   const [flash, setFlash] = useFlash();
   const [view, setView] = useState("week");
@@ -119,9 +132,73 @@ export default function Mentorship() {
     load();
   }, [load]);
 
+  useEffect(() => setReady(true), []);
+
+  /* Everything else on this faculty member's calendar: the programmes they
+     host, the skill tests they run, and the milestones they owe on accepted
+     collaborations. All three were already listed as "Upcoming" on the
+     dashboard, whose "Calendar →" link landed on a calendar that knew about
+     office hours and nothing else. */
+  const commitments = useMemo(() => {
+    if (!ready || !user) return [];
+    const rows = [];
+
+    listPrograms()
+      .filter((p) => p.ownerId === user.id && p.status !== "Cancelled")
+      .forEach((p) => {
+        const startsAt = programmeStartMs(p);
+        if (startsAt == null) return;
+        // A programme with no published start time lands on local midnight,
+        // which reads as "12:00 am" on a day grid that begins at 7am.
+        const at = new Date(startsAt);
+        if (!p.startTime) at.setHours(9, 0, 0, 0);
+        rows.push({
+          id: `programme-${p.id}`,
+          start: at.toISOString(),
+          durationMins: 120,
+          title: p.title,
+          subtitle: `Programme · ${p.mode || "On campus"}`,
+          tone: "programme",
+        });
+      });
+
+    listSkillTestsByOwner(user.id).forEach((t) => {
+      const startsAt = getScheduledTimestamp(t);
+      if (startsAt == null) return;
+      rows.push({
+        id: `test-${t.id}`,
+        start: new Date(startsAt).toISOString(),
+        durationMins: testDurationMinutes(t),
+        title: t.title,
+        subtitle: `Skill test · ${t.mode}`,
+        tone: "test",
+      });
+    });
+
+    SEED_COLLABS.filter((c) => c.status === "Active" || getCollabResponse(c.id) === "Accepted").forEach((c) => {
+      listCollabMilestones(c.id)
+        .filter((m) => !m.done && m.due)
+        .forEach((m) => {
+          const due = parseIsoDate(m.due);
+          if (!due) return;
+          due.setHours(17, 0, 0, 0);
+          rows.push({
+            id: `milestone-${m.id}`,
+            start: due.toISOString(),
+            durationMins: 60,
+            title: m.title,
+            subtitle: `Milestone due · ${c.title}`,
+            tone: "deadline",
+          });
+        });
+    });
+
+    return rows;
+  }, [ready, user]);
+
   const events = useMemo(
-    () =>
-      slots.map((s) => {
+    () => [
+      ...slots.map((s) => {
         const active = (s.bookings || []).filter((b) => b.status !== "Cancelled").length;
         return {
           id: s.id,
@@ -133,7 +210,9 @@ export default function Mentorship() {
           raw: s,
         };
       }),
-    [slots]
+      ...commitments,
+    ],
+    [slots, commitments]
   );
 
   const now = Date.now();

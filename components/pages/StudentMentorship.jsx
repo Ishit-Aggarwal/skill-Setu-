@@ -14,8 +14,6 @@ import {
   schedulingMode,
 } from "../../lib/scheduling";
 import {
-  isMentorshipSaved,
-  toggleSavedMentorship,
   listUsersByRole,
   requestMentorship,
   listMentorshipRequestsForStudent,
@@ -183,6 +181,34 @@ const SEED_MENTORS = [
     bio: "Leads AI research initiatives at IISc with grants from Google and DST. Enthusiastic about mentoring undergraduates interested in applied machine learning.",
     previousMentorships: "Guided 30+ capstone and research theses resulting in IEEE/CVPR workshop publications.",
   },
+  /* BITS Pilani is listed as a partner college with 45 active mentors, and had
+     none — "View mentors from this institution" led to an empty page. */
+  {
+    id: "mentor-bits-vikram",
+    name: "Dr. Vikram Seth",
+    designation: "Professor",
+    department: "Computer Science",
+    institution: "Birla Institute of Technology and Science (BITS Pilani)",
+    rating: 4.91,
+    reviewsCount: 41,
+    sessionsCompleted: 57,
+    expertise: ["Operating Systems", "Compilers", "Practice School Placements", "Product Engineering"],
+    bio: "Runs the Practice School industry programme at BITS. Advises students on converting internships into pre-placement offers.",
+    previousMentorships: "Guided 90+ Practice School students into full-time roles at D.E. Shaw, Nvidia and Flipkart.",
+  },
+  {
+    id: "mentor-bits-meera",
+    name: "Prof. Meera Iyengar",
+    designation: "Associate Professor",
+    department: "Economics & Finance",
+    institution: "Birla Institute of Technology and Science (BITS Pilani)",
+    rating: 4.86,
+    reviewsCount: 27,
+    sessionsCompleted: 35,
+    expertise: ["Quantitative Finance", "Financial Modelling", "Case Interviews", "Higher Studies"],
+    bio: "Ex-Morgan Stanley quantitative analyst. Coaches students through finance case interviews and quant screening rounds.",
+    previousMentorships: "Placed 35+ mentees into investment banking, consulting and quant research roles.",
+  },
   {
     id: "mentor-nitk-ananya",
     name: "Prof. Ananya Roy",
@@ -219,7 +245,6 @@ export default function StudentMentorship() {
   const [booking, setBooking] = useState(null);
   const [busy, setBusy] = useState(false);
 
-  const [savedIds, setSavedIds] = useState(() => new Set());
   const [myRequests, setMyRequests] = useState([]);
   const [requestingMentor, setRequestingMentor] = useState(null);
   const [requestTopic, setRequestTopic] = useState("");
@@ -235,7 +260,6 @@ export default function StudentMentorship() {
       const [slots, bookings] = await Promise.all([loadAvailableSlots(user), loadMyBookings(user)]);
       setAvailable(slots || []);
       setMine(bookings || []);
-      setSavedIds(new Set([...(slots || []), ...(bookings || [])].filter((s) => isMentorshipSaved(user?.id, s.id)).map((s) => s.id)));
       if (user?.id) {
         setMyRequests(listMentorshipRequestsForStudent(user.id) || []);
       }
@@ -246,17 +270,6 @@ export default function StudentMentorship() {
       setLoading(false);
     }
   }, [user]);
-
-  function handleToggleSave(slot) {
-    const nowSaved = toggleSavedMentorship(user.id, slot);
-    setSavedIds((prev) => {
-      const next = new Set(prev);
-      if (nowSaved) next.add(slot.id);
-      else next.delete(slot.id);
-      return next;
-    });
-    setFlash(nowSaved ? "Saved — it's under Saved Mentorships." : "Removed from your saved mentorships.");
-  }
 
   useEffect(() => {
     load();
@@ -682,8 +695,12 @@ export default function StudentMentorship() {
                     <Button
                       variant="outline"
                       className="w-full text-xs"
+                      /* Was `college.name.split(" ")[0]` — the first word only,
+                         so "Birla Institute of Technology and Science (BITS
+                         Pilani)" searched for "Birla" and matched nothing,
+                         because its mentors carry the full name. */
                       onClick={() => {
-                        setMentorSearch(college.name.split(" ")[0]);
+                        setMentorSearch(college.name);
                         setTab("mentors");
                       }}
                     >
@@ -752,17 +769,10 @@ export default function StudentMentorship() {
                   {selectedSlot.remaining > 0 ? `${selectedSlot.remaining} of ${selectedSlot.capacity} free` : "Full"}
                 </Badge>
               )}
-              <button
-                type="button"
-                onClick={() => handleToggleSave(selectedSlot)}
-                className={`ml-auto inline-flex items-center gap-1.5 text-xs font-medium px-2.5 py-1 rounded-full border transition-colors ${
-                  savedIds.has(selectedSlot.id)
-                    ? "border-primary text-primary bg-primary/10"
-                    : "border-border text-muted-foreground hover:border-primary/40"
-                }`}
-              >
-                {savedIds.has(selectedSlot.id) ? "★ Saved" : "☆ Save for later"}
-              </button>
+              {/* No "save for later" here. A mentoring slot is a specific
+                  time on someone's calendar — bookmarking one does nothing for
+                  the student and nothing for the mentor; booking it, or
+                  requesting mentorship, is the action that matters. */}
             </div>
 
             <dl className="divide-y divide-border text-sm">

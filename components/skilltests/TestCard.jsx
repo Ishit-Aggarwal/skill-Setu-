@@ -50,9 +50,16 @@ export default function TestCard({ test, user, registration, attempt, onRefresh 
         {test.prerequisites && <div>📋 {test.prerequisites}</div>}
         <div>⏱ {test.duration}</div>
         <div>📅 {formatScheduled(test)}</div>
-        {test.mode === "Offline" && test.venue && <div>📍 {test.venue}</div>}
-        {test.mode === "Online" && !isLinkRevealWindow(test) && test.status !== "In Progress" && <div>🔗 Meeting link will appear here 1 day before the test.</div>}
-        {test.mode === "Online" && (isLinkRevealWindow(test) || test.status === "In Progress") && (
+        {test.mode === "Offline" && test.venue && registration && <div>📍 {test.venue}</div>}
+
+        {/* The joining details belong to the people sitting the test. Showing
+            the link (or the venue) on a public card handed anyone who scrolled
+            past a way into a paper they never registered for. */}
+        {test.mode === "Online" && !registration && <div>🔗 Joining details are sent to registered candidates.</div>}
+        {test.mode === "Online" && registration && !isLinkRevealWindow(test) && test.status !== "In Progress" && (
+          <div>🔗 Meeting link will appear here 1 day before the test.</div>
+        )}
+        {test.mode === "Online" && registration && (isLinkRevealWindow(test) || test.status === "In Progress") && (
           test.meetingLink ? (
             <div>🔗 <a href={test.meetingLink} target="_blank" rel="noreferrer" className="text-primary hover:underline font-medium">Join meeting ↗</a></div>
           ) : (

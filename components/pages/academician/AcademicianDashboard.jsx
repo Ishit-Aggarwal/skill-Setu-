@@ -97,9 +97,18 @@ export default function AcademicianDashboard() {
   const openMilestones = useMemo(() => {
     if (!ready) return [];
     const accepted = SEED_COLLABS.filter((c) => c.status === "Active" || getCollabResponse(c.id) === "Accepted");
+    const seen = new Set();
     return accepted
       .flatMap((c) => listCollabMilestones(c.id).map((m) => ({ ...m, collabTitle: c.title })))
-      .filter((m) => !m.done)
+      .filter((m) => {
+        if (m.done) return false;
+        // Belt and braces alongside the dedupe in the store: this list showed
+        // the same milestone four times, on two different due dates.
+        const key = `${m.collabId}::${(m.title || "").trim().toLowerCase()}`;
+        if (seen.has(key)) return false;
+        seen.add(key);
+        return true;
+      })
       .sort((a, b) => (a.due || "").localeCompare(b.due || ""))
       .slice(0, 4);
   }, [ready]);
@@ -182,8 +191,8 @@ export default function AcademicianDashboard() {
 
         <StatGrid
           stats={[
-            { label: "My advisees", value: String(advisees.length), icon: "🎓", hint: `${departmentCount} in my department` },
-            { label: "Advisees placed", value: String(placedAdvisees), icon: "✅", hint: advisees.length ? `${Math.round((placedAdvisees / advisees.length) * 100)}% of my students` : "—" },
+            { label: "My mentees", value: String(advisees.length), icon: "🎓", hint: `${departmentCount} in my department` },
+            { label: "Mentees placed", value: String(placedAdvisees), icon: "✅", hint: advisees.length ? `${Math.round((placedAdvisees / advisees.length) * 100)}% of my students` : "—" },
             { label: "Programmes hosted", value: String(myPrograms.length), icon: "📘", hint: `${seatAlerts.reduce((s, p) => s + p.confirmed, 0)} registrations` },
             { label: "Active collaborations", value: String(listings.length + SEED_COLLABS.filter((c) => getCollabResponse(c.id) === "Accepted" || c.status === "Active").length), icon: "🔬" },
             { label: "Research outputs", value: String(outputs.length), icon: "📄", hint: outputs.filter((o) => o.type === "Patent").length ? `${outputs.filter((o) => o.type === "Patent").length} patent(s)` : "Papers & patents" },
@@ -225,7 +234,7 @@ export default function AcademicianDashboard() {
           <Card>
             <Section
               title="Where my students are weakest"
-              description={advisees.length ? "Across your advisees." : "Across your department cohort."}
+              description={advisees.length ? "Across your mentees." : "Across your department cohort."}
               actions={<button onClick={() => navigate("academician-alignment")} className="text-xs text-primary font-medium hover:underline">Details →</button>}
             >
               {weakAreas.length === 0 ? (
@@ -251,12 +260,12 @@ export default function AcademicianDashboard() {
         <div className="grid lg:grid-cols-2 gap-5">
           <Card>
             <Section
-              title="My advisees"
+              title="My mentees"
               actions={<button onClick={() => navigate("academician-students")} className="text-xs text-primary font-medium hover:underline">Manage →</button>}
             >
               {advisees.length === 0 ? (
-                <EmptyState icon="🎓" title="No advisees assigned yet" action={<Button size="sm" onClick={() => navigate("academician-students")}>Assign students</Button>}>
-                  Assign students from your department as advisees to track them here.
+                <EmptyState icon="🎓" title="No mentees assigned yet" action={<Button size="sm" onClick={() => navigate("academician-students")}>Assign students</Button>}>
+                  Assign students from your department as mentees to track them here.
                 </EmptyState>
               ) : (
                 <div className="flex flex-col sm:flex-row gap-5">

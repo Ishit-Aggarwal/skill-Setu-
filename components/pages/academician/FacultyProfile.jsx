@@ -5,7 +5,7 @@ import DashboardLayout from "../../DashboardLayout";
 import { useAuth } from "../../../lib/auth";
 import { Avatar, Badge, Button, Card, Field, Flash, Modal, PageHeader, ProgressRing, Section, Select, StatGrid, TextArea, TextInput, useFlash } from "../../ui/Kit";
 import { COLLAB_EXPERTISE, DEPARTMENTS } from "../../../lib/domains";
-import { addResearchOutput, listAdvisees, listCollabListingsByOwner, listPrograms, listResearchOutputs, removeResearchOutput, updateResearchOutput } from "../../../lib/store";
+import { addResearchOutput, listAdvisees, listCollabListingsByOwner, listCredentialsForStudent, listPrograms, listResearchOutputs, removeResearchOutput, updateResearchOutput } from "../../../lib/store";
 import { hasFile, openStoredFile, readFileAsDataUrl } from "../../../lib/files";
 import TagInput from "../../TagInput";
 import { api } from "../../../convex/_generated/api";
@@ -78,6 +78,7 @@ export default function FacultyProfile() {
   const outputs = useMemo(() => (ready && user ? listResearchOutputs(user.id) : []), [user, ready, pubVersion]);
   const listings = useMemo(() => (ready && user ? listCollabListingsByOwner(user.id) : []), [user, ready]);
   const advisees = useMemo(() => (ready && user ? listAdvisees(user.id) : []), [user, ready]);
+  const credentials = useMemo(() => (ready && user ? listCredentialsForStudent(user.id) : []), [user, ready]);
   const programs = useMemo(() => (ready && user ? listPrograms().filter((p) => p.ownerId === user.id) : []), [user, ready]);
 
   const set = (k, v) => setForm((f) => ({ ...f, [k]: v }));
@@ -132,12 +133,42 @@ export default function FacultyProfile() {
                 stats={[
                   { label: "Publications & patents", value: String(outputs.length), icon: "📄", hint: `${outputs.filter((o) => o.type === "Patent").length} patent(s)` },
                   { label: "Ongoing projects", value: String(listings.length), icon: "🔬" },
-                  { label: "Advisees mentored", value: String(advisees.length), icon: "🎓", hint: `${programs.length} programme(s) hosted` },
+                  { label: "Mentees mentored", value: String(advisees.length), icon: "🎓", hint: `${programs.length} programme(s) hosted` },
                 ]}
               />
             </div>
           </div>
         </Card>
+
+        {/* Certificates issued to this account — an FDP a faculty member
+            attended, for instance. They are the issuer's record, not the
+            holder's, so they are shown and never edited here. */}
+        {credentials.length > 0 && (
+          <Card>
+            <Section title="Certificates awarded to me" description="Verifiable credentials issued by programme hosts and partner organisations.">
+              <div className="space-y-2">
+                {credentials.map((c) => (
+                  <a
+                    key={c.id}
+                    href={`/certificate/${c.id}`}
+                    target="_blank"
+                    rel="noreferrer"
+                    className="flex items-center gap-3 border border-border rounded-xl px-4 py-3 hover:border-primary/40 transition-colors"
+                  >
+                    <span className="text-lg">🏅</span>
+                    <div className="min-w-0 flex-1">
+                      <div className="text-sm font-medium text-foreground truncate">{c.title}</div>
+                      <div className="text-[11px] text-muted-foreground truncate">
+                        {c.issuer} · {c.certificateNo}
+                      </div>
+                    </div>
+                    <Badge tone="green">{c.kind}</Badge>
+                  </a>
+                ))}
+              </div>
+            </Section>
+          </Card>
+        )}
 
         <form onSubmit={submit} className="space-y-5">
           <Card>

@@ -10,7 +10,6 @@ import { useTheme } from "../lib/preferences";
 import {
   listApplicationsForStudent,
   listSavedInternships,
-  listSavedMentorships,
   listStudentNotifications,
 } from "../lib/store";
 import { subscribeToMutations } from "../lib/sync";
@@ -116,7 +115,10 @@ const NAV = {
     { section: "My activity", label: "Applied Internships", short: "Applied", page: "applied-internships", icon: <IconSend /> },
     { label: "Saved Internships", short: "Saved", page: "saved-internships", icon: <IconBookmark /> },
     { label: "Applied Mentorships", short: "Sessions", page: "applied-mentorships", icon: <IconHandshake /> },
-    { label: "Saved Mentorships", short: "Saved", page: "saved-mentorships", icon: <IconBookmark /> },
+    /* No "Saved Mentorships": bookmarking a mentor's slot was an action with
+       no consequence for either side, so the way to keep a mentor is to book
+       them or request mentorship. Saved *internships* stay — a posting is
+       still there tomorrow, a 3pm slot is not. */
     { label: "Notifications", short: "Inbox", page: "notifications", icon: <IconInbox /> },
 
     { section: "My profile", label: "My Portfolio", short: "Profile", page: "student-portfolio", icon: <IconUser /> },
@@ -203,14 +205,13 @@ function useNavBadges(user, role) {
       setBadges({
         "applied-internships": listApplicationsForStudent(user.id).filter((a) => !["Rejected", "Withdrawn"].includes(a.status)).length,
         "saved-internships": listSavedInternships(user.id).length,
-        "saved-mentorships": listSavedMentorships(user.id).length,
         notifications: listStudentNotifications(user.id).filter((n) => !n.read).length,
       });
     }
 
     recount();
     return subscribeToMutations(
-      ["applications", "savedInternships", "savedMentorships", "studentNotifications"],
+      ["applications", "savedInternships", "studentNotifications"],
       recount
     );
   }, [user?.id, role]);

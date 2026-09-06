@@ -75,7 +75,7 @@ export const STUDENT_EXPORT_COLUMNS = [
   { label: "Skill Score", value: (r) => (r.score == null ? "" : r.score) },
   { label: "Applications", value: (r) => r.applications },
   { label: "Placement Status", value: (r) => r.status },
-  { label: "My advisee", value: (r) => (r.isAdvisee ? "Yes" : "No") },
+  { label: "My mentee", value: (r) => (r.isAdvisee ? "Yes" : "No") },
   { label: "Flag", value: (r) => r.flag },
   { label: "Mentor note", value: (r) => r.note },
 ];

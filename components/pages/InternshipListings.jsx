@@ -28,7 +28,8 @@ import {
   TERMINAL_STAGES,
 } from "../../lib/store";
 import { checkEligibility, computeMatch, computeSkillGap, daysUntil, formatDate } from "../../lib/match";
-import { STIPEND_MODES, formatStipend, monthlyEquivalent, parseDurationMonths, parseLegacyStipend } from "../../lib/money";
+import { STIPEND_MODES, formatStipend, isPaidPosting, monthlyEquivalent, parseDurationMonths, parseLegacyStipend } from "../../lib/money";
+import { APPLICATION_LEAD_HOURS, checkLeadTime, earliestDateAfter } from "../../lib/dates";
 
 const typeFilters = ["All", "Remote", "Hybrid", "Onsite"];
 const STAGE_ORDER = PIPELINE_STAGES;
@@ -499,6 +500,10 @@ function StudentView({ user }) {
                   )}
                   <Badge tone={typeTone[intern.type] || "neutral"}>{intern.type}</Badge>
                   <Badge tone="neutral">{intern.domain}</Badge>
+                  {/* Whether a role pays at all is the first thing most
+                      students filter on, so it is stated rather than inferred
+                      from the stipend line further down. */}
+                  <Badge tone={isPaidPosting(intern) ? "green" : "muted"}>{isPaidPosting(intern) ? "Paid" : "Unpaid"}</Badge>
                   {intern.hot && <Badge tone="amber">🔥 Hot</Badge>}
                 </div>
 
@@ -634,6 +639,11 @@ function IndustryView({ user }) {
   }, [postings, applications, search, domainFilter, statusFilter, sortBy]);
 
   function handleSubmit(data) {
+    const deadlineError = checkLeadTime(data.deadline, "23:59", APPLICATION_LEAD_HOURS, "An application deadline");
+    if (deadlineError) {
+      setFlash(`⚠️ ${deadlineError}`);
+      return;
+    }
     const amount = String(data.stipendAmount ?? "").trim();
     const payload = {
       title: data.title,
@@ -755,6 +765,7 @@ function IndustryView({ user }) {
 
                 <div className="flex flex-wrap gap-1 mb-3">
                   <span className="text-[10px] bg-secondary text-secondary-foreground px-2 py-0.5 rounded-full">{p.domain}</span>
+                  <Badge tone={isPaidPosting(p) ? "green" : "muted"}>{isPaidPosting(p) ? "Paid" : "Unpaid"}</Badge>
                   {(p.tags || []).slice(0, 2).map((t) => <span key={t} className="text-[10px] bg-primary/8 text-primary px-2 py-0.5 rounded-full">{t}</span>)}
                 </div>
 
@@ -856,11 +867,23 @@ function PostingModal({ posting, onClose, onSubmit }) {
   const set = (k, v) => setForm((f) => ({ ...f, [k]: v }));
 
   const previewMonths = parseDurationMonths(form.duration);
-  const stipendPreview = formatStipend({
+  const previewPosting = {
     stipendAmount: form.stipendAmount === "" ? null : Number(form.stipendAmount),
     stipendMode: form.stipendMode,
     duration: form.duration,
-  });
+  };
+  const stipendPreview = formatStipend(previewPosting);
+  // 0 is a valid answer, and it means unpaid rather than "not filled in yet".
+  const payingRole = isPaidPosting(previewPosting);
+
+  /* The department picker used to be twenty pills laid out flat — the biggest,
+     busiest control in the dialog, for the field that matters least. It is now
+     collapsed behind a summary of what is actually selected. */
+  const [showDepartments, setShowDepartments] = useState(() => (posting?.eligibleDepartments || []).length > 0);
+  const [departmentQuery, setDepartmentQuery] = useState("");
+  const visibleDepartments = DEPARTMENTS.filter((d) =>
+    d.toLowerCase().includes(departmentQuery.trim().toLowerCase())
+  );
 
   return (
     <Modal
@@ -932,14 +955,28 @@ function PostingModal({ posting, onClose, onSubmit }) {
           </div>
           <p className="text-[11px] text-muted-foreground mt-1.5">
             Students will see: <span className="font-medium text-foreground">{stipendPreview}</span>
+            {payingRole && <span className="font-semibold text-emerald-600"> · tagged Paid</span>}
+            {!payingRole && form.stipendAmount !== "" && <span> — 0 is recorded as an unpaid role.</span>}
             {form.stipendMode === "total" && form.stipendAmount && !previewMonths && (
               <span className="text-amber-600"> — add a duration so this reads as a period, not a bare number.</span>
             )}
           </p>
         </Field>
 
-        <Field label="Application deadline" hint="The posting closes itself once this date passes; you can reopen it manually.">
-          <TextInput type="date" value={form.deadline} onChange={(e) => set("deadline", e.target.value)} />
+        {/* At least two days out. A role that closed the day after it opened
+            was only ever visible to whoever happened to be on the listings
+            that evening, which is the opposite of what a deadline is for. */}
+        <Field
+          label="Application deadline"
+          hint={`At least ${APPLICATION_LEAD_HOURS} hours (2 days) from today. The posting closes itself once this date passes; you can reopen it manually.`}
+        >
+          <TextInput
+            required
+            type="date"
+            min={earliestDateAfter(APPLICATION_LEAD_HOURS)}
+            value={form.deadline}
+            onChange={(e) => set("deadline", e.target.value)}
+          />
         </Field>
 
         <Field label="Required skills" hint="Comma separated — these drive the skill-match score students see.">
@@ -960,21 +997,73 @@ function PostingModal({ posting, onClose, onSubmit }) {
               comma in it. Departments and a score floor express the same intent
               without excluding people by accident. */}
           <Field label="Eligible departments" hint="Leave empty to accept every department — the role stays open to every institution either way.">
-            <div className="flex flex-wrap gap-2">
-              {DEPARTMENTS.map((d) => (
-                <button
-                  key={d}
-                  type="button"
-                  onClick={() =>
-                    set("eligibleDepartments", form.eligibleDepartments.includes(d) ? form.eligibleDepartments.filter((x) => x !== d) : [...form.eligibleDepartments, d])
-                  }
-                  className={`text-[11px] px-2.5 py-1.5 rounded-full border font-medium transition-colors ${
-                    form.eligibleDepartments.includes(d) ? "bg-primary text-white border-transparent" : "bg-card border-border text-muted-foreground"
-                  }`}
-                >
-                  {d}
-                </button>
-              ))}
+            <div className="rounded-xl border border-border">
+              <button
+                type="button"
+                onClick={() => setShowDepartments((v) => !v)}
+                aria-expanded={showDepartments}
+                className="w-full flex items-center justify-between gap-3 px-3.5 py-2.5 text-left"
+              >
+                <span className="text-sm text-foreground truncate">
+                  {form.eligibleDepartments.length === 0
+                    ? "Open to every department"
+                    : `${form.eligibleDepartments.length} department${form.eligibleDepartments.length === 1 ? "" : "s"} selected`}
+                </span>
+                <span className="text-xs text-muted-foreground flex-shrink-0">{showDepartments ? "Done" : "Choose"}</span>
+              </button>
+
+              {form.eligibleDepartments.length > 0 && !showDepartments && (
+                <div className="flex flex-wrap gap-1.5 px-3.5 pb-3">
+                  {form.eligibleDepartments.map((d) => (
+                    <span key={d} className="text-[10px] bg-primary/10 text-primary px-2 py-0.5 rounded-full">{d}</span>
+                  ))}
+                </div>
+              )}
+
+              {showDepartments && (
+                <div className="border-t border-border p-3 space-y-2">
+                  <div className="flex items-center gap-2">
+                    <TextInput
+                      value={departmentQuery}
+                      onChange={(e) => setDepartmentQuery(e.target.value)}
+                      placeholder="Filter departments…"
+                      className="py-1.5 text-xs"
+                    />
+                    {form.eligibleDepartments.length > 0 && (
+                      <button
+                        type="button"
+                        onClick={() => set("eligibleDepartments", [])}
+                        className="text-[11px] text-muted-foreground hover:text-foreground whitespace-nowrap"
+                      >
+                        Clear all
+                      </button>
+                    )}
+                  </div>
+                  <div className="max-h-44 overflow-y-auto grid sm:grid-cols-2 gap-x-3 gap-y-0.5 pr-1">
+                    {visibleDepartments.map((d) => (
+                      <label key={d} className="flex items-center gap-2 py-1 cursor-pointer">
+                        <input
+                          type="checkbox"
+                          checked={form.eligibleDepartments.includes(d)}
+                          onChange={() =>
+                            set(
+                              "eligibleDepartments",
+                              form.eligibleDepartments.includes(d)
+                                ? form.eligibleDepartments.filter((x) => x !== d)
+                                : [...form.eligibleDepartments, d]
+                            )
+                          }
+                          className="w-3.5 h-3.5 accent-primary flex-shrink-0"
+                        />
+                        <span className="text-xs text-muted-foreground truncate">{d}</span>
+                      </label>
+                    ))}
+                    {visibleDepartments.length === 0 && (
+                      <p className="text-xs text-muted-foreground py-2">No department matches that.</p>
+                    )}
+                  </div>
+                </div>
+              )}
             </div>
           </Field>
         </div>

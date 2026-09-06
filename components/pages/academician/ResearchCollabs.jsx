@@ -29,6 +29,7 @@ import {
 } from "../../../lib/store";
 import { subscribeToMutations } from "../../../lib/sync";
 import TagInput from "../../TagInput";
+import { downloadStoredFile } from "../../../lib/files";
 
 const TYPE_TONE = { Industry: "blue", Academic: "purple", Govt: "green" };
 const OUTPUT_TYPES = ["Journal Paper", "Conference Paper", "Book Chapter", "Patent", "Technical Report"];
@@ -492,7 +493,16 @@ function Workspace({ collab, user, onChange }) {
                 <div key={f.id} className="flex items-center gap-3 border border-border rounded-xl px-4 py-2.5 hover:border-primary/30 transition-colors">
                   <IconTile icon="📎" tone="blue" size={32} />
                   <div className="min-w-0 flex-1">
-                    <a href={f.dataUrl} download={f.name} className="text-sm text-primary hover:underline truncate block">{f.name}</a>
+                    {/* Opened through lib/files: a data: URL in an anchor is
+                        refused as a top-level navigation, so the download
+                        looked like it worked and produced a broken file. */}
+                    <button
+                      type="button"
+                      onClick={() => downloadStoredFile({ dataUrl: f.dataUrl, fileName: f.name })}
+                      className="text-sm text-primary hover:underline truncate block text-left w-full"
+                    >
+                      {f.name}
+                    </button>
                     <div className="text-[10px] text-muted-foreground">
                       {(f.size / 1024).toFixed(0)} KB · {f.uploadedBy} · {relativeTime(f.uploadedAt)}
                     </div>

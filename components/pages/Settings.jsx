@@ -120,7 +120,7 @@ const NOTIFICATION_SETTINGS = {
   ],
   academician: [
     { key: "notifyMentorship", label: "Mentorship bookings", description: "When a student books or cancels one of your office-hours slots." },
-    { key: "notifyApplicationUpdates", label: "Advisee progress", description: "When one of your advisees is shortlisted, interviewed or hired." },
+    { key: "notifyApplicationUpdates", label: "Mentee progress", description: "When one of your mentees is shortlisted, interviewed or hired." },
     { key: "notifyAnnouncements", label: "Campus notices", description: "Announcements posted to your institution's notice board." },
   ],
   institution: [

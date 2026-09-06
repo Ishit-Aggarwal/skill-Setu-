@@ -20,6 +20,7 @@ import DashboardLayout from "../DashboardLayout";
 import ApplyConfirmModal from "../ApplyConfirmModal";
 import { useAuth } from "../../lib/auth";
 import { useNav } from "../../lib/nav";
+import { downloadStoredFile, hasFile } from "../../lib/files";
 import {
   getAssessment,
   getPortfolio,
@@ -1032,15 +1033,21 @@ export default function StudentDashboard() {
                           <span className="text-sm">📄</span>
                           <span className="text-[11px] font-medium text-foreground truncate">{a.attachment.name}</span>
                         </div>
-                        <a
-                          href={a.attachment.dataUrl || a.attachment.url || "#"}
-                          download={a.attachment.name}
-                          target="_blank"
-                          rel="noreferrer"
-                          className="text-[11px] font-semibold text-primary hover:underline flex-shrink-0"
-                        >
-                          PDF ↓
-                        </a>
+                        {/* Saved through lib/files. A data: URL in an
+                            <a href download> is refused as a top-level
+                            navigation, so what actually saved was the HTML of
+                            this page under a .pdf name. */}
+                        {hasFile(a.attachment) ? (
+                          <button
+                            type="button"
+                            onClick={() => downloadStoredFile({ dataUrl: a.attachment.dataUrl, url: a.attachment.url, fileName: a.attachment.name })}
+                            className="text-[11px] font-semibold text-primary hover:underline flex-shrink-0"
+                          >
+                            PDF ↓
+                          </button>
+                        ) : (
+                          <span className="text-[11px] text-muted-foreground flex-shrink-0">Not uploaded</span>
+                        )}
                       </div>
                     )}
                   </Card>
@@ -1101,15 +1108,17 @@ export default function StudentDashboard() {
                       <span className="font-medium text-foreground truncate">{a.attachment.name}</span>
                       {a.attachment.size && <span className="text-muted-foreground">({a.attachment.size})</span>}
                     </div>
-                    <a
-                      href={a.attachment.dataUrl || a.attachment.url || "#"}
-                      download={a.attachment.name}
-                      target="_blank"
-                      rel="noreferrer"
-                      className="px-2.5 py-1 rounded-lg bg-primary text-white text-xs font-medium hover:bg-accent transition-colors flex-shrink-0"
-                    >
-                      Download PDF
-                    </a>
+                    {hasFile(a.attachment) ? (
+                      <button
+                        type="button"
+                        onClick={() => downloadStoredFile({ dataUrl: a.attachment.dataUrl, url: a.attachment.url, fileName: a.attachment.name })}
+                        className="px-2.5 py-1 rounded-lg bg-primary text-white text-xs font-medium hover:bg-accent transition-colors flex-shrink-0"
+                      >
+                        Download PDF
+                      </button>
+                    ) : (
+                      <span className="text-xs text-muted-foreground flex-shrink-0">Not uploaded</span>
+                    )}
                   </div>
                 )}
               </div>

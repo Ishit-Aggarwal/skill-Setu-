@@ -20,11 +20,14 @@ import {
   getRegistration,
   hasCredentialForTest,
   checkAndRecordMissedTests,
-  listUsersByRole,
   rescheduleSkillTest,
+  hasTestEnded,
+  getTestEndTimestamp,
 } from "../../lib/store";
+import { TEST_LEAD_HOURS, checkLeadTime, earliestDateAfter } from "../../lib/dates";
 import IssueCredentialModal from "../IssueCredentialModal";
 import RecordResultsModal from "../skilltests/RecordResultsModal";
+import QuestionBuilder, { blankQuestion, normaliseQuestions, totalMarksOf, validateQuestions } from "../skilltests/QuestionBuilder";
 import { Badge, Button, Card, EmptyState, Field, Flash, Modal, PageHeader, Select, Tabs, TextArea, TextInput, useFlash } from "../ui/Kit";
 
 function StudentView({ user }) {
@@ -129,6 +132,7 @@ const EMPTY_TEST_FORM = {
   reportingTime: "",
   documentsRequired: "",
   meetingLink: "",
+  questions: [blankQuestion()],
 };
 
 function HostView({ user }) {
@@ -153,45 +157,29 @@ function HostView({ user }) {
 
   /**
    * Registrants for one test, joined to their attempt and to any certificate
-   * they already hold. If test has no registrations yet or in global mode,
-   * falls back to all enrolled students with their completed scores so the host
-   * can always issue certificates with pre-filled scores.
+   * they already hold.
+   *
+   * Only people who actually registered. This used to fall back to every
+   * student on the platform whenever a test had no registrations, so the
+   * certificate dialog offered to certify seventy strangers — including people
+   * with no score — for a test none of them had sat.
    */
   function recipientsFor(testId) {
-    if (testId && testId !== "global") {
-      const specific = registrations
-        .filter((r) => r.testId === testId)
-        .map((r) => {
-          const student = findOne("users", (u) => u.id === r.userId);
-          const attempt = getAttemptForTest(r.userId, testId);
-          return {
-            id: r.userId,
-            name: student?.name || r.name || "Student",
-            email: student?.email || r.email || "",
-            subtitle: student?.institution || "",
-            score: attempt && !attempt.missed ? attempt.score : (r.score != null ? r.score : null),
-            attended: Boolean(r.attended),
-            alreadyIssued: hasCredentialForTest(r.userId, testId),
-          };
-        });
-      if (specific.length > 0) return specific;
-    }
-
-    const students = listUsersByRole("student");
-    return students.map((s) => {
-      const specificAttempt = testId && testId !== "global" ? getAttemptForTest(s.id, testId) : null;
-      const sAttempts = getAttemptsForStudent(s.id);
-      const score = specificAttempt?.score ?? (sAttempts.length > 0 ? sAttempts[0].score : (s.assessment?.score ?? null));
-      return {
-        id: s.id,
-        name: s.name,
-        email: s.email,
-        subtitle: s.institution || s.degree || "Student",
-        score: score,
-        attended: true,
-        alreadyIssued: testId && testId !== "global" ? hasCredentialForTest(s.id, testId) : false,
-      };
-    });
+    return registrations
+      .filter((r) => r.testId === testId)
+      .map((r) => {
+        const student = findOne("users", (u) => u.id === r.userId);
+        const attempt = getAttemptForTest(r.userId, testId);
+        return {
+          id: r.userId,
+          name: student?.name || r.name || "Student",
+          email: student?.email || r.email || "",
+          subtitle: student?.institution || "",
+          score: attempt && !attempt.missed ? attempt.score : (r.score != null ? r.score : null),
+          attended: Boolean(r.attended),
+          alreadyIssued: hasCredentialForTest(r.userId, testId),
+        };
+      });
   }
 
   function registrantStats(testId) {
@@ -209,8 +197,18 @@ function HostView({ user }) {
     e.preventDefault();
     setFormError(null);
 
+    /* Three days' notice, checked here as well as in the store so the host is
+       told before they lose the rest of the form. */
+    const leadError = checkLeadTime(form.scheduledAt, form.scheduledTime, TEST_LEAD_HOURS, "A skill test");
+    if (leadError) return setFormError(leadError);
+
+    if (form.mode === "Online") {
+      const paperError = validateQuestions(form.questions);
+      if (paperError) return setFormError(paperError);
+    }
+
     if (form.mode === "Online" && form.meetingLink.trim()) {
-      const scheduled = form.scheduledAt ? new Date(`${form.scheduledAt}T${form.scheduledTime || "00:00"}`).getTime() : null;
+      const scheduled = new Date(`${form.scheduledAt}T${form.scheduledTime || "00:00"}`).getTime();
       if (scheduled && scheduled - Date.now() < 24 * 60 * 60 * 1000) {
         setFormError("The meeting link must be set at least 24 hours before the test's scheduled start time. Leave it blank and add it later if the test is sooner than that.");
         return;
@@ -218,23 +216,33 @@ function HostView({ user }) {
     }
 
     const hostName = user.companyName || user.institution || user.name;
-    createSkillTest(user.id, hostName, {
-      title: form.title,
-      domain: form.mode === "Online" ? form.domain : form.domain || "General",
-      mode: form.mode,
-      duration: form.duration,
-      price: Number(form.price) || 0,
-      description: form.description,
-      prerequisites: form.prerequisites,
-      certification: form.certification,
-      rules: form.rules.split("\n").map((r) => r.trim()).filter(Boolean),
-      scheduledAt: form.scheduledAt || undefined,
-      scheduledTime: form.mode === "Online" ? form.scheduledTime : undefined,
-      venue: form.mode === "Offline" ? form.venue : undefined,
-      reportingTime: form.mode === "Offline" ? form.reportingTime : undefined,
-      documentsRequired: form.mode === "Offline" ? form.documentsRequired.split(",").map((d) => d.trim()).filter(Boolean) : undefined,
-      meetingLink: form.mode === "Online" ? form.meetingLink.trim() || undefined : undefined,
-    });
+    const questions = form.mode === "Online" ? normaliseQuestions(form.questions) : [];
+    try {
+      createSkillTest(user.id, hostName, {
+        title: form.title,
+        domain: form.mode === "Online" ? form.domain : form.domain || "General",
+        mode: form.mode,
+        duration: form.duration,
+        price: Number(form.price) || 0,
+        description: form.description,
+        prerequisites: form.prerequisites,
+        certification: form.certification,
+        rules: form.rules.split("\n").map((r) => r.trim()).filter(Boolean),
+        scheduledAt: form.scheduledAt,
+        // Both modes carry a real start time now: an on-site test whose only
+        // time was a free-text "9:30 AM" could not be ordered, compared or
+        // counted down to, and rendered on a student's card as "Flexible".
+        scheduledTime: form.scheduledTime,
+        venue: form.mode === "Offline" ? form.venue : undefined,
+        reportingTime: form.mode === "Offline" ? form.reportingTime : undefined,
+        documentsRequired: form.mode === "Offline" ? form.documentsRequired.split(",").map((d) => d.trim()).filter(Boolean) : undefined,
+        meetingLink: form.mode === "Online" ? form.meetingLink.trim() || undefined : undefined,
+        questions: questions.length ? questions : undefined,
+        totalMarks: questions.length ? totalMarksOf(questions) : undefined,
+      });
+    } catch (err) {
+      return setFormError(err.message);
+    }
     setForm(EMPTY_TEST_FORM);
     setShowModal(false);
     refresh();
@@ -279,6 +287,10 @@ function HostView({ user }) {
   function handleRescheduleSubmit(e) {
     e.preventDefault();
     if (!rescheduleModalTest) return;
+    setRescheduleError(null);
+
+    const leadError = checkLeadTime(rescheduleForm.scheduledAt, rescheduleForm.scheduledTime, TEST_LEAD_HOURS, "A rescheduled test");
+    if (leadError) return setRescheduleError(leadError);
 
     if (rescheduleModalTest.mode === "Offline") {
       const scheduledTimestamp = rescheduleModalTest.scheduledAt
@@ -293,7 +305,7 @@ function HostView({ user }) {
     try {
       rescheduleSkillTest(rescheduleModalTest.id, {
         scheduledAt: rescheduleForm.scheduledAt,
-        scheduledTime: rescheduleModalTest.mode === "Online" ? rescheduleForm.scheduledTime : undefined,
+        scheduledTime: rescheduleForm.scheduledTime,
         reportingTime: rescheduleModalTest.mode === "Offline" ? rescheduleForm.reportingTime : undefined,
       });
       setRescheduleModalTest(null);
@@ -310,23 +322,12 @@ function HostView({ user }) {
         eyebrow="Test Hosting"
         title="Your Skill Tests"
         subtitle={`${tests.length} test${tests.length === 1 ? "" : "s"} hosted`}
-        actions={
-          <div className="flex items-center gap-2">
-            <Button
-              variant="outline"
-              onClick={() =>
-                setCertifyTest({
-                  id: "global",
-                  title: "Skill Assessment Certificate",
-                  certification: "Skill Assessment Certificate",
-                })
-              }
-            >
-              🏅 Issue Certificates
-            </Button>
-            <Button onClick={() => setShowModal(true)}>+ Host a Skill Test</Button>
-          </div>
-        }
+        /* The blanket "Issue Certificates" button that used to sit here issued
+           a certificate to every student on the platform, for no test in
+           particular — which is exactly the route around "a certificate only
+           exists once a test has been sat". Certificates are issued per test,
+           from the test's own card, after it ends. */
+        actions={<Button onClick={() => setShowModal(true)}>+ Host a Skill Test</Button>}
       />
 
       {tests.length === 0 ? (
@@ -405,12 +406,24 @@ function HostView({ user }) {
                     ✍️ Record results
                   </button>
                 )}
-                <button
-                  onClick={() => setCertifyTest(test)}
-                  className="w-full text-xs font-medium py-2 rounded-xl border border-border text-muted-foreground hover:border-primary/40 hover:text-primary transition-all duration-150"
-                >
-                  🏅 Issue certificates
-                </button>
+                {/* A certificate records something that happened. Until the
+                    sitting is over there is nothing to certify, so the button
+                    says when it unlocks rather than issuing early. */}
+                {hasTestEnded(test) ? (
+                  <button
+                    onClick={() => setCertifyTest(test)}
+                    className="w-full text-xs font-medium py-2 rounded-xl border border-border text-muted-foreground hover:border-primary/40 hover:text-primary transition-all duration-150"
+                  >
+                    🏅 Issue certificates
+                  </button>
+                ) : (
+                  <div className="text-[11px] text-muted-foreground bg-secondary/60 border border-border rounded-lg p-2 text-center leading-relaxed">
+                    🏅 Certificates unlock when this test finishes
+                    {getTestEndTimestamp(test)
+                      ? ` — ${new Date(getTestEndTimestamp(test)).toLocaleString("en-IN", { day: "numeric", month: "short", hour: "numeric", minute: "2-digit" })}`
+                      : ""}
+                  </div>
+                )}
               </div>
             </Card>
           ))}
@@ -470,28 +483,28 @@ function HostView({ user }) {
               ) : null;
             })()}
 
-            <Field label="New Test Date">
+            <Field label="New Test Date" hint={`At least ${TEST_LEAD_HOURS} hours from now, so registered students get notice.`}>
               <TextInput
                 required
                 type="date"
+                min={earliestDateAfter(TEST_LEAD_HOURS)}
                 value={rescheduleForm.scheduledAt}
                 onChange={(e) => setRescheduleForm((f) => ({ ...f, scheduledAt: e.target.value }))}
               />
             </Field>
 
-            {rescheduleModalTest.mode === "Online" ? (
-              <Field label="New Test Time">
+            <Field label="New Test Time">
+              <TextInput
+                required
+                type="time"
+                value={rescheduleForm.scheduledTime}
+                onChange={(e) => setRescheduleForm((f) => ({ ...f, scheduledTime: e.target.value }))}
+              />
+            </Field>
+
+            {rescheduleModalTest.mode === "Offline" && (
+              <Field label="New Reporting Time" hint="What candidates are told to arrive by.">
                 <TextInput
-                  required
-                  type="time"
-                  value={rescheduleForm.scheduledTime}
-                  onChange={(e) => setRescheduleForm((f) => ({ ...f, scheduledTime: e.target.value }))}
-                />
-              </Field>
-            ) : (
-              <Field label="New Reporting Time">
-                <TextInput
-                  required
                   value={rescheduleForm.reportingTime}
                   onChange={(e) => setRescheduleForm((f) => ({ ...f, reportingTime: e.target.value }))}
                   placeholder="09:30 AM"
@@ -550,22 +563,45 @@ function HostView({ user }) {
               <TextInput type="number" min="0" value={form.price} onChange={(e) => setForm((f) => ({ ...f, price: e.target.value }))} />
             </Field>
 
+            {/* Date and time are mandatory whatever the mode. An undated test
+                showed to candidates as "Flexible", which nobody can attend. */}
+            <div className="grid grid-cols-2 gap-3">
+              <Field label="Test Date" hint={`At least ${TEST_LEAD_HOURS} hours (3 days) from today.`}>
+                <TextInput
+                  required
+                  type="date"
+                  min={earliestDateAfter(TEST_LEAD_HOURS)}
+                  value={form.scheduledAt}
+                  onChange={(e) => setForm((f) => ({ ...f, scheduledAt: e.target.value }))}
+                />
+              </Field>
+              <Field label="Start Time">
+                <TextInput required type="time" value={form.scheduledTime} onChange={(e) => setForm((f) => ({ ...f, scheduledTime: e.target.value }))} />
+              </Field>
+            </div>
+
             {form.mode === "Online" ? (
               <>
-                <Field label="Skill Domain" hint="Students take a ready-made short quiz for this domain.">
+                <Field label="Skill Domain" hint="Which of the student's skill averages this test's mark counts towards.">
                   <Select value={form.domain} onChange={(e) => setForm((f) => ({ ...f, domain: e.target.value }))}>
                     {SKILL_DOMAINS.map((d) => <option key={d}>{d}</option>)}
                   </Select>
                 </Field>
-                <div className="grid grid-cols-2 gap-3">
-                  <Field label="Test Date">
-                    <TextInput required type="date" value={form.scheduledAt} onChange={(e) => setForm((f) => ({ ...f, scheduledAt: e.target.value }))} />
-                  </Field>
-                  <Field label="Test Time">
-                    <TextInput required type="time" value={form.scheduledTime} onChange={(e) => setForm((f) => ({ ...f, scheduledTime: e.target.value }))} />
-                  </Field>
+
+                <div className="border-t border-border pt-4">
+                  <div className="flex items-center justify-between gap-3 mb-1">
+                    <div className="text-xs font-semibold text-primary uppercase tracking-wider">Question paper</div>
+                    <span className="text-[11px] text-muted-foreground">
+                      Out of <span className="font-semibold text-foreground">{totalMarksOf(form.questions)}</span> marks
+                    </span>
+                  </div>
+                  <p className="text-[11px] text-muted-foreground mb-3">
+                    Write your own questions and mark the correct option. This is the paper candidates actually sit.
+                  </p>
+                  <QuestionBuilder questions={form.questions} onChange={(questions) => setForm((f) => ({ ...f, questions }))} />
                 </div>
-                <Field label="Meeting Link (optional — add now or later)" hint="Must be set at least 24 hours before the scheduled start.">
+
+                <Field label="Meeting Link (optional — add now or later)" hint="Must be set at least 24 hours before the scheduled start. Only registered candidates ever see it.">
                   <TextInput value={form.meetingLink} onChange={(e) => setForm((f) => ({ ...f, meetingLink: e.target.value }))} placeholder="https://meet.google.com/…" />
                 </Field>
               </>
@@ -574,14 +610,9 @@ function HostView({ user }) {
                 <Field label="Skill / Focus Area">
                   <TextInput value={form.domain} onChange={(e) => setForm((f) => ({ ...f, domain: e.target.value }))} placeholder="e.g. Case Study & Group Discussion" />
                 </Field>
-                <div className="grid grid-cols-2 gap-3">
-                  <Field label="Date">
-                    <TextInput required type="date" value={form.scheduledAt} onChange={(e) => setForm((f) => ({ ...f, scheduledAt: e.target.value }))} />
-                  </Field>
-                  <Field label="Reporting Time">
-                    <TextInput value={form.reportingTime} onChange={(e) => setForm((f) => ({ ...f, reportingTime: e.target.value }))} placeholder="9:30 AM" />
-                  </Field>
-                </div>
+                <Field label="Reporting Time" hint="What candidates are told to arrive by, if it differs from the start.">
+                  <TextInput value={form.reportingTime} onChange={(e) => setForm((f) => ({ ...f, reportingTime: e.target.value }))} placeholder="9:30 AM" />
+                </Field>
                 <Field label="Venue">
                   <TextInput value={form.venue} onChange={(e) => setForm((f) => ({ ...f, venue: e.target.value }))} placeholder="Campus / office address" />
                 </Field>

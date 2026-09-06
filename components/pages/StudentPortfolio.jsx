@@ -14,6 +14,7 @@ import {
 import { subscribeToMutations } from "../../lib/sync";
 import { profileStrength } from "../../lib/profile";
 import { formatDate } from "../../lib/match";
+import { isPlausibleDate, todayIso } from "../../lib/dates";
 import { useNav } from "../../lib/nav";
 import { Badge, Button, Card, EmptyState, Field, Modal, ProgressRing, Section, Select, StatGrid, Tabs, TextArea, TextInput } from "../ui/Kit";
 import TagInput from "../TagInput";
@@ -25,6 +26,100 @@ const levelTone = {
   Intermediate: "amber",
   Beginner: "muted",
 };
+
+/* ---------------- Project dates ----------------
+
+   A project used to carry a single free-text "Year", which could not say when
+   the work ran, could not say it was still running, and accepted anything
+   typed into it. It now has a start date, a finish date, and a "still working
+   on this" switch that stands in for the finish date while the work is live.
+
+   Old dates are entirely legitimate — someone may be listing work from 2013 —
+   so the past is wide open. What is rejected is a date that cannot be real:
+   a five-digit year, a finish before the start, or work finished in a year
+   that has not happened yet. */
+
+const EMPTY_PROJECT_FORM = {
+  title: "",
+  description: "",
+  tags: "",
+  link: "",
+  startDate: "",
+  endDate: "",
+  ongoing: false,
+  year: "",
+};
+
+function validateProjectDates(form) {
+  if (form.startDate && !isPlausibleDate(form.startDate, { allowFuture: false })) {
+    return "That start date isn't a real date. Past dates are fine — a project from 2013 is welcome — but check the year.";
+  }
+  if (form.ongoing) return null;
+  if (form.endDate) {
+    if (!isPlausibleDate(form.endDate, { allowFuture: false })) {
+      return "That finish date isn't a real date. If the project isn't finished yet, tick “I'm still working on this”.";
+    }
+    if (form.startDate && form.endDate < form.startDate) {
+      return "The finish date can't be before the start date.";
+    }
+  }
+  return null;
+}
+
+/** The single year older cards and the résumé builder still read. */
+function projectYear(project) {
+  const iso = project?.endDate || project?.startDate;
+  if (iso) return String(iso).slice(0, 4);
+  return project?.year || "";
+}
+
+/** "Mar 2024 – Present", "Mar 2024 – Aug 2024", or just the year. */
+function projectPeriod(project) {
+  const start = project?.startDate ? formatDate(project.startDate) : "";
+  if (project?.ongoing) return start ? `${start} – Present` : "In progress";
+  const end = project?.endDate ? formatDate(project.endDate) : "";
+  if (start && end) return `${start} – ${end}`;
+  return start || end || project?.year || "";
+}
+
+/** The start/finish/ongoing group, shared by the add form and the edit dialog. */
+function ProjectDateFields({ value, onChange }) {
+  const today = todayIso();
+  return (
+    <>
+      <label className="flex items-center gap-2 text-xs text-foreground cursor-pointer">
+        <input
+          type="checkbox"
+          checked={Boolean(value.ongoing)}
+          onChange={(e) => onChange({ ongoing: e.target.checked, ...(e.target.checked ? { endDate: "" } : {}) })}
+          className="w-3.5 h-3.5 accent-primary"
+        />
+        I&apos;m still working on this
+      </label>
+      <div className="grid sm:grid-cols-2 gap-3">
+        <Field label="Started">
+          <TextInput
+            type="date"
+            max={today}
+            value={value.startDate || ""}
+            onChange={(e) => onChange({ startDate: e.target.value })}
+          />
+        </Field>
+        {!value.ongoing && (
+          <Field label="Finished">
+            <TextInput
+              type="date"
+              min={value.startDate || undefined}
+              max={today}
+              value={value.endDate || ""}
+              onChange={(e) => onChange({ endDate: e.target.value })}
+            />
+          </Field>
+        )}
+      </div>
+    </>
+  );
+}
 
 const SKILL_LEVELS = ["Beginner", "Intermediate", "Proficient", "Advanced"];
 
@@ -170,7 +265,8 @@ export default function StudentPortfolio() {
   const [skillForm, setSkillForm] = useState({ category: DEFAULT_SKILL_CATEGORIES[0], customCategory: "", name: "", level: "Proficient" });
   const [certForm, setCertForm] = useState({ name: "", issuer: "", year: "", score: "", credentialUrl: "" });
   const [certFile, setCertFile] = useState(null);
-  const [projectForm, setProjectForm] = useState({ title: "", description: "", tags: "", link: "", year: "" });
+  const [projectForm, setProjectForm] = useState(EMPTY_PROJECT_FORM);
+  const [projectError, setProjectError] = useState(null);
   const [eduForm, setEduForm] = useState({ degree: "", institution: "", startYear: "", endYear: "", score: "", pursuing: true });
   const [eduFile, setEduFile] = useState(null);
   const [timelineForm, setTimelineForm] = useState({ year: "", title: "", org: "", type: "Internship", detail: "" });
@@ -341,17 +437,23 @@ export default function StudentPortfolio() {
   function addProject(e) {
     e.preventDefault();
     if (!projectForm.title.trim()) return;
+    const dateError = validateProjectDates(projectForm);
+    if (dateError) return setProjectError(dateError);
+    setProjectError(null);
     persist({
       projects: [
         ...(portfolio.projects || []),
         {
           id: newId("proj"),
           ...projectForm,
+          endDate: projectForm.ongoing ? "" : projectForm.endDate,
+          // `year` is what the résumé builder and the older cards read.
+          year: projectYear(projectForm),
           tags: projectForm.tags.split(",").map((t) => t.trim()).filter(Boolean),
         },
       ],
     });
-    setProjectForm({ title: "", description: "", tags: "", link: "", year: "" });
+    setProjectForm(EMPTY_PROJECT_FORM);
     setShowAdd(null);
   }
 
@@ -833,7 +935,8 @@ export default function StudentPortfolio() {
                   <div className="min-w-0 flex-1">
                     <div className="flex flex-wrap items-center gap-2">
                       <span className="text-sm font-semibold text-foreground">{p.title}</span>
-                      {p.year && <Badge tone="muted">{p.year}</Badge>}
+                      {projectPeriod(p) && <Badge tone="muted">{projectPeriod(p)}</Badge>}
+                      {p.ongoing && <Badge tone="green">In progress</Badge>}
                     </div>
                     {p.description && <p className="text-xs text-muted-foreground leading-relaxed mt-1.5">{p.description}</p>}
                     {(p.tags || []).length > 0 && (
@@ -864,20 +967,19 @@ export default function StudentPortfolio() {
                   <Field label="What you built and why">
                     <TextArea rows={3} value={projectForm.description} onChange={(e) => setProjectForm((f) => ({ ...f, description: e.target.value }))} placeholder="One or two lines on the problem, your approach and the outcome." />
                   </Field>
-                  <div className="grid sm:grid-cols-2 gap-3">
-                    <Field label="Skills used" hint="Comma separated.">
-                      <TextInput value={projectForm.tags} onChange={(e) => setProjectForm((f) => ({ ...f, tags: e.target.value }))} placeholder="React, SQL, Data Visualisation" />
-                    </Field>
-                    <Field label="Year">
-                      <TextInput value={projectForm.year} onChange={(e) => setProjectForm((f) => ({ ...f, year: e.target.value }))} placeholder="2026" />
-                    </Field>
-                  </div>
+                  <Field label="Skills used" hint="Comma separated.">
+                    <TextInput value={projectForm.tags} onChange={(e) => setProjectForm((f) => ({ ...f, tags: e.target.value }))} placeholder="React, SQL, Data Visualisation" />
+                  </Field>
+                  <ProjectDateFields value={projectForm} onChange={(patch) => setProjectForm((f) => ({ ...f, ...patch }))} />
                   <Field label="Link" hint="Repository, demo or write-up. Optional.">
                     <TextInput value={projectForm.link} onChange={(e) => setProjectForm((f) => ({ ...f, link: e.target.value }))} placeholder="https://…" />
                   </Field>
+                  {projectError && (
+                    <p className="text-xs text-red-600 bg-red-50 border border-red-200 rounded-xl px-3 py-2">{projectError}</p>
+                  )}
                   <div className="flex gap-2">
                     <Button type="submit" className="flex-1">Add project</Button>
-                    <Button type="button" variant="outline" onClick={() => setShowAdd(null)}>Cancel</Button>
+                    <Button type="button" variant="outline" onClick={() => { setShowAdd(null); setProjectError(null); }}>Cancel</Button>
                   </div>
                 </form>
               </Card>
@@ -1413,7 +1515,14 @@ export default function StudentPortfolio() {
             onSubmit={(e) => {
               e.preventDefault();
               if (!editingProject.data.title?.trim()) return;
-              updateProject(editingProject.id, editingProject.data);
+              const dateError = validateProjectDates(editingProject.data);
+              if (dateError) return setProjectError(dateError);
+              setProjectError(null);
+              updateProject(editingProject.id, {
+                ...editingProject.data,
+                endDate: editingProject.data.ongoing ? "" : editingProject.data.endDate,
+                year: projectYear(editingProject.data),
+              });
             }}
             className="space-y-3"
           >
@@ -1431,20 +1540,19 @@ export default function StudentPortfolio() {
                 onChange={(e) => setEditingProject((prev) => ({ ...prev, data: { ...prev.data, description: e.target.value } }))}
               />
             </Field>
-            <div className="grid sm:grid-cols-2 gap-3">
-              <Field label="Skills used (comma separated)">
-                <TextInput
-                  value={editingProject.data.tags || ""}
-                  onChange={(e) => setEditingProject((prev) => ({ ...prev, data: { ...prev.data, tags: e.target.value } }))}
-                />
-              </Field>
-              <Field label="Year">
-                <TextInput
-                  value={editingProject.data.year || ""}
-                  onChange={(e) => setEditingProject((prev) => ({ ...prev, data: { ...prev.data, year: e.target.value } }))}
-                />
-              </Field>
-            </div>
+            <Field label="Skills used (comma separated)">
+              <TextInput
+                value={editingProject.data.tags || ""}
+                onChange={(e) => setEditingProject((prev) => ({ ...prev, data: { ...prev.data, tags: e.target.value } }))}
+              />
+            </Field>
+            <ProjectDateFields
+              value={editingProject.data}
+              onChange={(patch) => setEditingProject((prev) => ({ ...prev, data: { ...prev.data, ...patch } }))}
+            />
+            {projectError && (
+              <p className="text-xs text-red-600 bg-red-50 border border-red-200 rounded-xl px-3 py-2">{projectError}</p>
+            )}
             <Field label="Link (repository or live demo)">
               <TextInput
                 value={editingProject.data.link || ""}

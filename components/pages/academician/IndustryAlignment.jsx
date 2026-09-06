@@ -43,7 +43,7 @@ export default function IndustryAlignment() {
   // Fall back to a wider ring rather than showing an empty panel.
   const { cohort, scopeLabel } = useMemo(() => {
     const options = {
-      advisees: { list: advisees, label: "your advisees" },
+      advisees: { list: advisees, label: "your mentees" },
       department: { list: department, label: `the ${user?.department || "department"} cohort` },
       institution: { list: students, label: user?.institution || "your institution" },
     };
@@ -107,7 +107,7 @@ export default function IndustryAlignment() {
         <div className="flex flex-wrap items-end gap-3">
           <Field label="Cohort">
             <Select value={scope} onChange={(e) => setScope(e.target.value)} className="w-auto">
-              <option value="advisees">My advisees ({advisees.length})</option>
+              <option value="advisees">My mentees ({advisees.length})</option>
               <option value="department">My department ({department.length})</option>
               <option value="institution">Whole institution ({students.length})</option>
             </Select>

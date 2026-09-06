@@ -1,7 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import { useAuth } from "../lib/auth";
+import { isDemoAccount, useAuth } from "../lib/auth";
 import { DEPARTMENTS } from "../lib/domains";
 import { getPortfolio, savePortfolio } from "../lib/store";
 import { Field, TextInput, TextArea, Select, Button, Tabs, Overlay } from "./ui/Kit";
@@ -437,22 +437,26 @@ export default function EditProfileModal({ onClose }) {
             </div>
           </form>
 
-          {/* Danger Zone: Account Deletion */}
-          <div className="mt-6 pt-5 border-t border-border">
-            <div className="flex items-center justify-between gap-3">
-              <div>
-                <div className="text-xs font-semibold text-red-600 uppercase tracking-wider">Danger Zone</div>
-                <p className="text-xs text-muted-foreground mt-0.5">Permanently delete your account and profile data</p>
+          {/* Danger Zone: Account Deletion. Never in demo mode — the four demo
+              personas are shared by everyone who tries the product, so the
+              account on offer to delete is not the visitor's to delete. */}
+          {!isDemoAccount(user) && (
+            <div className="mt-6 pt-5 border-t border-border">
+              <div className="flex items-center justify-between gap-3">
+                <div>
+                  <div className="text-xs font-semibold text-red-600 uppercase tracking-wider">Danger Zone</div>
+                  <p className="text-xs text-muted-foreground mt-0.5">Permanently delete your account and profile data</p>
+                </div>
+                <button
+                  type="button"
+                  onClick={() => setShowDeleteConfirm(true)}
+                  className="px-3 py-1.5 rounded-xl border border-red-300 text-red-600 hover:bg-red-50 text-xs font-medium transition-colors flex-shrink-0"
+                >
+                  Delete Account
+                </button>
               </div>
-              <button
-                type="button"
-                onClick={() => setShowDeleteConfirm(true)}
-                className="px-3 py-1.5 rounded-xl border border-red-300 text-red-600 hover:bg-red-50 text-xs font-medium transition-colors flex-shrink-0"
-              >
-                Delete Account
-              </button>
             </div>
-          </div>
+          )}
         </div>
 
         {/* Confirmation Modal. z-[60] is an arbitrary value on purpose — Tailwind's

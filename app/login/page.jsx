@@ -59,6 +59,22 @@ function isValidDomain(value) {
   return /^@?[^\s@]+\.[a-z]{2,}$/i.test(value.trim());
 }
 
+/**
+ * The line under a verification-code box.
+ *
+ * It used to print three real, working codes as a "Sample:" — so the field
+ * that exists to prove you were issued a code told anyone who scrolled past
+ * exactly what to type. Nothing is shown until something has been typed; then
+ * it either confirms who the code belongs to, or says the code is invalid.
+ */
+function CodeHint({ field, validation, verifiedName }) {
+  if (!field?.trim()) return null;
+  if (validation?.valid) {
+    return <p className="text-xs text-emerald-600 mt-1">✓ Verified: {verifiedName}</p>;
+  }
+  return <p className="text-xs text-red-600 mt-1">Invalid code.</p>;
+}
+
 function LoginPageInner() {
   const router = useRouter();
   const params = useSearchParams();
@@ -704,9 +720,9 @@ function LoginPageInner() {
                   </div>
                   <div>
                     <label className="block text-sm font-medium text-foreground mb-1.5">Company Partner Code</label>
-                    <input type="text" value={form.companyCode} onChange={(e) => setField("companyCode", e.target.value)} placeholder="MERIDIAN-IND-9912"
+                    <input type="text" value={form.companyCode} onChange={(e) => setField("companyCode", e.target.value)} placeholder="XXXX-IND-0000"
                       className={`w-full bg-card border rounded-xl px-4 py-3 text-sm text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-primary/30 transition-all uppercase ${codeValidation.valid ? "border-green-400" : form.companyCode ? "border-red-300" : "border-border"}`} />
-                    <p className="text-xs text-muted-foreground mt-1">{codeValidation.valid ? `✓ Verified: ${codeValidation.data?.company}` : "Sample: TCS-IND-1001, ICICI-IND-1005, MERIDIAN-IND-9912"}</p>
+                    <CodeHint field={form.companyCode} validation={codeValidation} verifiedName={codeValidation.data?.company} />
                   </div>
                 </>
               )}
@@ -725,9 +741,9 @@ function LoginPageInner() {
                   </div>
                   <div>
                     <label className="block text-sm font-medium text-foreground mb-1.5">Teacher Code</label>
-                    <input type="text" value={form.teacherCode} onChange={(e) => setField("teacherCode", e.target.value)} placeholder="APEX-FAC-2026"
+                    <input type="text" value={form.teacherCode} onChange={(e) => setField("teacherCode", e.target.value)} placeholder="XXXX-FAC-0000"
                       className={`w-full bg-card border rounded-xl px-4 py-3 text-sm text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-primary/30 transition-all uppercase ${codeValidation.valid ? "border-green-400" : form.teacherCode ? "border-red-300" : "border-border"}`} />
-                    <p className="text-xs text-muted-foreground mt-1">{codeValidation.valid ? `✓ Verified: ${codeValidation.data?.name}` : "Sample: APEX-FAC-2026, SIT-FAC-3301, AIIA-FAC-1002"}</p>
+                    <CodeHint field={form.teacherCode} validation={codeValidation} verifiedName={codeValidation.data?.name} />
                   </div>
                 </>
               )}
@@ -746,9 +762,9 @@ function LoginPageInner() {
                   </div>
                   <div>
                     <label className="block text-sm font-medium text-foreground mb-1.5">Institute Verification Code</label>
-                    <input type="text" value={form.instituteCode} onChange={(e) => setField("instituteCode", e.target.value)} placeholder="APEX-INST-2026"
+                    <input type="text" value={form.instituteCode} onChange={(e) => setField("instituteCode", e.target.value)} placeholder="XXXX-INST-000"
                       className={`w-full bg-card border rounded-xl px-4 py-3 text-sm text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-primary/30 transition-all uppercase ${codeValidation.valid ? "border-green-400" : form.instituteCode ? "border-red-300" : "border-border"}`} />
-                    <p className="text-xs text-muted-foreground mt-1">{codeValidation.valid ? `✓ Verified: ${codeValidation.data?.institution}` : "Sample: APEX-INST-2026, SIT-INST-006, NSM-INST-007"}</p>
+                    <CodeHint field={form.instituteCode} validation={codeValidation} verifiedName={codeValidation.data?.institution} />
                   </div>
                 </>
               )}

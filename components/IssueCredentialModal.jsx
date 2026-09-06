@@ -22,7 +22,6 @@ export default function IssueCredentialModal({ issuer, recipients = [], defaults
   const [search, setSearch] = useState("");
   const [title, setTitle] = useState(defaults.title || "");
   const [kind, setKind] = useState(defaults.kind || "Participation");
-  const [grade, setGrade] = useState("");
   const [remarks, setRemarks] = useState(defaults.remarks || "");
   const [includeScores, setIncludeScores] = useState(true);
   const [error, setError] = useState(null);
@@ -65,7 +64,6 @@ export default function IssueCredentialModal({ issuer, recipients = [], defaults
           kind,
           testId: defaults.testId || null,
           score: includeScores && r.score != null ? `${r.score}%` : null,
-          grade: grade.trim() || null,
           remarks: remarks.trim(),
         }
       )
@@ -98,15 +96,16 @@ export default function IssueCredentialModal({ issuer, recipients = [], defaults
               placeholder="Frontend Engineering Fundamentals"
             />
           </Field>
-          <Field label="Type">
+          {/* There was a "Grade" box here, typed once and printed on every
+              certificate in the batch — so a hundred people with a hundred
+              different marks all came out "A / Distinction". Each recipient's
+              own score out of 100 is what gets printed instead. */}
+          <Field label="Type" className="sm:col-span-2">
             <Select value={kind} onChange={(e) => setKind(e.target.value)}>
               {CREDENTIAL_KINDS.map((k) => (
                 <option key={k}>{k}</option>
               ))}
             </Select>
-          </Field>
-          <Field label="Grade" hint="Optional — printed next to the score.">
-            <TextInput value={grade} onChange={(e) => setGrade(e.target.value)} placeholder="A / Distinction" />
           </Field>
           <Field label="Remarks" hint="Optional line printed under the achievement." className="sm:col-span-2">
             <TextArea rows={2} value={remarks} onChange={(e) => setRemarks(e.target.value)} placeholder="Completed all modules with distinction." />

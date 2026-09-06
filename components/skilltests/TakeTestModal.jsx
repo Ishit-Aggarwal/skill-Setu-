@@ -3,7 +3,7 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { api } from "../../convex/_generated/api";
 import { backendErrorMessage, backendMutation, backendQuery, isBackendConfigured } from "../../lib/convexBrowser";
-import { recordGradedAttempt } from "../../lib/store";
+import { getAssessment, recordGradedAttempt } from "../../lib/store";
 import { Badge, Button, Modal, ProgressBar } from "../ui/Kit";
 
 /**
@@ -44,10 +44,50 @@ export default function TakeTestModal({ test, user, onClose, onGraded }) {
   const startedAtRef = useRef(null);
   const durationMins = useMemo(() => parseDurationMinutes(test.duration), [test.duration]);
 
+  /* The host's own paper, when they wrote one. Marks are per question, so a
+     20-mark question is worth twenty times a 1-mark one and the percentage
+     that reaches the skill profile reflects the marking the host set. */
+  const hostPaper = useMemo(() => (Array.isArray(test.questions) ? test.questions : []), [test.questions]);
+  const totalMarks = useMemo(
+    () => hostPaper.reduce((sum, q) => sum + (Number(q.marks) || 1), 0),
+    [hostPaper]
+  );
+
+  const gradeHostPaper = useCallback(
+    (given) => {
+      let earned = 0;
+      const breakdown = hostPaper.map((q, index) => {
+        const correct = given[index] != null && given[index] === q.correctOption;
+        if (correct) earned += Number(q.marks) || 1;
+        return { index, question: q.question, correct, chosen: given[index], correctOption: q.correctOption };
+      });
+      return {
+        ok: true,
+        score: totalMarks ? Math.round((earned / totalMarks) * 100) : 0,
+        marksEarned: earned,
+        totalMarks,
+        correctCount: breakdown.filter((b) => b.correct).length,
+        totalQuestions: hostPaper.length,
+        breakdown,
+      };
+    },
+    [hostPaper, totalMarks]
+  );
+
   useEffect(() => {
     let cancelled = false;
 
     async function load() {
+      /* A paper the host wrote themselves is carried on the test record, so it
+         is served straight from there — the platform's own domain bank is the
+         fallback for the sample catalogue, which has no authored paper. */
+      if (hostPaper.length) {
+        setQuestions(hostPaper.map(({ question, options }) => ({ question, options })));
+        setAnswers(new Array(hostPaper.length).fill(null));
+        setPhase("brief");
+        return;
+      }
+
       /* Graded papers genuinely cannot be faked on the device — the answer key
          is deliberately server-side, which is the whole point. So this one does
          have to say no. It says it as a state of the service, not as a
@@ -79,7 +119,7 @@ export default function TakeTestModal({ test, user, onClose, onGraded }) {
     return () => {
       cancelled = true;
     };
-  }, [test.domain]);
+  }, [test.domain, hostPaper]);
 
   const submit = useCallback(
     async (auto = false) => {
@@ -87,12 +127,14 @@ export default function TakeTestModal({ test, user, onClose, onGraded }) {
       submittingRef.current = true;
       setPhase("grading");
       try {
-        const graded = await backendMutation(api.skillTests.submitAttempt, {
-          testId: test.id,
-          domain: test.domain,
-          answers,
-          mode: test.mode,
-        });
+        const graded = hostPaper.length
+          ? gradeHostPaper(answers)
+          : await backendMutation(api.skillTests.submitAttempt, {
+              testId: test.id,
+              domain: test.domain,
+              answers,
+              mode: test.mode,
+            });
         const startedAt = startedAtRef.current;
         const enriched = {
           ...graded,
@@ -103,6 +145,9 @@ export default function TakeTestModal({ test, user, onClose, onGraded }) {
         // Mirror the server's verdict into this device's cache so the radar,
         // the dashboard tiles and the recruiter view all read the same number.
         recordGradedAttempt(user.id, test, enriched);
+        // A host-marked paper has no server round trip, so the refreshed skill
+        // profile is read back locally rather than arriving with the verdict.
+        if (!enriched.assessment) enriched.assessment = getAssessment(user.id);
         setResult(enriched);
         setPhase("result");
         onGraded?.(graded);
@@ -113,7 +158,7 @@ export default function TakeTestModal({ test, user, onClose, onGraded }) {
         submittingRef.current = false;
       }
     },
-    [answers, onGraded, test, user.id]
+    [answers, gradeHostPaper, hostPaper.length, onGraded, test, user.id]
   );
 
   /* The clock is authoritative only as a courtesy — running out submits what
@@ -182,7 +227,7 @@ export default function TakeTestModal({ test, user, onClose, onGraded }) {
     return (
       <Modal
         title={test.title}
-        description={`${test.domain} · ${questions.length} questions · ${durationMins} minutes`}
+        description={`${test.domain} · ${questions.length} questions${totalMarks ? ` · ${totalMarks} marks` : ""} · ${durationMins} minutes`}
         onClose={onClose}
         size="lg"
       >
@@ -285,6 +330,7 @@ export default function TakeTestModal({ test, user, onClose, onGraded }) {
             <div className="min-w-0">
               <div className="text-sm font-semibold text-foreground">
                 {result.correctCount} of {result.totalQuestions} correct
+                {result.totalMarks ? ` · ${result.marksEarned}/${result.totalMarks} marks` : ""}
               </div>
               <p className="text-xs text-muted-foreground mt-1 leading-relaxed">
                 Added to your <span className="font-medium text-foreground">{test.domain}</span> average. Your overall skill

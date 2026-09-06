@@ -209,7 +209,7 @@ export default function LandingPage() {
           {[
             { role: "student", emoji: "🎓", title: "Students", subtitle: "Engineering · Management · Technology · Sciences · Healthcare · Design", features: ["Skill tests & gap analysis", "Matched internships across every sector", "Portfolio & certification tracker"], cta: "Sign Up as Student" },
             { role: "industry", emoji: "🏢", title: "Industries", subtitle: "IT & Tech · Manufacturing · Finance · Healthcare & Life Sciences · Enterprise", features: ["Post roles with eligibility filters", "Proactive talent-pool search", "Pipeline, offers & joining tracking"], cta: "Partner as Industry", featured: true },
-            { role: "academician", emoji: "📚", title: "Academicians", subtitle: "Faculty · Researchers · Programme Leads", features: ["Host FDPs with rosters & certificates", "Propose & run research collaborations", "Mentor advisees and book office hours"], cta: "Join as Academician" },
+            { role: "academician", emoji: "📚", title: "Academicians", subtitle: "Faculty · Researchers · Programme Leads", features: ["Host FDPs with rosters & certificates", "Propose & run research collaborations", "Mentor mentees and book office hours"], cta: "Join as Academician" },
             { role: "institution", emoji: "🏫", title: "Institutions", subtitle: "Placement Cells · Deans · Multi-faculty Institutes", features: ["Student roster, drives & MOU tracking", "Cohort skill-gap heatmaps", "Curriculum alignment & accreditation exports"], cta: "Register Institution" },
           ].map((card) => (
             <div

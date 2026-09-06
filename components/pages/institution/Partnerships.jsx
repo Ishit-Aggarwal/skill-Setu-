@@ -12,10 +12,12 @@ import {
   deleteMou,
   listApplications,
   listMous,
+  listUsersByRole,
   logActivity,
   mouStatus,
   updateMou,
 } from "../../../lib/store";
+import { openStoredFile } from "../../../lib/files";
 import { subscribeToMutations } from "../../../lib/sync";
 import { buildRoster, useInstitutionName } from "./useInstitution";
 
@@ -178,9 +180,15 @@ export default function Partnerships() {
                 <div className="flex flex-wrap items-center gap-2 pt-1">
                   <Button size="sm" variant="outline" onClick={() => setEditing(m)}>Edit</Button>
                   {m.documentDataUrl ? (
-                    <a href={m.documentDataUrl} target="_blank" rel="noreferrer" className="text-xs text-primary font-medium hover:underline">
+                    // Opened through lib/files — a data: URL in an anchor is
+                    // refused as a top-level navigation and opens nothing.
+                    <button
+                      type="button"
+                      onClick={() => openStoredFile({ dataUrl: m.documentDataUrl, fileName: m.documentName })}
+                      className="text-xs text-primary font-medium hover:underline"
+                    >
                       View MOU document
-                    </a>
+                    </button>
                   ) : (
                     <span className="text-xs text-amber-600">No document uploaded</span>
                   )}
@@ -216,6 +224,26 @@ export default function Partnerships() {
   );
 }
 
+/**
+ * Whether this partner has an account of their own on Skill Setu.
+ *
+ * If they do, their organisation name and contact details are *their* record,
+ * not the placement cell's, and this form must not overwrite them — an
+ * institution could otherwise rename a partner company or point its contact
+ * email somewhere else from inside its own MOU register. Everything the
+ * institution genuinely owns — dates, scope, the signed document, internal
+ * notes — stays editable.
+ */
+function findRegisteredPartner(partnerName) {
+  if (!partnerName?.trim()) return null;
+  const wanted = partnerName.trim().toLowerCase();
+  return (
+    listUsersByRole("industry").find(
+      (u) => (u.companyName || u.name || "").trim().toLowerCase() === wanted
+    ) || null
+  );
+}
+
 function MouModal({ instituteName, actor, mou, onClose, onDone, onDelete }) {
   const [form, setForm] = useState({
     partner: mou?.partner || "",
@@ -232,6 +260,9 @@ function MouModal({ instituteName, actor, mou, onClose, onDone, onDelete }) {
   const [error, setError] = useState(null);
   const set = (k, v) => setForm((f) => ({ ...f, [k]: v }));
 
+  const registeredPartner = useMemo(() => findRegisteredPartner(form.partner), [form.partner]);
+  const partnerLocked = Boolean(registeredPartner);
+
   async function handleDoc(e) {
     const file = e.target.files?.[0];
     if (!file) return;
@@ -244,6 +275,14 @@ function MouModal({ instituteName, actor, mou, onClose, onDone, onDelete }) {
   function submit(e) {
     e.preventDefault();
     const payload = { ...form, scope, documentDataUrl: doc, documentName: docName };
+    // A partner who has their own account owns their own identity: their name
+    // and contact details are read from their profile, never written from here.
+    if (registeredPartner) {
+      payload.partner = registeredPartner.companyName || registeredPartner.name;
+      payload.contactName = registeredPartner.name || "";
+      payload.contactEmail = registeredPartner.email || "";
+      payload.contactPhone = registeredPartner.phone || "";
+    }
     if (mou) {
       updateMou(mou.id, payload);
       addMouTimelineEvent(mou.id, "Details updated");
@@ -261,7 +300,19 @@ function MouModal({ instituteName, actor, mou, onClose, onDone, onDelete }) {
     <Modal title={mou ? "Edit partnership" : "Record a new MOU"} onClose={onClose} size="lg">
       <form onSubmit={submit} className="space-y-4">
         {error && <Flash message={error} tone="red" />}
-        <Field label="Partner organisation"><TextInput required value={form.partner} onChange={(e) => set("partner", e.target.value)} placeholder="Apex Global Technologies & Innovations" /></Field>
+        <Field
+          label="Partner organisation"
+          hint={partnerLocked ? "This partner has a Skill Setu account — their name and contact are maintained by them." : undefined}
+        >
+          <TextInput
+            required
+            readOnly={partnerLocked}
+            value={form.partner}
+            onChange={(e) => set("partner", e.target.value)}
+            placeholder="Apex Global Technologies & Innovations"
+            className={partnerLocked ? "opacity-70 cursor-not-allowed" : ""}
+          />
+        </Field>
         <div className="grid grid-cols-2 gap-3">
           <Field label="Signed on"><TextInput type="date" value={form.signedDate} onChange={(e) => set("signedDate", e.target.value)} /></Field>
           <Field label="Valid until" hint="Drives the renewal reminder."><TextInput type="date" value={form.expiryDate} onChange={(e) => set("expiryDate", e.target.value)} /></Field>
@@ -282,11 +333,21 @@ function MouModal({ instituteName, actor, mou, onClose, onDone, onDelete }) {
             ))}
           </div>
         </Field>
-        <div className="grid sm:grid-cols-3 gap-3">
-          <Field label="Primary contact"><TextInput value={form.contactName} onChange={(e) => set("contactName", e.target.value)} /></Field>
-          <Field label="Contact email"><TextInput type="email" value={form.contactEmail} onChange={(e) => set("contactEmail", e.target.value)} /></Field>
-          <Field label="Contact phone"><TextInput value={form.contactPhone} onChange={(e) => set("contactPhone", e.target.value)} /></Field>
-        </div>
+        {partnerLocked ? (
+          <div className="rounded-xl border border-border bg-secondary/50 px-3.5 py-3 text-xs text-muted-foreground">
+            <div className="font-medium text-foreground mb-1">Partner contact</div>
+            <div>{registeredPartner.name || "—"}{registeredPartner.email ? ` · ${registeredPartner.email}` : ""}</div>
+            <p className="mt-1.5 text-[11px]">
+              Held on {registeredPartner.companyName || registeredPartner.name}&apos;s own profile. Ask them to update it if it is out of date.
+            </p>
+          </div>
+        ) : (
+          <div className="grid sm:grid-cols-3 gap-3">
+            <Field label="Primary contact"><TextInput value={form.contactName} onChange={(e) => set("contactName", e.target.value)} /></Field>
+            <Field label="Contact email"><TextInput type="email" value={form.contactEmail} onChange={(e) => set("contactEmail", e.target.value)} /></Field>
+            <Field label="Contact phone"><TextInput value={form.contactPhone} onChange={(e) => set("contactPhone", e.target.value)} /></Field>
+          </div>
+        )}
         <Field label="Signed MOU document" hint="PDF or image, under 1.5MB. Stored with the partnership record.">
           <input type="file" accept="application/pdf,image/*" onChange={handleDoc} className="block w-full text-xs text-muted-foreground file:mr-3 file:py-2 file:px-3 file:rounded-lg file:border-0 file:text-xs file:font-medium file:bg-primary/10 file:text-primary" />
           {docName && <p className="text-[11px] text-primary mt-1.5">Attached: {docName}</p>}

@@ -147,7 +147,7 @@ export default function AcademicianAnalytics() {
         <div className="flex flex-wrap items-end gap-3">
           <Field label="Cohort">
             <Select value={scope} onChange={(e) => setScope(e.target.value)} className="w-auto">
-              <option value="advisees">My advisees</option>
+              <option value="advisees">My mentees</option>
               <option value="department">My department</option>
               <option value="institution">Whole institution</option>
             </Select>
@@ -172,7 +172,7 @@ export default function AcademicianAnalytics() {
 
         {cohort.length === 0 ? (
           <EmptyState icon="📊" title="No students in this scope">
-            Assign advisees or widen the scope to see cohort analytics.
+            Assign mentees or widen the scope to see cohort analytics.
           </EmptyState>
         ) : (
           <>
@@ -298,7 +298,7 @@ export default function AcademicianAnalytics() {
                   { key: "score", header: "Skill", align: "center", render: (s) => <span className="font-semibold text-foreground">{s.score ?? "—"}</span> },
                   { key: "apps", header: "Apps", align: "center", hideBelow: "hidden sm:table-cell", render: (s) => <span className="text-xs text-muted-foreground">{s.applications}</span> },
                   { key: "status", header: "Placement", align: "center", render: (s) => <Badge tone={PLACEMENT_TONE[s.status]}>{s.status}</Badge> },
-                  { key: "advisee", header: "Advisee", align: "center", hideBelow: "hidden md:table-cell", render: (s) => (s.isAdvisee ? <Badge tone="primary">Mine</Badge> : <span className="text-[11px] text-muted-foreground">—</span>) },
+                  { key: "advisee", header: "Mentee", align: "center", hideBelow: "hidden md:table-cell", render: (s) => (s.isAdvisee ? <Badge tone="primary">Mine</Badge> : <span className="text-[11px] text-muted-foreground">—</span>) },
                 ]}
                 rows={cohort}
                 rowKey={(s) => s.id}

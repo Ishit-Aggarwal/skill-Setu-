@@ -114,10 +114,10 @@ export default function MyStudents() {
   function toggleAdvisee(s) {
     if (s.isAdvisee) {
       removeAdvisee(user.id, s.id);
-      bump(`${s.name} removed from your advisee list.`);
+      bump(`${s.name} removed from your mentee list.`);
     } else {
       addAdvisee(user.id, s.id);
-      bump(`${s.name} added as your advisee.`);
+      bump(`${s.name} added as your mentee.`);
     }
   }
 
@@ -174,13 +174,30 @@ export default function MyStudents() {
       ),
     },
     { key: "status", header: "Placement", align: "center", render: (s) => <Badge tone={PLACEMENT_TONE[s.status]}>{s.status}</Badge> },
+    /* A recommendation left no trace on this table — the link said
+       "Recommend" whether you had sent one or five, so there was no way to
+       tell from the cohort view what you had already done. */
+    {
+      key: "recommended",
+      header: "Recommended",
+      align: "center",
+      hideBelow: "hidden lg:table-cell",
+      render: (s) =>
+        s.recommendations?.length ? (
+          <Badge tone="green">{s.recommendations.length} sent</Badge>
+        ) : (
+          <span className="text-xs text-muted-foreground">—</span>
+        ),
+    },
     {
       key: "actions",
       header: "",
       align: "right",
       render: (s) => (
         <div className="flex items-center justify-end gap-2 whitespace-nowrap">
-          <button onClick={() => setRecommendTo(s)} className="text-xs text-primary hover:underline">Recommend</button>
+          <button onClick={() => setRecommendTo(s)} className="text-xs text-primary hover:underline">
+            {s.recommendations?.length ? "Recommend more" : "Recommend"}
+          </button>
           <button onClick={() => toggleAdvisee(s)} className="text-xs text-muted-foreground hover:text-foreground">
             {s.isAdvisee ? "Unassign" : "Assign to me"}
           </button>
@@ -204,7 +221,7 @@ export default function MyStudents() {
 
         <StatGrid
           stats={[
-            { label: "Mentored advisees", value: String(adviseeCount), icon: "🎓", hint: `${scoped.length} in current view` },
+            { label: "Mentees assigned to me", value: String(adviseeCount), icon: "🎓", hint: `${scoped.length} in current view` },
             { label: "Students flagged", value: String(students.filter((s) => Boolean(s.flag)).length), icon: "🚩", hint: `${students.filter((s) => s.flag === "Promising").length} promising` },
             { label: "Private notes saved", value: String(students.filter((s) => Boolean(s.note && s.note.trim())).length), icon: "📝", hint: "Confidential guidance logs" },
             { label: "Department cohort", value: String(students.filter((s) => s.department === user?.department).length), icon: "🏛", hint: user?.department || "Campus-wide" },
@@ -213,7 +230,7 @@ export default function MyStudents() {
 
         <Tabs
           tabs={[
-            { key: "advisees", label: `My advisees (${adviseeCount})` },
+            { key: "advisees", label: `My mentees (${adviseeCount})` },
             { key: "department", label: "My department" },
             { key: "institution", label: "Whole institution" },
           ]}
@@ -256,10 +273,10 @@ export default function MyStudents() {
         {filtered.length === 0 && scope === "advisees" && adviseeCount === 0 ? (
           <EmptyState
             icon="🎓"
-            title="No advisees assigned yet"
+            title="No mentees assigned yet"
             action={<Button size="sm" onClick={() => setScope("department")}>Browse my department</Button>}
           >
-            Students aren't linked to a faculty member automatically. Open your department cohort and use “Assign to me” to build your advisee list.
+            Students aren't linked to a faculty member automatically. Open your department cohort and use “Assign to me” to build your mentee list.
           </EmptyState>
         ) : (
           <DataTable columns={columns} rows={filtered} rowKey={(s) => s.id} empty="No students match these filters." />
@@ -308,7 +325,7 @@ function StudentProfileModal({ faculty, student, onClose, onSaved }) {
             <Badge tone="neutral">{student.department}</Badge>
             {student.rollNo && <Badge tone="neutral">{student.rollNo}</Badge>}
             <Badge tone={PLACEMENT_TONE[student.status]}>{student.status}</Badge>
-            {student.isAdvisee && <Badge tone="primary">My advisee</Badge>}
+            {student.isAdvisee && <Badge tone="primary">My mentee</Badge>}
           </div>
         </div>
 
@@ -402,8 +419,21 @@ function StudentProfileModal({ faculty, student, onClose, onSaved }) {
   );
 }
 
+/**
+ * Recommending roles to one student.
+ *
+ * The dialog used to close on the first click and forget: reopening it showed
+ * every posting as "Recommend" again, including the one just sent, so there
+ * was no way to tell what had already gone out and easy to send the same role
+ * twice. It now stays open, marks what has been sent, and keeps its own list
+ * of this session's recommendations alongside the ones already on record.
+ */
 function RecommendModal({ faculty, student, postings, onClose, onDone }) {
   const [search, setSearch] = useState("");
+  const [sent, setSent] = useState(
+    () => new Set((student.recommendations || []).map((r) => r.internshipId))
+  );
+
   const filtered = useMemo(() => {
     const q = search.trim().toLowerCase();
     return postings
@@ -411,11 +441,16 @@ function RecommendModal({ faculty, student, postings, onClose, onDone }) {
       .slice(0, 20);
   }, [postings, search]);
 
+  function recommend(p) {
+    recommendPostingToStudent(faculty, student.id, p);
+    setSent((prev) => new Set(prev).add(p.id));
+  }
+
   return (
     <Modal
       title={`Recommend a role to ${student.name}`}
-      description="The recommendation is logged against your mentor notes and lands in the student's portal inbox."
-      onClose={onClose}
+      description="Each recommendation is logged against your mentor notes and lands in the student's portal inbox."
+      onClose={() => onDone(sent.size ? `${sent.size} role${sent.size === 1 ? "" : "s"} recommended to ${student.name}.` : null)}
       size="lg"
     >
       <div className="space-y-4">
@@ -424,26 +459,38 @@ function RecommendModal({ faculty, student, postings, onClose, onDone }) {
           <p className="text-sm text-muted-foreground py-6 text-center">No open postings match.</p>
         ) : (
           <div className="space-y-2 max-h-80 overflow-y-auto pr-1">
-            {filtered.map((p) => (
-              <div key={p.id} className="flex items-center gap-3 border border-border rounded-xl px-4 py-3 hover:border-primary/30 transition-colors">
-                <IconTile icon="💼" tone="blue" size={34} />
-                <div className="min-w-0 flex-1">
-                  <div className="text-sm font-medium text-foreground truncate">{p.title}</div>
-                  <div className="text-[11px] text-muted-foreground truncate">{p.company} · {p.domain} · closes {formatDate(p.deadline)}</div>
-                </div>
-                <Button
-                  size="sm"
-                  onClick={() => {
-                    recommendPostingToStudent(faculty, student.id, p);
-                    onDone(`Recommended “${p.title}” to ${student.name}.`);
-                  }}
+            {filtered.map((p) => {
+              const already = sent.has(p.id);
+              return (
+                <div
+                  key={p.id}
+                  className={`flex items-center gap-3 border rounded-xl px-4 py-3 transition-colors ${
+                    already ? "border-emerald-300 bg-emerald-50/40" : "border-border hover:border-primary/30"
+                  }`}
                 >
-                  Recommend
-                </Button>
-              </div>
-            ))}
+                  <IconTile icon="💼" tone={already ? "green" : "blue"} size={34} />
+                  <div className="min-w-0 flex-1">
+                    <div className="text-sm font-medium text-foreground truncate">{p.title}</div>
+                    <div className="text-[11px] text-muted-foreground truncate">{p.company} · {p.domain} · closes {formatDate(p.deadline)}</div>
+                  </div>
+                  {already ? (
+                    <Badge tone="green">✓ Recommended</Badge>
+                  ) : (
+                    <Button size="sm" onClick={() => recommend(p)}>Recommend</Button>
+                  )}
+                </div>
+              );
+            })}
           </div>
         )}
+        <Button
+          type="button"
+          variant="outline"
+          className="w-full"
+          onClick={() => onDone(sent.size ? `${sent.size} role${sent.size === 1 ? "" : "s"} recommended to ${student.name}.` : null)}
+        >
+          Done
+        </Button>
       </div>
     </Modal>
   );

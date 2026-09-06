@@ -54,6 +54,10 @@ async function postJson(url, body, { withSession = false } = {}) {
 export function AuthProvider({ children }) {
   const [user, setUser] = useState(null);
   const [loading, setLoading] = useState(true);
+  /* Set when a profile edit was shown as saved but the server did not take it.
+     Kept in the provider so every screen that edits a profile reports a failed
+     save the same way, without each one growing its own error slot. */
+  const [profileError, setProfileError] = useState(null);
 
   /* On load, ask the server who this session belongs to rather than trusting
      the cached profile. A stale or forged local record is replaced by the
@@ -349,31 +353,58 @@ export function AuthProvider({ children }) {
 
   /**
    * Profile edits write through to the server, which decides whether this
-   * session may touch this account. The local cache is only updated once the
-   * server accepts — otherwise the two would disagree about what was saved.
+   * session may touch this account.
+   *
+   * The write is optimistic so the field updates as you type, but an
+   * optimistic write that the server then refuses has to be taken back. It
+   * previously was not: a rejected save logged a console warning and left the
+   * new value on screen, so the profile read as saved on this device and was
+   * unchanged everywhere else — the failure was invisible until you signed in
+   * somewhere else and found the old value. Now the local cache is rolled back
+   * to what it held before and the reason is surfaced to the person editing.
    */
   async function updateProfile(patch) {
     if (!user) return null;
+
+    // What these keys held before, so a refusal can be undone precisely
+    // rather than by refetching the whole account.
+    const previous = {};
+    Object.keys(patch || {}).forEach((key) => {
+      previous[key] = user[key] === undefined ? null : user[key];
+    });
+
     const merged = update("users", user.id, patch);
     setUser(merged);
 
     if (!getSessionToken()) return merged; // demo persona: local only
+
+    const rollBack = (reason) => {
+      const restored = update("users", user.id, previous);
+      setUser(restored);
+      setProfileError(reason);
+      return restored;
+    };
 
     try {
       const { res, data } = await postJson("/api/auth/profile", { id: user.id, patch }, { withSession: true });
       if (res.ok && data.success && data.user) {
         const authoritative = update("users", user.id, data.user);
         setUser(authoritative);
+        setProfileError(null);
         return authoritative;
       }
       if (res.status === 401 || res.status === 403) {
         console.warn("[auth] The server refused this profile change:", data.error);
+        return rollBack(data.error || "You are not allowed to make that change.");
       }
+      return rollBack(data.error || "The server could not save that change.");
     } catch (err) {
       console.warn("[auth] Could not sync profile to the server:", err);
+      return rollBack("We couldn't reach the server, so that change was not saved.");
     }
-    return merged;
   }
+
+  const dismissProfileError = () => setProfileError(null);
 
   async function logout() {
     try {
@@ -437,6 +468,8 @@ export function AuthProvider({ children }) {
         completeSignup,
         loginAsDemo,
         updateProfile,
+        profileError,
+        dismissProfileError,
         changePassword,
         requestPasswordReset,
         resetPassword,
@@ -444,9 +477,39 @@ export function AuthProvider({ children }) {
         hasServerSession: Boolean(getSessionToken()),
       }}
     >
+      {profileError && (
+        <div
+          role="alert"
+          className="fixed bottom-4 left-1/2 -translate-x-1/2 z-[100] w-[calc(100%-2rem)] max-w-md bg-card border border-red-300 rounded-xl shadow-lg px-4 py-3 flex items-start gap-3"
+        >
+          <div className="flex-1 text-sm">
+            <p className="font-medium text-red-700">That change wasn't saved.</p>
+            <p className="text-xs text-muted-foreground mt-0.5">{profileError}</p>
+          </div>
+          <button
+            onClick={dismissProfileError}
+            className="text-xs font-medium text-muted-foreground hover:text-foreground"
+          >
+            Dismiss
+          </button>
+        </div>
+      )}
       {children}
     </AuthContext.Provider>
   );
+}
+
+/**
+ * Whether this is one of the four shared demo personas.
+ *
+ * Demo mode is a shop window: anyone can enter it, and everyone entering as a
+ * given role lands on the same account. Destructive, account-level actions —
+ * deleting the account above all — must not be offered there, because the
+ * thing being deleted belongs to every future visitor rather than to the
+ * person clicking.
+ */
+export function isDemoAccount(user) {
+  return typeof user?.id === "string" && user.id.startsWith("demo-");
 }
 
 export function useAuth() {
