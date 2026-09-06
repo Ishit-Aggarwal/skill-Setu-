@@ -7,6 +7,7 @@ import { internal } from "./_generated/api";
 import { v } from "convex/values";
 import { publicUser } from "./_lib/authz";
 import { validateRegistryCode } from "./_lib/verification";
+import { verifyOtpToken, otpSecretFingerprint } from "../lib/otp";
 
 /**
  * Credential handling.
@@ -24,44 +25,9 @@ import { validateRegistryCode } from "./_lib/verification";
 
 const BCRYPT_COST = 12;
 const LEGACY_SHA256 = /^[a-f0-9]{64}$/i;
-const OTP_SECRET = process.env.OTP_SECRET || "setu-dev-otp-secret-change-me";
 
 function legacyDigest(password) {
   return crypto.createHash("sha256").update(password, "utf8").digest("hex");
-}
-
-function hmac(value) {
-  return crypto.createHmac("sha256", OTP_SECRET).update(value).digest("hex");
-}
-
-/**
- * The signup OTP is re-checked HERE, in the same call that creates the account,
- * so a client cannot skip the email-verification step by calling the account
- * creation path directly. `pages/api/send-otp` mints the token; only its hash
- * ever leaves the server.
- */
-function verifyOtpToken(token, email, otp) {
-  if (!token || typeof token !== "string" || !token.includes(".")) {
-    return { valid: false, error: "Your verification session expired. Please request a new code." };
-  }
-  const [payload, signature] = token.split(".");
-  if (hmac(payload) !== signature) {
-    return { valid: false, error: "Your verification session is invalid. Please request a new code." };
-  }
-  let decoded;
-  try {
-    decoded = JSON.parse(Buffer.from(payload, "base64url").toString("utf8"));
-  } catch {
-    return { valid: false, error: "Your verification session is invalid. Please request a new code." };
-  }
-  if (decoded.email !== email) return { valid: false, error: "This code was issued for a different email address." };
-  if (Date.now() > decoded.expiresAt) {
-    return { valid: false, error: "This verification code has expired (5-minute validity). Please request a new code." };
-  }
-  if (hmac(`${email}:${otp}`) !== decoded.otpHash) {
-    return { valid: false, error: "Invalid verification code. Please enter the correct 6-digit code." };
-  }
-  return { valid: true };
 }
 
 async function verifyPassword(password, storedHash) {
@@ -342,10 +308,7 @@ export const signInAsDemo = action({
  */
 export const secretFingerprint = action({
   args: {},
-  handler: async () => ({
-    fingerprint: hmac("skill-setu-otp-secret-probe").slice(0, 16),
-    usingDefaultSecret: !process.env.OTP_SECRET,
-  }),
+  handler: async () => otpSecretFingerprint(),
 });
 
 /** Changing your own password from Settings — requires the current one. */

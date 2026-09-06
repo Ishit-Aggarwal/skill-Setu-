@@ -1,7 +1,7 @@
-import crypto from "crypto";
 import { getConvexClient } from "../../lib/convexServer";
 import { api } from "../../convex/_generated/api";
 import { getMailConfig } from "../../lib/mailer";
+import { otpSecretFingerprint } from "../../lib/otp";
 
 /**
  * Deployment self-check, reachable at /api/health.
@@ -14,8 +14,7 @@ import { getMailConfig } from "../../lib/mailer";
  */
 
 function fingerprintLocally() {
-  const secret = process.env.OTP_SECRET || "setu-dev-otp-secret-change-me";
-  return crypto.createHmac("sha256", secret).update("skill-setu-otp-secret-probe").digest("hex").slice(0, 16);
+  return otpSecretFingerprint().fingerprint;
 }
 
 export default async function handler(req, res) {
