@@ -93,7 +93,7 @@ export default function IssueCredentialModal({ issuer, recipients = [], defaults
             <TextInput
               value={title}
               onChange={(e) => setTitle(e.target.value)}
-              placeholder="Frontend Engineering Fundamentals"
+              placeholder="Panchakarma Procedures Fundamentals"
             />
           </Field>
           {/* There was a "Grade" box here, typed once and printed on every

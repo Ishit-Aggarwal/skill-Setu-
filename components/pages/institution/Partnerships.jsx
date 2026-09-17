@@ -309,7 +309,7 @@ function MouModal({ instituteName, actor, mou, onClose, onDone, onDelete }) {
             readOnly={partnerLocked}
             value={form.partner}
             onChange={(e) => set("partner", e.target.value)}
-            placeholder="Apex Global Technologies & Innovations"
+            placeholder="Dabur India Ltd."
             className={partnerLocked ? "opacity-70 cursor-not-allowed" : ""}
           />
         </Field>

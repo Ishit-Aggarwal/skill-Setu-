@@ -211,7 +211,7 @@ export default function FacultyProfile() {
               <TagInput
                 value={subjects}
                 onChange={setSubjects}
-                placeholder="e.g. Data Structures, Operations Management, Constitutional Law"
+                placeholder="e.g. Dravyaguna Vijnana, Kayachikitsa, Homoeopathic Materia Medica"
                 inputLabel="Add a subject you teach"
                 maxTags={25}
               />
@@ -229,7 +229,7 @@ export default function FacultyProfile() {
               <TagInput
                 value={interests}
                 onChange={setInterests}
-                placeholder="e.g. Distributed Systems, Operations Research, Structural Dynamics"
+                placeholder="e.g. HPTLC Standardisation, Panchakarma Protocols, Yoga Therapy"
                 inputLabel="Add a research interest"
                 emptyHint="None added yet — Research Collabs has nothing to match you on."
                 suggestions={COLLAB_EXPERTISE}
@@ -431,7 +431,7 @@ function PublicationModal({ pub, onCancel, onSave }) {
             required
             value={title}
             onChange={(e) => setTitle(e.target.value)}
-            placeholder="e.g. Resilient Transformer Architectures for Multimodal Perception"
+            placeholder="e.g. HPTLC fingerprinting of market samples of Ashwagandha churna"
           />
         </Field>
 
@@ -457,7 +457,7 @@ function PublicationModal({ pub, onCancel, onSave }) {
           <TextInput
             value={venue}
             onChange={(e) => setVenue(e.target.value)}
-            placeholder="e.g. IEEE Transactions on Neural Networks"
+            placeholder="e.g. Journal of Ayurveda and Integrative Medicine"
           />
         </Field>
 

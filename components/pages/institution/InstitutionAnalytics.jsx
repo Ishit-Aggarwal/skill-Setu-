@@ -655,7 +655,7 @@ export default function InstitutionAnalytics() {
 
 function BatchRecordModal({ record, onClose, onSave, departments, instituteName }) {
   const [batch, setBatch] = useState(record ? String(record.batch) : new Date().getFullYear().toString());
-  const [department, setDepartment] = useState(record ? record.department : departments[0] || "Computer Science & Engineering");
+  const [department, setDepartment] = useState(record ? record.department : departments[0] || "Ayurveda (BAMS)");
   const [students, setStudents] = useState(record ? String(record.students) : "");
   const [placed, setPlaced] = useState(record ? String(record.placed) : "");
   const [medianStipend, setMedianStipend] = useState(record ? String(record.medianStipend || "") : "");
@@ -810,7 +810,7 @@ function BatchRecordModal({ record, onClose, onSave, departments, instituteName 
             <TextInput
               value={topRecruiter}
               onChange={(e) => setTopRecruiter(e.target.value)}
-              placeholder="e.g. Meridian Software Labs"
+              placeholder="e.g. Dabur India Ltd."
             />
           </Field>
         </div>

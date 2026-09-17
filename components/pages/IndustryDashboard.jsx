@@ -454,7 +454,7 @@ export default function IndustryDashboard() {
       {showPostJob && (
         <Modal title="Post a new opportunity" onClose={() => setShowPostJob(false)}>
           <form onSubmit={handleCreate} className="space-y-4">
-            <Field label="Role title"><TextInput required value={form.title} onChange={(e) => setForm((f) => ({ ...f, title: e.target.value }))} placeholder="Software Engineer Intern (Full-Stack)" /></Field>
+            <Field label="Role title"><TextInput required value={form.title} onChange={(e) => setForm((f) => ({ ...f, title: e.target.value }))} placeholder="Panchakarma Therapist Intern" /></Field>
             <Field label="Sector">
               <Select value={form.domain} onChange={(e) => setForm((f) => ({ ...f, domain: e.target.value }))}>
                 {DOMAIN_GROUPS.map((g) => (
@@ -464,7 +464,7 @@ export default function IndustryDashboard() {
                 ))}
               </Select>
             </Field>
-            <Field label="Location"><TextInput value={form.location} onChange={(e) => setForm((f) => ({ ...f, location: e.target.value }))} placeholder="Pune / Remote" /></Field>
+            <Field label="Location"><TextInput value={form.location} onChange={(e) => setForm((f) => ({ ...f, location: e.target.value }))} placeholder="Kottakkal / Remote" /></Field>
             <div className="grid grid-cols-2 gap-3">
               {/* The amount only. The "/month" or "total for 6 months" label is
                   rendered from the mode below, never typed. */}
@@ -511,7 +511,7 @@ export default function IndustryDashboard() {
                 </span>
               </p>
             </Field>
-            <Field label="Required skills" hint="Comma separated."><TextInput value={form.tags} onChange={(e) => setForm((f) => ({ ...f, tags: e.target.value }))} placeholder="React, SQL, Quality Control" /></Field>
+            <Field label="Required skills" hint="Comma separated."><TextInput value={form.tags} onChange={(e) => setForm((f) => ({ ...f, tags: e.target.value }))} placeholder="Panchakarma, HPTLC, GMP Compliance" /></Field>
             <p className="text-[11px] text-muted-foreground">
               Need eligibility filters and a deadline? Use the full form on the Postings page.
             </p>

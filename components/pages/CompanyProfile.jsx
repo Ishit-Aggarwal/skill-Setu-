@@ -202,16 +202,16 @@ export default function CompanyProfile() {
             </div>
 
             <Field label="About">
-              <TextArea rows={3} value={form.companyDescription} onChange={(e) => set("companyDescription", e.target.value)} placeholder="Describe your organisation, products/services, and industry focus." />
+              <TextArea rows={3} value={form.companyDescription} onChange={(e) => set("companyDescription", e.target.value)} placeholder="Describe your organisation, ASU&H products/services, and AYUSH sector focus." />
             </Field>
 
             <Field label="Why work with us" hint="Shown prominently to students browsing your postings — what an intern actually gets out of it.">
-              <TextArea rows={3} value={form.whyWorkWithUs} onChange={(e) => set("whyWorkWithUs", e.target.value)} placeholder="Mentorship, rotations across teams, exposure to real-world projects and technologies." />
+              <TextArea rows={3} value={form.whyWorkWithUs} onChange={(e) => set("whyWorkWithUs", e.target.value)} placeholder="Mentorship by senior vaidyas, rotations across OPD, pharmacy and QC, exposure to live clinical and GMP work." />
             </Field>
 
             <div className="grid sm:grid-cols-2 gap-3">
               <Field label="Website"><TextInput value={form.companyWebsite} onChange={(e) => set("companyWebsite", e.target.value)} placeholder="https://…" /></Field>
-              <Field label="HQ location"><TextInput value={form.hqLocation} onChange={(e) => set("hqLocation", e.target.value)} placeholder="Pune, Maharashtra" /></Field>
+              <Field label="HQ location"><TextInput value={form.hqLocation} onChange={(e) => set("hqLocation", e.target.value)} placeholder="Ghaziabad, Uttar Pradesh" /></Field>
             </div>
 
             <Field label="Work email domain" hint="Used to verify colleagues who join your hiring team.">

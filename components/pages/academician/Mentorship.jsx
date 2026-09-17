@@ -68,9 +68,9 @@ import { parseIsoDate, programmeStartMs } from "../../../lib/dates";
  */
 
 const DEMO_VENUES = [
-  "Department of Computer Science & Engineering, IIT Delhi, Hauz Khas, New Delhi 110016",
-  "Indian Institute of Science (IISc), CV Raman Rd, Bengaluru, Karnataka 560012",
-  "Apex University, Electronic City Phase 1, Hosur Road, Bengaluru, Karnataka 560100",
+  "Department of Dravyaguna, All India Institute of Ayurveda (AIIA), Sarita Vihar, New Delhi 110076",
+  "National Institute of Ayurveda (NIA), Jorawar Singh Gate, Amer Road, Jaipur, Rajasthan 302002",
+  "Institute of Teaching & Research in Ayurveda (ITRA), Gurudev Tagore Road, Jamnagar, Gujarat 361008",
 ];
 
 const EMPTY_FORM = {
@@ -80,7 +80,7 @@ const EMPTY_FORM = {
   capacity: "2",
   mode: "In person",
   audience: "all",
-  location: "Department of Computer Science & Engineering, IIT Delhi, Hauz Khas, New Delhi 110016",
+  location: "Department of Dravyaguna, All India Institute of Ayurveda (AIIA), Sarita Vihar, New Delhi 110076",
   meetingUrl: "",
   notes: "",
 };
@@ -688,7 +688,7 @@ function SlotForm({ initial, onSubmit, onCancel, busy }) {
           required
           value={form.title}
           onChange={(e) => set("title", e.target.value)}
-          placeholder="e.g. Capstone project reviews"
+          placeholder="e.g. PG dissertation reviews"
         />
       </Field>
 
@@ -742,7 +742,7 @@ function SlotForm({ initial, onSubmit, onCancel, busy }) {
           <TextInput
             value={form.location}
             onChange={(e) => set("location", e.target.value)}
-            placeholder="e.g. Department of Computer Science & Engineering, IIT Delhi, Hauz Khas, New Delhi 110016"
+            placeholder="e.g. Department of Dravyaguna, All India Institute of Ayurveda (AIIA), Sarita Vihar, New Delhi 110076"
           />
           <div className="flex items-center gap-1.5 flex-wrap mt-2">
             <span className="text-[10px] text-muted-foreground font-medium">Quick presets:</span>

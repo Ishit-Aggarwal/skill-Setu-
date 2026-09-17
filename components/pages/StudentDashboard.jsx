@@ -158,8 +158,8 @@ export default function StudentDashboard() {
   /* ---------------- Derived data ---------------- */
 
   /* The radar, the nudges and the "N of M assessed" counter all read the
-     rubric for this student's own stream — a CSE candidate is never charted on
-     clinical axes, and a BAMS candidate is never charted on programming. */
+     rubric for this student's own stream — a B.Pharm (Ayu) candidate is never charted
+     on Panchakarma axes, and a BAMS candidate is never charted on HPTLC. */
   const taxonomy = useMemo(() => taxonomyFor(user), [user]);
   const competency = useMemo(() => scoresFor(user, assessment), [user, assessment]);
 

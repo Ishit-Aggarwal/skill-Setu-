@@ -226,10 +226,10 @@ export default function EditProfileModal({ onClose }) {
                     onChange={(e) => set("headline", e.target.value)}
                     placeholder={
                       user.role === "student"
-                        ? "Final-year CS student · Full-stack & data"
+                        ? "Final-year BAMS intern · Panchakarma & clinical research"
                         : user.role === "industry"
-                        ? "Hiring engineering interns across India"
-                        : "Associate Professor · Applied Research"
+                        ? "Hiring AYUSH interns across India"
+                        : "Associate Professor · Dravyaguna & Pharmacognosy"
                     }
                   />
                 </Field>
@@ -294,7 +294,7 @@ export default function EditProfileModal({ onClose }) {
                     </Field>
                     <div className="grid grid-cols-2 gap-3">
                       <Field label="Course">
-                        <TextInput value={form.course} onChange={(e) => set("course", e.target.value)} placeholder="B.Tech / B.Sc / MBA" />
+                        <TextInput value={form.course} onChange={(e) => set("course", e.target.value)} placeholder="BAMS / BHMS / BUMS / BSMS / BNYS" />
                       </Field>
                       <Field label="Year">
                         <Select value={form.year} onChange={(e) => set("year", e.target.value)}>
@@ -308,7 +308,7 @@ export default function EditProfileModal({ onClose }) {
                         <TextInput value={form.batch} onChange={(e) => set("batch", e.target.value)} placeholder="2023" />
                       </Field>
                       <Field label="Roll Number">
-                        <TextInput value={form.rollNo} onChange={(e) => set("rollNo", e.target.value)} placeholder="CSE/2023/017" />
+                        <TextInput value={form.rollNo} onChange={(e) => set("rollNo", e.target.value)} placeholder="BAMS/2023/017" />
                       </Field>
                     </div>
                     <div className="grid grid-cols-2 gap-3">
@@ -335,7 +335,7 @@ export default function EditProfileModal({ onClose }) {
                     </Field>
                     <div className="grid grid-cols-2 gap-3">
                       <Field label="HQ Location">
-                        <TextInput value={form.hqLocation} onChange={(e) => set("hqLocation", e.target.value)} placeholder="Pune, Maharashtra" />
+                        <TextInput value={form.hqLocation} onChange={(e) => set("hqLocation", e.target.value)} placeholder="Ghaziabad, Uttar Pradesh" />
                       </Field>
                       <Field label="Company Size">
                         <Select value={form.companySize} onChange={(e) => set("companySize", e.target.value)}>

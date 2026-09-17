@@ -3,7 +3,7 @@ import Link from "next/link";
 export default function NotFound() {
   const personas = [
     { title: "Student Dashboard", desc: "Access verified skill scores, applications & career roadmaps", href: "/dashboard", icon: "🎓" },
-    { title: "Recruiter & Industry", desc: "Manage talent pipelines, candidate shortlists & postings", href: "/industry", icon: "💼" },
+    { title: "AYUSH Industry", desc: "Manage AYUSH talent pipelines, candidate shortlists & postings", href: "/industry", icon: "💼" },
     { title: "Academician Portal", desc: "Track student cohorts, curriculum mappings & research", href: "/academician", icon: "🔬" },
     { title: "Institution & TPO", desc: "Monitor institutional placements, drives & partnerships", href: "/institution", icon: "🏛️" },
   ];
@@ -17,7 +17,7 @@ export default function NotFound() {
           </div>
           <div>
             <div className="font-bold text-foreground text-sm tracking-tight">Skill Setu</div>
-            <div className="text-[11px] text-muted-foreground -mt-0.5">National Academia-Industry Bridge</div>
+            <div className="text-[11px] text-muted-foreground -mt-0.5">AYUSH Academia–Industry Bridge</div>
           </div>
         </Link>
         <Link
@@ -59,7 +59,7 @@ export default function NotFound() {
       </main>
 
       <footer className="max-w-5xl mx-auto w-full pt-8 border-t border-border text-center text-xs text-muted-foreground">
-        Skill Setu · Smart India Hackathon Grand Finale (SIH26044) · Academia & Industry Partners
+        Skill Setu · Smart India Hackathon Grand Finale (SIH26044) · Ministry of AYUSH · Academia & Industry Partners
       </footer>
     </div>
   );

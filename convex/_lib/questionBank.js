@@ -6,10 +6,11 @@
  * into the Next.js client) and is read only by the grading mutation. The
  * client gets question text and options from a query that strips `correct`.
  *
- * Ten domains, assessed the same way for every student: eight general
- * employability competencies screened across technology, engineering,
- * consulting, management, design and health sciences, plus two faculty-specific
- * domains for the science and design streams. Which of these a given student is actually
+ * Ten domains, assessed the same way for every student: four universal
+ * aptitude axes, four AYUSH professional competencies (research & clinical
+ * documentation, digital health, practice management & regulation, health
+ * data), and two applied axes — ASU&H clinical fundamentals and herbal drug
+ * quality / GMP / pharmacognosy. Which of these a given student is actually
  * charted and scored on is decided by lib/taxonomy.js from their own
  * department — no student is assessed on a rubric that isn't theirs.
  */
@@ -19,14 +20,14 @@ import { SKILL_DOMAINS } from "../../lib/questionBank";
 export const QUESTION_BANK = {
   /* ---------- Core Universal Employability Domains ---------- */
   "Quantitative Aptitude": [
-    { question: "If a train travels 60 km in 45 minutes, what is its speed in km/h?", options: ["60", "75", "80", "90"], correct: 2 },
-    { question: "What is 15% of 240?", options: ["30", "36", "40", "24"], correct: 1 },
-    { question: "The average of 5 numbers is 20. If one number is removed, the average of the remaining 4 becomes 18. What was the removed number?", options: ["24", "28", "30", "32"], correct: 1 },
-    { question: "A shopkeeper marks up a product by 25% and then gives a 20% discount on the marked price. What is the net effect?", options: ["5% profit", "No profit, no loss", "5% loss", "10% profit"], correct: 1 },
-    { question: "Simplify: 2/3 + 1/6", options: ["5/6", "1/2", "3/9", "1"], correct: 0 },
+    { question: "A Panchakarma centre treats 60 patients in 45 minutes of registration time. At the same rate, how many are registered per hour?", options: ["60", "75", "80", "90"], correct: 2 },
+    { question: "What is 15% of 240 ml of a medicated oil (taila)?", options: ["30 ml", "36 ml", "40 ml", "24 ml"], correct: 1 },
+    { question: "The average daily OPD count over 5 days at an Ayurveda dispensary is 20. If one day is removed, the average of the remaining 4 becomes 18. What was the removed day's count?", options: ["24", "28", "30", "32"], correct: 1 },
+    { question: "An Ayurvedic pharmacy marks up a churna by 25% and then gives a 20% discount on the marked price. What is the net effect?", options: ["5% profit", "No profit, no loss", "5% loss", "10% profit"], correct: 1 },
+    { question: "Simplify: 2/3 + 1/6 (a decoction dilution ratio)", options: ["5/6", "1/2", "3/9", "1"], correct: 0 },
   ],
   "Logical Reasoning": [
-    { question: "Find the odd one out.", options: ["Apple", "Banana", "Carrot", "Mango"], correct: 2 },
+    { question: "Find the odd one out.", options: ["Ashwagandha", "Brahmi", "Ghee", "Shatavari"], correct: 2 },
     { question: "All Bloops are Razzles. All Razzles are Lazzles. Are all Bloops definitely Lazzles?", options: ["Yes", "No", "Cannot be determined", "Only sometimes"], correct: 0 },
     { question: "Complete the series: 2, 6, 12, 20, 30, ?", options: ["40", "42", "36", "38"], correct: 1 },
     { question: "A is taller than B. C is shorter than B. Who is the shortest?", options: ["A", "B", "C", "Cannot be determined"], correct: 2 },
@@ -36,59 +37,59 @@ export const QUESTION_BANK = {
     { question: "Choose the correctly spelled word.", options: ["Recieve", "Receive", "Receeve", "Receve"], correct: 1 },
     { question: "Choose the synonym of 'Meticulous'.", options: ["Careless", "Thorough", "Hasty", "Vague"], correct: 1 },
     { question: "Choose the antonym of 'Abundant'.", options: ["Plentiful", "Scarce", "Ample", "Generous"], correct: 1 },
-    { question: "Fill in the blank: \"She has been working here ___ 2019.\"", options: ["since", "for", "from", "at"], correct: 0 },
+    { question: "Fill in the blank: \"She has been practising at the AYUSH wellness centre ___ 2019.\"", options: ["since", "for", "from", "at"], correct: 0 },
     { question: "Which sentence is correctly punctuated?", options: ["Its a great day.", "It's a great day.", "Its' a great day.", "It is' a great day."], correct: 1 },
   ],
-  "Programming & Digital Fundamentals": [
-    { question: "What does 'API' stand for?", options: ["Application Programming Interface", "Advanced Program Integration", "Applied Programming Interface", "Automated Program Instruction"], correct: 0 },
-    { question: "Which data structure follows First-In-First-Out (FIFO)?", options: ["Stack", "Queue", "Tree", "Graph"], correct: 1 },
-    { question: "What is the time complexity of binary search on a sorted list of n items?", options: ["O(n)", "O(log n)", "O(n^2)", "O(1)"], correct: 1 },
-    { question: "In a relational database, what does a single row in a table typically represent?", options: ["A function", "A single record", "A loop", "A variable"], correct: 1 },
-    { question: "Which SQL clause filters rows before grouping?", options: ["HAVING", "WHERE", "ORDER BY", "LIMIT"], correct: 1 },
+  "AYUSH Digital Health & Telemedicine": [
+    { question: "Which national teleconsultation service runs a dedicated AYUSH OPD for online consultations with Ayurveda, Yoga, Unani, Siddha and Homoeopathy practitioners?", options: ["DigiLocker", "eSanjeevani", "UMANG", "CoWIN"], correct: 1 },
+    { question: "The Ayush Grid initiative of the Ministry of AYUSH aims to:", options: ["Build a unified IT backbone for the AYUSH sector — digital health records, telemedicine, education and research", "Distribute free medicines by post", "Run a chain of spa resorts", "Print pharmacopoeia volumes"], correct: 0 },
+    { question: "Under the Ayushman Bharat Digital Mission (ABDM), the ABHA number is:", options: ["A drug manufacturing licence", "A prescription format", "A unique health ID that links a person's digital health records", "A yoga certification"], correct: 2 },
+    { question: "In digital health, 'interoperability' means:", options: ["Software runs only on one device", "Different systems can exchange and use health data consistently", "Records are stored on paper", "All doctors share one login"], correct: 1 },
+    { question: "The NAMASTE portal (National AYUSH Morbidity and Standardized Terminologies Electronic) is used for:", options: ["Booking spa appointments", "Exporting herbal products", "Student admissions", "Standardised coding of AYUSH morbidity and diagnostic terminologies"], correct: 3 },
   ],
   "Problem Solving & Critical Thinking": [
-    { question: "When resolving an unexpected system outage, what is the recommended first step?", options: ["Blame the last committer", "Identify symptoms, scope impact and isolate recent changes", "Restart all infrastructure without logging", "Wait for users to complain"], correct: 1 },
+    { question: "A patient reports an unexpected reaction midway through a Panchakarma course. What is the recommended first step?", options: ["Continue as planned until the course ends", "Stop the procedure, assess symptoms, document them and escalate to the treating physician", "Blame the therapist", "Wait for the patient to complain again"], correct: 1 },
     { question: "Which cognitive bias describes relying heavily on the first piece of information encountered?", options: ["Confirmation bias", "Anchoring bias", "Hindsight bias", "Availability heuristic"], correct: 1 },
-    { question: "A team has a hard 2-week deadline and scope exceeds capacity. What is the standard Agile response?", options: ["Force team to work 18-hour days", "Negotiate scope down with stakeholders and prioritize core value", "Cancel the project immediately", "Deliver untested code silently"], correct: 1 },
+    { question: "An AYUSH health camp has a fixed date and more registrations than the team can screen. What is the sound response?", options: ["Ask the team to work 18-hour days", "Prioritise by clinical need, negotiate scope with the organisers and schedule follow-ups", "Cancel the camp on the day", "Skip documentation to move faster"], correct: 1 },
     { question: "In root cause analysis, which technique asks 'Why?' iteratively to reach the source issue?", options: ["Pareto Principle", "5 Whys technique", "Monte Carlo simulation", "Six Sigma Black Belt"], correct: 1 },
     { question: "What is the primary difference between correlation and causation?", options: ["They mean the exact same thing", "Correlation indicates a relationship; causation proves one variable directly triggers the other", "Causation applies only in physics", "Correlation requires a laboratory"], correct: 1 },
   ],
-  "Business & Professional Dynamics": [
-    { question: "In a professional email, what does 'CC' typically mean?", options: ["Carbon Copy", "Central Copy", "Confirm Copy", "Copy Content"], correct: 0 },
-    { question: "What is the first step in effective active listening?", options: ["Interrupting to clarify", "Giving full attention to the speaker", "Preparing your response while they talk", "Checking your phone"], correct: 1 },
-    { question: "In a SWOT analysis, what does the 'O' stand for?", options: ["Objectives", "Opportunities", "Outcomes", "Operations"], correct: 1 },
-    { question: "What is the primary purpose of a KPI (Key Performance Indicator)?", options: ["To decorate reports", "To measure progress toward an objective", "To replace employee reviews", "To set office rules"], correct: 1 },
-    { question: "Which of these represents good practice when concluding a client or stakeholder meeting?", options: ["Leaving immediately without summary", "Reiterating agreed action items, owners, and due dates", "Avoiding written follow-ups", "Changing agreed commitments unilaterally"], correct: 1 },
+  "AYUSH Practice Management & Ethics": [
+    { question: "Registration of Ayurveda, Unani, Siddha and Sowa-Rigpa practitioners in India is regulated by:", options: ["National Medical Commission (NMC)", "National Commission for Indian System of Medicine (NCISM)", "Pharmacy Council of India", "Dental Council of India"], correct: 1 },
+    { question: "Which body regulates homoeopathic education and practitioner registration in India?", options: ["NCISM", "AICTE", "National Commission for Homoeopathy (NCH)", "NMC"], correct: 2 },
+    { question: "The 'AYUSH Premium Mark' is:", options: ["A voluntary quality certification for AYUSH products, particularly for export markets", "A scholarship scheme", "A hospital rating", "A yoga competition award"], correct: 0 },
+    { question: "A patient's clinical records at an AYUSH hospital should be:", options: ["Posted publicly for research", "Discarded after each visit", "Shared freely with pharmaceutical companies", "Kept confidential and shared only with consent or as the law requires"], correct: 3 },
+    { question: "The National AYUSH Mission (NAM) is a centrally sponsored scheme that primarily:", options: ["Regulates allopathic drug pricing", "Strengthens AYUSH hospitals, colleges, drug quality control and medicinal-plant cultivation through the States/UTs", "Runs national entrance exams for engineering", "Funds IT parks"], correct: 1 },
   ],
   "Data Analysis & Interpretation": [
-    { question: "Which metric is least affected by extreme outliers in a skewed dataset?", options: ["Mean", "Median", "Standard deviation", "Variance"], correct: 1 },
-    { question: "What chart type is best suited for showing proportions of a whole across 3–4 categories?", options: ["Scatter plot", "Donut / Pie chart", "Candlestick chart", "Gantt chart"], correct: 1 },
-    { question: "In A/B testing, a statistically significant result typically means:", options: ["The result happened purely by chance", "The observed difference is unlikely due to random variation", "Every user preferred option B", "No further testing is ever needed"], correct: 1 },
-    { question: "What does a high positive correlation coefficient (+0.88) indicate between variables X and Y?", options: ["As X increases, Y tends to increase", "As X increases, Y tends to decrease", "There is zero relationship", "X causes Y directly"], correct: 0 },
-    { question: "Which of these is a categorical (qualitative) variable?", options: ["Annual revenue", "Employee department", "Years of experience", "Server response time"], correct: 1 },
+    { question: "Which metric is least affected by extreme outliers in a skewed dataset of patient recovery times?", options: ["Mean", "Median", "Standard deviation", "Variance"], correct: 1 },
+    { question: "What chart type is best suited for showing the share of OPD visits across the 3–4 AYUSH systems at a hospital?", options: ["Scatter plot", "Donut / Pie chart", "Candlestick chart", "Gantt chart"], correct: 1 },
+    { question: "In a comparison of two Yoga protocols, a statistically significant result typically means:", options: ["The result happened purely by chance", "The observed difference is unlikely to be due to random variation", "Every participant preferred protocol B", "No further study is ever needed"], correct: 1 },
+    { question: "What does a high positive correlation coefficient (+0.88) indicate between adherence to a Pathya diet (X) and symptom improvement (Y)?", options: ["As X increases, Y tends to increase", "As X increases, Y tends to decrease", "There is zero relationship", "X causes Y directly"], correct: 0 },
+    { question: "Which of these is a categorical (qualitative) variable?", options: ["Dispensary revenue", "Patient's Prakriti type (Vata / Pitta / Kapha)", "Years of practice", "Consultation duration in minutes"], correct: 1 },
   ],
-  "Research & Documentation": [
-    { question: "In formal research, which section provides an exhaustive summary of prior published work on the subject?", options: ["Literature Review", "Executive Summary only", "Appendix B", "Budget justification"], correct: 0 },
+  "AYUSH Research & Clinical Documentation": [
+    { question: "Before enrolling the first participant, an AYUSH clinical trial in India must be registered with:", options: ["Clinical Trials Registry – India (CTRI)", "The institution's library", "The state drug controller only", "No registry is required"], correct: 0 },
     { question: "Informed consent in human participant studies must always be:", options: ["Verbal only", "Documented, voluntary, and revocable at any time", "Signed by the investigator alone", "Obtained after publication"], correct: 1 },
-    { question: "A p-value of 0.02 at an alpha level of 0.05 indicates:", options: ["The null hypothesis can be rejected", "The result is inconclusive", "The sample size was too large", "There is a 98% chance of experimental error"], correct: 0 },
-    { question: "Which of these constitutes proper citation practice to avoid plagiarism?", options: ["Paraphrasing without attributing the author", "Using exact quotes with quotation marks, author citation, and page/link", "Only citing websites, never academic papers", "Omitting sources if found on social media"], correct: 1 },
-    { question: "What is the primary purpose of peer review in scientific publishing?", options: ["To delay publication", "To independently evaluate validity, methodology, and originality", "To market the paper to news outlets", "To check typography only"], correct: 1 },
+    { question: "In a randomised controlled trial of a Panchakarma protocol, the purpose of the control group is to:", options: ["Increase the cost of the trial", "Guarantee a positive result", "Separate the effect of the intervention from natural recovery and expectation", "Avoid ethics-committee review"], correct: 2 },
+    { question: "A Case Record Form (CRF) in a clinical study is used to:", options: ["Advertise the trial", "Capture each participant's protocol-required data in a standard format", "Replace informed consent", "Record only adverse events"], correct: 1 },
+    { question: "Which of these constitutes proper citation practice when quoting a Samhita commentary or a journal paper?", options: ["Paraphrasing without attributing the author", "Using exact quotes with quotation marks, author citation, and page/link", "Only citing websites, never classical texts", "Omitting sources if found on social media"], correct: 1 },
   ],
 
-  /* ---------- Faculty-specific domains ---------- */
-  "Health & Life Sciences": [
-    { question: "Which organ system is primarily responsible for gas exchange in the human body?", options: ["Respiratory system", "Endocrine system", "Lymphatic system", "Integumentary system"], correct: 0 },
-    { question: "In a controlled clinical study, the purpose of a placebo group is to:", options: ["Increase the size of the treatment effect", "Separate the effect of the intervention from expectation and natural recovery", "Reduce the cost of the trial", "Guarantee statistical significance"], correct: 1 },
-    { question: "Incidence and prevalence differ in that incidence measures:", options: ["Total existing cases at one point in time", "New cases arising over a period of time", "Deaths attributable to a disease", "Cases per hospital bed"], correct: 1 },
-    { question: "Which practice is the single most effective way to limit infection transmission in a clinical setting?", options: ["Hand hygiene", "Wearing a lab coat", "Keeping windows open", "Daily temperature checks"], correct: 0 },
-    { question: "Enzymes increase the rate of a biochemical reaction by:", options: ["Raising the reaction temperature", "Lowering the activation energy", "Shifting the equilibrium position", "Consuming the substrate directly"], correct: 1 },
+  /* ---------- Applied AYUSH domains ---------- */
+  "ASU&H Clinical Fundamentals": [
+    { question: "In Ayurveda, the three doshas that govern physiological function are:", options: ["Vata, Pitta, Kapha", "Rasa, Rakta, Mamsa", "Sattva, Rajas, Tamas", "Agni, Ama, Ojas"], correct: 0 },
+    { question: "Which classical Ayurvedic text is primarily associated with surgery (Shalya Tantra)?", options: ["Charaka Samhita", "Sushruta Samhita", "Ashtanga Hridaya", "Madhava Nidana"], correct: 1 },
+    { question: "In Unani medicine, the four humours (Akhlat) are Dam, Balgham, Safra and:", options: ["Ruh", "Mizaj", "Sauda", "Quwa"], correct: 2 },
+    { question: "The foundational principle of Homoeopathy, 'Similia Similibus Curentur', means:", options: ["Opposites cure", "Like cures like", "The minimum dose is the maximum", "Disease is dosha imbalance"], correct: 1 },
+    { question: "In Siddha medicine, 'Mukkutram' refers to the three humours Vatham, Pitham and:", options: ["Kabam", "Rasam", "Ojas", "Sauda"], correct: 0 },
   ],
-  "Design & Visual Thinking": [
-    { question: "Visual hierarchy on a screen is established primarily through:", options: ["Alphabetical ordering", "Contrast, scale and spacing", "Using as many colours as possible", "Centring every element"], correct: 1 },
-    { question: "A wireframe is best described as:", options: ["A final, pixel-accurate design", "A low-fidelity layout that settles structure and priority before styling", "The production front-end code", "A colour palette specification"], correct: 1 },
-    { question: "Which pairing is most likely to fail an accessibility contrast check?", options: ["Near-black text on white", "Light grey text on a white background", "White text on a dark navy background", "Dark green text on a pale background"], correct: 1 },
-    { question: "In user research, the point of a usability test is to:", options: ["Confirm that the team's design is correct", "Observe where real users struggle to complete a task", "Collect testimonials for marketing", "Measure page load time"], correct: 1 },
-    { question: "Whitespace in a layout is best understood as:", options: ["Wasted area waiting to be filled", "An active tool for grouping, separation and emphasis", "A printing constraint only", "Another name for a white background"], correct: 1 },
+  "Herbal Drug Quality, GMP & Pharmacognosy": [
+    { question: "GMP requirements for Ayurveda, Siddha and Unani drug manufacturing in India are laid down under which schedule of the Drugs and Cosmetics Rules, 1945?", options: ["Schedule M", "Schedule T", "Schedule Y", "Schedule H"], correct: 1 },
+    { question: "Which official monograph collection sets quality standards for single drugs and formulations of Ayurveda in India?", options: ["Indian Pharmacopoeia (IP)", "British Pharmacopoeia", "Ayurvedic Pharmacopoeia of India (API)", "Homoeopathic Pharmacopoeia of India"], correct: 2 },
+    { question: "HPTLC fingerprinting is used in ASU drug quality control primarily to:", options: ["Establish the identity and batch-to-batch consistency of a herbal raw material or formulation", "Measure tablet hardness", "Determine shelf-life by accelerated heating", "Count microbial colonies"], correct: 0 },
+    { question: "Which heavy-metal limit test is routinely mandated for ASU formulations before release?", options: ["Sodium and potassium", "Calcium and magnesium", "Iron and zinc", "Lead, arsenic, mercury and cadmium"], correct: 3 },
+    { question: "In Rasashastra, a 'Bhasma' is:", options: ["A fermented herbal decoction", "A calcined (incinerated) metal or mineral preparation", "A medicated oil", "A herbal powder mixed with honey"], correct: 1 },
   ],
 };
 

@@ -6,7 +6,7 @@ function otpEmailHtml(otp) {
         <div style="font-family: Arial, sans-serif; max-width: 560px; margin: 0 auto; padding: 24px; background: #FAF7F2; border: 1px solid #DFD6C6; border-radius: 12px;">
           <div style="text-align: center; margin-bottom: 20px;">
             <h2 style="color: #1B4B43; margin: 0;">🌉 Skill Setu</h2>
-            <p style="color: #61706B; font-size: 13px; margin: 4px 0 0;">Academia–Industry Collaboration Portal</p>
+            <p style="color: #61706B; font-size: 13px; margin: 4px 0 0;">AYUSH Academia–Industry Collaboration Portal</p>
           </div>
           <div style="background: #FFFFFF; padding: 24px; border-radius: 10px; border: 1px solid #EDE4D6; text-align: center;">
             <p style="font-size: 15px; color: #12211E; margin-top: 0;">Hello,</p>

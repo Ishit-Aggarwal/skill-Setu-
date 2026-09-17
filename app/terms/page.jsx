@@ -7,7 +7,7 @@ export default function TermsPage() {
     <StaticPageLayout title="Terms of Use">
       <p>
         Skill Setu was built as a submission for Smart India Hackathon (Problem Statement SIH26044). It's a
-        working demonstration of an academia–industry collaboration platform, not a production service
+        working demonstration of an AYUSH academia–industry collaboration platform, not a production service
         with a support team or uptime guarantees.
       </p>
       <h2>Demo data</h2>

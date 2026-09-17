@@ -545,7 +545,7 @@ function HostView({ user }) {
         <Modal title="Host a Skill Test" onClose={() => { setShowModal(false); setFormError(null); }} size="lg">
           <form onSubmit={handleCreate} className="space-y-4">
             <Field label="Test Title">
-              <TextInput required value={form.title} onChange={(e) => setForm((f) => ({ ...f, title: e.target.value }))} placeholder="e.g. Programming Fundamentals Quiz" />
+              <TextInput required value={form.title} onChange={(e) => setForm((f) => ({ ...f, title: e.target.value }))} placeholder="e.g. ASU&H Clinical Fundamentals Quiz" />
             </Field>
             <div className="grid grid-cols-2 gap-3">
               <Field label="Mode">
@@ -608,7 +608,7 @@ function HostView({ user }) {
             ) : (
               <>
                 <Field label="Skill / Focus Area">
-                  <TextInput value={form.domain} onChange={(e) => setForm((f) => ({ ...f, domain: e.target.value }))} placeholder="e.g. Case Study & Group Discussion" />
+                  <TextInput value={form.domain} onChange={(e) => setForm((f) => ({ ...f, domain: e.target.value }))} placeholder="e.g. Clinical Case Study & Group Discussion" />
                 </Field>
                 <Field label="Reporting Time" hint="What candidates are told to arrive by, if it differs from the start.">
                   <TextInput value={form.reportingTime} onChange={(e) => setForm((f) => ({ ...f, reportingTime: e.target.value }))} placeholder="9:30 AM" />
@@ -626,7 +626,7 @@ function HostView({ user }) {
               <TextInput value={form.prerequisites} onChange={(e) => setForm((f) => ({ ...f, prerequisites: e.target.value }))} placeholder="What should candidates know beforehand?" />
             </Field>
             <Field label="Certification Awarded">
-              <TextInput value={form.certification} onChange={(e) => setForm((f) => ({ ...f, certification: e.target.value }))} placeholder="e.g. Programming Fundamentals Certificate" />
+              <TextInput value={form.certification} onChange={(e) => setForm((f) => ({ ...f, certification: e.target.value }))} placeholder="e.g. Clinical Fundamentals Certificate" />
             </Field>
             <Field label="Rules (one per line)">
               <TextArea value={form.rules} onChange={(e) => setForm((f) => ({ ...f, rules: e.target.value }))} rows={3} placeholder={"Keep your camera on\nNo external notes"} />

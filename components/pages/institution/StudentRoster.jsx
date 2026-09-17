@@ -409,14 +409,14 @@ function AddStudentModal({ instituteName, actor, onClose, onDone }) {
         <div className="grid sm:grid-cols-2 gap-3">
           <Field label="Full name"><TextInput required value={form.name} onChange={(e) => set("name", e.target.value)} placeholder="Aarav Sharma" /></Field>
           <Field label="Email"><TextInput required type="email" value={form.email} onChange={(e) => set("email", e.target.value)} placeholder="aarav@college.edu.in" /></Field>
-          <Field label="Roll number"><TextInput value={form.rollNo} onChange={(e) => set("rollNo", e.target.value)} placeholder="CSE/2024/017" /></Field>
+          <Field label="Roll number"><TextInput value={form.rollNo} onChange={(e) => set("rollNo", e.target.value)} placeholder="BAMS/2024/017" /></Field>
           <Field label="Phone"><TextInput value={form.phone} onChange={(e) => set("phone", e.target.value)} placeholder="+91 98765 43210" /></Field>
           <Field label="Department">
             <Select value={form.department} onChange={(e) => set("department", e.target.value)}>
               {DEPARTMENTS.map((d) => <option key={d}>{d}</option>)}
             </Select>
           </Field>
-          <Field label="Course"><TextInput value={form.course} onChange={(e) => set("course", e.target.value)} placeholder="B.Tech CSE" /></Field>
+          <Field label="Course"><TextInput value={form.course} onChange={(e) => set("course", e.target.value)} placeholder="BAMS" /></Field>
           <Field label="Batch (year of entry)"><TextInput value={form.batch} onChange={(e) => set("batch", e.target.value)} placeholder="2024" /></Field>
           <Field label="Current year">
             <Select value={form.year} onChange={(e) => set("year", e.target.value)}>

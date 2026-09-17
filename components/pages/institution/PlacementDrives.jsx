@@ -434,7 +434,7 @@ function CreateDriveModal({ instituteName, actor, batches, onClose, onDone }) {
           <TagInput
             value={tags}
             onChange={setTags}
-            placeholder="e.g. Software, Core Engineering, Analytics"
+            placeholder="e.g. Clinical Ayurveda, GMP & QC, Wellness"
             inputLabel="Add a sector tag"
             maxTags={8}
             emptyHint="None yet."
@@ -445,7 +445,7 @@ function CreateDriveModal({ instituteName, actor, batches, onClose, onDone }) {
 
         <div className="grid sm:grid-cols-3 gap-3">
           <Field label="Coordinator"><TextInput value={form.coordinatorName} onChange={(e) => set("coordinatorName", e.target.value)} placeholder="Pooja Sharma" /></Field>
-          <Field label="Contact email"><TextInput type="email" value={form.coordinatorEmail} onChange={(e) => set("coordinatorEmail", e.target.value)} placeholder="tpo@apex-tech.edu.in" /></Field>
+          <Field label="Contact email"><TextInput type="email" value={form.coordinatorEmail} onChange={(e) => set("coordinatorEmail", e.target.value)} placeholder="placement@aiia.example.in" /></Field>
           <Field label="Contact phone"><TextInput value={form.coordinatorPhone} onChange={(e) => set("coordinatorPhone", e.target.value)} placeholder="+91 80 4123 5500" /></Field>
         </div>
 
@@ -478,7 +478,7 @@ function InviteCompanyModal({ drive, instituteName, actor, suggestions, onClose,
             list="drive-company-suggestions"
             value={form.company}
             onChange={(e) => set("company", e.target.value)}
-            placeholder="Apex Global Technologies & Innovations"
+            placeholder="Dabur India Ltd."
             className="w-full bg-background border border-border rounded-xl px-3.5 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-primary/30"
           />
           <datalist id="drive-company-suggestions">
@@ -489,7 +489,7 @@ function InviteCompanyModal({ drive, instituteName, actor, suggestions, onClose,
           <Field label="Primary contact"><TextInput value={form.contact} onChange={(e) => set("contact", e.target.value)} placeholder="Name of their recruiter" /></Field>
           <Field label="Expected openings"><TextInput type="number" min="0" value={form.expectedRoles} onChange={(e) => set("expectedRoles", e.target.value)} placeholder="12" /></Field>
         </div>
-        <Field label="Roles being offered"><TextInput value={form.roles} onChange={(e) => set("roles", e.target.value)} placeholder="Formulation Intern, QC Analyst" /></Field>
+        <Field label="Roles being offered"><TextInput value={form.roles} onChange={(e) => set("roles", e.target.value)} placeholder="Panchakarma Therapist Intern, QC Analyst (ASU Drugs)" /></Field>
         <div className="flex gap-3">
           <Button type="button" variant="outline" className="flex-1" onClick={onClose}>Cancel</Button>
           <Button type="submit" className="flex-1">Send invitation</Button>

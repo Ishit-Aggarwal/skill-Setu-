@@ -73,9 +73,9 @@ export default function CandidateProfileModal({ application, onClose, onUpdated 
   const resumeDoc = portfolio?.documents?.find((d) => d.type === "Resume" && hasFile(d)) || null;
 
   /* The categories shown are this candidate's own rubric, derived from their
-     department and course — not a fixed list applied to every student. A CSE
-     candidate is never shown clinical axes, and a nursing candidate is never shown
-     programming ones. */
+     department and course — not a fixed list applied to every student. A BAMS
+     candidate is never shown HPTLC axes, and a B.Pharm (Ayu) candidate is never
+     shown Panchakarma ones. */
   const competency = scoresFor(
     student || {
       department: application.studentDepartment,
@@ -483,7 +483,7 @@ export default function CandidateProfileModal({ application, onClose, onUpdated 
                       value={feedbackSummary}
                       onChange={(e) => setFeedbackSummary(e.target.value)}
                       rows={2}
-                      placeholder="e.g. Great communication during the round, recommend practicing system design problems."
+                      placeholder="e.g. Strong clinical viva, recommend more practice on Panchakarma case presentation."
                       className="w-full bg-background border border-border rounded-xl px-3 py-2 text-xs focus:outline-none focus:ring-2 focus:ring-primary/30 resize-none"
                     />
                   </div>

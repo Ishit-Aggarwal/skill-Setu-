@@ -910,7 +910,7 @@ function ProgramForm({ program, onCancel, onSubmit }) {
           required
           value={form.title}
           onChange={(e) => set("title", e.target.value)}
-          placeholder="e.g. Applied Machine Learning for Educators"
+          placeholder="e.g. Research Methodology & Biostatistics for AYUSH Faculty"
         />
       </Field>
 
@@ -983,7 +983,7 @@ function ProgramForm({ program, onCancel, onSubmit }) {
             required
             value={form.venue}
             onChange={(e) => set("venue", e.target.value)}
-            placeholder="e.g. Central Instrumentation Lab, Room 204"
+            placeholder="e.g. Pharmacognosy & Drug Testing Lab, Room 204"
           />
         </Field>
       )}

@@ -10,27 +10,27 @@ import DemoModeMenu from "../../components/DemoModeMenu";
 const roleConfig = {
   student: {
     label: "Student",
-    desc: "Engineering · Management · Technology · Sciences · Healthcare · Design",
+    desc: "BAMS · BHMS · BUMS · BSMS · BNYS · MD/MS (Ayu) · PG Diplomas",
     image: "https://images.unsplash.com/photo-1686624386665-4cd01b96d0f6?w=800&h=1100&fit=crop&auto=format",
-    tagline: "Map your skills. Find your internship.",
+    tagline: "Map your AYUSH skills. Find your internship.",
   },
   industry: {
     label: "Industry",
-    desc: "IT & Tech · Manufacturing · Finance · Healthcare & Life Sciences",
+    desc: "ASU&H Drug Manufacturers · Ayurveda Hospitals · Research Councils · Wellness & Export",
     image: "https://images.unsplash.com/photo-1577962917302-cd874c4e31d2?w=800&h=1100&fit=crop&auto=format",
-    tagline: "Hire talent matched to your needs.",
+    tagline: "Hire AYUSH talent matched to your needs.",
   },
   academician: {
     label: "Academician",
-    desc: "Faculty · Researchers · Program Leads",
+    desc: "Vaidyas · Hakims · Siddha & Homoeopathy Faculty · Yoga Therapists",
     image: "https://images.unsplash.com/photo-1573894998033-c0cef4ed722b?w=800&h=1100&fit=crop&auto=format",
-    tagline: "Drive research and student excellence.",
+    tagline: "Drive AYUSH research and student excellence.",
   },
   institution: {
     label: "Institution",
-    desc: "Placement Cells · Deans · Multi-faculty Institutes",
+    desc: "National Institutes · AYUSH Universities · NCISM/NCH-approved Colleges",
     image: "https://images.unsplash.com/photo-1680084521816-cc1ad0433ceb?w=800&h=1100&fit=crop&auto=format",
-    tagline: "Track placement outcomes at scale.",
+    tagline: "Track AYUSH placement outcomes at scale.",
   },
 };
 
@@ -42,8 +42,8 @@ const roleConfig = {
  * more than one account.
  */
 const ORG_ROLES = {
-  industry: { noun: "company name", label: "Company Name", placeholder: "e.g. Meridian Software Labs" },
-  institution: { noun: "institution name", label: "Institution Name", placeholder: "e.g. Apex University of Technology & Applied Sciences" },
+  industry: { noun: "company name", label: "Company Name", placeholder: "e.g. Dabur India Ltd." },
+  institution: { noun: "institution name", label: "Institution Name", placeholder: "e.g. All India Institute of Ayurveda (AIIA), New Delhi" },
 };
 
 const MIN_PASSWORD_LENGTH = 8;
@@ -52,7 +52,7 @@ function isValidEmail(email) {
   return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email);
 }
 
-/* A work email domain (e.g. "@meridiansoftware.com") is not a full email
+/* A work email domain (e.g. "@dabur.com") is not a full email
    address — just the "@domain.tld" part a company would issue addresses
    under. Only checking it's non-empty let through anything typed. */
 function isValidDomain(value) {
@@ -337,7 +337,7 @@ function LoginPageInner() {
           <div>
             <div className="inline-block bg-white/10 border border-white/20 rounded-full px-3 py-1 text-xs text-white/80 mb-4">Smart India Hackathon · SIH26044</div>
             <h2 className="text-3xl font-semibold text-white mb-3 leading-snug">{selected.tagline}</h2>
-            <p className="text-white/60 text-sm">India's cross-industry academia–industry platform.</p>
+            <p className="text-white/60 text-sm">The Ministry of AYUSH academia–industry platform.</p>
           </div>
         </div>
       </div>
@@ -373,7 +373,7 @@ function LoginPageInner() {
               ? "Sign in to access your dashboard."
               : step === "otp"
               ? `Enter the 6-digit code sent to ${form.email}`
-              : "Join the cross-industry skill & placement network."}
+              : "Join the AYUSH skill-mapping & placement network."}
           </p>
 
           {step === "form" && (
@@ -685,13 +685,13 @@ function LoginPageInner() {
                 <>
                   <div>
                     <label className="block text-sm font-medium text-foreground mb-1.5">Institution</label>
-                    <input type="text" value={form.institution} onChange={(e) => setField("institution", e.target.value)} placeholder="Apex University of Technology & Applied Sciences"
+                    <input type="text" value={form.institution} onChange={(e) => setField("institution", e.target.value)} placeholder="All India Institute of Ayurveda (AIIA), New Delhi"
                       className="w-full bg-card border border-border rounded-xl px-4 py-3 text-sm text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-primary/30 focus:border-primary transition-all" />
                   </div>
                   <div className="grid grid-cols-2 gap-3">
                     <div>
                       <label className="block text-sm font-medium text-foreground mb-1.5">Course <span className="text-muted-foreground font-normal">(optional)</span></label>
-                      <input type="text" value={form.course} onChange={(e) => setField("course", e.target.value)} placeholder="B.Tech CSE / MBA / BAMS"
+                      <input type="text" value={form.course} onChange={(e) => setField("course", e.target.value)} placeholder="BAMS / BHMS / BUMS / BSMS / BNYS"
                         className="w-full bg-card border border-border rounded-xl px-4 py-3 text-sm text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-primary/30 focus:border-primary transition-all" />
                     </div>
                     <div>
@@ -710,7 +710,7 @@ function LoginPageInner() {
                 <>
                   <div>
                     <label className="block text-sm font-medium text-foreground mb-1.5">Organisation</label>
-                    <input type="text" value={form.companyName} onChange={(e) => setField("companyName", e.target.value)} placeholder="Meridian Software Labs"
+                    <input type="text" value={form.companyName} onChange={(e) => setField("companyName", e.target.value)} placeholder="Dabur India Ltd."
                       className="w-full bg-card border border-border rounded-xl px-4 py-3 text-sm text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-primary/30 focus:border-primary transition-all" />
                   </div>
                   <div>
@@ -731,12 +731,12 @@ function LoginPageInner() {
                 <>
                   <div>
                     <label className="block text-sm font-medium text-foreground mb-1.5">Institution</label>
-                    <input type="text" value={form.institution} onChange={(e) => setField("institution", e.target.value)} placeholder="Apex University of Technology & Applied Sciences"
+                    <input type="text" value={form.institution} onChange={(e) => setField("institution", e.target.value)} placeholder="All India Institute of Ayurveda (AIIA), New Delhi"
                       className="w-full bg-card border border-border rounded-xl px-4 py-3 text-sm text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-primary/30 focus:border-primary transition-all" />
                   </div>
                   <div>
                     <label className="block text-sm font-medium text-foreground mb-1.5">Department <span className="text-muted-foreground font-normal">(optional)</span></label>
-                    <input type="text" value={form.department} onChange={(e) => setField("department", e.target.value)} placeholder="Mechanical Engineering"
+                    <input type="text" value={form.department} onChange={(e) => setField("department", e.target.value)} placeholder="Dravyaguna & Pharmacognosy"
                       className="w-full bg-card border border-border rounded-xl px-4 py-3 text-sm text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-primary/30 focus:border-primary transition-all" />
                   </div>
                   <div>
@@ -752,7 +752,7 @@ function LoginPageInner() {
                 <>
                   <div>
                     <label className="block text-sm font-medium text-foreground mb-1.5">Institution Name</label>
-                    <input type="text" value={form.instituteName} onChange={(e) => setField("instituteName", e.target.value)} placeholder="Apex University of Technology & Applied Sciences"
+                    <input type="text" value={form.instituteName} onChange={(e) => setField("instituteName", e.target.value)} placeholder="All India Institute of Ayurveda (AIIA), New Delhi"
                       className="w-full bg-card border border-border rounded-xl px-4 py-3 text-sm text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-primary/30 focus:border-primary transition-all" />
                   </div>
                   <div>

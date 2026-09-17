@@ -87,8 +87,8 @@ export default function StudentAnalytics() {
 
   /**
    * The benchmark cohort: other students on the same rubric — same taxonomy,
-   * and where possible the same department. Comparing a CSE student's score
-   * against a platform-wide average that includes clinical streams assessed on
+   * and where possible the same department. Comparing a BAMS student's score
+   * against a platform-wide average that includes pharmacy streams assessed on
    * entirely different domains would not mean anything.
    */
   const peers = useMemo(() => {

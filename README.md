@@ -1,20 +1,20 @@
-# Skill Setu — Academia–Industry Collaboration Portal
+# Skill Setu — AYUSH Academia–Industry Collaboration Portal
 
-**Skill Mapping, Internships & Placements**
-Smart India Hackathon · Problem Statement SIH26044
+**Skill Mapping, Internships & Placements for Ayurveda, Yoga & Naturopathy, Unani, Siddha and Homoeopathy**
+Smart India Hackathon · Ministry of AYUSH · Problem Statement SIH26044
 
 ---
 
 ## What is Skill Setu?
 
-**Skill Setu** ("bridge") is a unified platform connecting **students**, **academicians**, **industry partners**, and **institutions** across every sector — not just one industry. It covers the full lifecycle described in the problem statement: skill assessment, skill mapping, internship & job discovery, industry learning programs, and placement analytics.
+**Skill Setu** ("bridge") is the academia–industry portal for the AYUSH ecosystem, connecting **BAMS / BHMS / BUMS / BSMS / BNYS students**, **AYUSH faculty**, **ASU&H industry partners** (drug manufacturers, Ayurveda hospitals, research councils, wellness and export trade) and **AYUSH colleges**. It covers the full lifecycle described in the Ministry of AYUSH problem statement: AYUSH-specific skill assessment, skill mapping, internship & job discovery, faculty development programmes, and placement analytics shaped for NCISM/NCH and NAAC reporting.
 
 ## Four Dedicated Workspaces
 
-- **Student** — take skill tests, browse & apply to internships/jobs, build a verified digital portfolio, track applications.
-- **Industry** — post internships/jobs, manage an applicant pipeline (Applied → Shortlisted → Interview → Hired), host skill tests.
-- **Academician** — host Faculty Development Programs (FDPs), respond to research collaboration requests, track student progress.
-- **Institution** — a dedicated placement & skill analytics dashboard (funnel, cohort skill gaps, course-wise placement rates).
+- **Student** — take AYUSH skill tests (ASU&H clinical fundamentals, herbal drug quality & GMP, research documentation, digital health, practice management), browse & apply to Panchakarma, clinical, pharma, research and wellness internships, build a verified digital portfolio, track applications.
+- **Industry** — ASU&H manufacturers, hospitals and research councils post internships/jobs with BAMS/BHMS/BUMS/BSMS eligibility filters, manage an applicant pipeline (Applied → Shortlisted → Interview → Hired), host skill tests.
+- **Academician** — host Faculty Development Programmes (FDPs), propose and respond to CTRI-registered research collaborations, mentor and track student progress.
+- **Institution** — a dedicated placement & skill analytics dashboard for AYUSH colleges (funnel, cohort skill gaps by programme, department-wise placement rates).
 
 ## How it's built
 

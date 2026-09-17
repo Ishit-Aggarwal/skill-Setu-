@@ -299,7 +299,7 @@ export default function AnalyticsDashboard({ activePage = "analytics", title = "
           subtitle={
             scope === "company"
               ? `Computed from ${user?.companyName || "your"} postings only, with platform figures shown as a benchmark.`
-              : "Live market insight across every sector on this platform."
+              : "Live hiring insight across every AYUSH sector on this platform."
           }
           actions={
             <div className="flex flex-wrap items-center gap-2">
@@ -390,7 +390,7 @@ export default function AnalyticsDashboard({ activePage = "analytics", title = "
           </Card>
 
           <Card>
-            <Section title="Demand vs. supply by sector" description="Share of applications vs. share of postings across every sector on the platform.">
+            <Section title="Demand vs. supply by sector" description="Share of applications vs. share of postings across every AYUSH sector on the platform.">
               {domainComparison.length === 0 ? (
                 <p className="text-sm text-muted-foreground py-8 text-center">No activity yet.</p>
               ) : (

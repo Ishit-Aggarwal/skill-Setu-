@@ -71,7 +71,7 @@ export default function RegisterModal({ test, user, onConfirm, onClose }) {
         </Field>
         <div className="grid grid-cols-2 gap-3">
           <Field label="Course / Branch">
-            <TextInput value={form.course} onChange={(e) => set("course", e.target.value)} placeholder="e.g. B.Tech CSE" />
+            <TextInput value={form.course} onChange={(e) => set("course", e.target.value)} placeholder="e.g. BAMS" />
           </Field>
           <Field label="Year">
             <Select value={form.year} onChange={(e) => set("year", e.target.value)}>

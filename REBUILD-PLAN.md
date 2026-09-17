@@ -36,7 +36,7 @@ Distinct from `portfolios.certifications` (self-declared) and from
 ```js
 {
   id, studentId, studentName, studentEmail,
-  title,                 // "Frontend Engineering Fundamentals"
+  title,                 // "Panchakarma Procedures Fundamentals"
   issuer,                // display name of the issuing org
   issuerId, issuerRole,  // "industry" | "institution" | "academician"
   kind,                  // "Skill Test" | "Internship" | "Training" | "Merit" | "Participation"
@@ -149,9 +149,9 @@ percentage) instead of the current opaque arithmetic, so the number is explainab
   Generate ATS Resume, Print.
 - **Profile strength card** with the same itemised checklist as the dashboard.
 - **Tabs**: About · Skills · Projects · Education · Certifications · Experience · Documents.
-  - *Skills*: categories are no longer three hard-coded strings. Default set spans industries
-    (Technical, Tools & Software, Analytical & Research, Clinical & Practical,
-    Business & Communication, Languages) **plus** a free-text "new category" input, and
+  - *Skills*: categories are no longer three hard-coded strings. Default set spans the AYUSH CV
+    (Clinical & Diagnostic, Therapeutic Procedures, Pharmacy Quality & GMP, Research & Documentation,
+    Digital Health & Practice, Practice Management, Languages) **plus** a free-text "new category" input, and
     existing categories in the portfolio are always offered. Edit level / remove per badge.
   - *Projects*: add/edit/remove with tags and link.
   - *Education*: structured rows.
@@ -272,10 +272,10 @@ document so a link can be single-use.
    only registers when the student happens to open the Skill Tests page.
 8. `DataTable` has no paging (HANDOFF 4.4) — add optional `pageSize` defaulting to `null`
    so no existing caller changes behaviour, then enable it on the institution roster.
-9. AYUSH-flavoured placeholder strings in generic forms (`"BAMS"` course placeholder,
-   `"Dravyaguna, Quality Control"` skills placeholder) — replace with cross-sector examples.
-   The AYUSH **taxonomy** stays intact; only the defaults that imply every user is an
-   AYUSH student change.
+9. Placeholder strings in every form (`"BAMS"` course placeholder,
+   `"Panchakarma, HPTLC, GMP Compliance"` skills placeholder) — keep them AYUSH-specific.
+   The AYUSH **taxonomy** is the platform's subject; every default should read as an
+   AYUSH student, AYUSH college or ASU&H employer.
 
 ---
 

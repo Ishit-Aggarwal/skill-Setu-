@@ -123,17 +123,18 @@ function ProjectDateFields({ value, onChange }) {
 
 const SKILL_LEVELS = ["Beginner", "Intermediate", "Proficient", "Advanced"];
 
-/* Deliberately cross-sector. The old list was three hard-coded categories that
-   only fitted a technical CV; a student can also type their own, and any
-   category already on their portfolio stays offered even if it isn't here. */
+/* The categories an AYUSH CV actually needs — clinical, therapeutic, pharmacy
+   & quality, research, digital health and practice management. A student can
+   also type their own, and any category already on their portfolio stays
+   offered even if it isn't here. */
 const DEFAULT_SKILL_CATEGORIES = [
-  "Technical Skills",
-  "Tools & Software",
-  "Analytical & Research",
-  "Clinical & Practical",
-  "Business & Communication",
-  "Design & Creative",
-  "Languages",
+  "Clinical & Diagnostic Skills",
+  "Therapeutic Procedures (Panchakarma, Yoga, Regimenal)",
+  "Pharmacy, Quality & GMP",
+  "Research & Documentation",
+  "Digital Health & Practice",
+  "Practice Management & Communication",
+  "Languages (Sanskrit, Arabic, Tamil, English)",
 ];
 
 const typeTone = {
@@ -785,7 +786,7 @@ export default function StudentPortfolio() {
             <TagInput
               value={interests}
               onChange={saveInterests}
-              placeholder="e.g. Distributed systems, Climate policy, Sports analytics"
+              placeholder="e.g. Panchakarma, Medicinal plant conservation, Yoga therapy"
               inputLabel="Add an interest"
               emptyHint="None added yet — add a few so people know what to talk to you about."
               maxTags={15}
@@ -897,7 +898,7 @@ export default function StudentPortfolio() {
                       <TextInput
                         value={skillForm.customCategory}
                         onChange={(e) => setSkillForm((f) => ({ ...f, customCategory: e.target.value }))}
-                        placeholder="e.g. Laboratory Techniques"
+                        placeholder="e.g. Pharmacy, Quality & GMP"
                         required
                       />
                     </Field>
@@ -906,7 +907,7 @@ export default function StudentPortfolio() {
                     <TextInput
                       value={skillForm.name}
                       onChange={(e) => setSkillForm((f) => ({ ...f, name: e.target.value }))}
-                      placeholder="e.g. Python, Financial Modelling, Patient Counselling"
+                      placeholder="e.g. Panchakarma, HPTLC, Patient Counselling"
                       required
                     />
                   </Field>
@@ -968,7 +969,7 @@ export default function StudentPortfolio() {
                     <TextArea rows={3} value={projectForm.description} onChange={(e) => setProjectForm((f) => ({ ...f, description: e.target.value }))} placeholder="One or two lines on the problem, your approach and the outcome." />
                   </Field>
                   <Field label="Skills used" hint="Comma separated.">
-                    <TextInput value={projectForm.tags} onChange={(e) => setProjectForm((f) => ({ ...f, tags: e.target.value }))} placeholder="React, SQL, Data Visualisation" />
+                    <TextInput value={projectForm.tags} onChange={(e) => setProjectForm((f) => ({ ...f, tags: e.target.value }))} placeholder="Panchakarma, Pharmacovigilance, Biostatistics" />
                   </Field>
                   <ProjectDateFields value={projectForm} onChange={(patch) => setProjectForm((f) => ({ ...f, ...patch }))} />
                   <Field label="Link" hint="Repository, demo or write-up. Optional.">
@@ -1036,7 +1037,7 @@ export default function StudentPortfolio() {
               <Card>
                 <form onSubmit={addEducation} className="space-y-3">
                   <Field label="Degree / Programme">
-                    <TextInput value={eduForm.degree} onChange={(e) => setEduForm((f) => ({ ...f, degree: e.target.value }))} placeholder="B.Tech Computer Science" required />
+                    <TextInput value={eduForm.degree} onChange={(e) => setEduForm((f) => ({ ...f, degree: e.target.value }))} placeholder="BAMS (Bachelor of Ayurvedic Medicine & Surgery)" required />
                   </Field>
                   <Field label="Institution / Board">
                     <TextInput value={eduForm.institution} onChange={(e) => setEduForm((f) => ({ ...f, institution: e.target.value }))} placeholder={user.institution || "University name"} />
@@ -1188,7 +1189,7 @@ export default function StudentPortfolio() {
                   <Card>
                     <form onSubmit={addCert} className="space-y-3">
                       <Field label="Certification name">
-                        <TextInput value={certForm.name} onChange={(e) => setCertForm((f) => ({ ...f, name: e.target.value }))} placeholder="AWS Cloud Practitioner" required />
+                        <TextInput value={certForm.name} onChange={(e) => setCertForm((f) => ({ ...f, name: e.target.value }))} placeholder="YCB Yoga Protocol Instructor (Level 1)" required />
                       </Field>
                       <Field label="Issuing body">
                         <TextInput value={certForm.issuer} onChange={(e) => setCertForm((f) => ({ ...f, issuer: e.target.value }))} placeholder="Amazon Web Services" />

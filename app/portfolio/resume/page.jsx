@@ -36,8 +36,8 @@ function ResumeContent() {
     );
   }
 
-  // Competencies are listed against this student's own stream rubric, so a CSE
-  // candidate's resume never carries a clinical axis (and vice versa).
+  // Competencies are listed against this student's own stream rubric, so a B.Pharm (Ayu)
+  // candidate's resume never carries a Panchakarma axis (and vice versa).
   const competency = scoresFor(user, assessment);
   const sortedDomains = competency.rows
     .filter((r) => r.score != null)

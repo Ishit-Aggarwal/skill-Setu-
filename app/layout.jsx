@@ -3,9 +3,9 @@ import { AuthProvider } from "../lib/auth";
 import ConvexClientProvider from "./ConvexClientProvider";
 
 export const metadata = {
-  title: "Skill Setu — Academia-Industry Collaboration Portal",
+  title: "Skill Setu — AYUSH Academia–Industry Collaboration Portal",
   description:
-    "Skill mapping, internships and placement platform across all industries — connecting students, academicians, institutions and employers across engineering, technology, management, healthcare and science sectors. Built for SIH26044.",
+    "Ministry of AYUSH academia–industry portal for skill mapping, internships and placement across Ayurveda, Yoga & Naturopathy, Unani, Siddha and Homoeopathy — connecting BAMS/BHMS/BUMS/BSMS/BNYS students, AYUSH colleges, faculty and ASU&H industry partners. Built for SIH26044.",
 };
 
 export default function RootLayout({ children }) {

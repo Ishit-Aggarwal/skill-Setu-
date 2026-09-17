@@ -79,9 +79,9 @@ const typeTone = {
 /**
  * Sector picker.
  *
- * Was a single flat row of every sector in use — around two dozen pills, of
- * which eleven belonged to one industry, so the densest control on the page
- * implied that industry was the platform's subject. Now five equal clusters that
+ * Was a single flat row of every sector in use — around two dozen pills, too
+ * dense to scan. Now five clusters — the ASU&H clinical systems, pharma &
+ * manufacturing, research & regulation, wellness & trade, digital health — that
  * expand on demand, each showing how many live roles sit inside it, plus a
  * type-ahead for going straight to a sub-sector without opening its cluster.
  */
@@ -893,7 +893,7 @@ function PostingModal({ posting, onClose, onSubmit }) {
       size="lg"
     >
       <form onSubmit={(e) => { e.preventDefault(); onSubmit(form); }} className="space-y-4">
-        <Field label="Role title"><TextInput required value={form.title} onChange={(e) => set("title", e.target.value)} placeholder="Software Development Engineer Intern" /></Field>
+        <Field label="Role title"><TextInput required value={form.title} onChange={(e) => set("title", e.target.value)} placeholder="Ayurvedic Physician / Clinical Consultant Intern" /></Field>
 
         <div className="grid grid-cols-2 gap-3">
           <Field label="Work type">
@@ -912,7 +912,7 @@ function PostingModal({ posting, onClose, onSubmit }) {
           </Field>
         </div>
 
-        <Field label="Location"><TextInput value={form.location} onChange={(e) => set("location", e.target.value)} placeholder="Pune / Remote" /></Field>
+        <Field label="Location"><TextInput value={form.location} onChange={(e) => set("location", e.target.value)} placeholder="Kottakkal / Remote" /></Field>
 
         <Field label="Duration" hint="Used to work out what a total figure comes to per month.">
           <TextInput value={form.duration} onChange={(e) => set("duration", e.target.value)} placeholder="6 months" />
@@ -980,7 +980,7 @@ function PostingModal({ posting, onClose, onSubmit }) {
         </Field>
 
         <Field label="Required skills" hint="Comma separated — these drive the skill-match score students see.">
-          <TextInput value={form.tags} onChange={(e) => set("tags", e.target.value)} placeholder="React, Financial Modelling, Quality Control" />
+          <TextInput value={form.tags} onChange={(e) => set("tags", e.target.value)} placeholder="Panchakarma, Pharmacovigilance, GMP Compliance" />
         </Field>
 
         <div className="border-t border-border pt-4">

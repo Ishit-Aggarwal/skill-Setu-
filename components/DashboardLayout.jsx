@@ -272,7 +272,7 @@ export default function DashboardLayout({ children, activePage, title }) {
             {/* The wordmark is wide (≈3.6:1) — capped by height and allowed to
                 size its own width so it never overflows the 240px rail. */}
             <img src="/logo.png" alt="Skill Setu" className="h-9 w-auto max-w-[190px] brand-logo" />
-            <div className="text-[11px] text-muted-foreground">Academia–Industry Portal</div>
+            <div className="text-[11px] text-muted-foreground">AYUSH Academia–Industry Portal</div>
           </Link>
 
           <div className="px-3 pt-3.5">

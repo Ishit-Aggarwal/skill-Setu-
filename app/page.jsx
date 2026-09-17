@@ -36,51 +36,51 @@ const highlights = [
   {
     emoji: "🎯",
     title: "Skill Mapping & Gap Analysis",
-    desc: "Every student gets a live skill radar across eight core employability domains — including quantitative aptitude, programming, data analysis, and critical thinking — with targeted gap nudges.",
+    desc: "Every AYUSH student gets a live skill radar across eight competencies of their own stream — ASU&H clinical fundamentals, herbal drug quality & GMP, AYUSH research documentation, digital health and core aptitude — with targeted gap nudges.",
   },
   {
     emoji: "🌐",
-    title: "Cross-Industry Scale & Sector Depth",
-    desc: "Software, Engineering, Data Science, Healthcare, Finance, Management, and Applied Sciences each feature dedicated recruitment pipelines, verified skill assessments, and institutional alignment.",
+    title: "Every AYUSH System, One Portal",
+    desc: "Ayurveda, Yoga & Naturopathy, Unani, Siddha and Homoeopathy each get dedicated recruitment pipelines, verified skill assessments and NCISM/NCH-aligned institutional reporting — alongside ASU&H pharma, research councils, wellness and export trade.",
   },
   {
     emoji: "📋",
     title: "Live Applicant Pipeline",
-    desc: "Recruiters track every candidate through Applied → Shortlisted → Interview → Hired → Joined, with skill-match scores, eligibility filters and bulk review for high-volume roles.",
+    desc: "ASU&H manufacturers, Ayurveda hospitals and research councils track every candidate through Applied → Shortlisted → Interview → Hired → Joined, with skill-match scores, BAMS/BHMS/BUMS/BSMS eligibility filters and bulk review for high-volume roles.",
   },
   {
     emoji: "🔬",
     title: "FDPs & Research Collaboration",
-    desc: "Faculty host development programmes with managed rosters and certificates, publish their own calls for collaborators, and run accepted projects with milestones and a shared workspace.",
+    desc: "AYUSH faculty host development programmes with managed rosters and certificates, publish calls for co-investigators on CTRI-registered studies, and run accepted projects with milestones and a shared workspace.",
   },
   {
     emoji: "🏫",
     title: "A Real Placement-Cell Toolkit",
-    desc: "Institutions get a searchable student roster, cohort skill-gap heatmaps, drive scheduling with recruiter RSVPs, MOU tracking and multi-year placement history for accreditation reporting.",
+    desc: "AYUSH colleges get a searchable student roster, cohort skill-gap heatmaps by department, drive scheduling with recruiter RSVPs, MOU tracking and multi-year placement history shaped for NCISM/NCH and NAAC reporting.",
   },
   {
     emoji: "🧭",
     title: "Curriculum Alignment Insights",
-    desc: "See what employers are actually hiring for against what your programmes produce, with specific electives and certifications suggested to close each gap.",
+    desc: "See what ASU&H manufacturers, hospitals and research councils are actually hiring for against what your BAMS, BHMS, BUMS, BSMS and BNYS programmes produce, with specific electives and certifications suggested to close each gap.",
   },
   {
     emoji: "🔐",
     title: "Verified Accounts, Any Device",
-    desc: "Email-OTP verification plus a partner verification code for every institution, faculty member and recruiter — one account works from a laptop or a phone.",
+    desc: "Email-OTP verification plus a partner verification code for every AYUSH institution, faculty member and industry recruiter — one account works from a laptop or a phone.",
   },
 ];
 
 const stats = [
-  { value: "35+", label: "Industry & Academic Sectors" },
-  { value: "8", label: "Core Competency Domains" },
+  { value: "5", label: "AYUSH Systems of Medicine" },
+  { value: "21", label: "AYUSH Industry Sectors" },
   { value: "4", label: "Connected Stakeholder Roles" },
-  { value: "SIH26044", label: "Academia-Industry Collaboration" },
+  { value: "SIH26044", label: "Ministry of AYUSH Problem Statement" },
 ];
 
 const steps = [
-  { num: "01", title: "Create Your Profile", desc: "Students map their skills; employers post roles in their sector; faculty and institutions register with a partner verification code." },
-  { num: "02", title: "Skill Matching", desc: "Skill-test scores are matched against each opportunity's required skills, with minimum-qualification and eligible-department filters applied before an application is even sent." },
-  { num: "03", title: "Connect & Collaborate", desc: "Apply, shortlist, run campus drives and research collaborations — with role-scoped analytics for every stakeholder." },
+  { num: "01", title: "Create Your Profile", desc: "AYUSH students map their skills; ASU&H manufacturers, hospitals and research councils post roles in their sector; faculty and AYUSH colleges register with a partner verification code." },
+  { num: "02", title: "Skill Matching", desc: "Skill-test scores are matched against each opportunity's required skills, with minimum-score and eligible-programme (BAMS, BHMS, BUMS, BSMS, BNYS) filters applied before an application is even sent." },
+  { num: "03", title: "Connect & Collaborate", desc: "Apply, shortlist, run campus drives and CTRI-registered research collaborations — with role-scoped analytics for every AYUSH stakeholder." },
 ];
 
 const sectors = LANDING_SECTORS;
@@ -108,7 +108,7 @@ export default function LandingPage() {
         <div className="max-w-6xl mx-auto px-5 py-3.5 flex items-center justify-between">
           <Link href="/" className="flex items-center gap-2.5 min-w-0 cursor-pointer hover:opacity-90 transition-opacity">
             <img src="/logo.png" alt="Skill Setu" className="h-9 sm:h-10 w-auto flex-shrink-0 brand-logo" />
-            <span className="hidden sm:inline text-xs text-muted-foreground truncate">Academia–Industry Portal</span>
+            <span className="hidden sm:inline text-xs text-muted-foreground truncate">AYUSH Academia–Industry Portal</span>
           </Link>
           <div className="flex items-center gap-2">
             {user ? (
@@ -154,16 +154,16 @@ export default function LandingPage() {
           <div className="max-w-2xl">
             <div className="inline-flex items-center gap-2 bg-white/10 backdrop-blur-sm border border-white/20 rounded-full px-4 py-1.5 text-sm text-white/80 mb-8">
               <span className="w-4 h-4 text-base leading-none">🎯</span>
-              <span>Smart India Hackathon · Problem Statement SIH26044 · Academia–Industry Bridge</span>
+              <span>Smart India Hackathon · Ministry of AYUSH · Problem Statement SIH26044</span>
             </div>
 
             <h1 className="text-4xl sm:text-5xl lg:text-6xl font-semibold text-white leading-[1.12] mb-6">
-              Academia–Industry<br />
+              AYUSH Academia–Industry<br />
               <span className="text-olive-300">Collaboration</span> Portal
             </h1>
 
             <p className="text-lg sm:text-xl text-white/70 mb-10 max-w-xl leading-relaxed">
-              Skill mapping, internships and placements across every sector — connecting students, academicians, institutions and employers nationwide across engineering, technology, management, and health sciences.
+              Skill mapping, internships and placements for Ayurveda, Yoga & Naturopathy, Unani, Siddha and Homoeopathy — connecting AYUSH students, faculty, colleges and the ASU&H industry under the National AYUSH Mission.
             </p>
 
             <div className="flex flex-col sm:flex-row flex-wrap gap-3">
@@ -172,13 +172,13 @@ export default function LandingPage() {
                 <span className="transition-transform duration-150 group-hover:translate-x-0.5"><IconArrowRight /></span>
               </button>
               <button onClick={() => goToLogin("industry")} className="flex items-center justify-center gap-2 bg-white/10 hover:bg-white/20 backdrop-blur-sm border border-white/30 text-white px-7 py-3.5 rounded-xl font-medium transition-all duration-150 hover:scale-105">
-                For Industries
+                For AYUSH Industry
               </button>
               <button onClick={() => goToLogin("academician")} className="flex items-center justify-center gap-2 bg-white/10 hover:bg-white/20 backdrop-blur-sm border border-white/30 text-white px-7 py-3.5 rounded-xl font-medium transition-all duration-150 hover:scale-105">
-                For Academicians
+                For AYUSH Faculty
               </button>
               <button onClick={() => goToLogin("institution")} className="flex items-center justify-center gap-2 bg-white/10 hover:bg-white/20 backdrop-blur-sm border border-white/30 text-white px-7 py-3.5 rounded-xl font-medium transition-all duration-150 hover:scale-105">
-                For Institutions
+                For AYUSH Colleges
               </button>
             </div>
           </div>
@@ -202,15 +202,15 @@ export default function LandingPage() {
         <div className="text-center mb-12">
           <div className="text-xs font-semibold text-primary uppercase tracking-widest mb-3">Who Is This For?</div>
           <h2 className="text-3xl font-semibold text-foreground mb-3">One Platform, Four Roles</h2>
-          <p className="text-muted-foreground max-w-xl mx-auto">One account, one purpose-built workspace — pick the role that matches what you're here to do.</p>
+          <p className="text-muted-foreground max-w-xl mx-auto">One account, one purpose-built workspace — pick the role that matches your place in the AYUSH ecosystem.</p>
         </div>
 
         <div className="grid md:grid-cols-2 lg:grid-cols-4 gap-6">
           {[
-            { role: "student", emoji: "🎓", title: "Students", subtitle: "Engineering · Management · Technology · Sciences · Healthcare · Design", features: ["Skill tests & gap analysis", "Matched internships across every sector", "Portfolio & certification tracker"], cta: "Sign Up as Student" },
-            { role: "industry", emoji: "🏢", title: "Industries", subtitle: "IT & Tech · Manufacturing · Finance · Healthcare & Life Sciences · Enterprise", features: ["Post roles with eligibility filters", "Proactive talent-pool search", "Pipeline, offers & joining tracking"], cta: "Partner as Industry", featured: true },
-            { role: "academician", emoji: "📚", title: "Academicians", subtitle: "Faculty · Researchers · Programme Leads", features: ["Host FDPs with rosters & certificates", "Propose & run research collaborations", "Mentor mentees and book office hours"], cta: "Join as Academician" },
-            { role: "institution", emoji: "🏫", title: "Institutions", subtitle: "Placement Cells · Deans · Multi-faculty Institutes", features: ["Student roster, drives & MOU tracking", "Cohort skill-gap heatmaps", "Curriculum alignment & accreditation exports"], cta: "Register Institution" },
+            { role: "student", emoji: "🎓", title: "Students", subtitle: "BAMS · BHMS · BUMS · BSMS · BNYS · MD/MS (Ayu) · PG Diplomas", features: ["AYUSH skill tests & gap analysis", "Matched clinical, pharma & wellness internships", "Portfolio & certification tracker"], cta: "Sign Up as Student" },
+            { role: "industry", emoji: "🏢", title: "AYUSH Industry", subtitle: "ASU&H Drug Manufacturers · Ayurveda Hospitals · Research Councils · Wellness & Export", features: ["Post roles with BAMS/BHMS/BUMS/BSMS filters", "Proactive AYUSH talent-pool search", "Pipeline, offers & joining tracking"], cta: "Partner as AYUSH Industry", featured: true },
+            { role: "academician", emoji: "📚", title: "AYUSH Faculty", subtitle: "Vaidyas · Hakims · Siddha & Homoeopathy Faculty · Yoga Therapists", features: ["Host FDPs with rosters & certificates", "Propose & run CTRI-registered collaborations", "Mentor mentees and book office hours"], cta: "Join as AYUSH Faculty" },
+            { role: "institution", emoji: "🏫", title: "AYUSH Colleges", subtitle: "National Institutes · AYUSH Universities · NCISM/NCH-approved Colleges", features: ["Student roster, drives & MOU tracking", "Cohort skill-gap heatmaps by programme", "Curriculum alignment & NCISM/NCH-ready exports"], cta: "Register AYUSH College" },
           ].map((card) => (
             <div
               key={card.role}
@@ -272,7 +272,7 @@ export default function LandingPage() {
         <div className="text-center mb-10">
           <div className="text-xs font-semibold text-primary uppercase tracking-widest mb-3">Highlights</div>
           <h2 className="text-3xl font-semibold text-foreground mb-3">What Makes Skill Setu Work</h2>
-          <p className="text-muted-foreground max-w-lg mx-auto">A closer look at what each role actually gets — built around how institutions, faculty and employers really work.</p>
+          <p className="text-muted-foreground max-w-lg mx-auto">A closer look at what each role actually gets — built around how AYUSH colleges, faculty and the ASU&H industry really work.</p>
         </div>
 
         <div className="relative bg-card border border-border rounded-2xl p-8 sm:p-12 text-center min-h-[260px] flex flex-col items-center justify-center overflow-hidden">
@@ -313,8 +313,8 @@ export default function LandingPage() {
       <section className="max-w-6xl mx-auto px-5 py-16">
         <div className="text-center mb-10">
           <div className="text-xs font-semibold text-primary uppercase tracking-widest mb-3">Network</div>
-          <h2 className="text-2xl font-semibold text-foreground mb-2">Every Sector, One Portal</h2>
-          <p className="text-muted-foreground text-sm">From engineering, software, and finance to healthcare, sciences, and creative arts — one unified platform connecting academia with industry.</p>
+          <h2 className="text-2xl font-semibold text-foreground mb-2">The Whole AYUSH Ecosystem, One Portal</h2>
+          <p className="text-muted-foreground text-sm">From the five systems of medicine to ASU&H pharma, pharmacovigilance, wellness & spa, export trade and R&D — one platform connecting AYUSH academia with AYUSH industry.</p>
         </div>
 
         <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-4">
@@ -331,7 +331,7 @@ export default function LandingPage() {
           ))}
         </div>
         <p className="text-center text-xs text-muted-foreground mt-6">
-          Representative cross-section of industry sectors across Technology, Engineering, Management, Healthcare, and Applied Sciences.
+          Sectors recognised under the Ministry of AYUSH and the National AYUSH Mission — clinical systems, ASU&H drug industry, research councils, wellness and trade.
         </p>
       </section>
 
@@ -345,10 +345,10 @@ export default function LandingPage() {
           <div className="space-y-4">
             {[
               { q: "Is Skill Setu free to use?", a: "Yes. Creating an account and using every feature — skill tests, internship listings, portfolios, drives and analytics — is free." },
-              { q: "Which sectors does the platform support?", a: "All major industries. Software & AI, Core Engineering, Manufacturing, Finance & Banking, Design, Healthcare & Life Sciences, Biotechnology, Management, and Applied Sciences all collaborate on the same platform. Every sector has dedicated skill tests, eligible departments, and custom talent filters." },
-              { q: "How do industry, academician, and institution accounts get verified?", a: "Signup for those roles asks for a short partner verification code, similar to how many campus placement portals confirm an organisation before granting posting access." },
+              { q: "Which sectors does the platform support?", a: "The AYUSH ecosystem only. Ayurveda, Yoga & Naturopathy, Unani, Siddha, Homoeopathy and Sowa-Rigpa clinical practice, plus the ASU&H drug industry (GMP manufacturing, pharmacognosy, pharmacovigilance, regulatory affairs), AYUSH clinical research, wellness & spa, export/trade, medicinal-plant cultivation and AYUSH digital health. Every sector has dedicated skill tests, eligible programmes and talent filters." },
+              { q: "How do industry, faculty, and college accounts get verified?", a: "Signup for those roles asks for a short partner verification code, similar to how NCISM/NCH-approved colleges and AYUSH employers are confirmed before being granted posting access." },
               { q: "Is my data safe?", a: "Your account and activity are stored server-side in our Convex database (with your device's local storage as an offline fallback) — see the Privacy Policy for the full picture, including how passwords and OTPs are handled." },
-              { q: "What's Demo Mode?", a: "A one-click way to explore a fully populated Student, Industry, Academician, or Institution dashboard without creating an account first." },
+              { q: "What's Demo Mode?", a: "A one-click way to explore a fully populated BAMS Student, AYUSH Industry, AYUSH Faculty, or AYUSH College dashboard without creating an account first." },
             ].map((item) => (
               <div key={item.q} className="bg-card border border-border rounded-2xl p-5">
                 <div className="text-sm font-semibold text-foreground mb-1.5">{item.q}</div>
@@ -367,7 +367,7 @@ export default function LandingPage() {
                 <img src="/logo.png" alt="Skill Setu" className="h-8 sm:h-9 w-auto brand-logo" />
               </Link>
               <p className="text-xs text-muted-foreground max-w-xs leading-relaxed">
-                A unified skill-mapping, internship and placement platform bridging academia and industry across engineering, technology, management, healthcare, and allied sectors. Built for SIH26044.
+                The Ministry of AYUSH academia–industry portal for skill mapping, internships and placement across Ayurveda, Yoga & Naturopathy, Unani, Siddha and Homoeopathy. Built for SIH26044.
               </p>
             </div>
             <div className="flex flex-wrap gap-x-8 gap-y-2 text-sm text-muted-foreground">
@@ -378,7 +378,7 @@ export default function LandingPage() {
             </div>
           </div>
           <div className="mt-8 pt-6 border-t border-border text-xs text-muted-foreground text-center">
-            © 2026 Skill Setu. Built for Smart India Hackathon · Problem Statement SIH26044.
+            © 2026 Skill Setu. Built for Smart India Hackathon · Ministry of AYUSH · Problem Statement SIH26044.
           </div>
         </div>
       </footer>
