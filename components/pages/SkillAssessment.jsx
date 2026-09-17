@@ -28,6 +28,7 @@ import { TEST_LEAD_HOURS, checkLeadTime, earliestDateAfter } from "../../lib/dat
 import IssueCredentialModal from "../IssueCredentialModal";
 import RecordResultsModal from "../skilltests/RecordResultsModal";
 import QuestionBuilder, { blankQuestion, normaliseQuestions, totalMarksOf, validateQuestions } from "../skilltests/QuestionBuilder";
+import AiDraftPanel from "../skilltests/AiDraftPanel";
 import { Badge, Button, Card, EmptyState, Field, Flash, Modal, PageHeader, Select, Tabs, TextArea, TextInput, useFlash } from "../ui/Kit";
 
 function StudentView({ user }) {
@@ -596,8 +597,20 @@ function HostView({ user }) {
                     </span>
                   </div>
                   <p className="text-[11px] text-muted-foreground mb-3">
-                    Write your own questions and mark the correct option. This is the paper candidates actually sit.
+                    Write your own questions and mark the correct option, or let AI draft them from a topic. This is the paper candidates actually sit.
                   </p>
+                  <div className="mb-3">
+                    <AiDraftPanel
+                      defaultTopic={form.title}
+                      domain={form.domain}
+                      onDraft={(drafted, mode) =>
+                        setForm((f) => {
+                          const existing = (f.questions || []).filter((q) => q.question?.trim() || (q.options || []).some((o) => o.trim()));
+                          return { ...f, questions: mode === "append" ? [...existing, ...drafted] : drafted };
+                        })
+                      }
+                    />
+                  </div>
                   <QuestionBuilder questions={form.questions} onChange={(questions) => setForm((f) => ({ ...f, questions }))} />
                 </div>
 

@@ -130,7 +130,7 @@ export default function QuestionBuilder({ questions, onChange }) {
             rows={2}
             value={q.question}
             onChange={(e) => patch(index, { question: e.target.value })}
-            placeholder="What is the time complexity of a binary search on a sorted array?"
+            placeholder="Which schedule of the Drugs & Cosmetics Rules lays down GMP for ASU drugs?"
           />
 
           <div className="space-y-1.5">
