@@ -108,7 +108,7 @@ export default function LandingPage() {
         <div className="max-w-6xl mx-auto px-5 py-3.5 flex items-center justify-between">
           <Link href="/" className="flex items-center gap-2.5 min-w-0 cursor-pointer hover:opacity-90 transition-opacity">
             <img src="/logo.png" alt="Skill Setu" className="h-9 sm:h-10 w-auto flex-shrink-0 brand-logo" />
-            <span className="hidden sm:inline text-xs text-muted-foreground truncate">AYUSH Academia–Industry Portal</span>
+            <span className="hidden sm:inline text-xs text-muted-foreground truncate">Academia–Industry Portal</span>
           </Link>
           <div className="flex items-center gap-2">
             {user ? (
@@ -158,7 +158,7 @@ export default function LandingPage() {
             </div>
 
             <h1 className="text-4xl sm:text-5xl lg:text-6xl font-semibold text-white leading-[1.12] mb-6">
-              AYUSH Academia–Industry<br />
+              Academia–Industry<br />
               <span className="text-olive-300">Collaboration</span> Portal
             </h1>
 
@@ -172,13 +172,13 @@ export default function LandingPage() {
                 <span className="transition-transform duration-150 group-hover:translate-x-0.5"><IconArrowRight /></span>
               </button>
               <button onClick={() => goToLogin("industry")} className="flex items-center justify-center gap-2 bg-white/10 hover:bg-white/20 backdrop-blur-sm border border-white/30 text-white px-7 py-3.5 rounded-xl font-medium transition-all duration-150 hover:scale-105">
-                For AYUSH Industry
+                For Industries
               </button>
               <button onClick={() => goToLogin("academician")} className="flex items-center justify-center gap-2 bg-white/10 hover:bg-white/20 backdrop-blur-sm border border-white/30 text-white px-7 py-3.5 rounded-xl font-medium transition-all duration-150 hover:scale-105">
-                For AYUSH Faculty
+                For Academicians
               </button>
               <button onClick={() => goToLogin("institution")} className="flex items-center justify-center gap-2 bg-white/10 hover:bg-white/20 backdrop-blur-sm border border-white/30 text-white px-7 py-3.5 rounded-xl font-medium transition-all duration-150 hover:scale-105">
-                For AYUSH Colleges
+                For Institutions
               </button>
             </div>
           </div>
@@ -208,9 +208,9 @@ export default function LandingPage() {
         <div className="grid md:grid-cols-2 lg:grid-cols-4 gap-6">
           {[
             { role: "student", emoji: "🎓", title: "Students", subtitle: "BAMS · BHMS · BUMS · BSMS · BNYS · MD/MS (Ayu) · PG Diplomas", features: ["AYUSH skill tests & gap analysis", "Matched clinical, pharma & wellness internships", "Portfolio & certification tracker"], cta: "Sign Up as Student" },
-            { role: "industry", emoji: "🏢", title: "AYUSH Industry", subtitle: "ASU&H Drug Manufacturers · Ayurveda Hospitals · Research Councils · Wellness & Export", features: ["Post roles with BAMS/BHMS/BUMS/BSMS filters", "Proactive AYUSH talent-pool search", "Pipeline, offers & joining tracking"], cta: "Partner as AYUSH Industry", featured: true },
-            { role: "academician", emoji: "📚", title: "AYUSH Faculty", subtitle: "Vaidyas · Hakims · Siddha & Homoeopathy Faculty · Yoga Therapists", features: ["Host FDPs with rosters & certificates", "Propose & run CTRI-registered collaborations", "Mentor mentees and book office hours"], cta: "Join as AYUSH Faculty" },
-            { role: "institution", emoji: "🏫", title: "AYUSH Colleges", subtitle: "National Institutes · AYUSH Universities · NCISM/NCH-approved Colleges", features: ["Student roster, drives & MOU tracking", "Cohort skill-gap heatmaps by programme", "Curriculum alignment & NCISM/NCH-ready exports"], cta: "Register AYUSH College" },
+            { role: "industry", emoji: "🏢", title: "Industries", subtitle: "ASU&H Drug Manufacturers · Ayurveda Hospitals · Research Councils · Wellness & Export", features: ["Post roles with BAMS/BHMS/BUMS/BSMS filters", "Proactive AYUSH talent-pool search", "Pipeline, offers & joining tracking"], cta: "Partner as Industry", featured: true },
+            { role: "academician", emoji: "📚", title: "Academicians", subtitle: "Vaidyas · Hakims · Siddha & Homoeopathy Faculty · Yoga Therapists", features: ["Host FDPs with rosters & certificates", "Propose & run CTRI-registered collaborations", "Mentor mentees and book office hours"], cta: "Join as Academician" },
+            { role: "institution", emoji: "🏫", title: "Institutions", subtitle: "National Institutes · AYUSH Universities · NCISM/NCH-approved Colleges", features: ["Student roster, drives & MOU tracking", "Cohort skill-gap heatmaps by programme", "Curriculum alignment & NCISM/NCH-ready exports"], cta: "Register Institution" },
           ].map((card) => (
             <div
               key={card.role}
@@ -348,7 +348,7 @@ export default function LandingPage() {
               { q: "Which sectors does the platform support?", a: "The AYUSH ecosystem only. Ayurveda, Yoga & Naturopathy, Unani, Siddha, Homoeopathy and Sowa-Rigpa clinical practice, plus the ASU&H drug industry (GMP manufacturing, pharmacognosy, pharmacovigilance, regulatory affairs), AYUSH clinical research, wellness & spa, export/trade, medicinal-plant cultivation and AYUSH digital health. Every sector has dedicated skill tests, eligible programmes and talent filters." },
               { q: "How do industry, faculty, and college accounts get verified?", a: "Signup for those roles asks for a short partner verification code, similar to how NCISM/NCH-approved colleges and AYUSH employers are confirmed before being granted posting access." },
               { q: "Is my data safe?", a: "Your account and activity are stored server-side in our Convex database (with your device's local storage as an offline fallback) — see the Privacy Policy for the full picture, including how passwords and OTPs are handled." },
-              { q: "What's Demo Mode?", a: "A one-click way to explore a fully populated BAMS Student, AYUSH Industry, AYUSH Faculty, or AYUSH College dashboard without creating an account first." },
+              { q: "What's Demo Mode?", a: "A separate sandbox where you can play with a fully populated BAMS Student, AYUSH Industry, AYUSH Faculty, or AYUSH College dashboard without creating an account. Its sample postings, tests, cohort and notices live only inside demo mode — nothing from it appears in the real portal, and nothing real appears in it." },
             ].map((item) => (
               <div key={item.q} className="bg-card border border-border rounded-2xl p-5">
                 <div className="text-sm font-semibold text-foreground mb-1.5">{item.q}</div>

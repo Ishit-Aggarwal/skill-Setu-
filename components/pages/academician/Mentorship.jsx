@@ -36,7 +36,7 @@ import {
 } from "../../ui/Kit";
 import IssueCredentialModal from "../../IssueCredentialModal";
 import {
-  SEED_COLLABS,
+  sampleCollabs,
   getCollabResponse,
   getScheduledTimestamp,
   listCollabMilestones,
@@ -175,7 +175,7 @@ export default function Mentorship() {
       });
     });
 
-    SEED_COLLABS.filter((c) => c.status === "Active" || getCollabResponse(c.id) === "Accepted").forEach((c) => {
+    sampleCollabs().filter((c) => c.status === "Active" || getCollabResponse(c.id) === "Accepted").forEach((c) => {
       listCollabMilestones(c.id)
         .filter((m) => !m.done && m.due)
         .forEach((m) => {

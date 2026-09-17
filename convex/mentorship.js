@@ -212,7 +212,12 @@ export const availableForStudent = query({
       .query("users")
       .withIndex("by_role", (q) => q.eq("role", "academician"))
       .collect();
-    const eligible = mentors.filter((m) => !institution || m.institution === institution);
+    // Demo mode is sealed off: the demo student only sees the demo faculty's
+    // slots, and a real student never sees slots the demo persona published.
+    const actorIsDemo = String(actor.id || "").startsWith("demo-");
+    const eligible = mentors.filter(
+      (m) => (!institution || m.institution === institution) && String(m.id || "").startsWith("demo-") === actorIsDemo
+    );
     const mentorById = new Map(eligible.map((m) => [m.id, m]));
 
     const rows = [];

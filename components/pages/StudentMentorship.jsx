@@ -14,6 +14,7 @@ import {
   schedulingMode,
 } from "../../lib/scheduling";
 import {
+  isDemoMode,
   listUsersByRole,
   requestMentorship,
   listMentorshipRequestsForStudent,
@@ -307,7 +308,8 @@ export default function StudentMentorship() {
     const registeredAcademicians = listUsersByRole("academician") || [];
     const map = new Map();
 
-    SEED_MENTORS.forEach((m) => map.set(m.id, m));
+    // Sample mentors belong to the demo tour; a real portal lists only faculty who registered.
+    if (isDemoMode()) SEED_MENTORS.forEach((m) => map.set(m.id, m));
     registeredAcademicians.forEach((a) => {
       const existing = map.get(a.id) || {};
       map.set(a.id, {
@@ -342,9 +344,10 @@ export default function StudentMentorship() {
   }, [allMentors, mentorSearch]);
 
   const filteredColleges = useMemo(() => {
+    const colleges = isDemoMode() ? COLLEGES_DATA : [];
     const q = collegeSearch.trim().toLowerCase();
-    if (!q) return COLLEGES_DATA;
-    return COLLEGES_DATA.filter(
+    if (!q) return colleges;
+    return colleges.filter(
       (c) =>
         c.name?.toLowerCase().includes(q) ||
         c.city?.toLowerCase().includes(q) ||
@@ -420,7 +423,7 @@ export default function StudentMentorship() {
             { key: "upcoming", label: `My sessions (${mine.length})` },
             { key: "browse", label: `Open slots (${bookable.length})` },
             { key: "mentors", label: `Browse Mentors & Request (${allMentors.length})` },
-            { key: "colleges", label: `Colleges & Stats (${COLLEGES_DATA.length})` },
+            { key: "colleges", label: `Colleges & Stats (${filteredColleges.length})` },
           ]}
           value={tab}
           onChange={setTab}
@@ -710,6 +713,11 @@ export default function StudentMentorship() {
                 </Card>
               ))}
             </div>
+            {filteredColleges.length === 0 && (
+              <EmptyState icon="🏫" title="No partner colleges listed yet">
+                Colleges appear here once institutions register on the portal and publish their placement statistics.
+              </EmptyState>
+            )}
           </div>
         )}
       </div>

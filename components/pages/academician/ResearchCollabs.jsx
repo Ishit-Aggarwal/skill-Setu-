@@ -7,7 +7,7 @@ import { Avatar, Badge, Button, Card, EmptyState, Field, Flash, IconTile, Modal,
 import { COLLAB_EXPERTISE } from "../../../lib/domains";
 import { formatDate, formatDateTime, relativeTime } from "../../../lib/match";
 import {
-  SEED_COLLABS,
+  sampleCollabs,
   addCollabFile,
   addCollabMilestone,
   addResearchOutput,
@@ -74,18 +74,18 @@ export default function ResearchCollabs() {
 
   const responses = useMemo(() => {
     if (!ready) return {};
-    return Object.fromEntries(SEED_COLLABS.map((c) => [c.id, getCollabResponse(c.id)]));
+    return Object.fromEntries(sampleCollabs().map((c) => [c.id, getCollabResponse(c.id)]));
   }, [ready, version]);
 
   const listings = useMemo(() => (ready && user ? listCollabListingsByOwner(user.id) : []), [user, ready, version]);
   const outputs = useMemo(() => (ready && user ? listResearchOutputs(user.id) : []), [user, ready, version]);
 
   const activeCollabs = useMemo(
-    () => SEED_COLLABS.filter((c) => c.status === "Active" || responses[c.id] === "Accepted"),
+    () => sampleCollabs().filter((c) => c.status === "Active" || responses[c.id] === "Accepted"),
     [responses]
   );
 
-  const pending = SEED_COLLABS.filter((c) => c.status === "Pending Review" && !responses[c.id]);
+  const pending = sampleCollabs().filter((c) => c.status === "Pending Review" && !responses[c.id]);
   const totalInterests = listings.reduce((s, l) => s + listCollabInterests(l.id).length, 0);
 
   function bump(msg) {
@@ -133,7 +133,7 @@ export default function ResearchCollabs() {
 
         {tab === "requests" && (
           <div className="space-y-4">
-            {SEED_COLLABS.map((c) => {
+            {sampleCollabs().map((c) => {
               const response = responses[c.id];
               return (
                 <Card key={c.id} hover>
@@ -181,6 +181,11 @@ export default function ResearchCollabs() {
                 </Card>
               );
             })}
+            {sampleCollabs().length === 0 && (
+              <EmptyState icon="🤝" title="No collaboration requests yet">
+                When an industry partner, institution or research council invites you onto a project, the request appears here.
+              </EmptyState>
+            )}
           </div>
         )}
 

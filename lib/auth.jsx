@@ -1,7 +1,7 @@
 "use client";
 
 import { createContext, useContext, useEffect, useState } from "react";
-import { findOne, insert, update, remove, getDemoUser, all, saveAll } from "./store";
+import { findOne, insert, update, remove, getDemoUser, all, saveAll, setDemoMode } from "./store";
 import { getSessionToken, setSessionToken } from "./session";
 
 const AuthContext = createContext(null);
@@ -70,7 +70,9 @@ export function AuthProvider({ children }) {
 
       // Demo personas are local by design and have no server session.
       if (!token && cachedId?.startsWith("demo-")) {
-        const demo = findOne("users", (u) => u.id === cachedId);
+        // Re-enter the sandbox namespace (and seed it if this browser has
+        // never had it) rather than looking the persona up in the real store.
+        const demo = getDemoUser(cachedId.slice("demo-".length));
         if (demo && !cancelled) setUser(demo);
         if (!cancelled) setLoading(false);
         return;
@@ -112,6 +114,8 @@ export function AuthProvider({ children }) {
   function persistSession(u) {
     setUser(u);
     if (typeof window === "undefined") return;
+    // Demo personas live in the sandbox namespace; everyone else is on the real one.
+    setDemoMode(isDemoAccount(u));
     if (u) {
       window.sessionStorage.setItem(TAB_SESSION_KEY, u.id);
       window.localStorage.setItem(GLOBAL_SESSION_KEY, u.id);
@@ -130,6 +134,9 @@ export function AuthProvider({ children }) {
    * every roster and talent-pool search.
    */
   function mirrorUser(record) {
+    // A server account is never a demo persona: leave the sandbox before the
+    // profile is cached, so it lands in the real namespace.
+    if (!isDemoAccount(record)) setDemoMode(false);
     const byId = findOne("users", (u) => u.id === record.id);
     if (byId) return update("users", record.id, record);
 

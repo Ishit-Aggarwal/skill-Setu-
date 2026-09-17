@@ -7,7 +7,7 @@ import { useNav } from "../../../lib/nav";
 import { Avatar, Badge, Button, Card, EmptyState, IconTile, PageHeader, ProgressBar, ProgressRing, Section, StatGrid } from "../../ui/Kit";
 import { formatDate, formatDateTime, relativeTime } from "../../../lib/match";
 import {
-  SEED_COLLABS,
+  sampleCollabs,
   getCollabResponse,
   listCollabInterests,
   listCollabListingsByOwner,
@@ -55,7 +55,7 @@ export default function AcademicianDashboard() {
   }, [user]);
 
   const pendingCollabs = useMemo(
-    () => (ready ? SEED_COLLABS.filter((c) => c.status === "Pending Review" && !getCollabResponse(c.id)) : []),
+    () => (ready ? sampleCollabs().filter((c) => c.status === "Pending Review" && !getCollabResponse(c.id)) : []),
     [ready]
   );
 
@@ -96,7 +96,7 @@ export default function AcademicianDashboard() {
 
   const openMilestones = useMemo(() => {
     if (!ready) return [];
-    const accepted = SEED_COLLABS.filter((c) => c.status === "Active" || getCollabResponse(c.id) === "Accepted");
+    const accepted = sampleCollabs().filter((c) => c.status === "Active" || getCollabResponse(c.id) === "Accepted");
     const seen = new Set();
     return accepted
       .flatMap((c) => listCollabMilestones(c.id).map((m) => ({ ...m, collabTitle: c.title })))
@@ -194,7 +194,7 @@ export default function AcademicianDashboard() {
             { label: "My mentees", value: String(advisees.length), icon: "🎓", hint: `${departmentCount} in my department` },
             { label: "Mentees placed", value: String(placedAdvisees), icon: "✅", hint: advisees.length ? `${Math.round((placedAdvisees / advisees.length) * 100)}% of my students` : "—" },
             { label: "Programmes hosted", value: String(myPrograms.length), icon: "📘", hint: `${seatAlerts.reduce((s, p) => s + p.confirmed, 0)} registrations` },
-            { label: "Active collaborations", value: String(listings.length + SEED_COLLABS.filter((c) => getCollabResponse(c.id) === "Accepted" || c.status === "Active").length), icon: "🔬" },
+            { label: "Active collaborations", value: String(listings.length + sampleCollabs().filter((c) => getCollabResponse(c.id) === "Accepted" || c.status === "Active").length), icon: "🔬" },
             { label: "Research outputs", value: String(outputs.length), icon: "📄", hint: outputs.filter((o) => o.type === "Patent").length ? `${outputs.filter((o) => o.type === "Patent").length} patent(s)` : "Papers & patents" },
           ]}
           columns={5}
