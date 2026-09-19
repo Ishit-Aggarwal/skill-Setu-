@@ -17,7 +17,7 @@ import { readSessionToken, unauthorized } from "../../../lib/apiAuth";
  * override the free-tier default.
  */
 
-const MODEL = process.env.GEMINI_MODEL || "gemini-2.0-flash";
+const MODEL = process.env.GEMINI_MODEL || "gemini-flash-latest";
 const MAX_QUESTIONS = 20;
 const MAX_TOPIC_LENGTH = 400;
 const HOST_ROLES = new Set(["industry", "academician", "institution", "admin"]);
