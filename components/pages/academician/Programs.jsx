@@ -35,6 +35,7 @@ import {
   programmeDates,
   todayIso,
   validateDateRange,
+  latestScheduleDate,
 } from "../../../lib/dates";
 
 const MODE_TONE = { Hybrid: "blue", Online: "green", Onsite: "amber" };
@@ -917,7 +918,7 @@ function ProgramForm({ program, onCancel, onSubmit }) {
       <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
         <Field label="Start date" required>
           <TextInput
-            type="date"
+            type="date" max={latestScheduleDate()}
             required
             min={program ? undefined : todayIso()}
             value={form.startDate}
@@ -931,7 +932,7 @@ function ProgramForm({ program, onCancel, onSubmit }) {
         </Field>
         <Field label="End date">
           <TextInput
-            type="date"
+            type="date" max={latestScheduleDate()}
             min={form.startDate || (program ? undefined : todayIso())}
             value={form.endDate}
             onChange={(e) => {

@@ -3,6 +3,7 @@
 import { useCallback, useEffect, useRef, useState } from "react";
 import QuestionEditor from "./QuestionEditor";
 import AiGenerateModal from "./AiGenerateModal";
+import ImportPaperModal from "./ImportPaperModal";
 import RecheckDialog from "./RecheckDialog";
 import { api } from "../../convex/_generated/api";
 import { backendErrorMessage, backendMutation } from "../../lib/convexBrowser";
@@ -48,6 +49,8 @@ export function clearPaperDraft(key) {
 
 export default function PaperBuilder({ questions, onChange, ayushSystem = "", testId = null, draftKey = null, defaultTopic = "", locked = false, onSaved }) {
   const [showGenerate, setShowGenerate] = useState(false);
+  const [showImport, setShowImport] = useState(false);
+  const [importNote, setImportNote] = useState(null);
   const [generateMode, setGenerateMode] = useState("replace");
   const [recheck, setRecheck] = useState(null); // { question, result }
   const [recheckingId, setRecheckingId] = useState(null);
@@ -189,6 +192,17 @@ export default function PaperBuilder({ questions, onChange, ayushSystem = "", te
           >
             ✨ Generate with AI
           </Button>
+          <Button
+            type="button"
+            size="sm"
+            variant="outline"
+            onClick={() => {
+              setGenerateMode(empty ? "replace" : "append");
+              setShowImport(true);
+            }}
+          >
+            📄 Import from PDF
+          </Button>
           {empty ? (
             <Button type="button" size="sm" variant="outline" onClick={() => handleChange([blankQuestion({ ayushSystem })])}>
               ✍️ Write manually
@@ -198,6 +212,12 @@ export default function PaperBuilder({ questions, onChange, ayushSystem = "", te
       )}
 
       {recheckError && <p className="text-[11px] text-red-600">⚠️ {recheckError}</p>}
+      {importNote && (
+        <div className="flex items-start justify-between gap-3 rounded-xl border border-primary/30 bg-primary/5 px-3.5 py-2.5 text-xs text-foreground">
+          <span>{importNote}</span>
+          <button type="button" onClick={() => setImportNote(null)} className="text-muted-foreground hover:text-foreground flex-shrink-0" aria-label="Dismiss">×</button>
+        </div>
+      )}
 
       <QuestionEditor
         questions={questions}
@@ -218,6 +238,23 @@ export default function PaperBuilder({ questions, onChange, ayushSystem = "", te
             const existing = questions.filter((q) => q.text?.trim() || (q.options || []).some((o) => o.text?.trim()));
             handleChange(generateMode === "append" ? [...existing, ...generated] : generated);
             setShowGenerate(false);
+          }}
+        />
+      )}
+
+      {showImport && (
+        <ImportPaperModal
+          ayushSystem={ayushSystem}
+          onClose={() => setShowImport(false)}
+          onImported={(imported, summary) => {
+            const existing = questions.filter((q) => q.text?.trim() || (q.options || []).some((o) => o.text?.trim()));
+            handleChange(generateMode === "append" ? [...existing, ...imported] : imported);
+            setShowImport(false);
+            const bits = [`Imported ${summary.imported} question${summary.imported === 1 ? "" : "s"} from the PDF.`];
+            if (summary.generatedKeys) bits.push(`${summary.generatedKeys} had no answer key in the paper — the answers were generated and are badged AI-generated; please check them.`);
+            if (summary.generatedExplanations) bits.push(`${summary.generatedExplanations} explanation${summary.generatedExplanations === 1 ? " was" : "s were"} generated.`);
+            if (summary.dropped?.length) bits.push(`${summary.dropped.length} could not be read and were skipped.`);
+            setImportNote(bits.join(" "));
           }}
         />
       )}

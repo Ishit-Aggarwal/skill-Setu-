@@ -3,7 +3,7 @@
 import { useState } from "react";
 import { api } from "../../convex/_generated/api";
 import { backendErrorMessage, backendMutation, isBackendConfigured } from "../../lib/convexBrowser";
-import { recordHostEnteredScore } from "../../lib/store";
+import { findOne, insert, recordHostEnteredScore } from "../../lib/store";
 import { Avatar, Badge, Button, Flash, Modal } from "../ui/Kit";
 
 /**
@@ -36,23 +36,31 @@ export default function RecordResultsModal({ test, issuer, recipients, onClose, 
 
     setSaving(true);
     let saved = 0;
+    let certified = 0;
     try {
       for (const [studentId, value] of entered) {
         const score = Number(value);
         if (isBackendConfigured()) {
-          await backendMutation(api.skillTests.recordOfflineResult, {
+          const out = await backendMutation(api.skillTests.recordOfflineResult, {
             testId: test.id,
             studentId,
             domain: test.domain,
             score,
           });
+          // An in-person or hybrid sitting earns its certificate from the mark
+          // just entered, exactly as an online paper does on grading.
+          const credential = out?.certificate?.credential;
+          if (credential) {
+            certified += 1;
+            if (!findOne("credentials", (c) => c.id === credential.id)) insert("credentials", credential);
+          }
         }
         // Mirror locally so this device's roster and the student's cached
         // profile agree with what the server now holds.
         recordHostEnteredScore(studentId, test, score, issuer?.id);
         saved += 1;
       }
-      setFlash(`Recorded ${saved} result${saved === 1 ? "" : "s"}.`);
+      setFlash(`Recorded ${saved} result${saved === 1 ? "" : "s"}${certified ? ` · ${certified} certificate${certified === 1 ? "" : "s"} issued` : ""}.`);
       onSaved?.(saved);
     } catch (err) {
       setError(backendErrorMessage(err, "Could not record these results."));

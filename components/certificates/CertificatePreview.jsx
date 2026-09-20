@@ -38,8 +38,13 @@ export default function CertificatePreview({ branding, design, data = SAMPLE_CER
       aria-label={`Certificate preview: ${title} for ${data?.studentName}`}
     >
       {d.border === "ornate" && <div className="absolute inset-2 pointer-events-none" style={{ border: `1px solid ${d.palette.primary}` }} />}
-      {logo && (
-        <img src={logo} alt="" className="absolute inset-0 m-auto w-1/2 object-contain pointer-events-none select-none" style={{ opacity: 0.06 }} />
+      {logo && d.watermark.enabled && (
+        <img
+          src={logo}
+          alt=""
+          className="absolute inset-0 m-auto object-contain pointer-events-none select-none"
+          style={{ opacity: d.watermark.opacity, width: `${Math.round(d.watermark.size * 100)}%`, height: `${Math.round(d.watermark.size * 100)}%` }}
+        />
       )}
 
       <div className={`relative h-full flex flex-col ${left ? "items-start text-left" : "items-center text-center"}`} style={{ padding: compact ? "4% 6%" : "5% 7%" }}>

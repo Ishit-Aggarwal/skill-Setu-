@@ -736,14 +736,14 @@ export default function StudentDashboard() {
                         <div className="text-xs text-muted-foreground mt-0.5 truncate">
                           {test.hostName} · {test.mode} · {formatScheduled(test)}
                         </div>
-                        {test.mode === "Offline" && test.venue && status !== "completed" && (
+                        {test.mode !== "Online" && test.venue && status !== "completed" && (
                           <div className="text-[11px] text-muted-foreground mt-0.5">📍 {test.venue}</div>
                         )}
                       </div>
                       <div className="flex items-center gap-2.5 flex-shrink-0">
                         {attempt && !attempt.missed && <span className="text-sm font-semibold text-foreground">{attempt.score}%</span>}
                         <Badge tone={testStatusTone[status]} dot>{testStatusLabel[status]}</Badge>
-                        {test.mode === "Online" && test.meetingLink && isLinkRevealWindow(test) && status !== "completed" && (
+                        {test.mode !== "Offline" && test.meetingLink && isLinkRevealWindow(test) && status !== "completed" && (
                           <a
                             href={test.meetingLink}
                             target="_blank"

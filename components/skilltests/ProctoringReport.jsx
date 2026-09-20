@@ -204,7 +204,11 @@ export default function ProctoringReport({ attemptId }) {
                   {attempt.autoSubmitReason && <div className="text-muted-foreground mt-1">{autoSubmitMessage(attempt.autoSubmitReason).replace("Your test was", "Test was")}</div>}
                 </div>
                 <div>
-                  <div className="text-[10px] uppercase tracking-wider text-muted-foreground">Violations · {attempt.violationCount || 0}/{data.violationLimit}</div>
+                  <div className="text-[10px] uppercase tracking-wider text-muted-foreground">
+                    Violations · {attempt.violationCount || 0}
+                    {data.test?.violationPenalty ? ` · −${data.test.violationPenalty} pt${data.test.violationPenalty === 1 ? "" : "s"} each · ${attempt.penaltyPoints || 0} pts deducted` : ` / ${data.violationLimit}`}
+                    {attempt.failed ? " · FAILED" : ""}
+                  </div>
                   <ul className="mt-1 space-y-0.5 text-muted-foreground">
                     <li>Fullscreen exits: {counts.FULLSCREEN_EXIT || 0}</li>
                     <li>Tab switches: {counts.TAB_SWITCH || 0}</li>

@@ -31,7 +31,7 @@ import {
 } from "../../lib/store";
 import { checkEligibility, computeMatch, computeSkillGap, daysUntil, formatDate } from "../../lib/match";
 import { STIPEND_MODES, formatStipend, isPaidPosting, monthlyEquivalent, parseDurationMonths, parseLegacyStipend } from "../../lib/money";
-import { APPLICATION_LEAD_HOURS, checkLeadTime, earliestDateAfter } from "../../lib/dates";
+import { APPLICATION_LEAD_HOURS, checkLeadTime, earliestDateAfter, latestScheduleDate } from "../../lib/dates";
 
 const typeFilters = ["All", "Remote", "Hybrid", "Onsite"];
 const STAGE_ORDER = PIPELINE_STAGES;
@@ -1013,7 +1013,7 @@ function PostingModal({ posting, onClose, onSubmit }) {
         >
           <TextInput
             required
-            type="date"
+            type="date" max={latestScheduleDate()}
             min={earliestDateAfter(APPLICATION_LEAD_HOURS)}
             value={form.deadline}
             onChange={(e) => set("deadline", e.target.value)}

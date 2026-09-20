@@ -94,7 +94,7 @@ export default function RegisterModal({ test, user, onConfirm, onClose }) {
           </div>
         )}
 
-        {test.mode === "Offline" && test.documentsRequired?.length > 0 && (
+        {test.mode !== "Online" && test.documentsRequired?.length > 0 && (
           <div className="bg-secondary rounded-xl p-3">
             <div className="text-xs font-semibold text-foreground mb-1.5">Documents to bring</div>
             <ul className="space-y-1">
@@ -109,7 +109,7 @@ export default function RegisterModal({ test, user, onConfirm, onClose }) {
 
         <label className="flex items-start gap-2 text-xs text-muted-foreground pt-1">
           <input type="checkbox" checked={agreed} onChange={(e) => setAgreed(e.target.checked)} className="mt-0.5" />
-          I have read and agree to the rules{test.mode === "Offline" ? " and will bring the required documents" : ""}.
+          I have read and agree to the rules{test.mode !== "Online" ? " and will bring the required documents" : ""}.
         </label>
 
         <div className="flex gap-3 pt-2">

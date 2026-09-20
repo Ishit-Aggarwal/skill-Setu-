@@ -1,6 +1,6 @@
 import { test } from "node:test";
 import assert from "node:assert/strict";
-import { gradeQuestion, gradePaper, paperType, paperTypeLabel, totalPoints, certificateEligible, paperCounter } from "../lib/grading.js";
+import { gradeQuestion, gradePaper, paperType, paperTypeLabel, totalPoints, certificateEligible, paperCounter, applyPenalty, clampPenalty, violationsToFail } from "../lib/grading.js";
 
 /* Section 3.7 — all-or-nothing, 1 point per question, no partial credit. */
 
@@ -94,4 +94,37 @@ test("Section 4.3 — certificate eligibility against a minimum score", () => {
   assert.equal(certificateEligible(0, null), true); // blank minimum = everyone
   assert.equal(certificateEligible(10, ""), true);
   assert.equal(certificateEligible(10, undefined), true);
+});
+
+test("violation penalties come off the marked paper and fail it when they reach the total", () => {
+  const marked = { points: 3, total: 4, score: 75, correctCount: 3, totalQuestions: 4, breakdown: [] };
+  const one = applyPenalty(marked, { violations: 1, penaltyPerViolation: 2 });
+  assert.equal(one.points, 1);
+  assert.equal(one.score, 25);
+  assert.equal(one.penaltyPoints, 2);
+  assert.equal(one.failed, false);
+  const two = applyPenalty(marked, { violations: 2, penaltyPerViolation: 2 });
+  assert.equal(two.failed, true);
+  assert.equal(two.points, 0);
+  assert.equal(two.score, 0);
+  assert.equal(two.rawPoints, 3);
+  // three violations on a four-point paper with a two-point penalty: failed at the second
+  assert.equal(violationsToFail(4, 2), 2);
+  assert.equal(violationsToFail(10, 3), 4);
+  assert.equal(violationsToFail(10, 0), null);
+  // penalties are off → nothing changes
+  const off = applyPenalty(marked, { violations: 5, penaltyPerViolation: 0 });
+  assert.equal(off.points, 3);
+  assert.equal(off.failed, false);
+});
+
+test("a penalty can never exceed the paper's total points", () => {
+  assert.equal(clampPenalty(7, 4), 4);
+  assert.equal(clampPenalty(2, 4), 2);
+  assert.equal(clampPenalty(-3, 4), 0);
+  assert.equal(clampPenalty("abc", 4), 0);
+  assert.equal(clampPenalty(2.6, 4), 3);
+  const r = applyPenalty({ points: 4, total: 4 }, { violations: 1, penaltyPerViolation: 99 });
+  assert.equal(r.penaltyPerViolation, 4);
+  assert.equal(r.failed, true);
 });

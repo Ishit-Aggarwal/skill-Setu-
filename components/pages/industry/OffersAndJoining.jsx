@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useMemo, useState } from "react";
+import { latestScheduleDate } from "../../../lib/dates";
 import { useStoreVersion } from "../../../lib/useLiveStore";
 import DashboardLayout from "../../DashboardLayout";
 import { useAuth } from "../../../lib/auth";
@@ -312,7 +313,7 @@ function OfferForm({ application, onCancel, onSubmit }) {
         </Select>
       </Field>
       <div className="grid grid-cols-2 gap-3">
-        <Field label="Joining date"><TextInput type="date" value={form.joiningDate} onChange={(e) => set("joiningDate", e.target.value)} /></Field>
+        <Field label="Joining date"><TextInput type="date" max={latestScheduleDate()} value={form.joiningDate} onChange={(e) => set("joiningDate", e.target.value)} /></Field>
         <Field label="Offered stipend / CTC"><TextInput value={form.offerAmount} onChange={(e) => set("offerAmount", e.target.value)} placeholder="₹20,000/mo" /></Field>
       </div>
       <Field label="Internal notes" hint="Visible only to your hiring team.">

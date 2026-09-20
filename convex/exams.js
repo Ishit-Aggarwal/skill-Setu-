@@ -8,7 +8,7 @@ import { issueCertificateForAttempt } from "./_lib/certificates";
 import { SKILL_DOMAINS } from "../lib/questionBank";
 import { EXAM } from "../lib/settings";
 import { LIVE_STATES, canTransition, isClosed } from "../lib/examState";
-import { gradePaper } from "../lib/grading";
+import { applyPenalty, clampPenalty, gradePaper } from "../lib/grading";
 import { sanitizeForCandidate } from "../lib/questions";
 
 /**
@@ -26,8 +26,18 @@ import { sanitizeForCandidate } from "../lib/questions";
  * that attempt, and for nobody else except the host.
  */
 
-const TEST_WEIGHT = { Online: 1, Offline: 1.5 };
+const TEST_WEIGHT = { Online: 1, Offline: 1.5, Hybrid: 1.5 };
 const HOST_ROLES = ["industry", "academician", "institution", "admin"];
+
+/**
+ * The penalty a test charges per violation. A host sets it on the test
+ * (0 turns penalties off); tests published before penalties existed use the
+ * default. Never more than the paper's total, whatever was saved.
+ */
+function penaltyFor(test, totalPoints) {
+  const raw = test && test.violationPenalty != null ? test.violationPenalty : EXAM.DEFAULT_VIOLATION_PENALTY;
+  return clampPenalty(raw, totalPoints);
+}
 
 function newId(prefix) {
   return `${prefix}_${Date.now().toString(36)}_${Math.random().toString(36).slice(2, 8)}`;
@@ -91,12 +101,24 @@ async function logEvent(ctx, attempt, type, atMs, detail, durationMs) {
   });
 }
 
-/** Grades, records the result everywhere it is read, and issues a certificate. */
+/**
+ * Grades, records the result everywhere it is read, and issues a certificate.
+ *
+ * Violation penalties come off here, from the count this server kept — the
+ * browser never sends a score or a penalty. An attempt that failed outright
+ * (penalties used up the paper, or the camera was switched off) scores 0 and
+ * gets no certificate.
+ */
 async function gradeAttempt(ctx, attempt, answers) {
   const paper = await paperFor(ctx, attempt);
-  const result = gradePaper(paper, answers || {});
+  const marked = gradePaper(paper, answers || {});
   const test = await findTestByClientId(ctx, attempt.testId);
   const student = await findUserById(ctx, attempt.studentId);
+
+  const penaltyPerViolation = penaltyFor(test, marked.total);
+  let result = applyPenalty(marked, { violations: attempt.violationCount || 0, penaltyPerViolation });
+  const failedOutright = Boolean(attempt.failedReason) || result.failed;
+  if (failedOutright && !result.failed) result = { ...result, failed: true, points: 0, score: 0 };
 
   const gradedAt = new Date().toISOString();
   await ctx.db.patch(attempt._id, {
@@ -104,6 +126,10 @@ async function gradeAttempt(ctx, attempt, answers) {
     score: result.score,
     correctCount: result.correctCount,
     totalQuestions: result.totalQuestions,
+    rawPoints: result.rawPoints,
+    penaltyPoints: result.penaltyPoints,
+    penaltyPerViolation,
+    failed: failedOutright,
     gradedAt,
   });
 
@@ -130,7 +156,8 @@ async function gradeAttempt(ctx, attempt, answers) {
   const assessment = await recalculateAssessment(ctx, attempt.studentId);
 
   let certificate = { status: "not_enabled", credential: null };
-  if (test && student) {
+  if (failedOutright) certificate = { status: "failed", credential: null };
+  else if (test && student) {
     certificate = await issueCertificateForAttempt(ctx, { test, attempt: { ...attempt, ...result }, student, score: result.score });
   }
   const graded = await transition(ctx, { ...attempt, state: attempt.state }, "GRADED");
@@ -139,11 +166,36 @@ async function gradeAttempt(ctx, attempt, answers) {
   return { result, assessment, certificate, attempt: { ...graded, certificateStatus: certificate.status, credentialId: certificate.credential?.id || null } };
 }
 
+const FAILING_REASONS = ["penalty_limit_reached", "device_lost"];
+
 async function autoSubmit(ctx, attempt, reason, atMs) {
   await logEvent(ctx, attempt, "AUTO_SUBMIT_TRIGGERED", atMs, reason);
   const closed = await transition(ctx, attempt, "AUTO_SUBMITTED", reason);
-  await ctx.db.patch(closed._id, { autoSubmitReason: reason });
-  return await gradeAttempt(ctx, { ...closed, autoSubmitReason: reason }, closed.answers || {});
+  const patch = { autoSubmitReason: reason };
+  if (FAILING_REASONS.includes(reason)) {
+    patch.failedReason = reason;
+    patch.disqualified = true;
+    patch.disqualifiedAt = attempt.disqualifiedAt || new Date().toISOString();
+  }
+  await ctx.db.patch(closed._id, patch);
+  return await gradeAttempt(ctx, { ...closed, ...patch }, closed.answers || {});
+}
+
+/** Everything the browser needs to describe the rules of this sitting. */
+async function configFor(ctx, attempt) {
+  const paper = await paperFor(ctx, attempt);
+  const totalPoints = paper.length;
+  const test = await findTestByClientId(ctx, attempt.testId);
+  const penaltyPerViolation = penaltyFor(test, totalPoints);
+  return {
+    totalPoints,
+    penaltyPerViolation,
+    deviceGraceSeconds: EXAM.DEVICE_GRACE_SECONDS,
+    faceMonitoring: Boolean(test?.faceMonitoring !== false),
+    // Kept for browsers still running the previous exam room.
+    violationLimit: EXAM.VIOLATION_LIMIT,
+    fullscreenGraceSeconds: EXAM.FULLSCREEN_GRACE_SECONDS,
+  };
 }
 
 function stripCredential(credential) {
@@ -303,7 +355,7 @@ export const start = mutation({
       serverNow: now,
       deadlineAt: now + (attempt.durationMins || 15) * 60000,
       questions: paper.map(sanitizeForCandidate),
-      config: { violationLimit: EXAM.VIOLATION_LIMIT, fullscreenGraceSeconds: EXAM.FULLSCREEN_GRACE_SECONDS, deviceGraceSeconds: EXAM.DEVICE_GRACE_SECONDS },
+      config: await configFor(ctx, attempt),
     };
   },
 });
@@ -315,7 +367,18 @@ export const paper = query({
     const { attempt } = await requireAttemptAccess(ctx, args.sessionToken, args.attemptId, { studentOnly: true });
     if (!LIVE_STATES.includes(attempt.state)) return { ok: false, state: attempt.state };
     const questions = (await paperFor(ctx, attempt)).map(sanitizeForCandidate);
-    return { ok: true, state: attempt.state, questions, answers: attempt.answers || {}, deadlineAt: attempt.deadlineAt, startedAt: attempt.startedAt, serverNow: Date.now() };
+    return {
+      ok: true,
+      state: attempt.state,
+      questions,
+      answers: attempt.answers || {},
+      deadlineAt: attempt.deadlineAt,
+      startedAt: attempt.startedAt,
+      serverNow: Date.now(),
+      violationCount: attempt.violationCount || 0,
+      penaltyPoints: attempt.penaltyPoints || 0,
+      config: await configFor(ctx, attempt),
+    };
   },
 });
 
@@ -371,7 +434,7 @@ export const logEvents = mutation({
   },
   handler: async (ctx, args) => {
     const { attempt } = await requireAttemptAccess(ctx, args.sessionToken, args.attemptId, { studentOnly: true });
-    if (isClosed(attempt.state)) return { ok: false, state: attempt.state, violationCount: attempt.violationCount || 0, limit: EXAM.VIOLATION_LIMIT };
+    if (isClosed(attempt.state)) return { ok: false, state: attempt.state, violationCount: attempt.violationCount || 0 };
 
     let violationCount = attempt.violationCount || 0;
     const byType = { ...(attempt.violationsByType || {}) };
@@ -382,31 +445,39 @@ export const logEvents = mutation({
       if (EXAM.VIOLATION_TYPES.includes(e.type)) violationCount += 1;
     }
 
+    const config = await configFor(ctx, attempt);
+    const penaltyPoints = violationCount * config.penaltyPerViolation;
+    const pointsLeft = Math.max(0, config.totalPoints - penaltyPoints);
     const test = await findTestByClientId(ctx, attempt.testId);
-    const patch = { violationCount, violationsByType: byType };
+    const patch = { violationCount, violationsByType: byType, penaltyPoints };
     if (test?.autoDisqualifyAfter != null && violationCount >= test.autoDisqualifyAfter && !attempt.disqualified) {
       patch.disqualified = true;
       patch.disqualifiedAt = new Date().toISOString();
     }
     await ctx.db.patch(attempt._id, patch);
     const updated = { ...attempt, ...patch };
+    const summary = { violationCount, penaltyPerViolation: config.penaltyPerViolation, penaltyPoints, pointsLeft, totalPoints: config.totalPoints };
 
-    if (violationCount >= EXAM.VIOLATION_LIMIT && LIVE_STATES.includes(attempt.state)) {
+    // Penalties have used up the paper (or, for a test with penalties off,
+    // the legacy count limit was hit): the attempt is over.
+    const penaltiesExhausted = config.penaltyPerViolation > 0 && config.totalPoints > 0 && penaltyPoints >= config.totalPoints;
+    const legacyLimit = config.penaltyPerViolation === 0 && violationCount >= EXAM.VIOLATION_LIMIT;
+    if ((penaltiesExhausted || legacyLimit) && LIVE_STATES.includes(attempt.state)) {
       const lastMs = args.events.length ? args.events[args.events.length - 1].atMs : 0;
-      const graded = await autoSubmit(ctx, updated, "violation_limit_reached", lastMs);
+      const reason = penaltiesExhausted ? "penalty_limit_reached" : "violation_limit_reached";
+      const graded = await autoSubmit(ctx, updated, reason, lastMs);
       return {
         ok: true,
         state: "GRADED",
-        violationCount,
-        limit: EXAM.VIOLATION_LIMIT,
-        autoSubmitReason: "violation_limit_reached",
-        disqualified: Boolean(patch.disqualified),
+        ...summary,
+        autoSubmitReason: reason,
+        disqualified: penaltiesExhausted || Boolean(patch.disqualified),
         result: graded.result,
         certificate: { status: graded.certificate.status, credential: stripCredential(graded.certificate.credential) },
         assessment: graded.assessment,
       };
     }
-    return { ok: true, state: updated.state, violationCount, limit: EXAM.VIOLATION_LIMIT, disqualified: Boolean(updated.disqualified) };
+    return { ok: true, state: updated.state, ...summary, disqualified: Boolean(updated.disqualified) };
   },
 });
 
@@ -428,7 +499,7 @@ export const submit = mutation({
     const withAnswers = { ...attempt, answers: args.answers || {} };
 
     if (args.auto) {
-      const reason = ["time_up", "fullscreen_timeout", "device_timeout"].includes(args.reason) ? args.reason : "time_up";
+      const reason = ["time_up", "fullscreen_timeout", "device_timeout", "device_lost"].includes(args.reason) ? args.reason : "time_up";
       const graded = await autoSubmit(ctx, withAnswers, reason, args.atMs || 0);
       return {
         ok: true,
@@ -437,7 +508,7 @@ export const submit = mutation({
         result: graded.result,
         certificate: { status: graded.certificate.status, credential: stripCredential(graded.certificate.credential) },
         assessment: graded.assessment,
-        disqualified: Boolean(attempt.disqualified),
+        disqualified: Boolean(attempt.disqualified) || FAILING_REASONS.includes(reason),
       };
     }
 
@@ -604,7 +675,9 @@ export const report = query({
       ok: true,
       attempt: rest,
       student: student ? { id: student.id, name: student.name, email: student.email, institution: student.institution } : null,
-      test: test ? { id: test.id, title: test.title, autoDisqualifyAfter: test.autoDisqualifyAfter ?? null } : { id: attempt.testId, title: attempt.testTitle, autoDisqualifyAfter: null },
+      test: test
+        ? { id: test.id, title: test.title, autoDisqualifyAfter: test.autoDisqualifyAfter ?? null, violationPenalty: penaltyFor(test, attempt.totalQuestions || 0) }
+        : { id: attempt.testId, title: attempt.testTitle, autoDisqualifyAfter: null, violationPenalty: penaltyFor(null, attempt.totalQuestions || 0) },
       events,
       chunks,
       gaps,

@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useMemo, useState } from "react";
+import { latestScheduleDate } from "../../../lib/dates";
 import DashboardLayout from "../../DashboardLayout";
 import { useAuth } from "../../../lib/auth";
 import { Avatar, Badge, Button, Card, EmptyState, Field, Flash, IconTile, Modal, PageHeader, ProgressRing, Section, Select, StatGrid, Tabs, TextArea, TextInput, useFlash } from "../../ui/Kit";
@@ -467,7 +468,7 @@ function Workspace({ collab, user, onChange }) {
             >
               <TextInput value={milestone.title} onChange={(e) => setMilestone((m) => ({ ...m, title: e.target.value }))} placeholder="New milestone" />
               <div className="grid grid-cols-2 gap-2">
-                <TextInput type="date" value={milestone.due} onChange={(e) => setMilestone((m) => ({ ...m, due: e.target.value }))} />
+                <TextInput type="date" max={latestScheduleDate()} value={milestone.due} onChange={(e) => setMilestone((m) => ({ ...m, due: e.target.value }))} />
                 <TextInput value={milestone.owner} onChange={(e) => setMilestone((m) => ({ ...m, owner: e.target.value }))} placeholder="Owner" />
               </div>
               <Button type="submit" variant="outline" size="sm" className="w-full" disabled={!milestone.title.trim()}>Add milestone</Button>
@@ -548,7 +549,7 @@ function ListingForm({ defaultExpertise, onCancel, onSubmit }) {
       </Field>
       <div className="grid grid-cols-2 gap-3">
         <Field label="Collaborators needed"><TextInput type="number" min="1" value={form.collaboratorsNeeded} onChange={(e) => set("collaboratorsNeeded", e.target.value)} /></Field>
-        <Field label="Deadline to respond"><TextInput type="date" value={form.deadline} onChange={(e) => set("deadline", e.target.value)} /></Field>
+        <Field label="Deadline to respond"><TextInput type="date" max={latestScheduleDate()} value={form.deadline} onChange={(e) => set("deadline", e.target.value)} /></Field>
       </div>
       <label className="flex items-center gap-2 text-sm text-foreground">
         <input type="checkbox" checked={form.funded} onChange={(e) => set("funded", e.target.checked)} className="w-4 h-4 accent-primary" />

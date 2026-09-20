@@ -17,7 +17,10 @@ import {
   hasTestEnded,
   getTestEndTimestamp,
 } from "../../lib/store";
-import { TEST_LEAD_HOURS, checkLeadTime, earliestDateAfter } from "../../lib/dates";
+import { TEST_LEAD_HOURS, checkLeadTime, earliestDateAfter, latestScheduleDate } from "../../lib/dates";
+import { uploadToStorage } from "../../lib/uploads";
+import { clampPenalty, violationsToFail } from "../../lib/grading";
+import { openStoredFile } from "../../lib/files";
 import { publishSkillTest } from "../../lib/skillTestSync";
 import { subscribeToMutations } from "../../lib/sync";
 import { api } from "../../convex/_generated/api";
@@ -62,10 +65,13 @@ const EMPTY_TEST_FORM = {
   meetingLink: "",
   questions: [],
   proctored: true,
+  faceMonitoring: true,
+  violationPenalty: String(EXAM.DEFAULT_VIOLATION_PENALTY),
   autoDisqualifyOn: false,
   autoDisqualifyAfter: String(EXAM.VIOLATION_LIMIT),
   issueCertificate: false,
   minCertificateScore: "",
+  samplePapers: [],
 };
 
 function genId(prefix = "skillTests") {
@@ -81,6 +87,9 @@ function paperTypeBadge(test) {
 /* ---------------- Exam & certificate settings shared by create/edit ---------------- */
 
 function ExamSettings({ form, set }) {
+  const total = Array.isArray(form.questions) ? form.questions.length : 0;
+  const penalty = clampPenalty(form.violationPenalty, total || undefined);
+  const toFail = violationsToFail(total, penalty);
   return (
     <div className="rounded-xl border border-border p-3.5 space-y-3">
       <div className="text-xs font-semibold text-primary uppercase tracking-wider">Secure exam room</div>
@@ -88,7 +97,41 @@ function ExamSettings({ form, set }) {
         <input type="checkbox" checked={form.proctored} onChange={(e) => set("proctored", e.target.checked)} className="mt-0.5" />
         <span>
           Record and monitor this test
-          <span className="block text-[11px] text-muted-foreground">{EXAM.MONITORING_NOTICE} Fullscreen is enforced; {EXAM.VIOLATION_LIMIT} violations submit the paper automatically.</span>
+          <span className="block text-[11px] text-muted-foreground">{EXAM.MONITORING_NOTICE} Fullscreen is enforced and Esc is locked; leaving fullscreen or switching tabs is charged the penalty below.</span>
+        </span>
+      </label>
+      <label className="flex items-start gap-2 text-xs text-foreground">
+        <input type="checkbox" checked={form.faceMonitoring !== false} onChange={(e) => set("faceMonitoring", e.target.checked)} className="mt-0.5" disabled={!form.proctored} />
+        <span>
+          Camera face check
+          <span className="block text-[11px] text-muted-foreground">
+            Runs on the candidate's own device: no face for {EXAM.FACE.NO_FACE_SECONDS}s, more than one face, or looking away for {EXAM.FACE.LOOK_AWAY_SECONDS}s each count as a violation. A camera switched off fails the test outright.
+          </span>
+        </span>
+      </label>
+      <label className="flex items-start gap-2 text-xs text-foreground">
+        <span className="mt-0.5 w-3.5 flex-shrink-0" aria-hidden="true" />
+        <span className="flex-1">
+          Penalty per violation{" "}
+          <input
+            type="number"
+            min="0"
+            max={total || undefined}
+            step="1"
+            value={form.violationPenalty}
+            onChange={(e) => set("violationPenalty", e.target.value)}
+            disabled={!form.proctored}
+            aria-label="Points deducted per violation"
+            className="w-14 mx-1 bg-background border border-border rounded-lg px-2 py-1 text-xs text-center"
+          />{" "}
+          point{penalty === 1 ? "" : "s"}
+          <span className="block text-[11px] text-muted-foreground">
+            {penalty === 0
+              ? "Penalties are off; violations are only recorded for your review."
+              : total
+              ? `Never more than the paper's ${total} point${total === 1 ? "" : "s"}. On this paper the test fails at violation ${toFail} — the moment the penalties reach the total.`
+              : "Never more than the paper's total points. The test fails the moment the penalties reach the total."}
+          </span>
         </span>
       </label>
       <label className="flex items-start gap-2 text-xs text-foreground">
@@ -109,6 +152,69 @@ function ExamSettings({ form, set }) {
           <span className="block text-[11px] text-muted-foreground">Off by default. When on, the attempt is marked disqualified pending your review; you can reverse it from the proctoring report.</span>
         </span>
       </label>
+    </div>
+  );
+}
+
+/* ---------------- Sample papers (any mode) ---------------- */
+
+/**
+ * Up to EXAM.MAX_SAMPLE_PAPERS PDFs a host attaches so candidates can see
+ * what the sitting looks like. They live in file storage; the test row keeps
+ * the references, and every candidate's test card lists them.
+ */
+function SamplePapers({ papers, onChange }) {
+  const [busy, setBusy] = useState(false);
+  const [error, setError] = useState(null);
+  const list = Array.isArray(papers) ? papers : [];
+
+  async function handleFiles(e) {
+    const files = [...(e.target.files || [])];
+    e.target.value = "";
+    if (!files.length) return;
+    if (list.length + files.length > EXAM.MAX_SAMPLE_PAPERS) return setError(`You can attach up to ${EXAM.MAX_SAMPLE_PAPERS} sample papers.`);
+    setError(null);
+    setBusy(true);
+    try {
+      const added = [];
+      for (const file of files) {
+        const uploaded = await uploadToStorage(file, { kind: "document" });
+        added.push({ id: `sample_${Date.now().toString(36)}_${Math.random().toString(36).slice(2, 6)}`, ...uploaded });
+      }
+      onChange([...list, ...added]);
+    } catch (err) {
+      setError(err?.message || "That file could not be uploaded.");
+    } finally {
+      setBusy(false);
+    }
+  }
+
+  return (
+    <div className="rounded-xl border border-border p-3.5 space-y-2">
+      <div className="text-xs font-semibold text-primary uppercase tracking-wider">Sample papers (optional)</div>
+      <p className="text-[11px] text-muted-foreground">Up to {EXAM.MAX_SAMPLE_PAPERS} PDFs candidates can download before the test — a past paper, a specimen, a syllabus.</p>
+      {list.length > 0 && (
+        <ul className="space-y-1">
+          {list.map((p) => (
+            <li key={p.id || p.storageId} className="flex items-center gap-2 text-xs text-foreground bg-secondary/50 rounded-lg px-2.5 py-1.5">
+              <button type="button" onClick={() => openStoredFile(p)} className="truncate text-left hover:underline flex-1">📄 {p.fileName}</button>
+              <button type="button" onClick={() => onChange(list.filter((x) => x !== p))} className="text-red-500 hover:underline flex-shrink-0">Remove</button>
+            </li>
+          ))}
+        </ul>
+      )}
+      {list.length < EXAM.MAX_SAMPLE_PAPERS && (
+        <input
+          type="file"
+          accept=".pdf,application/pdf"
+          multiple
+          onChange={handleFiles}
+          disabled={busy}
+          className="text-xs text-muted-foreground file:mr-2.5 file:py-1.5 file:px-3 file:rounded-lg file:border-0 file:text-xs file:font-medium file:bg-primary/10 file:text-primary hover:file:bg-primary/20"
+        />
+      )}
+      {busy && <div className="text-[11px] text-muted-foreground">Uploading…</div>}
+      {error && <div className="text-[11px] text-red-600">{error}</div>}
     </div>
   );
 }
@@ -308,6 +414,11 @@ export default function HostView({ user }) {
       const min = Number(form.minCertificateScore);
       if (!Number.isFinite(min) || min < 0 || min > 100) return setFormError("Minimum score to receive a certificate must be between 0 and 100.");
     }
+    if (form.mode === "Online" && form.proctored) {
+      const penalty = Number(form.violationPenalty);
+      if (!Number.isInteger(penalty) || penalty < 0) return setFormError("The penalty per violation must be a whole number of points (0 turns penalties off).");
+      if (penalty > form.questions.length) return setFormError(`The penalty per violation can't be more than the paper's ${form.questions.length} point${form.questions.length === 1 ? "" : "s"}.`);
+    }
 
     const hostName = user.companyName || user.instituteName || user.institution || user.name;
     const record = {
@@ -325,11 +436,14 @@ export default function HostView({ user }) {
       rules: form.rules.split("\n").map((r) => r.trim()).filter(Boolean),
       scheduledAt: form.scheduledAt,
       scheduledTime: form.scheduledTime,
-      venue: form.mode === "Offline" ? form.venue : undefined,
-      reportingTime: form.mode === "Offline" ? form.reportingTime : undefined,
-      documentsRequired: form.mode === "Offline" ? form.documentsRequired.split(",").map((d) => d.trim()).filter(Boolean) : undefined,
-      meetingLink: form.mode === "Online" ? form.meetingLink.trim() || undefined : undefined,
+      venue: form.mode !== "Online" ? form.venue : undefined,
+      reportingTime: form.mode !== "Online" ? form.reportingTime : undefined,
+      documentsRequired: form.mode !== "Online" ? form.documentsRequired.split(",").map((d) => d.trim()).filter(Boolean) : undefined,
+      meetingLink: form.mode !== "Offline" ? form.meetingLink.trim() || undefined : undefined,
       proctored: form.mode === "Online" ? form.proctored : false,
+      faceMonitoring: form.mode === "Online" ? form.proctored && form.faceMonitoring !== false : false,
+      violationPenalty: form.mode === "Online" && form.proctored ? clampPenalty(form.violationPenalty, form.questions.length) : null,
+      samplePapers: form.samplePapers,
       autoDisqualifyAfter: form.mode === "Online" && form.proctored && form.autoDisqualifyOn ? Math.max(1, Math.round(Number(form.autoDisqualifyAfter) || EXAM.VIOLATION_LIMIT)) : null,
       issueCertificate: Boolean(form.issueCertificate),
       minCertificateScore: form.issueCertificate && form.minCertificateScore !== "" ? Number(form.minCertificateScore) : null,
@@ -467,12 +581,12 @@ export default function HostView({ user }) {
               </div>
               <div className="text-sm font-semibold text-foreground mb-1">{test.title}</div>
               <p className="text-xs text-muted-foreground leading-relaxed mb-2">{test.description}</p>
-              {test.mode === "Online" && (
-                <p className="text-[11px] text-muted-foreground mb-3">
-                  {test.questionCount ? paperCounter(new Array(test.questionCount).fill(0)) : "Platform question bank"}
-                  {test.issueCertificate ? ` · certificate ${test.minCertificateScore != null ? `at ${test.minCertificateScore}%+` : "on completion"}` : ""}
-                </p>
-              )}
+              <p className="text-[11px] text-muted-foreground mb-3">
+                {test.mode === "Online" ? (test.questionCount ? paperCounter(new Array(test.questionCount).fill(0)) : "Platform question bank") : `${test.mode} sitting`}
+                {test.issueCertificate ? ` · certificate ${test.minCertificateScore != null ? `at ${test.minCertificateScore}%+` : "on completion"}` : ""}
+                {test.mode === "Online" && test.proctored && test.violationPenalty != null ? ` · −${test.violationPenalty} pt${test.violationPenalty === 1 ? "" : "s"} per violation` : ""}
+                {Array.isArray(test.samplePapers) && test.samplePapers.length ? ` · ${test.samplePapers.length} sample paper${test.samplePapers.length === 1 ? "" : "s"}` : ""}
+              </p>
               <div className="mb-3">
                 <RetagPrompt row={test} what="This test" saving={retagging === test.id} onSave={(slug) => retag(test, slug)} />
               </div>
@@ -607,7 +721,7 @@ export default function HostView({ user }) {
         <Modal title={`Reschedule "${rescheduleModalTest.title}"`} description="Set a new date and time for this test. Registered students will automatically receive a schedule update notification." onClose={() => setRescheduleModalTest(null)}>
           <form onSubmit={handleRescheduleSubmit} className="space-y-4">
             <Field label="New Test Date" hint={`At least ${TEST_LEAD_HOURS} hours from now, so registered students get notice.`}>
-              <TextInput required type="date" min={earliestDateAfter(TEST_LEAD_HOURS)} value={rescheduleForm.scheduledAt} onChange={(e) => setRescheduleForm((f) => ({ ...f, scheduledAt: e.target.value }))} />
+              <TextInput required type="date" max={latestScheduleDate()} min={earliestDateAfter(TEST_LEAD_HOURS)} value={rescheduleForm.scheduledAt} onChange={(e) => setRescheduleForm((f) => ({ ...f, scheduledAt: e.target.value }))} />
             </Field>
             <Field label="New Test Time">
               <TextInput required type="time" value={rescheduleForm.scheduledTime} onChange={(e) => setRescheduleForm((f) => ({ ...f, scheduledTime: e.target.value }))} />
@@ -639,6 +753,7 @@ export default function HostView({ user }) {
                 <Select value={form.mode} onChange={(e) => set("mode", e.target.value)}>
                   <option>Online</option>
                   <option>Offline</option>
+                  <option>Hybrid</option>
                 </Select>
               </Field>
               <Field label="Duration">
@@ -653,7 +768,7 @@ export default function HostView({ user }) {
             </div>
             <div className="grid grid-cols-2 gap-3">
               <Field label="Test Date" hint={`At least ${TEST_LEAD_HOURS} hours (3 days) from today.`}>
-                <TextInput required type="date" min={earliestDateAfter(TEST_LEAD_HOURS)} value={form.scheduledAt} onChange={(e) => set("scheduledAt", e.target.value)} />
+                <TextInput required type="date" min={earliestDateAfter(TEST_LEAD_HOURS)} max={latestScheduleDate()} value={form.scheduledAt} onChange={(e) => set("scheduledAt", e.target.value)} />
               </Field>
               <Field label="Start Time">
                 <TextInput required type="time" value={form.scheduledTime} onChange={(e) => set("scheduledTime", e.target.value)} />
@@ -702,8 +817,15 @@ export default function HostView({ user }) {
                 <Field label="Documents Required (comma separated)">
                   <TextInput value={form.documentsRequired} onChange={(e) => set("documentsRequired", e.target.value)} placeholder="Photo ID, Printed resume" />
                 </Field>
+                {form.mode === "Hybrid" && (
+                  <Field label="Meeting Link (optional — add now or later)" hint="For the online part of a hybrid sitting. Only registered candidates ever see it.">
+                    <TextInput value={form.meetingLink} onChange={(e) => set("meetingLink", e.target.value)} placeholder="https://meet.google.com/…" />
+                  </Field>
+                )}
               </>
             )}
+
+            <SamplePapers papers={form.samplePapers} onChange={(papers) => set("samplePapers", papers)} />
 
             <Field label="Prerequisites">
               <TextInput value={form.prerequisites} onChange={(e) => set("prerequisites", e.target.value)} placeholder="What should candidates know beforehand?" />
@@ -712,15 +834,14 @@ export default function HostView({ user }) {
               <TextInput value={form.certification} onChange={(e) => set("certification", e.target.value)} placeholder="e.g. Clinical Fundamentals Certificate" />
             </Field>
 
-            {form.mode === "Online" && (
-              <TestCertificateSettings
-                user={user}
-                testId={form.id}
-                issueCertificate={form.issueCertificate}
-                minCertificateScore={form.minCertificateScore}
-                onChange={(patch) => setForm((f) => ({ ...f, ...patch }))}
-              />
-            )}
+            <TestCertificateSettings
+              user={user}
+              testId={form.id}
+              issueCertificate={form.issueCertificate}
+              minCertificateScore={form.minCertificateScore}
+              mode={form.mode}
+              onChange={(patch) => setForm((f) => ({ ...f, ...patch }))}
+            />
 
             <Field label="Rules (one per line)">
               <TextArea value={form.rules} onChange={(e) => set("rules", e.target.value)} rows={3} placeholder={"Keep your camera on\nNo external notes"} />

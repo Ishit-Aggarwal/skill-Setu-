@@ -37,5 +37,8 @@ test("Section 0.3 — the exam limits live in one config", () => {
   assert.equal(EXAM.FULLSCREEN_GRACE_SECONDS, 15);
   assert.equal(EXAM.AUDIO_FLAG_SECONDS, 5);
   assert.equal(EXAM.RETENTION_DAYS, 90);
-  assert.deepEqual(EXAM.VIOLATION_TYPES, ["FULLSCREEN_EXIT", "TAB_SWITCH", "BLOCKED_ACTION"]);
+  assert.equal(EXAM.DEFAULT_VIOLATION_PENALTY, 2);
+  assert.equal(EXAM.DEVICE_GRACE_SECONDS, 3);
+  assert.deepEqual(EXAM.VIOLATION_TYPES, ["FULLSCREEN_EXIT", "TAB_SWITCH", "BLOCKED_ACTION", "NO_FACE", "MULTIPLE_FACES", "LOOKING_AWAY"]);
+  EXAM.VIOLATION_TYPES.forEach((t) => assert.ok(EXAM.EVENT_TYPES.includes(t), t + " is a known event"));
 });

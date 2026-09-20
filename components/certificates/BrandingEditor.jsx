@@ -6,7 +6,7 @@ import { api } from "../../convex/_generated/api";
 import { backendMutation } from "../../lib/convexBrowser";
 import { authHeaders } from "../../lib/session";
 import { CERTIFICATES } from "../../lib/settings";
-import { DESIGN_PRESETS, normaliseDesign } from "../../lib/certificateDesign";
+import { DESIGN_PRESETS, normaliseDesign, WATERMARK_OPACITY, WATERMARK_SIZES } from "../../lib/certificateDesign";
 import { Button, Field, TextInput } from "../ui/Kit";
 
 /**
@@ -134,7 +134,16 @@ export default function BrandingEditor({ user, initial, prefilledFromProfile = f
   }, [initial]);
 
   const set = (k, v) => setForm((f) => ({ ...f, [k]: v }));
-  const design = variations[current] || DESIGN_PRESETS[0];
+  const design = normaliseDesign(variations[current] || DESIGN_PRESETS[0]);
+
+  /** A change to the current design (the watermark controls) edits it in place. */
+  function updateDesign(patch) {
+    setVariations((list) => {
+      const next = list.length ? [...list] : [normaliseDesign(DESIGN_PRESETS[0])];
+      next[Math.min(current, next.length - 1)] = normaliseDesign({ ...next[Math.min(current, next.length - 1)], ...patch });
+      return next;
+    });
+  }
   const complete = form.logoStorageId && form.signatureStorageId && form.institutionName.trim() && form.professorName.trim() && form.professorTitle.trim();
 
   async function generate() {
@@ -249,6 +258,44 @@ export default function BrandingEditor({ user, initial, prefilledFromProfile = f
         </p>
         {note && <p className="text-[11px] text-amber-700">{note}</p>}
         <CertificatePreview branding={form} design={design} />
+
+        {/* The logo as a watermark: on by default, faint; the professor can
+            make it stronger or larger, or turn it off, and the preview and
+            the PDF both follow. */}
+        <div className="rounded-lg border border-border bg-secondary/30 p-3 space-y-2">
+          <label className="flex items-center gap-2 text-xs text-foreground">
+            <input type="checkbox" checked={design.watermark.enabled} onChange={(e) => updateDesign({ watermark: { ...design.watermark, enabled: e.target.checked } })} />
+            Logo watermark behind the certificate
+          </label>
+          {design.watermark.enabled && (
+            <div className="grid sm:grid-cols-2 gap-3 pl-6">
+              <label className="text-[11px] text-muted-foreground">
+                Strength · {Math.round(design.watermark.opacity * 100)}%
+                <input
+                  type="range"
+                  min={WATERMARK_OPACITY.min}
+                  max={WATERMARK_OPACITY.max}
+                  step="0.01"
+                  value={design.watermark.opacity}
+                  onChange={(e) => updateDesign({ watermark: { ...design.watermark, opacity: Number(e.target.value) } })}
+                  className="w-full mt-1 accent-[var(--primary,#3C7C6B)]"
+                />
+              </label>
+              <label className="text-[11px] text-muted-foreground">
+                Size
+                <select
+                  value={design.watermark.size}
+                  onChange={(e) => updateDesign({ watermark: { ...design.watermark, size: Number(e.target.value) } })}
+                  className="w-full mt-1 bg-background border border-border rounded-lg px-2 py-1.5 text-xs text-foreground"
+                >
+                  {WATERMARK_SIZES.map((s) => (
+                    <option key={s.id} value={s.id}>{s.label}</option>
+                  ))}
+                </select>
+              </label>
+            </div>
+          )}
+        </div>
       </div>
 
       {error && <div className="rounded-xl border border-red-200 bg-red-50 px-3.5 py-2.5 text-xs text-red-700">⚠️ {error}</div>}

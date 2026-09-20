@@ -32,11 +32,15 @@ export default function ExamResult({ test, result, onClose }) {
       {result.autoSubmitted && (
         <div className="rounded-xl border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-800">{autoSubmitMessage(result.autoSubmitReason)}</div>
       )}
-      {result.disqualified && (
+      {result.failed ? (
+        <div className="rounded-xl border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700">
+          This attempt has failed. {result.penaltyPoints > 0 ? `Violation penalties took ${result.penaltyPoints} of the paper's ${result.total ?? result.totalQuestions} points` : "The monitoring rules for this test were broken"}, so it scores 0 and no certificate is issued. Your answers were still marked and are shown below.
+        </div>
+      ) : result.disqualified ? (
         <div className="rounded-xl border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700">
           Your attempt was flagged for review and is currently disqualified pending your professor's decision. Your answers were still marked and are shown below.
         </div>
-      )}
+      ) : null}
 
       <div className="flex items-center gap-4">
         <div className={`w-20 h-20 rounded-2xl flex flex-col items-center justify-center flex-shrink-0 ${tone === "green" ? "bg-emerald-50 text-emerald-700" : tone === "amber" ? "bg-amber-50 text-amber-700" : "bg-red-50 text-red-700"}`}>
@@ -46,6 +50,11 @@ export default function ExamResult({ test, result, onClose }) {
         <div className="min-w-0">
           <div className="text-sm font-semibold text-foreground">
             {result.points ?? result.correctCount} of {result.total ?? result.totalQuestions} points
+            {result.penaltyPoints > 0 && (
+              <span className="font-normal text-muted-foreground">
+                {" "}· {result.rawPoints ?? result.correctCount} earned, −{result.penaltyPoints} for {result.violations} violation{result.violations === 1 ? "" : "s"}
+              </span>
+            )}
           </div>
           <p className="text-xs text-muted-foreground mt-1 leading-relaxed">
             Added to your <span className="font-medium text-foreground">{test.domain}</span> average. Your overall skill score is now {Math.round(result.assessment?.overallScore ?? 0)}/100.

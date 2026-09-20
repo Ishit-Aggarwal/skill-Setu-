@@ -301,6 +301,14 @@ export default defineSchema({
        minimum percentage. */
     issueCertificate: v.optional(v.boolean()),
     minCertificateScore: v.optional(v.union(v.number(), v.null())),
+    /* Points off per violation in the exam room (0 = off); never above the
+       paper's total. Tests published before this carry no value and use the
+       default in lib/settings.js. */
+    violationPenalty: v.optional(v.union(v.number(), v.null())),
+    /* On-device face monitoring (no face / extra faces / looking away). */
+    faceMonitoring: v.optional(v.boolean()),
+    /* Sample papers candidates may download, as storage references. */
+    samplePapers: v.optional(v.array(v.any())),
     updatedAt: v.optional(v.string()),
   }).index("by_owner", ["ownerId"]),
 
@@ -362,6 +370,14 @@ export default defineSchema({
     score: v.optional(v.number()),
     correctCount: v.optional(v.number()),
     totalQuestions: v.optional(v.number()),
+    /* Violation penalties: points off the marked paper, from the count this
+       server kept. `failed` = penalties used up the paper or the camera was
+       switched off; such an attempt scores 0 and gets no certificate. */
+    rawPoints: v.optional(v.number()),
+    penaltyPoints: v.optional(v.number()),
+    penaltyPerViolation: v.optional(v.number()),
+    failed: v.optional(v.boolean()),
+    failedReason: v.optional(v.union(v.string(), v.null())),
     gradedAt: v.optional(v.string()),
     certificateStatus: v.optional(v.union(v.string(), v.null())), // "issued" | "below_minimum" | "not_enabled"
     credentialId: v.optional(v.union(v.string(), v.null())),

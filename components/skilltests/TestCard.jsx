@@ -6,11 +6,13 @@ import TakeTestModal from "./TakeTestModal";
 import { getRegistrationStatus, formatScheduled, isLinkRevealWindow, STATUS_LABEL, STATUS_TONE } from "../../lib/testStatus";
 import { registerForSkillTest, confirmOfflineAttendance } from "../../lib/store";
 import { Badge, Button, Card } from "../ui/Kit";
+import { openStoredFile } from "../../lib/files";
 import { ayushSystemLabel, isAyushSystem } from "../../lib/ayush";
 
 const modeTone = {
   Online: "green",
   Offline: "amber",
+  Hybrid: "blue",
 };
 
 export default function TestCard({ test, user, registration, attempt, onRefresh }) {
@@ -52,21 +54,33 @@ export default function TestCard({ test, user, registration, attempt, onRefresh 
         {test.prerequisites && <div>📋 {test.prerequisites}</div>}
         <div>⏱ {test.duration}</div>
         <div>📅 {formatScheduled(test)}</div>
-        {test.mode === "Offline" && test.venue && registration && <div>📍 {test.venue}</div>}
+        {test.mode !== "Online" && test.venue && registration && <div>📍 {test.venue}</div>}
 
         {/* The joining details belong to the people sitting the test. Showing
             the link (or the venue) on a public card handed anyone who scrolled
             past a way into a paper they never registered for. */}
-        {test.mode === "Online" && !registration && <div>🔗 Joining details are sent to registered candidates.</div>}
-        {test.mode === "Online" && registration && !isLinkRevealWindow(test) && test.status !== "In Progress" && (
+        {test.mode !== "Offline" && !registration && <div>🔗 Joining details are sent to registered candidates.</div>}
+        {test.mode !== "Offline" && registration && !isLinkRevealWindow(test) && test.status !== "In Progress" && (
           <div>🔗 Meeting link will appear here 1 day before the test.</div>
         )}
-        {test.mode === "Online" && registration && (isLinkRevealWindow(test) || test.status === "In Progress") && (
+        {test.mode !== "Offline" && registration && (isLinkRevealWindow(test) || test.status === "In Progress") && (
           test.meetingLink ? (
             <div>🔗 <a href={test.meetingLink} target="_blank" rel="noreferrer" className="text-primary hover:underline font-medium">Join meeting ↗</a></div>
           ) : (
             <div>🔗 Meeting link not published yet — check back soon.</div>
           )
+        )}
+        {/* Sample papers are for everyone: they are what a candidate reads
+            before deciding whether to register. */}
+        {Array.isArray(test.samplePapers) && test.samplePapers.length > 0 && (
+          <div className="flex flex-wrap items-center gap-x-2 gap-y-1">
+            <span>📄 Sample paper{test.samplePapers.length === 1 ? "" : "s"}:</span>
+            {test.samplePapers.map((p, i) => (
+              <button key={p.id || p.storageId || i} type="button" onClick={() => openStoredFile(p)} className="text-primary hover:underline font-medium">
+                {p.fileName || `Paper ${i + 1}`}
+              </button>
+            ))}
+          </div>
         )}
       </div>
 

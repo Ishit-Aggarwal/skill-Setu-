@@ -9,3 +9,7 @@ npm-debug.log*
 .DS_Store
 .claude/
 HANDOFF.md
+
+# MediaPipe runtime and face model, copied/downloaded by scripts/copy-mediapipe.js
+/public/mediapipe/
+/public/models/

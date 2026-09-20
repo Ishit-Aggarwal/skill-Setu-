@@ -15,7 +15,7 @@ import { Button, Field, Modal, TextInput } from "../ui/Kit";
  * branding that will actually be used (a one-off override in full, else the
  * saved default), and the two ways to change it.
  */
-export default function TestCertificateSettings({ user, testId, issueCertificate, minCertificateScore, onChange }) {
+export default function TestCertificateSettings({ user, testId, issueCertificate, minCertificateScore, mode = "Online", onChange }) {
   const [resolved, setResolved] = useState(undefined); // { source, branding }
   const [editing, setEditing] = useState(false);
   const [saving, setSaving] = useState(false);
@@ -74,7 +74,9 @@ export default function TestCertificateSettings({ user, testId, issueCertificate
         <input type="checkbox" checked={Boolean(issueCertificate)} onChange={(e) => onChange({ issueCertificate: e.target.checked })} className="mt-0.5" />
         <span>
           Issue certificate on completion
-          <span className="block text-[11px] text-muted-foreground">Generated automatically the moment a candidate's attempt is graded. Off by default.</span>
+          <span className="block text-[11px] text-muted-foreground">
+            {mode === "Online" ? "Generated automatically the moment a candidate's attempt is graded." : "Generated automatically when you record a candidate's mark for this sitting."} Off by default.
+          </span>
         </span>
       </label>
 

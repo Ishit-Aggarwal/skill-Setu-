@@ -8,6 +8,7 @@ import { getSessionToken } from "../../lib/session";
 import { getAssessment, insert, findOne, recordGradedAttempt } from "../../lib/store";
 import { EXAM } from "../../lib/settings";
 import { autoSubmitMessage } from "../../lib/examState";
+import { startFaceMonitor } from "../../lib/faceMonitor";
 import { TYPE_LABEL } from "../../lib/questions";
 import { Badge, Button, ProgressBar } from "../ui/Kit";
 import ExamResult from "./ExamResult";
@@ -60,16 +61,38 @@ function pickMimeType() {
 /* The page chrome around every phase. Declared at module level so its identity
    is stable across renders — an inline component would remount on every
    state change and lose the fullscreen element and the preview video. */
-function Shell({ rootRef, showBanner, violations, title, wide = false, children }) {
+function Shell({ rootRef, showBanner, violations, penalty, onEndTest, title, wide = false, children }) {
   // Portalled to <body>: a test card's hover transform would otherwise turn
   // this fixed overlay into a box the size of the card.
   if (typeof document === "undefined") return null;
+  const perViolation = penalty?.penaltyPerViolation ?? EXAM.DEFAULT_VIOLATION_PENALTY;
+  const pointsLeft = penalty?.pointsLeft;
   return createPortal(
     <div ref={rootRef} className="fixed inset-0 z-[100] bg-background overflow-y-auto" role="dialog" aria-modal="true" aria-label={title}>
       {showBanner && (
         <div className="sticky top-0 z-10 flex items-center justify-between gap-3 px-4 py-2 bg-red-600 text-white text-xs font-semibold">
-          <span>🔴 Recording & Monitoring Active — Violations: {violations}/{EXAM.VIOLATION_LIMIT}</span>
-          <span className="font-normal opacity-90 hidden sm:inline">{EXAM.MONITORING_NOTICE}</span>
+          <span>
+            🔴 Recording & Monitoring Active — Violations: {violations}
+            {perViolation > 0 && (
+              <span className="font-normal opacity-90">
+                {" "}· −{perViolation} pt{perViolation === 1 ? "" : "s"} each{pointsLeft != null ? ` · ${pointsLeft}/${penalty.totalPoints} points left` : ""}
+              </span>
+            )}
+          </span>
+          <span className="flex items-center gap-3">
+            <span className="font-normal opacity-90 hidden lg:inline">{EXAM.MONITORING_NOTICE}</span>
+            {/* Always in reach: Esc is locked while the paper is open, so this is
+                how a candidate hands in early. */}
+            {onEndTest && (
+              <button
+                type="button"
+                onClick={onEndTest}
+                className="px-2.5 py-1 rounded-lg bg-white/15 hover:bg-white/25 border border-white/30 text-white text-xs font-semibold transition-colors"
+              >
+                End test
+              </button>
+            )}
+          </span>
         </div>
       )}
       <div className={`mx-auto px-4 py-6 sm:py-10 ${wide ? "max-w-4xl" : "max-w-2xl"}`}>{children}</div>
@@ -104,6 +127,16 @@ export default function ExamRoom({ test, user, onClose, onGraded }) {
   const [videoLive, setVideoLive] = useState(false);
   const [micHeard, setMicHeard] = useState(false);
   const [uploadIssue, setUploadIssue] = useState(false);
+  /* The rules of this sitting, from the server: points on the paper, the
+     penalty per violation, how long a lost camera is tolerated. */
+  const [config, setConfig] = useState(null);
+  const [penalty, setPenalty] = useState(null); // { violationCount, penaltyPerViolation, penaltyPoints, pointsLeft, totalPoints }
+  const [faceStatus, setFaceStatus] = useState(null);
+  const [endConfirm, setEndConfirm] = useState(false);
+  const monitorVideoRef = useRef(null);
+  const faceUnavailableLoggedRef = useRef(false);
+  const configRef = useRef(null);
+  configRef.current = config;
 
   const rootRef = useRef(null);
   const streamRef = useRef(null);
@@ -180,6 +213,9 @@ export default function ExamRoom({ test, user, onClose, onGraded }) {
     try {
       const out = await backendMutation(api.exams.logEvents, { attemptId: att.id, events: batch });
       if (out?.violationCount != null) setViolations(out.violationCount);
+      if (out?.penaltyPerViolation != null) {
+        setPenalty({ violationCount: out.violationCount, penaltyPerViolation: out.penaltyPerViolation, penaltyPoints: out.penaltyPoints, pointsLeft: out.pointsLeft, totalPoints: out.totalPoints });
+      }
       if (out?.state === "GRADED" && out.result) {
         stopEverything();
         applyGraded(out);
@@ -383,7 +419,26 @@ export default function ExamRoom({ test, user, onClose, onGraded }) {
     stopRecording();
     stopMeter();
     stopStream();
+    unlockKeyboard();
     if (document.fullscreenElement) document.exitFullscreen?.().catch(() => {});
+  }
+
+  /* Esc normally leaves fullscreen. While the paper is open it is locked
+     (Keyboard Lock API — Chrome and Edge; other browsers still exit and are
+     charged the penalty), which is why the banner carries an End test control. */
+  function lockKeyboard() {
+    try {
+      navigator.keyboard?.lock?.(["Escape"]).catch(() => {});
+    } catch {
+      /* not supported */
+    }
+  }
+  function unlockKeyboard() {
+    try {
+      navigator.keyboard?.unlock?.();
+    } catch {
+      /* not supported */
+    }
   }
 
   /* Pre-test state changes are best-effort: on a resumed live attempt the
@@ -495,6 +550,8 @@ export default function ExamRoom({ test, user, onClose, onGraded }) {
     const out = await backendMutation(api.exams.start, { attemptId: att.id });
     clockOffsetRef.current = (out.serverNow || out.startedAt) - Date.now();
     startedAtRef.current = toLocal(out.startedAt);
+    setConfig(out.config || null);
+    if (out.config) setPenalty({ violationCount: 0, penaltyPerViolation: out.config.penaltyPerViolation, penaltyPoints: 0, pointsLeft: out.config.totalPoints, totalPoints: out.config.totalPoints });
     setQuestions(out.questions);
     setAnswers({});
     setDeadline(toLocal(out.deadlineAt));
@@ -509,6 +566,17 @@ export default function ExamRoom({ test, user, onClose, onGraded }) {
     if (!paper?.ok) throw new Error("This attempt can no longer be resumed.");
     clockOffsetRef.current = (paper.serverNow || Date.now()) - Date.now();
     startedAtRef.current = toLocal(new Date(paper.startedAt).getTime());
+    if (paper.config) {
+      setConfig(paper.config);
+      setPenalty({
+        violationCount: paper.violationCount || 0,
+        penaltyPerViolation: paper.config.penaltyPerViolation,
+        penaltyPoints: paper.penaltyPoints || 0,
+        pointsLeft: Math.max(0, paper.config.totalPoints - (paper.penaltyPoints || 0)),
+        totalPoints: paper.config.totalPoints,
+      });
+      setViolations(paper.violationCount || 0);
+    }
     setQuestions(paper.questions);
     setAnswers(paper.answers || {});
     let deadlineAt = paper.deadlineAt;
@@ -571,6 +639,7 @@ export default function ExamRoom({ test, user, onClose, onGraded }) {
     try {
       const el = rootRef.current || document.documentElement;
       await (el.requestFullscreen ? el.requestFullscreen({ navigationUI: "hide" }) : el.webkitRequestFullscreen());
+      lockKeyboard();
     } catch {
       setError("Fullscreen was blocked. Click the button again and allow fullscreen when your browser asks.");
       return;
@@ -608,21 +677,33 @@ export default function ExamRoom({ test, user, onClose, onGraded }) {
     return () => clearTimeout(saveTimerRef.current);
   }, [answers, phase, attempt]);
 
-  // Pause / resume with a grace countdown.
+  /*
+   * Pause / resume.
+   *
+   * Leaving fullscreen is charged its penalty the moment it happens (the
+   * flag is flushed immediately, so the banner and the points-left figure
+   * update before the candidate is back) and the paper waits, blurred,
+   * behind a single "Return to fullscreen" control — there is no grace
+   * countdown to wait out. A lost camera or microphone is different: the
+   * candidate has EXAM.DEVICE_GRACE_SECONDS to reconnect, after which the
+   * attempt fails outright.
+   */
   const beginPause = useCallback(
     async (reason) => {
       if (pausedRef.current || phaseRef.current !== "paper") return;
-      const seconds = reason === "device" ? EXAM.DEVICE_GRACE_SECONDS : EXAM.FULLSCREEN_GRACE_SECONDS;
+      const seconds = reason === "device" ? configRef.current?.deviceGraceSeconds ?? EXAM.DEVICE_GRACE_SECONDS : null;
       pauseStartRef.current = Date.now();
-      const until = Date.now() + seconds * 1000;
+      const until = seconds == null ? null : Date.now() + seconds * 1000;
       setPaused({ reason, until });
-      setPauseLeft(seconds);
+      setPauseLeft(seconds ?? 0);
+      if (reason === "fullscreen") logEvent("FULLSCREEN_EXIT", "Left fullscreen", null, { immediate: true });
       try {
         await backendMutation(api.exams.pause, { attemptId: attemptRef.current.id, reason: reason === "device" ? "device_disconnected" : "fullscreen_exit" });
       } catch {
-        /* the countdown still runs locally */
+        /* the pause still holds locally */
       }
     },
+    // eslint-disable-next-line react-hooks/exhaustive-deps
     []
   );
 
@@ -638,30 +719,62 @@ export default function ExamRoom({ test, user, onClose, onGraded }) {
       setDeadline((d) => (d ? d + outFor : d));
     }
     if (p.reason === "device") logEvent("DEVICE_DISCONNECTED", "Camera or microphone reconnected", outFor);
-    else logEvent("FULLSCREEN_EXIT", "Returned to fullscreen", outFor);
   }, [logEvent]);
 
   useEffect(() => {
-    if (!paused) return undefined;
+    if (!paused || paused.until == null) return undefined;
     const tick = setInterval(() => {
       const left = Math.max(0, Math.ceil((paused.until - Date.now()) / 1000));
       setPauseLeft(left);
       if (left <= 0) {
         clearInterval(tick);
-        if (paused.reason === "device") logEvent("DEVICE_DISCONNECTED", "Not reconnected in time", Date.now() - pauseStartRef.current);
-        else logEvent("FULLSCREEN_EXIT", "Did not return in time", Date.now() - pauseStartRef.current);
-        submit({ auto: true, reason: paused.reason === "device" ? "device_timeout" : "fullscreen_timeout" });
+        logEvent("DEVICE_DISCONNECTED", "Camera or microphone switched off and not restored", Date.now() - pauseStartRef.current);
+        submit({ auto: true, reason: "device_lost" });
       }
     }, 250);
     return () => clearInterval(tick);
   }, [paused, submit, logEvent]);
+
+  /* On-device face monitoring: a small live preview is kept while the paper
+     is open (the model reads frames from it), and sustained "no face",
+     "extra faces" or "looking away" are logged like any other violation. */
+  useEffect(() => {
+    if (phase !== "paper" || !proctored || !streamRef.current || config?.faceMonitoring === false) return undefined;
+    const video = monitorVideoRef.current;
+    if (!video) return undefined;
+    video.srcObject = streamRef.current;
+    video.play().catch(() => {});
+    const stop = startFaceMonitor(video, {
+      onEvent: (type, detail, heldForMs) => logEvent(type, detail, heldForMs),
+      onStatus: (status) => {
+        setFaceStatus(status);
+        if (status.state === "unavailable" && !faceUnavailableLoggedRef.current) {
+          faceUnavailableLoggedRef.current = true;
+          logEvent("FACE_MONITOR_UNAVAILABLE", status.error || "model failed to load", null);
+        }
+      },
+    });
+    return () => {
+      stop();
+      setFaceStatus(null);
+    };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [phase, proctored, config?.faceMonitoring]);
 
   // Monitoring listeners while the paper is open.
   useEffect(() => {
     if (phase !== "paper" || !proctored) return undefined;
 
     const onFullscreen = () => {
-      if (!document.fullscreenElement) beginPause("fullscreen");
+      if (document.fullscreenElement) return;
+      beginPause("fullscreen");
+      // Browsers only re-enter fullscreen from a user gesture, so this is
+      // usually refused — but where it is honoured the paper is back at once.
+      const el = rootRef.current || document.documentElement;
+      (el.requestFullscreen ? el.requestFullscreen({ navigationUI: "hide" }) : Promise.reject())?.then?.(() => {
+        lockKeyboard();
+        endPause();
+      }).catch(() => {});
     };
     const onVisibility = () => {
       if (document.visibilityState === "hidden") logEvent("TAB_SWITCH", "Tab hidden or window minimised");
@@ -781,6 +894,7 @@ export default function ExamRoom({ test, user, onClose, onGraded }) {
     try {
       const el = rootRef.current || document.documentElement;
       await (el.requestFullscreen ? el.requestFullscreen({ navigationUI: "hide" }) : el.webkitRequestFullscreen());
+      lockKeyboard();
       await endPause();
     } catch {
       setError("Fullscreen was blocked. Click the button again and allow fullscreen when your browser asks.");
@@ -811,7 +925,14 @@ export default function ExamRoom({ test, user, onClose, onGraded }) {
   /* Screens                                                              */
   /* ------------------------------------------------------------------ */
 
-  const shellProps = { rootRef, showBanner: proctored && (phase === "paper" || Boolean(paused)), violations, title: test.title };
+  const shellProps = {
+    rootRef,
+    showBanner: proctored && (phase === "paper" || Boolean(paused)),
+    violations,
+    penalty,
+    onEndTest: phase === "paper" && !paused ? () => setEndConfirm(true) : null,
+    title: test.title,
+  };
 
   if (phase === "starting") {
     return (
@@ -972,7 +1093,7 @@ export default function ExamRoom({ test, user, onClose, onGraded }) {
         <div className="space-y-5 text-center py-8">
           <h1 className="text-xl font-semibold text-foreground">Click below to enter fullscreen and begin your test.</h1>
           <p className="text-sm text-muted-foreground">
-            {questions.length || test.questionCount || ""}{test.questionCount ? ` questions · ` : ""}{attempt?.durationMins || ""} minutes. The clock starts when you enter fullscreen. Leaving fullscreen pauses the test and counts as a violation.
+            {questions.length || test.questionCount || ""}{test.questionCount ? ` questions · ` : ""}{attempt?.durationMins || ""} minutes. The clock starts when you enter fullscreen. Leaving fullscreen, switching tabs, or looking away from the camera costs points; if the penalties use up the paper, or your camera is switched off, the test is failed.
           </p>
           {error && <div className="rounded-xl border border-red-200 bg-red-50 px-4 py-3 text-xs text-red-700">{error}</div>}
           <Button size="lg" onClick={enterFullscreenAndStart}>
@@ -1014,15 +1135,65 @@ export default function ExamRoom({ test, user, onClose, onGraded }) {
             <h2 className="text-lg font-semibold text-foreground">{paused.reason === "device" ? "Your camera/microphone has been disconnected." : "You have left fullscreen."}</h2>
             <p className="text-sm text-muted-foreground">
               {paused.reason === "device"
-                ? `Reconnect within ${EXAM.DEVICE_GRACE_SECONDS} seconds or your test will be automatically submitted.`
-                : `Return to fullscreen within ${EXAM.FULLSCREEN_GRACE_SECONDS} seconds or your test will be automatically submitted.`}
+                ? `Restore it within ${config?.deviceGraceSeconds ?? EXAM.DEVICE_GRACE_SECONDS} seconds or the test is failed and handed in.`
+                : penalty?.penaltyPerViolation
+                ? `A penalty of ${penalty.penaltyPerViolation} point${penalty.penaltyPerViolation === 1 ? "" : "s"} has been applied. ${penalty.pointsLeft} of ${penalty.totalPoints} points remain — when that reaches zero the test is failed and handed in.`
+                : "This has been recorded as a violation."}
             </p>
-            <div className="text-4xl font-bold text-red-600 tabular-nums">{pauseLeft}</div>
+            {paused.reason === "device" && <div className="text-4xl font-bold text-red-600 tabular-nums">{pauseLeft}</div>}
             {error && <div className="rounded-xl border border-red-200 bg-red-50 px-4 py-3 text-xs text-red-700">{error}</div>}
             <Button className="w-full" onClick={paused.reason === "device" ? reconnectDevices : returnToFullscreen}>
               {paused.reason === "device" ? "Reconnect devices" : "Return to Fullscreen"}
             </Button>
             <p className="text-[11px] text-muted-foreground">The timer is paused. Recording continues.</p>
+          </div>
+        </div>
+      )}
+
+      {endConfirm && (
+        <div className="fixed inset-0 z-20 bg-black/60 flex items-center justify-center p-4">
+          <div className="bg-card rounded-2xl p-6 max-w-sm w-full space-y-4 text-center">
+            <h2 className="text-lg font-semibold text-foreground">End the test now?</h2>
+            <p className="text-sm text-muted-foreground">
+              {answeredCount} of {questions.length} questions answered. Unanswered questions score zero. This cannot be undone.
+            </p>
+            <div className="flex gap-3">
+              <Button variant="outline" className="flex-1" onClick={() => setEndConfirm(false)}>
+                Keep going
+              </Button>
+              <Button className="flex-1" onClick={() => { setEndConfirm(false); submit(); }}>
+                End & submit
+              </Button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {proctored && config?.faceMonitoring !== false && (
+        <div className="fixed bottom-3 right-3 z-10 w-36 rounded-xl overflow-hidden border border-border bg-black shadow-lg">
+          <video ref={monitorVideoRef} muted playsInline className="w-full aspect-[4/3] object-cover" style={{ transform: "scaleX(-1)" }} />
+          <div
+            className={`px-2 py-1 text-[10px] font-semibold text-center ${
+              !faceStatus || faceStatus.state === "loading"
+                ? "bg-secondary text-muted-foreground"
+                : faceStatus.state === "unavailable"
+                ? "bg-amber-100 text-amber-800"
+                : faceStatus.noFace || faceStatus.multipleFaces || faceStatus.lookingAway
+                ? "bg-red-600 text-white"
+                : "bg-emerald-600 text-white"
+            }`}
+          >
+            {!faceStatus || faceStatus.state === "loading"
+              ? "Starting face check…"
+              : faceStatus.state === "unavailable"
+              ? "Face check unavailable"
+              : faceStatus.noFace
+              ? "No face detected"
+              : faceStatus.multipleFaces
+              ? "More than one face"
+              : faceStatus.lookingAway
+              ? "Look at the screen"
+              : "Face check OK"}
           </div>
         </div>
       )}

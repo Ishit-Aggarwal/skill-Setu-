@@ -5,10 +5,12 @@ import { gradeSubmission, publicQuestionsFor, questionCountFor } from "./_lib/qu
 import { SKILL_DOMAINS } from "../lib/questionBank";
 import { isAyushSystem } from "../lib/ayush";
 import { normalisePaper, validatePaper } from "../lib/questions";
-import { paperType } from "../lib/grading";
 import { findTestByClientId, findUserById, questionsForTest } from "./_lib/tests";
 import { findByClientId, publicRow } from "./_lib/rows";
 import { recalculateAssessment, writeAttempt } from "./_lib/assessment";
+import { issueCertificateForAttempt } from "./_lib/certificates";
+import { clampPenalty, paperType } from "../lib/grading";
+import { EXAM } from "../lib/settings";
 
 /**
  * Skill tests and their marking.
@@ -19,7 +21,7 @@ import { recalculateAssessment, writeAttempt } from "./_lib/assessment";
  * that test is allowed to enter.
  */
 
-const TEST_WEIGHT = { Online: 1, Offline: 1.5 };
+const TEST_WEIGHT = { Online: 1, Offline: 1.5, Hybrid: 1.5 };
 const HOST_ROLES = ["industry", "academician", "institution", "admin"];
 
 export const listAll = query({
@@ -293,7 +295,21 @@ export const recordOfflineResult = mutation({
       gradedBy: `host:${actor.id}`,
     });
     const assessment = await recalculateAssessment(ctx, args.studentId);
-    return { ok: true, score, assessment };
+
+    // In-person and hybrid sittings earn the same automatic certificate as
+    // an online paper, from the mark the host just entered.
+    let certificate = { status: "not_enabled", credential: null };
+    const student = await findUserById(ctx, args.studentId);
+    if (test && student && test.issueCertificate) {
+      certificate = await issueCertificateForAttempt(ctx, {
+        test,
+        attempt: { id: `host_${test.id}_${args.studentId}`, correctCount: null, totalQuestions: null },
+        student,
+        score,
+      });
+    }
+    const { _id, _creationTime, snapshot, ...credential } = certificate.credential || {};
+    return { ok: true, score, assessment, certificate: { status: certificate.status, credential: certificate.credential ? credential : null } };
   },
 });
 
@@ -422,8 +438,26 @@ const TEST_FIELDS = {
   autoDisqualifyAfter: v.optional(v.union(v.number(), v.null())),
   issueCertificate: v.optional(v.boolean()),
   minCertificateScore: v.optional(v.union(v.number(), v.null())),
+  violationPenalty: v.optional(v.union(v.number(), v.null())),
+  faceMonitoring: v.optional(v.boolean()),
+  samplePapers: v.optional(v.array(v.any())),
   updatedAt: v.optional(v.string()),
 };
+
+/** Sample papers are storage references only — never inline files — and at most EXAM.MAX_SAMPLE_PAPERS. */
+function cleanSamplePapers(list) {
+  if (!Array.isArray(list)) return undefined;
+  return list
+    .filter((p) => p && typeof p === "object" && typeof p.storageId === "string")
+    .slice(0, EXAM.MAX_SAMPLE_PAPERS)
+    .map((p) => ({ id: p.id || p.storageId, storageId: p.storageId, fileName: p.fileName || "Sample paper.pdf", mimeType: p.mimeType || "application/pdf", bytes: Number(p.bytes) || 0, url: typeof p.url === "string" ? p.url : undefined }));
+}
+
+/** A penalty is a whole number between 0 and the paper's total; null keeps the default. */
+function cleanPenalty(value, totalPoints) {
+  if (value == null || value === "") return null;
+  return clampPenalty(value, totalPoints || Number.MAX_SAFE_INTEGER);
+}
 
 async function attemptsStarted(ctx, testId) {
   const attempt = await ctx.db
@@ -501,6 +535,8 @@ export const publishTest = mutation({
       postedAt: fields.postedAt || new Date().toISOString(),
       updatedAt: fields.updatedAt || new Date().toISOString(),
       proctored: fields.mode === "Online" ? fields.proctored !== false : false,
+      violationPenalty: cleanPenalty(fields.violationPenalty, Array.isArray(questions) ? questions.length : undefined),
+      samplePapers: cleanSamplePapers(fields.samplePapers),
     };
 
     let test = await findTestByClientId(ctx, args.id);
@@ -515,6 +551,10 @@ export const publishTest = mutation({
 
     let paper = { questionCount: test.questionCount || 0, paperType: test.paperType || null };
     if (Array.isArray(questions) && fields.mode === "Online") paper = await writePaper(ctx, actor, test, questions);
+    // The penalty can never exceed the paper now that its size is known.
+    if (row.violationPenalty != null && paper.questionCount && row.violationPenalty > paper.questionCount) {
+      await ctx.db.patch(test._id, { violationPenalty: paper.questionCount });
+    }
     return { ok: true, ...paper };
   },
 });
@@ -538,6 +578,8 @@ export const updateByClientId = mutation({
     if ("autoDisqualifyAfter" in safe && safe.autoDisqualifyAfter != null) {
       safe.autoDisqualifyAfter = Math.max(1, Math.round(Number(safe.autoDisqualifyAfter) || 1));
     }
+    if ("violationPenalty" in safe) safe.violationPenalty = cleanPenalty(safe.violationPenalty, test.questionCount);
+    if ("samplePapers" in safe) safe.samplePapers = cleanSamplePapers(safe.samplePapers) || [];
     await ctx.db.patch(test._id, { ...safe, updatedAt: safe.updatedAt || new Date().toISOString() });
     return { ok: true };
   },

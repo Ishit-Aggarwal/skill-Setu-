@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useMemo, useState } from "react";
+import { latestScheduleDate } from "../../../lib/dates";
 import DashboardLayout from "../../DashboardLayout";
 import { useAuth } from "../../../lib/auth";
 import { Avatar, Badge, Button, Card, EmptyState, Field, Flash, IconTile, Modal, PageHeader, Section, Select, StatGrid, TextArea, TextInput, useFlash } from "../../ui/Kit";
@@ -392,12 +393,12 @@ function CreateDriveModal({ instituteName, actor, batches, onClose, onDone }) {
       <form onSubmit={submit} className="space-y-4">
         <Field label="Drive title"><TextInput required value={form.title} onChange={(e) => set("title", e.target.value)} placeholder="Annual Campus Placement Drive 2026" /></Field>
         <div className="grid grid-cols-2 gap-3">
-          <Field label="Date"><TextInput required type="date" value={form.date} onChange={(e) => set("date", e.target.value)} /></Field>
+          <Field label="Date"><TextInput required type="date" max={latestScheduleDate()} value={form.date} onChange={(e) => set("date", e.target.value)} /></Field>
           <Field label="Venue"><TextInput value={form.venue} onChange={(e) => set("venue", e.target.value)} placeholder="Main Auditorium" /></Field>
         </div>
         <div className="grid grid-cols-2 gap-3">
           <Field label="Registration deadline" hint="Shown as a countdown on the card.">
-            <TextInput type="date" value={form.registrationDeadline} onChange={(e) => set("registrationDeadline", e.target.value)} />
+            <TextInput type="date" max={latestScheduleDate()} value={form.registrationDeadline} onChange={(e) => set("registrationDeadline", e.target.value)} />
           </Field>
           <Field label="Capacity" hint="Total places on the day. Optional.">
             <TextInput type="number" min="0" value={form.capacity} onChange={(e) => set("capacity", e.target.value)} placeholder="200" />
