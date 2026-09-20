@@ -128,10 +128,11 @@ export default async function handler(req, res) {
   let lastError = null;
   for (let attempt = 0; attempt <= AI.GENERATION_RETRIES; attempt += 1) {
     try {
-      const raw = await generateJson({ prompt: buildPrompt(params), schema: RESPONSE_SCHEMA, temperature: attempt === 0 ? 0.6 : 0.8 });
+      const meta = {};
+      const raw = await generateJson({ prompt: buildPrompt(params), schema: RESPONSE_SCHEMA, temperature: attempt === 0 ? 0.6 : 0.8, meta });
       const checked = validate(raw, params);
       if (checked.questions) {
-        return res.status(200).json({ success: true, questions: checked.questions, model: GEMINI_MODEL, retried: attempt > 0 });
+        return res.status(200).json({ success: true, questions: checked.questions, model: meta.model || GEMINI_MODEL, retried: attempt > 0 });
       }
       lastError = checked.error;
       console.warn(`[ai] Generated paper rejected (attempt ${attempt + 1}): ${checked.error}`);

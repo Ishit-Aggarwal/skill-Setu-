@@ -122,7 +122,8 @@ export default async function handler(req, res) {
   let lastError = null;
   for (let attempt = 0; attempt <= AI.GENERATION_RETRIES; attempt += 1) {
     try {
-      const raw = await generateJson({ prompt: buildPrompt({ ayushSystem }), schema: RESPONSE_SCHEMA, temperature: 0.2, attachments: [{ mimeType, data }] });
+      const meta = {};
+      const raw = await generateJson({ prompt: buildPrompt({ ayushSystem }), schema: RESPONSE_SCHEMA, temperature: 0.2, attachments: [{ mimeType, data }], meta });
       const checked = validate(raw, { ayushSystem, topic });
       if (checked.questions) {
         const generatedKeys = checked.questions.filter((q) => !q.importNotes?.answerFromPaper).length;
@@ -131,7 +132,7 @@ export default async function handler(req, res) {
           success: true,
           questions: checked.questions.map(({ importNotes, ...q }) => q),
           summary: { imported: checked.questions.length, dropped: checked.dropped, generatedKeys, generatedExplanations },
-          model: GEMINI_MODEL,
+          model: meta.model || GEMINI_MODEL,
         });
       }
       lastError = checked.error;
