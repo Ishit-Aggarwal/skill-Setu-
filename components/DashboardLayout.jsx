@@ -68,6 +68,9 @@ const IconCompass = () => (
 const IconCheckCircle = () => (
   <Icon><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14" /><polyline points="22 4 12 14.01 9 11.01" /></Icon>
 );
+const IconAward = () => (
+  <Icon><circle cx="12" cy="8" r="6" /><path d="M15.5 13.5 17 22l-5-3-5 3 1.5-8.5" /></Icon>
+);
 const IconSettings = () => (
   <Icon><circle cx="12" cy="12" r="3" /><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06A1.65 1.65 0 0 0 9 4.6a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z" /></Icon>
 );
@@ -133,6 +136,7 @@ const NAV = {
     { label: "Offers & Joining", short: "Offers", page: "industry-offers", icon: <IconCheckCircle /> },
     { label: "Analytics", short: "Insights", page: "analytics", icon: <IconBarChart /> },
     { label: "Skill Tests", short: "Tests", page: "skill-assessment", icon: <IconTarget /> },
+    { label: "Certificate Settings", short: "Certs", page: "certificate-settings", icon: <IconAward /> },
     { label: "Hiring Team", short: "Team", page: "industry-team", icon: <IconUser /> },
     { label: "Company Profile", short: "Company", page: "company-profile", icon: <IconBuilding /> },
     { label: "Settings", short: "Settings", page: "settings", icon: <IconSettings /> },
@@ -147,6 +151,7 @@ const NAV = {
     { label: "Campus Board", short: "Board", page: "institution-announcements", icon: <IconMegaphone /> },
     { label: "Analytics", short: "Insights", page: "academician-analytics", icon: <IconBarChart /> },
     { label: "Skill Tests", short: "Tests", page: "skill-assessment", icon: <IconTarget /> },
+    { label: "Certificate Settings", short: "Certs", page: "certificate-settings", icon: <IconAward /> },
     { label: "Faculty Profile", short: "Profile", page: "academician-profile", icon: <IconUser /> },
     { label: "Settings", short: "Settings", page: "settings", icon: <IconSettings /> },
   ],
@@ -160,6 +165,7 @@ const NAV = {
     { label: "MOUs & Partners", short: "MOUs", page: "institution-partnerships", icon: <IconHandshake /> },
     { label: "Notice Board", short: "Notices", page: "institution-announcements", icon: <IconMegaphone /> },
     { label: "Skill Tests", short: "Tests", page: "skill-assessment", icon: <IconTarget /> },
+    { label: "Certificate Settings", short: "Certs", page: "certificate-settings", icon: <IconAward /> },
     { label: "Team & Activity", short: "Team", page: "institution-team", icon: <IconUser /> },
     { label: "Institution Profile", short: "Profile", page: "institution-profile", icon: <IconBuilding /> },
     { label: "Settings", short: "Settings", page: "settings", icon: <IconSettings /> },

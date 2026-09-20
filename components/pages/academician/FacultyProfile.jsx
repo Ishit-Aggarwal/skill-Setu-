@@ -8,6 +8,7 @@ import { COLLAB_EXPERTISE, DEPARTMENTS } from "../../../lib/domains";
 import { addResearchOutput, listAdvisees, listCollabListingsByOwner, listCredentialsForStudent, listPrograms, listResearchOutputs, removeResearchOutput, updateResearchOutput } from "../../../lib/store";
 import { hasFile, openStoredFile, readFileAsDataUrl } from "../../../lib/files";
 import TagInput from "../../TagInput";
+import { AyushSystemSelect } from "../../AyushSystemSelect";
 import { api } from "../../../convex/_generated/api";
 import { backendQuerySafe, isBackendConfigured } from "../../../lib/convexBrowser";
 import { getSessionToken } from "../../../lib/session";
@@ -29,6 +30,7 @@ export default function FacultyProfile() {
     designation: DESIGNATIONS[1],
     institution: "",
     department: "",
+    ayushSystem: "",
     email: "",
     phone: "",
     experienceYears: "",
@@ -48,6 +50,7 @@ export default function FacultyProfile() {
       designation: user.designation || DESIGNATIONS[1],
       institution: user.institution || "",
       department: user.department || "",
+      ayushSystem: user.ayushSystem || "",
       email: user.email || "",
       phone: user.phone || "",
       experienceYears: user.experienceYears || "",
@@ -85,7 +88,7 @@ export default function FacultyProfile() {
 
   function submit(e) {
     e.preventDefault();
-    updateProfile({ ...form, subjectsTaught: subjects, researchInterests: interests });
+    updateProfile({ ...form, ayushSystem: form.ayushSystem || undefined, subjectsTaught: subjects, researchInterests: interests });
     setFlash("Faculty profile saved.");
   }
 
@@ -94,6 +97,7 @@ export default function FacultyProfile() {
       form.name,
       form.designation,
       form.department,
+      form.ayushSystem,
       form.email,
       form.experienceYears,
       form.bio,
@@ -190,6 +194,7 @@ export default function FacultyProfile() {
                   </Select>
                 </Field>
                 <Field label="Institution"><TextInput value={form.institution} onChange={(e) => set("institution", e.target.value)} /></Field>
+                <AyushSystemSelect value={form.ayushSystem} onChange={(v) => set("ayushSystem", v)} required />
                 <Field label="Department">
                   <Select value={form.department} onChange={(e) => set("department", e.target.value)}>
                     <option value="">Select a department</option>

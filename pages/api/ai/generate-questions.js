@@ -1,26 +1,20 @@
-import { getConvexClient } from "../../../lib/convexServer";
-import { api } from "../../../convex/_generated/api";
-import { readSessionToken, unauthorized } from "../../../lib/apiAuth";
+import { requireHost } from "../../../lib/apiHost";
+import { AI_NOT_CONFIGURED, AYUSH_CONTEXT, GEMINI_MODEL, GeminiError, aiConfigured, generateJson } from "../../../lib/gemini";
+import { AI } from "../../../lib/settings";
+import { ayushSystemLabel, isAyushSystem } from "../../../lib/ayush";
+import { DIFFICULTIES, newId, normalisePaper, validateQuestion } from "../../../lib/questions";
 
 /**
- * AI-drafted question papers for skill tests.
+ * "Generate with AI" — a whole paper from a topic.
  *
- * A host (industry recruiter, faculty member or institution) describes what
- * the test should cover — "Panchakarma pre-procedure assessment, BAMS final
- * year, moderate" — and gets back a draft paper in exactly the shape the
- * QuestionBuilder edits, so every question is reviewed and can be corrected
- * before it is published. The model never publishes anything on its own.
- *
- * The key lives only here, on the server. Set GEMINI_API_KEY in .env.local
- * (and in the hosting provider's environment); without it this route returns
- * 503 and the form falls back to hand-written questions. GEMINI_MODEL can
- * override the free-tier default.
+ * The professor says what the paper should cover, how many questions, which
+ * AYUSH system, and the single/multiple mix; the model returns strict JSON in
+ * the question shape from lib/questions.js. The response is validated before
+ * anyone sees it — wrong count, missing field, a single-answer question with
+ * two keys — and generated once more on failure before the professor is told
+ * to retry. Nothing is published from here: the questions land in the
+ * editor, where every one is still theirs to correct.
  */
-
-const MODEL = process.env.GEMINI_MODEL || "gemini-flash-latest";
-const MAX_QUESTIONS = 20;
-const MAX_TOPIC_LENGTH = 400;
-const HOST_ROLES = new Set(["industry", "academician", "institution", "admin"]);
 
 const RESPONSE_SCHEMA = {
   type: "OBJECT",
@@ -30,148 +24,129 @@ const RESPONSE_SCHEMA = {
       items: {
         type: "OBJECT",
         properties: {
-          question: { type: "STRING" },
-          options: { type: "ARRAY", items: { type: "STRING" } },
-          correctOption: { type: "INTEGER" },
-          marks: { type: "INTEGER" },
+          text: { type: "STRING" },
+          type: { type: "STRING", enum: ["single", "multiple"] },
+          options: {
+            type: "ARRAY",
+            items: {
+              type: "OBJECT",
+              properties: { text: { type: "STRING" }, isCorrect: { type: "BOOLEAN" } },
+              required: ["text", "isCorrect"],
+            },
+          },
+          explanation: { type: "STRING" },
         },
-        required: ["question", "options", "correctOption", "marks"],
+        required: ["text", "type", "options", "explanation"],
       },
     },
   },
   required: ["questions"],
 };
 
-function buildPrompt({ topic, count, difficulty, domain, audience }) {
+function buildPrompt({ topic, count, singleCount, multipleCount, ayushSystem, difficulty, audience }) {
   return [
-    "You are setting a multiple-choice skill test for the Skill Setu portal, the Ministry of AYUSH academia–industry platform for Ayurveda, Yoga & Naturopathy, Unani, Siddha and Homoeopathy students and professionals.",
+    AYUSH_CONTEXT,
+    `AYUSH system for this paper: ${ayushSystemLabel(ayushSystem)}.`,
     `Write exactly ${count} multiple-choice questions on: ${topic}.`,
-    domain ? `The test is scored under the skill domain "${domain}".` : "",
     audience ? `Candidates are: ${audience}.` : "",
-    `Difficulty: ${difficulty}.`,
+    difficulty ? `Difficulty: ${difficulty}.` : "",
+    `Exactly ${singleCount} question(s) must have type "single" (exactly one option with isCorrect true) and exactly ${multipleCount} question(s) must have type "multiple" (two or more options with isCorrect true, and at least one false).`,
     "Rules:",
-    "- Every question must be factually correct and specific to the AYUSH sector, its regulation (NCISM, NCH, Schedule T GMP, Ayurvedic Pharmacopoeia of India, CTRI, National AYUSH Mission) and its clinical, pharmaceutical, research or wellness practice, unless the topic is explicitly a general aptitude one.",
-    "- Each question has exactly 4 options, one of which is unambiguously correct; the others must be plausible but wrong.",
-    "- Vary which option index is correct.",
-    "- Keep each question under 220 characters and each option under 90 characters. No lettering (A/B/C/D) inside the option text.",
-    "- marks is 1 for straightforward recall, 2 for applied or scenario questions.",
-    "Return only JSON matching the schema.",
+    "- Each question has 4 options (5 is allowed for multiple-answer). Wrong options must be plausible.",
+    "- Vary which position the correct option(s) sit in.",
+    "- Keep each question under 240 characters and each option under 100 characters. No A/B/C/D lettering inside option text.",
+    "- explanation: one or two sentences on why the correct answer(s) are correct, citing the relevant text, regulation or principle.",
+    "- Return only JSON matching the schema, with the single-type questions first.",
   ]
     .filter(Boolean)
     .join("\n");
 }
 
-/** Coerces whatever the model returned into rows the QuestionBuilder accepts. */
-function normalise(raw, count) {
-  const rows = Array.isArray(raw?.questions) ? raw.questions : [];
-  return rows
-    .map((q) => {
-      const options = (Array.isArray(q.options) ? q.options : []).map((o) => String(o ?? "").trim()).filter(Boolean).slice(0, 6);
-      const correct = Number.isInteger(q.correctOption) ? q.correctOption : 0;
-      return {
-        question: String(q.question ?? "").trim(),
-        options,
-        correctOption: correct >= 0 && correct < options.length ? correct : 0,
-        marks: Math.min(10, Math.max(1, Math.round(Number(q.marks) || 1))),
-      };
-    })
-    .filter((q) => q.question && q.options.length >= 2)
-    .slice(0, count);
+/** Shapes the model's output and says what, if anything, is wrong with it. */
+function validate(raw, { count, singleCount, multipleCount, ayushSystem, topic, difficulty }) {
+  const rows = Array.isArray(raw?.questions) ? raw.questions : null;
+  if (!rows) return { error: "no questions array" };
+  if (rows.length !== count) return { error: `expected ${count} questions, got ${rows.length}` };
+  const questions = normalisePaper(
+    rows.map((q) => ({
+      id: newId("q"),
+      text: q.text,
+      type: q.type,
+      options: (Array.isArray(q.options) ? q.options : []).map((o) => ({ id: newId("o"), text: o?.text, isCorrect: Boolean(o?.isCorrect) })),
+      explanation: q.explanation,
+      source: "ai_generated",
+      difficulty,
+    })),
+    { ayushSystem, topic }
+  );
+  for (let i = 0; i < questions.length; i += 1) {
+    const q = questions[i];
+    const errors = validateQuestion(q);
+    if (Object.keys(errors).length) return { error: `question ${i + 1}: ${Object.values(errors)[0]}` };
+    if (q.type === "multiple" && q.options.filter((o) => o.isCorrect).length < 1) return { error: `question ${i + 1}: multiple-answer with no key` };
+    if (!q.explanation) return { error: `question ${i + 1}: missing explanation` };
+  }
+  const singles = questions.filter((q) => q.type === "single").length;
+  if (singles !== singleCount || questions.length - singles !== multipleCount) {
+    return { error: `expected ${singleCount} single / ${multipleCount} multiple, got ${singles} / ${questions.length - singles}` };
+  }
+  return { questions };
 }
 
 export default async function handler(req, res) {
-  if (req.method !== "POST") {
-    return res.status(405).json({ success: false, error: "Method not allowed. Please use POST." });
-  }
+  if (req.method !== "POST") return res.status(405).json({ success: false, error: "Method not allowed. Please use POST." });
+  if (!aiConfigured()) return res.status(AI_NOT_CONFIGURED.status).json(AI_NOT_CONFIGURED.body);
 
-  const apiKey = process.env.GEMINI_API_KEY;
-  if (!apiKey) {
-    return res.status(503).json({
-      success: false,
-      code: "AI_NOT_CONFIGURED",
-      error: "AI drafting is not set up on this deployment yet. Write the questions by hand, or ask the administrator to add a GEMINI_API_KEY.",
-    });
-  }
-
-  // Only a signed-in host may spend the key: the same roles that may publish a test.
-  const sessionToken = readSessionToken(req);
-  if (!sessionToken) return unauthorized(res);
-  const convex = getConvexClient();
-  if (!convex) return res.status(503).json({ success: false, error: "Account database unavailable." });
-  let actor;
-  try {
-    actor = await convex.query(api.auth.me, { sessionToken });
-  } catch {
-    actor = null;
-  }
-  if (!actor) return unauthorized(res);
-  if (!HOST_ROLES.has(actor.role)) {
-    return res.status(403).json({ success: false, error: "Only test hosts can draft a question paper." });
-  }
+  const host = await requireHost(req, res);
+  if (!host) return undefined;
 
   const body = req.body || {};
-  const topic = String(body.topic || "").trim().slice(0, MAX_TOPIC_LENGTH);
-  const count = Math.min(MAX_QUESTIONS, Math.max(1, Math.round(Number(body.count) || 5)));
-  const difficulty = ["easy", "moderate", "hard"].includes(body.difficulty) ? body.difficulty : "moderate";
-  const domain = String(body.domain || "").slice(0, 120);
+  const topic = String(body.topic || "").trim().slice(0, AI.MAX_TOPIC_LENGTH);
+  const count = Math.round(Number(body.count));
+  if (!topic) return res.status(400).json({ success: false, error: "Describe what the paper should cover." });
+  if (!Number.isInteger(count) || count < 1 || count > AI.MAX_QUESTIONS) {
+    return res.status(400).json({ success: false, error: `Please enter a number between 1 and ${AI.MAX_QUESTIONS}` });
+  }
+  const ayushSystem = body.ayushSystem;
+  if (!isAyushSystem(ayushSystem)) return res.status(400).json({ success: false, error: "Choose the AYUSH System this paper is for." });
+
+  const mix = ["single", "multiple", "mixed"].includes(body.mix) ? body.mix : "single";
+  let singleCount = count;
+  let multipleCount = 0;
+  if (mix === "multiple") {
+    singleCount = 0;
+    multipleCount = count;
+  } else if (mix === "mixed") {
+    const requested = Number.isInteger(Number(body.singleCount)) ? Number(body.singleCount) : Math.round(count * AI.MIXED_SINGLE_RATIO);
+    singleCount = Math.max(0, Math.min(count, requested));
+    multipleCount = count - singleCount;
+  }
+  const difficulty = DIFFICULTIES.includes(body.difficulty) ? body.difficulty : "";
   const audience = String(body.audience || "").slice(0, 200);
-  if (!topic) return res.status(400).json({ success: false, error: "Describe what the test should cover." });
 
-  const url = `https://generativelanguage.googleapis.com/v1beta/models/${MODEL}:generateContent?key=${encodeURIComponent(apiKey)}`;
-  const payload = {
-    contents: [{ role: "user", parts: [{ text: buildPrompt({ topic, count, difficulty, domain, audience }) }] }],
-    generationConfig: {
-      temperature: 0.7,
-      responseMimeType: "application/json",
-      responseSchema: RESPONSE_SCHEMA,
-    },
-  };
-
-  let upstream;
-  try {
-    upstream = await fetch(url, { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(payload) });
-  } catch (error) {
-    console.error("[ai] Could not reach Gemini:", error);
-    return res.status(502).json({ success: false, error: "Could not reach the AI service. Please try again." });
-  }
-
-  let data = {};
-  try {
-    data = await upstream.json();
-  } catch {
-    data = {};
-  }
-
-  if (!upstream.ok) {
-    const message = data?.error?.message || `Gemini returned HTTP ${upstream.status}`;
-    console.error("[ai] Gemini error:", message);
-    const friendly =
-      upstream.status === 429
-        ? "The free AI quota is exhausted for now — try again in a minute, or write the questions by hand."
-        : upstream.status === 400 || upstream.status === 403
-        ? "The AI key on this deployment was rejected. Ask the administrator to check GEMINI_API_KEY."
-        : "The AI service could not draft the paper. Please try again.";
-    return res.status(502).json({ success: false, error: friendly });
-  }
-
-  const text = data?.candidates?.[0]?.content?.parts?.map((p) => p.text || "").join("") || "";
-  let parsed;
-  try {
-    parsed = JSON.parse(text);
-  } catch {
-    // Some responses arrive fenced despite the JSON mime type.
-    const fenced = text.match(/\{[\s\S]*\}/);
+  const params = { topic, count, singleCount, multipleCount, ayushSystem, difficulty, audience };
+  let lastError = null;
+  for (let attempt = 0; attempt <= AI.GENERATION_RETRIES; attempt += 1) {
     try {
-      parsed = fenced ? JSON.parse(fenced[0]) : null;
-    } catch {
-      parsed = null;
+      const raw = await generateJson({ prompt: buildPrompt(params), schema: RESPONSE_SCHEMA, temperature: attempt === 0 ? 0.6 : 0.8 });
+      const checked = validate(raw, params);
+      if (checked.questions) {
+        return res.status(200).json({ success: true, questions: checked.questions, model: GEMINI_MODEL, retried: attempt > 0 });
+      }
+      lastError = checked.error;
+      console.warn(`[ai] Generated paper rejected (attempt ${attempt + 1}): ${checked.error}`);
+    } catch (error) {
+      if (error instanceof GeminiError && !["AI_MALFORMED", "AI_ERROR", "AI_BUSY"].includes(error.code)) {
+        return res.status(error.status).json({ success: false, code: error.code, error: error.message });
+      }
+      lastError = error.message;
+      console.warn(`[ai] Generation failed (attempt ${attempt + 1}): ${error.message}`);
     }
   }
-
-  const questions = normalise(parsed, count);
-  if (!questions.length) {
-    return res.status(502).json({ success: false, error: "The AI returned an unusable paper. Try rephrasing the topic." });
-  }
-
-  return res.status(200).json({ success: true, questions, model: MODEL });
+  return res.status(502).json({
+    success: false,
+    code: "AI_INVALID",
+    error: "Something went wrong generating questions. Please try again.",
+    detail: lastError,
+  });
 }

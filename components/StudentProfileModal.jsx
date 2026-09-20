@@ -5,6 +5,7 @@ import { findOne, getAssessment, getPortfolio } from "../lib/store";
 import { scoresFor } from "../lib/taxonomy";
 import { downloadStoredFile, hasFile, openStoredFile } from "../lib/files";
 import { Badge, IconTile, Overlay } from "./ui/Kit";
+import { AYUSH_SYSTEM_FIELD_LABEL, ayushSystemLabel } from "../lib/ayush";
 
 function initials(name) {
   return (name || "?")
@@ -109,6 +110,10 @@ export default function StudentProfileModal({ studentId, student: propStudent, a
             <div>
               <span className="text-muted-foreground block text-[11px]">Department</span>
               <span className="font-medium text-foreground truncate block">{department}</span>
+            </div>
+            <div>
+              <span className="text-muted-foreground block text-[11px]">{AYUSH_SYSTEM_FIELD_LABEL}</span>
+              <span className="font-medium text-foreground truncate block">{ayushSystemLabel(student?.ayushSystem) || "Not set"}</span>
             </div>
           </div>
 

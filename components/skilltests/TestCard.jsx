@@ -6,6 +6,7 @@ import TakeTestModal from "./TakeTestModal";
 import { getRegistrationStatus, formatScheduled, isLinkRevealWindow, STATUS_LABEL, STATUS_TONE } from "../../lib/testStatus";
 import { registerForSkillTest, confirmOfflineAttendance } from "../../lib/store";
 import { Badge, Button, Card } from "../ui/Kit";
+import { ayushSystemLabel, isAyushSystem } from "../../lib/ayush";
 
 const modeTone = {
   Online: "green",
@@ -36,6 +37,7 @@ export default function TestCard({ test, user, registration, attempt, onRefresh 
     <Card hover className="flex flex-col">
       <div className="flex items-center gap-1.5 flex-wrap mb-3">
         <Badge tone={modeTone[test.mode]}>{test.mode}</Badge>
+        {isAyushSystem(test.ayushSystem) && <Badge tone="primary">{ayushSystemLabel(test.ayushSystem)}</Badge>}
         <Badge tone="neutral">{test.domain}</Badge>
         {test.price > 0 ? <Badge tone="muted">₹{test.price}</Badge> : <Badge tone="primary">Free</Badge>}
         {status && <Badge tone={STATUS_TONE[status]} className="ml-auto">{STATUS_LABEL[status]}</Badge>}

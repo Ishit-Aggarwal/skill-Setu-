@@ -7,6 +7,8 @@ import { useAuth } from "../../lib/auth";
 import { useNav } from "../../lib/nav";
 import { Badge, Button, Card, EmptyState, Field, FilterPills, Flash, Modal, PageHeader, ProgressBar, SearchInput, Select, StatGrid, TextArea, TextInput, useFlash } from "../ui/Kit";
 import { ALL_DOMAINS, DEPARTMENTS, DOMAIN_GROUPS, SECTOR_CLUSTERS, canonicalDomain, domainColor } from "../../lib/domains";
+import { AYUSH_SYSTEM_FIELD_LABEL, ayushSystemLabel, isAyushSystem, needsAyushRetag } from "../../lib/ayush";
+import { AyushSystemFilter, AyushSystemSelect, RetagPrompt } from "../AyushSystemSelect";
 import { subscribeToMutations } from "../../lib/sync";
 import {
   applyToInternship,
@@ -190,6 +192,7 @@ function StudentView({ user }) {
   const [appliedIds, setAppliedIds] = useState(new Set());
   const [search, setSearch] = useState("");
   const [domain, setDomain] = useState("All");
+  const [ayushSystem, setAyushSystem] = useState("");
   const [type, setType] = useState("All");
   const [sortBy, setSortBy] = useState("match");
   const [eligibleOnly, setEligibleOnly] = useState(false);
@@ -274,6 +277,7 @@ function StudentView({ user }) {
         const matchesSearch =
           !q || i.title.toLowerCase().includes(q) || i.company.toLowerCase().includes(q) || (i.tags || []).some((t) => t.toLowerCase().includes(q));
         const matchesDomain = domain === "All" || i.domain === domain;
+        const matchesSystem = !ayushSystem || i.ayushSystem === ayushSystem;
         const matchesType = type === "All" || i.type === type;
         const matchesLocation = location === "All" || i.location === location;
         const matchesStipend = stipend.test(monthlyEquivalent(i));
@@ -281,7 +285,7 @@ function StudentView({ user }) {
         const matchesPosted = !cutoff || (i.postedAt ? new Date(i.postedAt).getTime() >= cutoff : true);
         const matchesEligibility = !eligibleOnly || i.eligibility.eligible;
         return (
-          matchesSearch && matchesDomain && matchesType && matchesLocation &&
+          matchesSearch && matchesDomain && matchesSystem && matchesType && matchesLocation &&
           matchesStipend && matchesDuration && matchesPosted && matchesEligibility
         );
       })
@@ -294,7 +298,7 @@ function StudentView({ user }) {
         if (sortBy === "deadline") return new Date(a.deadline) - new Date(b.deadline);
         return b.match - a.match;
       });
-  }, [enriched, search, domain, type, location, stipendBand, durationBand, postedWithin, sortBy, eligibleOnly, recentNewIds]);
+  }, [enriched, search, domain, ayushSystem, type, location, stipendBand, durationBand, postedWithin, sortBy, eligibleOnly, recentNewIds]);
 
   /** Live role counts per cluster and per sector, so a filter never offers a
       choice that would return nothing. Clusters with no live roles are hidden. */
@@ -317,6 +321,7 @@ function StudentView({ user }) {
   const activeFilters = useMemo(() => {
     const chips = [];
     if (domain !== "All") chips.push({ key: "domain", label: domain, clear: () => setDomain("All") });
+    if (ayushSystem) chips.push({ key: "ayushSystem", label: ayushSystemLabel(ayushSystem), clear: () => setAyushSystem("") });
     if (type !== "All") chips.push({ key: "type", label: type, clear: () => setType("All") });
     if (location !== "All") chips.push({ key: "location", label: location, clear: () => setLocation("All") });
     if (stipendBand !== "any") chips.push({ key: "stipend", label: bandOf(STIPEND_BANDS, stipendBand).label, clear: () => setStipendBand("any") });
@@ -325,10 +330,11 @@ function StudentView({ user }) {
     if (eligibleOnly) chips.push({ key: "eligible", label: "Eligible roles only", clear: () => setEligibleOnly(false) });
     if (search.trim()) chips.push({ key: "search", label: `“${search.trim()}”`, clear: () => setSearch("") });
     return chips;
-  }, [domain, type, location, stipendBand, durationBand, postedWithin, eligibleOnly, search]);
+  }, [domain, ayushSystem, type, location, stipendBand, durationBand, postedWithin, eligibleOnly, search]);
 
   function clearAllFilters() {
     setDomain("All");
+    setAyushSystem("");
     setType("All");
     setLocation("All");
     setStipendBand("any");
@@ -386,6 +392,8 @@ function StudentView({ user }) {
           query={sectorQuery}
           onQuery={setSectorQuery}
         />
+
+        <AyushSystemFilter value={ayushSystem} onChange={setAyushSystem} />
 
         <div className="flex flex-wrap gap-x-6 gap-y-2">
           <FilterPills label="Type:" options={typeFilters} value={type} onChange={setType} />
@@ -499,6 +507,7 @@ function StudentView({ user }) {
                     </span>
                   )}
                   <Badge tone={typeTone[intern.type] || "neutral"}>{intern.type}</Badge>
+                  {isAyushSystem(intern.ayushSystem) && <Badge tone="primary">{ayushSystemLabel(intern.ayushSystem)}</Badge>}
                   <Badge tone="neutral">{intern.domain}</Badge>
                   {/* Whether a role pays at all is the first thing most
                       students filter on, so it is stated rather than inferred
@@ -578,6 +587,7 @@ const EMPTY_POSTING = {
   location: "",
   type: "Hybrid",
   domain: ALL_DOMAINS[0],
+  ayushSystem: "",
   duration: "",
   stipendAmount: "",
   stipendMode: "monthly",
@@ -598,6 +608,8 @@ function IndustryView({ user }) {
 
   const [search, setSearch] = useState("");
   const [domainFilter, setDomainFilter] = useState("All");
+  const [systemFilter, setSystemFilter] = useState("");
+  const [retagging, setRetagging] = useState(null);
   const [statusFilter, setStatusFilter] = useState("All");
   const [sortBy, setSortBy] = useState("deadline");
 
@@ -625,6 +637,7 @@ function IndustryView({ user }) {
     const rows = postings.filter((p) => {
       const matchesSearch = !q || p.title.toLowerCase().includes(q) || (p.tags || []).some((t) => t.toLowerCase().includes(q));
       const matchesDomain = domainFilter === "All" || p.domain === domainFilter;
+      if (systemFilter && p.ayushSystem !== systemFilter) return false;
       const matchesStatus = statusFilter === "All" || p.status === statusFilter;
       return matchesSearch && matchesDomain && matchesStatus;
     });
@@ -636,7 +649,7 @@ function IndustryView({ user }) {
       title: (a, b) => a.title.localeCompare(b.title),
     };
     return [...rows].sort(sorters[sortBy] || sorters.deadline);
-  }, [postings, applications, search, domainFilter, statusFilter, sortBy]);
+  }, [postings, applications, search, domainFilter, systemFilter, statusFilter, sortBy]);
 
   function handleSubmit(data) {
     const deadlineError = checkLeadTime(data.deadline, "23:59", APPLICATION_LEAD_HOURS, "An application deadline");
@@ -650,6 +663,7 @@ function IndustryView({ user }) {
       location: data.location || "Remote",
       type: data.type,
       domain: data.domain,
+      ayushSystem: isAyushSystem(data.ayushSystem) ? data.ayushSystem : undefined,
       duration: data.duration || "3 months",
       // A number and a mode. The unit label is rendered, never typed.
       stipendAmount: amount === "" ? null : Number(amount),
@@ -676,6 +690,16 @@ function IndustryView({ user }) {
   }
 
   const domainsInUse = ["All", ...[...new Set(postings.map((p) => p.domain))].sort()];
+  const untagged = postings.filter(needsAyushRetag);
+
+  /* One-click fix for a posting written before the AYUSH system field existed. */
+  function retag(posting, ayushSystem) {
+    setRetagging(posting.id);
+    patchInternship(posting.id, { ayushSystem });
+    setRetagging(null);
+    refresh();
+    setFlash(`Tagged "${posting.title}" as ${ayushSystemLabel(ayushSystem)}.`);
+  }
   const openCount = postings.filter((p) => p.status === "Open").length;
   const totalViews = postings.reduce((s, p) => s + (p.views || 0), 0);
   const totalUnique = postings.reduce((s, p) => s + (p.uniqueViews || 0), 0);
@@ -689,6 +713,12 @@ function IndustryView({ user }) {
       />
 
       <Flash message={flash} />
+
+      {untagged.length > 0 && (
+        <div className="rounded-xl border border-amber-200 bg-amber-50 px-4 py-3 text-xs text-amber-800">
+          ⚠️ {untagged.length} posting{untagged.length === 1 ? "" : "s"} need{untagged.length === 1 ? "s" : ""} to be re-tagged with an {AYUSH_SYSTEM_FIELD_LABEL}. Each one has a picker on its card below.
+        </div>
+      )}
 
       <StatGrid
         stats={[
@@ -727,6 +757,7 @@ function IndustryView({ user }) {
             </Select>
           </Field>
         </div>
+        <AyushSystemFilter value={systemFilter} onChange={setSystemFilter} />
       </Card>
 
       {filtered.length === 0 ? (
@@ -763,7 +794,12 @@ function IndustryView({ user }) {
                   </div>
                 </div>
 
+                <div className="mb-3">
+                  <RetagPrompt row={p} what="This posting" saving={retagging === p.id} onSave={(slug) => retag(p, slug)} />
+                </div>
+
                 <div className="flex flex-wrap gap-1 mb-3">
+                  {isAyushSystem(p.ayushSystem) && <Badge tone="primary">{ayushSystemLabel(p.ayushSystem)}</Badge>}
                   <span className="text-[10px] bg-secondary text-secondary-foreground px-2 py-0.5 rounded-full">{p.domain}</span>
                   <Badge tone={isPaidPosting(p) ? "green" : "muted"}>{isPaidPosting(p) ? "Paid" : "Unpaid"}</Badge>
                   {(p.tags || []).slice(0, 2).map((t) => <span key={t} className="text-[10px] bg-primary/8 text-primary px-2 py-0.5 rounded-full">{t}</span>)}
@@ -850,6 +886,7 @@ function PostingModal({ posting, onClose, onSubmit }) {
       ? {
           ...EMPTY_POSTING,
           ...posting,
+          ayushSystem: posting.ayushSystem || "",
           tags: (posting.tags || []).join(", "),
           minSkillScore: posting.minSkillScore ? String(posting.minSkillScore) : "",
           eligibleDepartments: posting.eligibleDepartments || [],
@@ -901,6 +938,10 @@ function PostingModal({ posting, onClose, onSubmit }) {
               {["Remote", "Hybrid", "Onsite"].map((t) => <option key={t}>{t}</option>)}
             </Select>
           </Field>
+          <AyushSystemSelect value={form.ayushSystem} onChange={(v) => set("ayushSystem", v)} required />
+        </div>
+
+        <div className="grid grid-cols-2 gap-3">
           <Field label="Sector">
             <Select value={form.domain} onChange={(e) => set("domain", e.target.value)}>
               {DOMAIN_GROUPS.map((g) => (

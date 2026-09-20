@@ -6,6 +6,8 @@ import CandidateProfileModal from "../CandidateProfileModal";
 import { useAuth } from "../../lib/auth";
 import { Avatar, Badge, Button, Card, EmptyState, Field, Flash, Modal, PageHeader, ProgressBar, SearchInput, Section, Select, StatGrid, TextInput, useFlash } from "../ui/Kit";
 import { DEPARTMENTS } from "../../lib/domains";
+import { AyushSystemSelect } from "../AyushSystemSelect";
+import { ayushSystemLabel, isAyushSystem } from "../../lib/ayush";
 import { SKILL_DOMAINS } from "../../lib/questionBank";
 import { downloadFile, getAssessment, getPortfolio, insert, listUsersByRole, placementStatusFor, remove, findMany, toCsv } from "../../lib/store";
 
@@ -13,6 +15,7 @@ const DEFAULT_FILTERS = {
   search: "",
   institution: "All",
   department: "All",
+  ayushSystem: "",
   domain: "All",
   minScore: 0,
   availability: "All",
@@ -82,6 +85,7 @@ export default function TalentPool() {
           matchesSearch &&
           (filters.institution === "All" || s.institution === filters.institution) &&
           (filters.department === "All" || s.department === filters.department) &&
+          (!filters.ayushSystem || s.ayushSystem === filters.ayushSystem) &&
           (filters.availability === "All" || s.status === filters.availability) &&
           (filters.minScore === 0 || (domainScore != null && domainScore >= filters.minScore))
         );
@@ -172,7 +176,8 @@ export default function TalentPool() {
               <option value="name">Sort: Name</option>
             </Select>
           </div>
-          <div className="grid sm:grid-cols-2 lg:grid-cols-5 gap-3">
+          <div className="grid sm:grid-cols-2 lg:grid-cols-6 gap-3">
+            <AyushSystemSelect value={filters.ayushSystem} onChange={(v) => set("ayushSystem", v)} placeholder="All" />
             <Field label="Institution">
               <Select value={filters.institution} onChange={(e) => set("institution", e.target.value)}>
                 {institutions.map((i) => <option key={i}>{i}</option>)}

@@ -43,6 +43,15 @@ EMAIL_PASS=your-16-character-app-password
 
 (Generate an App Password at https://myaccount.google.com/apppasswords.) Set `OTP_DEV_MODE=true` instead to skip email entirely — the code is shown directly in the UI.
 
+## Skill tests, exam room and certificates
+
+- Every test, posting and student/faculty profile carries one of the five **AYUSH Systems** (`lib/ayush.js` is the single source of the list).
+- Hosts write or AI-generate a question paper (`/api/ai/generate-questions`, `/api/ai/recheck-question`); answer keys and explanations live only in the Convex `skillTestQuestions` table.
+- Online tests are sat in the **secure exam room**: consent, camera/mic check, fullscreen, continuous chunked recording to Convex file storage, real-time violation flags, server-side grading. Hosts open the proctoring report from each test card.
+- Certificates are issued automatically on grading (`/certificate-settings` holds the reusable branding; a test can override it) and downloaded as PDFs from `/api/certificates/<id>`; anyone can verify one at `/verify/<code>`.
+- Every limit (violation budget, grace timers, retention days, AI caps, upload sizes) lives in `lib/settings.js`.
+- `npm test` runs the grading, question-model, AYUSH-list and exam-state suites with Node's built-in runner.
+
 ## Build for Production
 
 ```bash

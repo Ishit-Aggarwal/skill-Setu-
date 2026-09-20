@@ -1,8 +1,13 @@
 import { query, mutation } from "./_generated/server";
 import { v } from "convex/values";
-import { authError, publicUser, requireActor } from "./_lib/authz";
+import { authError, publicUser, requireActor, requireOwner } from "./_lib/authz";
 import { gradeSubmission, publicQuestionsFor, questionCountFor } from "./_lib/questionBank";
 import { SKILL_DOMAINS } from "../lib/questionBank";
+import { isAyushSystem } from "../lib/ayush";
+import { normalisePaper, validatePaper } from "../lib/questions";
+import { paperType } from "../lib/grading";
+import { findTestByClientId, questionsForTest } from "./_lib/tests";
+import { recalculateAssessment, writeAttempt } from "./_lib/assessment";
 
 /**
  * Skill tests and their marking.
@@ -109,52 +114,6 @@ export const getQuestions = query({
     return { ok: true, domain: args.domain, total: questions.length, questions };
   },
 });
-
-/** Recomputes a student's domain averages and overall score from their attempts. */
-async function recalculateAssessment(ctx, studentId) {
-  const attempts = await ctx.db
-    .query("assessmentAttempts")
-    .withIndex("by_student", (q) => q.eq("studentId", studentId))
-    .collect();
-
-  const byDomain = {};
-  attempts.forEach((a) => {
-    const w = a.weight || 1;
-    if (!byDomain[a.domain]) byDomain[a.domain] = { sum: 0, weight: 0 };
-    byDomain[a.domain].sum += a.score * w;
-    byDomain[a.domain].weight += w;
-  });
-
-  const domainScores = {};
-  Object.entries(byDomain).forEach(([d, { sum, weight }]) => {
-    domainScores[d] = Math.round(sum / weight);
-  });
-
-  const values = Object.values(domainScores);
-  const overallScore = values.length ? Math.round(values.reduce((a, b) => a + b, 0) / values.length) : 0;
-  const strongTags = Object.entries(domainScores).filter(([, s]) => s >= 70).map(([d]) => d);
-
-  const existing = await ctx.db
-    .query("assessments")
-    .withIndex("by_student", (q) => q.eq("studentId", studentId))
-    .first();
-
-  const record = { domainScores, overallScore, strongTags, updatedAt: new Date().toISOString() };
-  if (existing) await ctx.db.patch(existing._id, record);
-  else await ctx.db.insert("assessments", { studentId, ...record });
-
-  return record;
-}
-
-async function writeAttempt(ctx, studentId, attempt) {
-  const existing = await ctx.db
-    .query("assessmentAttempts")
-    .withIndex("by_student_test", (q) => q.eq("studentId", studentId).eq("testId", attempt.testId))
-    .first();
-
-  if (existing) await ctx.db.patch(existing._id, { ...attempt, completedAt: new Date().toISOString() });
-  else await ctx.db.insert("assessmentAttempts", { studentId, ...attempt, completedAt: new Date().toISOString() });
-}
 
 /**
  * Marks a submitted paper.
@@ -355,5 +314,239 @@ export const rosterForTest = query({
       });
     }
     return rows;
+  },
+});
+
+/* ============================================================
+   Hosting a test: the row, its settings and its paper
+   ============================================================ */
+
+const HOST_ROLES = ["industry", "academician", "institution", "admin"];
+
+/** Everything a host may set on a test row. The paper is handled separately. */
+const TEST_FIELDS = {
+  title: v.string(),
+  domain: v.string(),
+  ayushSystem: v.optional(v.string()),
+  hostName: v.optional(v.string()),
+  mode: v.string(),
+  duration: v.string(),
+  price: v.number(),
+  scheduledAt: v.optional(v.string()),
+  scheduledTime: v.optional(v.string()),
+  reportingTime: v.optional(v.string()),
+  venue: v.optional(v.string()),
+  description: v.string(),
+  prerequisites: v.optional(v.string()),
+  certification: v.optional(v.string()),
+  rules: v.optional(v.array(v.string())),
+  documentsRequired: v.optional(v.array(v.string())),
+  meetingLink: v.optional(v.string()),
+  status: v.optional(v.string()),
+  postedAt: v.optional(v.string()),
+  proctored: v.optional(v.boolean()),
+  autoDisqualifyAfter: v.optional(v.union(v.number(), v.null())),
+  issueCertificate: v.optional(v.boolean()),
+  minCertificateScore: v.optional(v.union(v.number(), v.null())),
+};
+
+async function attemptsStarted(ctx, testId) {
+  const attempt = await ctx.db
+    .query("examAttempts")
+    .withIndex("by_test", (q) => q.eq("testId", testId))
+    .filter((q) => q.neq(q.field("state"), "NOT_STARTED"))
+    .first();
+  return Boolean(attempt);
+}
+
+/** Replaces a test's paper. Only callable while nobody has started it. */
+async function writePaper(ctx, actor, test, questions) {
+  if (await attemptsStarted(ctx, test.id)) {
+    throw new Error("Candidates have already started this test, so its paper can no longer be changed.");
+  }
+  const paper = normalisePaper(questions, { ayushSystem: test.ayushSystem });
+  const problem = validatePaper(paper);
+  if (problem) throw new Error(problem);
+
+  const existing = await questionsForTest(ctx, test.id);
+  const keep = new Map(existing.map((row) => [row.id, row]));
+  const seen = new Set();
+  for (let order = 0; order < paper.length; order += 1) {
+    const q = paper[order];
+    seen.add(q.id);
+    const row = {
+      id: q.id,
+      testId: test.id,
+      ownerId: actor.id,
+      order,
+      text: q.text,
+      type: q.type,
+      options: q.options,
+      explanation: q.explanation,
+      source: q.source,
+      ayushSystem: q.ayushSystem || test.ayushSystem || undefined,
+      topic: q.topic || undefined,
+      difficulty: q.difficulty || undefined,
+      createdAt: q.createdAt,
+      updatedAt: q.updatedAt,
+      recheckHistory: q.recheckHistory || [],
+    };
+    const prior = keep.get(q.id);
+    if (prior) await ctx.db.patch(prior._id, { ...row, createdAt: prior.createdAt });
+    else await ctx.db.insert("skillTestQuestions", row);
+  }
+  for (const row of existing) if (!seen.has(row.id)) await ctx.db.delete(row._id);
+
+  const type = paperType(paper);
+  await ctx.db.patch(test._id, { questionCount: paper.length, paperType: type });
+  return { questionCount: paper.length, paperType: type };
+}
+
+/**
+ * Publishes (or re-publishes) a test under the client's own record id, with
+ * its paper. The paper is written to skillTestQuestions and never returned
+ * to a candidate with its keys; the row itself only says how many questions
+ * there are and of which types.
+ */
+export const publishTest = mutation({
+  args: { sessionToken: v.string(), id: v.string(), questions: v.optional(v.any()), ...TEST_FIELDS },
+  handler: async (ctx, args) => {
+    const actor = await requireActor(ctx, args.sessionToken);
+    if (!HOST_ROLES.includes(actor.role)) throw authError("Only a test host can publish a test.");
+
+    const { sessionToken, questions, ...fields } = args;
+    const hostName = actor.user.companyName || actor.user.instituteName || actor.user.institution || fields.hostName || actor.user.name || "Host";
+    const row = {
+      ...fields,
+      ayushSystem: isAyushSystem(fields.ayushSystem) ? fields.ayushSystem : undefined,
+      needsRetagging: !isAyushSystem(fields.ayushSystem),
+      hostName,
+      ownerId: actor.id,
+      status: fields.status || "Open",
+      postedAt: fields.postedAt || new Date().toISOString(),
+      proctored: fields.mode === "Online" ? fields.proctored !== false : false,
+    };
+
+    let test = await findTestByClientId(ctx, args.id);
+    if (test) {
+      requireOwner(actor, test, { what: "this test" });
+      await ctx.db.patch(test._id, row);
+      test = await ctx.db.get(test._id);
+    } else {
+      const _id = await ctx.db.insert("skillTests", row);
+      test = await ctx.db.get(_id);
+    }
+
+    let paper = { questionCount: test.questionCount || 0, paperType: test.paperType || null };
+    if (Array.isArray(questions) && fields.mode === "Online") paper = await writePaper(ctx, actor, test, questions);
+    return { ok: true, ...paper };
+  },
+});
+
+/** A host's edit to their own test, addressed by the client record id. */
+export const updateByClientId = mutation({
+  args: { sessionToken: v.string(), id: v.string(), patch: v.any() },
+  handler: async (ctx, args) => {
+    const actor = await requireActor(ctx, args.sessionToken);
+    const test = await findTestByClientId(ctx, args.id);
+    if (!test) return { ok: false, reason: "NOT_FOUND" };
+    requireOwner(actor, test, { what: "this test" });
+    const { ownerId, id, _id, _creationTime, questionCount, paperType: pt, ...safe } = args.patch || {};
+    if ("ayushSystem" in safe) {
+      if (isAyushSystem(safe.ayushSystem)) safe.needsRetagging = false;
+      else delete safe.ayushSystem;
+    }
+    if ("minCertificateScore" in safe && safe.minCertificateScore != null) {
+      safe.minCertificateScore = Math.max(0, Math.min(100, Number(safe.minCertificateScore) || 0));
+    }
+    if ("autoDisqualifyAfter" in safe && safe.autoDisqualifyAfter != null) {
+      safe.autoDisqualifyAfter = Math.max(1, Math.round(Number(safe.autoDisqualifyAfter) || 1));
+    }
+    await ctx.db.patch(test._id, safe);
+    return { ok: true };
+  },
+});
+
+/** Replaces the paper on a published test (autosave from the editor). */
+export const saveQuestions = mutation({
+  args: { sessionToken: v.string(), testId: v.string(), questions: v.any() },
+  handler: async (ctx, args) => {
+    const actor = await requireActor(ctx, args.sessionToken);
+    const test = await findTestByClientId(ctx, args.testId);
+    if (!test) throw new Error("This test no longer exists.");
+    requireOwner(actor, test, { what: "this test" });
+    return { ok: true, ...(await writePaper(ctx, actor, test, args.questions)) };
+  },
+});
+
+/** The full paper, keys and explanations included — host only. */
+export const paperForHost = query({
+  args: { sessionToken: v.string(), testId: v.string() },
+  handler: async (ctx, args) => {
+    const actor = await requireActor(ctx, args.sessionToken);
+    const test = await findTestByClientId(ctx, args.testId);
+    if (!test) return { ok: false, error: "This test no longer exists." };
+    requireOwner(actor, test, { what: "this test" });
+    const rows = await questionsForTest(ctx, test.id);
+    return {
+      ok: true,
+      locked: await attemptsStarted(ctx, test.id),
+      questions: rows.map(({ _id, _creationTime, ...q }) => q),
+    };
+  },
+});
+
+/**
+ * Records the outcome of a "Recheck with AI" on one question. `accepted`
+ * replaces the question's content with the proposal; either way the attempt
+ * is logged so the history shows every recheck, not just the applied ones.
+ */
+export const recordRecheck = mutation({
+  args: {
+    sessionToken: v.string(),
+    testId: v.string(),
+    questionId: v.string(),
+    verdict: v.string(),
+    proposed: v.optional(v.any()),
+    accepted: v.boolean(),
+  },
+  handler: async (ctx, args) => {
+    const actor = await requireActor(ctx, args.sessionToken);
+    const test = await findTestByClientId(ctx, args.testId);
+    if (!test) throw new Error("This test no longer exists.");
+    requireOwner(actor, test, { what: "this test" });
+    const row = await ctx.db
+      .query("skillTestQuestions")
+      .withIndex("by_client_id", (q) => q.eq("id", args.questionId))
+      .filter((q) => q.eq(q.field("testId"), test.id))
+      .first();
+    if (!row) throw new Error("That question is not on this test.");
+
+    const entry = { at: new Date().toISOString(), verdict: args.verdict, proposed: args.proposed || null, accepted: args.accepted };
+    const patch = { recheckHistory: [...(row.recheckHistory || []), entry] };
+    if (args.accepted && args.proposed) {
+      if (await attemptsStarted(ctx, test.id)) throw new Error("Candidates have already started this test, so its paper can no longer be changed.");
+      const [q] = normalisePaper([{ ...row, ...args.proposed, id: row.id, recheckHistory: patch.recheckHistory }], { ayushSystem: test.ayushSystem });
+      const problem = validatePaper([q]);
+      if (problem) throw new Error(problem);
+      Object.assign(patch, { text: q.text, type: q.type, options: q.options, explanation: q.explanation, updatedAt: q.updatedAt });
+      const all = await questionsForTest(ctx, test.id);
+      const merged = all.map((r) => (r.id === row.id ? { ...r, ...patch } : r));
+      await ctx.db.patch(test._id, { paperType: paperType(merged) });
+    }
+    await ctx.db.patch(row._id, patch);
+    return { ok: true };
+  },
+});
+
+/** Tests hosted by the signed-in account, from the shared database. */
+export const listMine = query({
+  args: { sessionToken: v.string() },
+  handler: async (ctx, args) => {
+    const actor = await requireActor(ctx, args.sessionToken);
+    return await ctx.db
+      .query("skillTests")
+      .withIndex("by_owner", (q) => q.eq("ownerId", actor.id))
+      .collect();
   },
 });

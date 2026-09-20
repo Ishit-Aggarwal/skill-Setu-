@@ -3,6 +3,9 @@
 import { Badge, Button, Modal, ProgressBar } from "../ui/Kit";
 import { formatDateTime } from "../../lib/match";
 import { formatScheduled, STATUS_LABEL, STATUS_TONE } from "../../lib/testStatus";
+import { findOne } from "../../lib/store";
+import { autoSubmitMessage } from "../../lib/examState";
+import CertificateCard from "../certificates/CertificateCard";
 
 /**
  * One attempt, opened from the attempt log.
@@ -42,6 +45,9 @@ export default function AttemptDetailModal({ test, registration, attempt, status
   const displayCorrectCount = attempt?.correctCount ?? breakdown.filter((b) => b.correct).length;
   const displayTotalQuestions = attempt?.totalQuestions ?? (breakdown.length || null);
   const timeTaken = formatDuration(attempt?.timeTakenMs);
+  /* An automatic certificate lands in the local credentials list the moment
+     the paper is graded, so it can be downloaded again from here any time. */
+  const credential = attempt?.credentialId ? findOne("credentials", (c) => c.id === attempt.credentialId && !c.revokedAt) : findOne("credentials", (c) => c.testId === test?.id && c.studentId === attempt?.studentId && !c.revokedAt);
 
   /* A completed online paper can be sat again — the store replaces the earlier
      attempt rather than stacking two scores for one test. An in-person result
@@ -75,12 +81,16 @@ export default function AttemptDetailModal({ test, registration, attempt, status
         <div className="flex flex-wrap items-center gap-2">
           <Badge tone={STATUS_TONE[status]}>{STATUS_LABEL[status]}</Badge>
           <Badge tone="neutral">{test.mode}</Badge>
-          {attempt?.autoSubmitted && <Badge tone="amber">Auto-submitted at time-up</Badge>}
+          {attempt?.autoSubmitted && <Badge tone="amber">{attempt.autoSubmitReason ? "Auto-submitted" : "Auto-submitted at time-up"}</Badge>}
+          {attempt?.disqualified && <Badge tone="red">Disqualified pending review</Badge>}
           {attempt?.missed && <Badge tone="red">Recorded as missed</Badge>}
         </div>
 
         {attempt ? (
           <>
+            {attempt.autoSubmitReason && <p className="text-xs text-amber-800 bg-amber-50 border border-amber-200 rounded-xl px-3.5 py-2.5">{autoSubmitMessage(attempt.autoSubmitReason)}</p>}
+            {credential && <CertificateCard credential={credential} status="issued" compact />}
+            {!credential && attempt.certificateStatus === "below_minimum" && <CertificateCard status="below_minimum" minScore={test?.minCertificateScore} compact />}
             <div className="flex items-center gap-4">
               <div
                 className={`w-20 h-20 rounded-2xl flex flex-col items-center justify-center flex-shrink-0 ${

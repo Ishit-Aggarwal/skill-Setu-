@@ -3,6 +3,8 @@
 import { useState } from "react";
 import { isDemoAccount, useAuth } from "../lib/auth";
 import { DEPARTMENTS } from "../lib/domains";
+import { AyushSystemSelect } from "./AyushSystemSelect";
+import { needsAyushRetag } from "../lib/ayush";
 import { getPortfolio, savePortfolio } from "../lib/store";
 import { Field, TextInput, TextArea, Select, Button, Tabs, Overlay } from "./ui/Kit";
 
@@ -57,6 +59,7 @@ export default function EditProfileModal({ onClose }) {
     batch: user.batch || "",
     rollNo: user.rollNo || "",
     department: user.department || "",
+    ayushSystem: user.ayushSystem || "",
     cgpa: user.cgpa || "",
     graduationYear: user.graduationYear || "",
     openToOpportunities: user.openToOpportunities !== false,
@@ -120,6 +123,7 @@ export default function EditProfileModal({ onClose }) {
         batch: form.batch,
         rollNo: form.rollNo,
         department: form.department,
+        ayushSystem: form.ayushSystem || undefined,
         cgpa: form.cgpa,
         graduationYear: form.graduationYear,
         github: form.github,
@@ -139,6 +143,7 @@ export default function EditProfileModal({ onClose }) {
       Object.assign(patch, {
         institution: form.institution,
         department: form.department,
+        ayushSystem: form.ayushSystem || undefined,
         designation: form.designation,
         experienceYears: form.experienceYears,
         orcid: form.orcid,
@@ -286,6 +291,11 @@ export default function EditProfileModal({ onClose }) {
                     <Field label="Institution">
                       <TextInput value={form.institution} onChange={(e) => set("institution", e.target.value)} />
                     </Field>
+                    <AyushSystemSelect
+                      value={form.ayushSystem}
+                      onChange={(v) => set("ayushSystem", v)}
+                      hint={needsAyushRetag(user) ? "Your account has no AYUSH system yet — pick the one you are studying under." : undefined}
+                    />
                     <Field label="Department">
                       <Select value={form.department} onChange={(e) => set("department", e.target.value)}>
                         <option value="">Select your department</option>
@@ -358,6 +368,11 @@ export default function EditProfileModal({ onClose }) {
                     <Field label="Institution">
                       <TextInput value={form.institution} onChange={(e) => set("institution", e.target.value)} />
                     </Field>
+                    <AyushSystemSelect
+                      value={form.ayushSystem}
+                      onChange={(v) => set("ayushSystem", v)}
+                      hint={needsAyushRetag(user) ? "Your account has no AYUSH system yet — pick the one you teach under." : undefined}
+                    />
                     <Field label="Department">
                       <Select value={form.department} onChange={(e) => set("department", e.target.value)}>
                         <option value="">Select a department</option>

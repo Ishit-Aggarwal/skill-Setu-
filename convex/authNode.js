@@ -2,6 +2,7 @@
 
 import bcrypt from "bcryptjs";
 import crypto from "crypto";
+import { isAyushSystem } from "../lib/ayush";
 import { action } from "./_generated/server";
 import { internal } from "./_generated/api";
 import { v } from "convex/values";
@@ -148,6 +149,9 @@ export const register = action({
       instituteName: profile.instituteName || undefined,
       instituteId: profile.instituteId || undefined,
       department: profile.department || undefined,
+      // Only one of the five canonical systems is ever stored; anything else
+      // is dropped here and the account shows as needing re-tagging.
+      ayushSystem: isAyushSystem(profile.ayushSystem) ? profile.ayushSystem : undefined,
       course: profile.course || undefined,
       year: profile.year || undefined,
       companyName: profile.companyName || undefined,
@@ -232,6 +236,7 @@ const DEMO_ACCOUNTS = [
     name: "Aarav Sharma",
     institution: "All India Institute of Ayurveda (AIIA), New Delhi",
     department: "Ayurveda (BAMS)",
+    ayushSystem: "ayurveda",
     course: "BAMS",
     year: "4th Year",
     openToOpportunities: true,
@@ -252,6 +257,7 @@ const DEMO_ACCOUNTS = [
     name: "Dr. Shalini Kulkarni",
     institution: "All India Institute of Ayurveda (AIIA), New Delhi",
     department: "Dravyaguna & Pharmacognosy",
+    ayushSystem: "ayurveda",
     designation: "Professor",
     verifiedCode: "APEX-FAC-2026",
   },

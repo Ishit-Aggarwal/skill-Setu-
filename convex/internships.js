@@ -2,6 +2,7 @@ import { query, mutation } from "./_generated/server";
 import { v } from "convex/values";
 import { authError, requireActor, requireOwner } from "./_lib/authz";
 import { checkEligibility, computeMatch } from "../lib/match";
+import { isAyushSystem } from "../lib/ayush";
 
 /**
  * Postings.
@@ -82,6 +83,7 @@ export const create = mutation({
     location: v.string(),
     type: v.string(),
     domain: v.string(),
+    ayushSystem: v.optional(v.string()),
     duration: v.string(),
     stipendAmount: v.optional(v.union(v.number(), v.null())),
     stipendMode: v.optional(v.string()),
@@ -105,6 +107,9 @@ export const create = mutation({
     const { sessionToken, ...fields } = args;
     const row = {
       ...fields,
+      // Only a canonical slug is stored; anything else leaves the row flagged.
+      ayushSystem: isAyushSystem(fields.ayushSystem) ? fields.ayushSystem : undefined,
+      needsRetagging: !isAyushSystem(fields.ayushSystem),
       // The company name on a posting is the caller's own, not free text.
       company: actor.user.companyName || actor.user.instituteName || actor.user.institution || fields.company,
       ownerId: actor.id,
@@ -159,6 +164,10 @@ export const updateByClientId = mutation({
     requireOwner(actor, doc, { what: "this posting" });
 
     const { ownerId, id, _id, _creationTime, ...safe } = args.patch || {};
+    if ("ayushSystem" in safe) {
+      if (isAyushSystem(safe.ayushSystem)) safe.needsRetagging = false;
+      else delete safe.ayushSystem;
+    }
     await ctx.db.patch(doc._id, safe);
     return { ok: true };
   },

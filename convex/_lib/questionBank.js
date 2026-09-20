@@ -153,3 +153,21 @@ export function gradeSubmission(domain, answers) {
     breakdown,
   };
 }
+
+/**
+ * The platform bank in the shape the exam room grades (lib/questions.js):
+ * one point each, single-answer, stable ids per domain so an attempt's saved
+ * answers can be matched back to the paper. Used for the sample catalogue
+ * tests, which have no host-authored paper.
+ */
+export function bankPaperFor(domain) {
+  const key = String(domain || "").replace(/[^A-Za-z0-9]+/g, "-").toLowerCase();
+  return (QUESTION_BANK[domain] || []).map((q, index) => ({
+    id: `bank:${key}:q${index}`,
+    text: q.question,
+    type: "single",
+    options: q.options.map((text, i) => ({ id: `bank:${key}:q${index}:o${i}`, text, isCorrect: i === q.correct })),
+    explanation: "",
+    source: "manual",
+  }));
+}

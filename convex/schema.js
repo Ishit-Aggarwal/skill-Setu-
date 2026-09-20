@@ -12,6 +12,10 @@ export default defineSchema({
     instituteName: v.optional(v.string()),
     instituteId: v.optional(v.string()),
     department: v.optional(v.string()),
+    /* One of the five canonical slugs in lib/ayush.js. Accounts created
+       before the field existed carry needsRetagging until they pick one. */
+    ayushSystem: v.optional(v.string()),
+    needsRetagging: v.optional(v.boolean()),
     course: v.optional(v.string()),
     year: v.optional(v.string()),
     batch: v.optional(v.string()),
@@ -133,6 +137,8 @@ export default defineSchema({
        institutions. Kept in the schema only so rows written before the field
        was removed still validate; nothing reads it. */
     eligibleInstitutions: v.optional(v.array(v.string())),
+    ayushSystem: v.optional(v.string()),
+    needsRetagging: v.optional(v.boolean()),
     recruiterId: v.optional(v.union(v.string(), v.null())),
     recruiterName: v.optional(v.union(v.string(), v.null())),
     manualStatus: v.optional(v.boolean()),
@@ -233,6 +239,8 @@ export default defineSchema({
     id: v.optional(v.string()),
     title: v.string(),
     domain: v.string(),
+    ayushSystem: v.optional(v.string()),
+    needsRetagging: v.optional(v.boolean()),
     hostName: v.string(),
     mode: v.string(), // "Online" | "Offline"
     duration: v.string(),
@@ -251,7 +259,157 @@ export default defineSchema({
     ownerId: v.string(),
     status: v.string(),
     postedAt: v.string(),
+    /* The paper itself lives in skillTestQuestions (server-only answer keys);
+       the row carries only what a candidate may see about it. */
+    questionCount: v.optional(v.number()),
+    paperType: v.optional(v.union(v.string(), v.null())), // "single" | "multiple" | "mixed"
+    /* Secure exam room. `proctored` turns recording + monitoring on for an
+       online test; `autoDisqualifyAfter` (null = off) marks an attempt
+       disqualified without waiting for the host once that many violations
+       have been logged. */
+    proctored: v.optional(v.boolean()),
+    autoDisqualifyAfter: v.optional(v.union(v.number(), v.null())),
+    /* Certificates: issue automatically on grading, optionally gated on a
+       minimum percentage. */
+    issueCertificate: v.optional(v.boolean()),
+    minCertificateScore: v.optional(v.union(v.number(), v.null())),
   }).index("by_owner", ["ownerId"]),
+
+  /**
+   * The questions behind a host-authored test. This table is the only place
+   * `isCorrect` and `explanation` are stored, and only the host's own
+   * queries or a GRADED attempt's review ever return them.
+   */
+  skillTestQuestions: defineTable({
+    id: v.string(),
+    testId: v.string(),
+    ownerId: v.string(),
+    order: v.number(),
+    text: v.string(),
+    type: v.string(), // "single" | "multiple"
+    options: v.array(v.object({ id: v.string(), text: v.string(), isCorrect: v.boolean() })),
+    explanation: v.optional(v.string()),
+    source: v.string(), // "ai_generated" | "manual"
+    ayushSystem: v.optional(v.string()),
+    topic: v.optional(v.string()),
+    difficulty: v.optional(v.string()),
+    createdAt: v.string(),
+    updatedAt: v.string(),
+    recheckHistory: v.optional(v.array(v.any())),
+  })
+    .index("by_test", ["testId"])
+    .index("by_client_id", ["id"]),
+
+  /**
+   * One row per sitting of a proctored online test — the state machine in
+   * lib/examState.js. Answers are saved progressively so a crash loses
+   * nothing; the score is written only by the server's grader.
+   */
+  examAttempts: defineTable({
+    id: v.string(),
+    testId: v.string(),
+    studentId: v.string(),
+    ownerId: v.string(),
+    state: v.string(),
+    transitions: v.array(v.object({ state: v.string(), at: v.string(), reason: v.optional(v.string()) })),
+    startedAt: v.optional(v.string()),
+    deadlineAt: v.optional(v.number()),
+    pausedAt: v.optional(v.union(v.number(), v.null())),
+    pausedMs: v.optional(v.number()),
+    endedAt: v.optional(v.string()),
+    answers: v.optional(v.any()),
+    questionIds: v.optional(v.array(v.string())),
+    paperSource: v.optional(v.string()), // "authored" | "bank"
+    domain: v.optional(v.string()),
+    testTitle: v.optional(v.string()),
+    durationMins: v.optional(v.number()),
+    mode: v.optional(v.string()),
+    violationCount: v.optional(v.number()),
+    violationsByType: v.optional(v.any()),
+    autoSubmitReason: v.optional(v.union(v.string(), v.null())),
+    disqualified: v.optional(v.boolean()),
+    disqualifiedAt: v.optional(v.union(v.string(), v.null())),
+    disqualifyOverriddenAt: v.optional(v.union(v.string(), v.null())),
+    score: v.optional(v.number()),
+    correctCount: v.optional(v.number()),
+    totalQuestions: v.optional(v.number()),
+    gradedAt: v.optional(v.string()),
+    certificateStatus: v.optional(v.union(v.string(), v.null())), // "issued" | "below_minimum" | "not_enabled"
+    credentialId: v.optional(v.union(v.string(), v.null())),
+    recordingDeletedAt: v.optional(v.union(v.string(), v.null())),
+    consented: v.optional(v.boolean()),
+    clientInfo: v.optional(v.any()),
+  })
+    .index("by_client_id", ["id"])
+    .index("by_student_test", ["studentId", "testId"])
+    .index("by_test", ["testId"])
+    .index("by_student", ["studentId"])
+    .index("by_owner", ["ownerId"]),
+
+  /* Kept permanently — the retention sweep never touches consent. */
+  examConsents: defineTable({
+    attemptId: v.string(),
+    testId: v.string(),
+    studentId: v.string(),
+    agreed: v.boolean(),
+    at: v.string(),
+    noticeText: v.string(),
+  })
+    .index("by_attempt", ["attemptId"])
+    .index("by_student", ["studentId"]),
+
+  /* Violations, audio flags, disconnects and upload failures. Deleted by the
+     retention sweep together with the recording. */
+  examEvents: defineTable({
+    attemptId: v.string(),
+    testId: v.string(),
+    studentId: v.string(),
+    type: v.string(),
+    at: v.string(),
+    atMs: v.number(), // milliseconds since the attempt started
+    durationMs: v.optional(v.union(v.number(), v.null())),
+    detail: v.optional(v.string()),
+  }).index("by_attempt", ["attemptId"]),
+
+  /* Recording chunks in Convex file storage, in order. */
+  examRecordingChunks: defineTable({
+    attemptId: v.string(),
+    seq: v.number(),
+    storageId: v.id("_storage"),
+    startedAtMs: v.number(),
+    endedAtMs: v.number(),
+    bytes: v.number(),
+    mimeType: v.string(),
+  }).index("by_attempt", ["attemptId", "seq"]),
+
+  /* A host's reusable certificate branding (Section 4.1). One row per host. */
+  certificateSettings: defineTable({
+    ownerId: v.string(),
+    logoStorageId: v.optional(v.union(v.id("_storage"), v.null())),
+    signatureStorageId: v.optional(v.union(v.id("_storage"), v.null())),
+    institutionName: v.string(),
+    professorName: v.string(),
+    professorTitle: v.string(),
+    programName: v.optional(v.string()),
+    title: v.optional(v.string()),
+    design: v.optional(v.any()),
+    savedAt: v.string(),
+  }).index("by_owner", ["ownerId"]),
+
+  /* A complete one-off branding set for a single test (Section 4.3). */
+  certificateOverrides: defineTable({
+    testId: v.string(),
+    ownerId: v.string(),
+    logoStorageId: v.optional(v.union(v.id("_storage"), v.null())),
+    signatureStorageId: v.optional(v.union(v.id("_storage"), v.null())),
+    institutionName: v.string(),
+    professorName: v.string(),
+    professorTitle: v.string(),
+    programName: v.optional(v.string()),
+    title: v.optional(v.string()),
+    design: v.optional(v.any()),
+    savedAt: v.string(),
+  }).index("by_test", ["testId"]),
 
   skillTestRegistrations: defineTable({
     testId: v.string(),
@@ -655,9 +813,18 @@ export default defineSchema({
     verifyCode: v.optional(v.string()),
     issuedAt: v.string(),
     revokedAt: v.optional(v.union(v.string(), v.null())),
+    /* Automatic certificates freeze everything the PDF is drawn from at issue
+       time, so a later branding change can never alter an issued record. */
+    attemptId: v.optional(v.union(v.string(), v.null())),
+    testTitle: v.optional(v.string()),
+    scorePercent: v.optional(v.union(v.number(), v.null())),
+    snapshot: v.optional(v.any()),
+    pdfStorageId: v.optional(v.union(v.id("_storage"), v.null())),
   })
     .index("by_student", ["studentId"])
-    .index("by_issuer", ["issuerId"]),
+    .index("by_issuer", ["issuerId"])
+    .index("by_client_id", ["id"])
+    .index("by_verify_code", ["verifyCode"]),
 
   savedInternships: defineTable({
     id: v.optional(v.string()),

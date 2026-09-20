@@ -66,6 +66,7 @@ export default async function handler(req, res) {
         instituteName: profile.instituteName || undefined,
         instituteId: profile.instituteId || undefined,
         department: profile.department || undefined,
+        ayushSystem: profile.ayushSystem || undefined,
         course: profile.course || undefined,
         year: profile.year || undefined,
         companyName: profile.companyName || undefined,

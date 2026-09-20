@@ -7,6 +7,7 @@ import {
   requireSelfOrAdmin,
   stripProtectedFields,
 } from "./_lib/authz";
+import { isAyushSystem } from "../lib/ayush";
 
 /**
  * Accounts live here (not in browser localStorage) so a registered user can
@@ -106,7 +107,13 @@ export const updateProfile = mutation({
       .first();
     if (!user) return null;
 
-    await ctx.db.patch(user._id, stripProtectedFields(args.patch));
+    const safe = stripProtectedFields(args.patch);
+    // The AYUSH system is one of five slugs or nothing at all — never free text.
+    if ("ayushSystem" in safe) {
+      if (isAyushSystem(safe.ayushSystem)) safe.needsRetagging = false;
+      else delete safe.ayushSystem;
+    }
+    await ctx.db.patch(user._id, safe);
     return publicUser(await ctx.db.get(user._id));
   },
 });

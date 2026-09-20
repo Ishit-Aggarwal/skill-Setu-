@@ -6,6 +6,7 @@ import { useAuth } from "../../lib/auth";
 import { PAGE_PATHS, roleHomePage } from "../../lib/nav";
 import { validateTeacherCode, validateCompanyCode, validateInstituteCode } from "../../lib/registry";
 import DemoModeMenu from "../../components/DemoModeMenu";
+import { AYUSH_SYSTEMS, AYUSH_SYSTEM_FIELD_LABEL, isAyushSystem } from "../../lib/ayush";
 
 const roleConfig = {
   student: {
@@ -109,6 +110,7 @@ function LoginPageInner() {
     companyCode: "",
     employeeId: "",
     department: "",
+    ayushSystem: "",
     teacherCode: "",
     instituteName: "",
     instituteId: "",
@@ -216,6 +218,7 @@ function LoginPageInner() {
 
     if (role === "student") {
       if (!form.institution.trim() || form.institution.trim().length < 4) return "Please enter your institution / college name.";
+      if (!isAyushSystem(form.ayushSystem)) return `Please choose your ${AYUSH_SYSTEM_FIELD_LABEL}.`;
     } else if (role === "industry") {
       if (!form.companyName.trim()) return "Please enter your company / organisation name.";
       if (!form.workEmailDomain.trim() || !isValidDomain(form.workEmailDomain)) {
@@ -225,6 +228,7 @@ function LoginPageInner() {
       if (!check.valid) return check.message;
     } else if (role === "academician") {
       if (!form.institution.trim()) return "Please enter your institution name.";
+      if (!isAyushSystem(form.ayushSystem)) return `Please choose your ${AYUSH_SYSTEM_FIELD_LABEL}.`;
       const check = validateTeacherCode(form.teacherCode);
       if (!check.valid) return check.message;
     } else if (role === "institution") {
@@ -249,6 +253,7 @@ function LoginPageInner() {
       workEmailDomain: form.workEmailDomain,
       employeeId: form.employeeId,
       department: form.department,
+      ayushSystem: form.ayushSystem || undefined,
       instituteName: form.instituteName,
       instituteId: form.instituteId,
       verifiedCode: form.teacherCode || form.companyCode || form.instituteCode || null,
@@ -688,6 +693,14 @@ function LoginPageInner() {
                     <input type="text" value={form.institution} onChange={(e) => setField("institution", e.target.value)} placeholder="All India Institute of Ayurveda (AIIA), New Delhi"
                       className="w-full bg-card border border-border rounded-xl px-4 py-3 text-sm text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-primary/30 focus:border-primary transition-all" />
                   </div>
+                  <div>
+                    <label className="block text-sm font-medium text-foreground mb-1.5">{AYUSH_SYSTEM_FIELD_LABEL}</label>
+                    <select value={form.ayushSystem} onChange={(e) => setField("ayushSystem", e.target.value)} aria-label={AYUSH_SYSTEM_FIELD_LABEL}
+                      className="w-full bg-card border border-border rounded-xl px-4 py-3 text-sm text-foreground focus:outline-none focus:ring-2 focus:ring-primary/30 focus:border-primary transition-all">
+                      <option value="">Which system are you studying?</option>
+                      {AYUSH_SYSTEMS.map((s) => <option key={s.slug} value={s.slug}>{s.label}</option>)}
+                    </select>
+                  </div>
                   <div className="grid grid-cols-2 gap-3">
                     <div>
                       <label className="block text-sm font-medium text-foreground mb-1.5">Course <span className="text-muted-foreground font-normal">(optional)</span></label>
@@ -733,6 +746,14 @@ function LoginPageInner() {
                     <label className="block text-sm font-medium text-foreground mb-1.5">Institution</label>
                     <input type="text" value={form.institution} onChange={(e) => setField("institution", e.target.value)} placeholder="All India Institute of Ayurveda (AIIA), New Delhi"
                       className="w-full bg-card border border-border rounded-xl px-4 py-3 text-sm text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-primary/30 focus:border-primary transition-all" />
+                  </div>
+                  <div>
+                    <label className="block text-sm font-medium text-foreground mb-1.5">{AYUSH_SYSTEM_FIELD_LABEL}</label>
+                    <select value={form.ayushSystem} onChange={(e) => setField("ayushSystem", e.target.value)} aria-label={AYUSH_SYSTEM_FIELD_LABEL}
+                      className="w-full bg-card border border-border rounded-xl px-4 py-3 text-sm text-foreground focus:outline-none focus:ring-2 focus:ring-primary/30 focus:border-primary transition-all">
+                      <option value="">Which system do you teach?</option>
+                      {AYUSH_SYSTEMS.map((s) => <option key={s.slug} value={s.slug}>{s.label}</option>)}
+                    </select>
                   </div>
                   <div>
                     <label className="block text-sm font-medium text-foreground mb-1.5">Department <span className="text-muted-foreground font-normal">(optional)</span></label>
