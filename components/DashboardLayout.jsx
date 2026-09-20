@@ -3,10 +3,11 @@
 import { useEffect, useState } from "react";
 import { profileImage } from "../lib/files";
 import Link from "next/link";
-import { useAuth } from "../lib/auth";
+import { isDemoAccount, useAuth } from "../lib/auth";
 import { useNav } from "../lib/nav";
 import EditProfileModal from "./EditProfileModal";
 import NotificationBell from "./NotificationBell";
+import DemoResetButton from "./DemoResetButton";
 import { useTheme } from "../lib/preferences";
 import {
   listApplicationsForStudent,
@@ -361,6 +362,9 @@ export default function DashboardLayout({ children, activePage, title }) {
           <div className="flex-1 hidden lg:block min-w-0">{title && <h1 className="text-base font-semibold text-foreground truncate tracking-tight">{title}</h1>}</div>
 
           <div className="ml-auto flex items-center gap-2.5">
+            {/* The tour is shared; anyone driving it can put it back to the
+                sample data. Never shown to a real account. */}
+            {isDemoAccount(user) && <DemoResetButton />}
             {/* A one-click toggle in reach at all times; Settings owns the full
                 choice including "match my device". */}
             <button

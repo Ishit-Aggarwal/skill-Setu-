@@ -21,6 +21,7 @@ import type * as authNode from "../authNode.js";
 import type * as certificates from "../certificates.js";
 import type * as collabs from "../collabs.js";
 import type * as crons from "../crons.js";
+import type * as demo from "../demo.js";
 import type * as exams from "../exams.js";
 import type * as files from "../files.js";
 import type * as institution from "../institution.js";
@@ -59,6 +60,7 @@ declare const fullApi: ApiFromModules<{
   certificates: typeof certificates;
   collabs: typeof collabs;
   crons: typeof crons;
+  demo: typeof demo;
   exams: typeof exams;
   files: typeof files;
   institution: typeof institution;

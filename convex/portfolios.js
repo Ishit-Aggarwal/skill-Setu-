@@ -126,3 +126,28 @@ export const setOpenToOpportunities = mutation({
     return { ok: true, openToOpportunities: args.open };
   },
 });
+
+/**
+ * Every portfolio a reviewer may see, in one request — what the talent pool,
+ * a roster and the directory draw from. Filtered by the same rule as
+ * getForViewer (student open to opportunities, same side of the demo wall);
+ * it used to take one request per student, which on a 60-student roster was
+ * sixty requests per page.
+ */
+const REVIEWER_LIST_CAP = 500;
+
+export const listForReviewer = query({
+  args: { sessionToken: v.string() },
+  handler: async (ctx, args) => {
+    const actor = await requireActor(ctx, args.sessionToken);
+    if (!REVIEWER_ROLES.includes(actor.role)) throw authError("Only verified recruiters, faculty and institutions can browse portfolios.");
+    const rows = await ctx.db.query("portfolios").take(REVIEWER_LIST_CAP);
+    const out = [];
+    for (const portfolio of rows) {
+      if (!portfolio.studentId || portfolio.studentId === actor.id) continue;
+      const visible = await forViewer(ctx, actor, portfolio, portfolio.studentId).catch(() => null);
+      if (visible) out.push(visible);
+    }
+    return out;
+  },
+});
