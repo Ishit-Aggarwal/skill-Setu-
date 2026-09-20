@@ -1,6 +1,10 @@
 "use client";
 
 import { useEffect, useMemo, useState } from "react";
+import { useStoreVersion } from "../../lib/useLiveStore";
+import { profileImage } from "../../lib/files";
+import { uploadToStorage } from "../../lib/uploads";
+import { FILES } from "../../lib/settings";
 import DashboardLayout from "../DashboardLayout";
 import { useAuth } from "../../lib/auth";
 import { Avatar, Badge, Button, Card, Field, Flash, IconTile, PageHeader, ProgressBar, ProgressRing, Section, Select, StatGrid, TextArea, TextInput, useFlash } from "../ui/Kit";
@@ -10,16 +14,8 @@ import { companyRating, listApplicationsForOwner, listCompanyReviews, listIntern
 
 const COMPANY_SIZES = ["1-10", "11-50", "51-200", "201-500", "501-1000", "1000+"];
 const MAX_IMAGE_BYTES = 800 * 1024;
-const MAX_GALLERY = 6;
+const MAX_GALLERY = Math.min(6, FILES.MAX_GALLERY_IMAGES);
 
-function readFileAsDataUrl(file) {
-  return new Promise((resolve, reject) => {
-    const reader = new FileReader();
-    reader.onload = () => resolve(reader.result);
-    reader.onerror = reject;
-    reader.readAsDataURL(file);
-  });
-}
 
 export default function CompanyProfile() {
   const { user, updateProfile } = useAuth();
@@ -40,6 +36,7 @@ export default function CompanyProfile() {
     linkedIn: "",
   });
   const [logo, setLogo] = useState(null);
+  const [uploading, setUploading] = useState(false);
   const [gallery, setGallery] = useState([]);
   const [error, setError] = useState(null);
   const [flash, setFlash] = useFlash();
@@ -61,15 +58,16 @@ export default function CompanyProfile() {
       phone: user.phone || "",
       linkedIn: user.linkedIn || "",
     });
-    setLogo(user.logoDataUrl || null);
+    setLogo(profileImage(user, "logo") ? { storageId: user.logoStorageId || null, url: profileImage(user, "logo") } : null);
     setGallery(user.gallery || []);
     setReady(true);
   }, [user]);
 
-  const reviews = useMemo(() => (ready && user ? listCompanyReviews(user.companyName) : []), [ready, user]);
-  const rating = useMemo(() => (ready && user ? companyRating(user.companyName) : null), [ready, user]);
-  const postings = useMemo(() => (ready && user ? listInternshipsByOwner(user.id) : []), [ready, user]);
-  const applications = useMemo(() => (ready && user ? listApplicationsForOwner(user.id) : []), [ready, user]);
+  const live = useStoreVersion(["companyReviews", "internships", "applications"]);
+  const reviews = useMemo(() => (ready && user ? listCompanyReviews(user.companyName) : []), [ready, user, live]);
+  const rating = useMemo(() => (ready && user ? companyRating(user.companyName) : null), [ready, user, live]);
+  const postings = useMemo(() => (ready && user ? listInternshipsByOwner(user.id) : []), [ready, user, live]);
+  const applications = useMemo(() => (ready && user ? listApplicationsForOwner(user.id) : []), [ready, user, live]);
 
   function set(key, value) {
     setForm((f) => ({ ...f, [key]: value }));
@@ -80,7 +78,15 @@ export default function CompanyProfile() {
     if (!file) return;
     if (file.size > MAX_IMAGE_BYTES) return setError("Please choose an image under 800KB.");
     setError(null);
-    setLogo(await readFileAsDataUrl(file));
+    setUploading(true);
+    try {
+      const uploaded = await uploadToStorage(file, { kind: "image" });
+      setLogo({ storageId: uploaded.storageId, url: uploaded.url });
+    } catch (err) {
+      setError(err?.message || "That image couldn't be uploaded. Try a different one.");
+    } finally {
+      setUploading(false);
+    }
   }
 
   async function handleGalleryAdd(e) {
@@ -89,14 +95,26 @@ export default function CompanyProfile() {
     if (gallery.length + files.length > MAX_GALLERY) return setError(`You can show up to ${MAX_GALLERY} photos.`);
     if (files.some((f) => f.size > MAX_IMAGE_BYTES)) return setError("Each image must be under 800KB.");
     setError(null);
-    const added = await Promise.all(files.map(async (f) => ({ name: f.name, dataUrl: await readFileAsDataUrl(f) })));
-    setGallery((g) => [...g, ...added]);
+    setUploading(true);
+    try {
+      const added = await Promise.all(
+        files.map(async (f) => {
+          const uploaded = await uploadToStorage(f, { kind: "image" });
+          return { name: f.name, storageId: uploaded.storageId, url: uploaded.url };
+        })
+      );
+      setGallery((g) => [...g, ...added]);
+    } catch (err) {
+      setError(err?.message || "Those images couldn't be uploaded. Try again.");
+    } finally {
+      setUploading(false);
+    }
     e.target.value = "";
   }
 
   function handleSubmit(e) {
     e.preventDefault();
-    updateProfile({ ...form, logoDataUrl: logo, gallery });
+    updateProfile({ ...form, logoStorageId: logo?.storageId || null, logoUrl: logo?.url || null, logoDataUrl: null, gallery });
     setFlash("Company profile saved.");
   }
 
@@ -165,7 +183,7 @@ export default function CompanyProfile() {
         <form onSubmit={handleSubmit} className="space-y-5">
           <Card className="flex items-center gap-4">
             <div className="w-16 h-16 rounded-2xl bg-primary flex items-center justify-center text-white text-xl font-bold flex-shrink-0 overflow-hidden">
-              {logo ? <img src={logo} alt="Company logo" className="w-full h-full object-cover" /> : initials}
+              {logo?.url ? <img src={logo.url} alt="Company logo" className="w-full h-full object-cover" /> : initials}
             </div>
             <div className="flex-1 min-w-0">
               <label className="inline-block text-sm font-medium text-primary hover:underline cursor-pointer">
@@ -228,7 +246,7 @@ export default function CompanyProfile() {
                 <div className="grid grid-cols-3 sm:grid-cols-4 gap-2 mb-3">
                   {gallery.map((g, i) => (
                     <div key={i} className="relative group aspect-video rounded-xl overflow-hidden border border-border shadow-[0_1px_2px_rgba(25,25,26,0.04)]">
-                      <img src={g.dataUrl} alt={g.name || `Gallery ${i + 1}`} className="w-full h-full object-cover transition-transform duration-300 group-hover:scale-105" />
+                      <img src={g.url || g.dataUrl} alt={g.name || `Gallery ${i + 1}`} className="w-full h-full object-cover transition-transform duration-300 group-hover:scale-105" />
                       <button
                         type="button"
                         onClick={() => setGallery((prev) => prev.filter((_, idx) => idx !== i))}

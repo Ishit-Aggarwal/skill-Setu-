@@ -6,20 +6,13 @@ import { DEPARTMENTS } from "../lib/domains";
 import { AyushSystemSelect } from "./AyushSystemSelect";
 import { needsAyushRetag } from "../lib/ayush";
 import { getPortfolio, savePortfolio } from "../lib/store";
+import { profileImage } from "../lib/files";
+import { uploadToStorage } from "../lib/uploads";
 import { Field, TextInput, TextArea, Select, Button, Tabs, Overlay } from "./ui/Kit";
 
 const YEAR_OPTIONS = ["1st Year", "2nd Year", "3rd Year", "4th Year", "5th Year", "Final Year", "Graduated"];
 const COMPANY_SIZES = ["1–10", "11–50", "51–200", "201–500", "501–1000", "1000+"];
 const MAX_AVATAR_BYTES = 800 * 1024;
-
-function readFileAsDataUrl(file) {
-  return new Promise((resolve, reject) => {
-    const reader = new FileReader();
-    reader.onload = () => resolve(reader.result);
-    reader.onerror = reject;
-    reader.readAsDataURL(file);
-  });
-}
 
 /**
  * The quick profile editor behind the header avatar and the sidebar footer.
@@ -81,7 +74,9 @@ export default function EditProfileModal({ onClose }) {
     state: user.state || "",
   });
 
-  const [avatar, setAvatar] = useState(user.avatarDataUrl || null);
+  // { storageId, url } for a photo in shared storage; { url } for a legacy one.
+  const [avatar, setAvatar] = useState(() => (profileImage(user, "avatar") ? { storageId: user.avatarStorageId || null, url: profileImage(user, "avatar") } : null));
+  const [uploading, setUploading] = useState(false);
   const [error, setError] = useState(null);
   const [saving, setSaving] = useState(false);
 
@@ -97,8 +92,15 @@ export default function EditProfileModal({ onClose }) {
       return;
     }
     setError(null);
-    const dataUrl = await readFileAsDataUrl(file);
-    setAvatar(dataUrl);
+    setUploading(true);
+    try {
+      const uploaded = await uploadToStorage(file, { kind: "image" });
+      setAvatar({ storageId: uploaded.storageId, url: uploaded.url });
+    } catch (err) {
+      setError(err?.message || "That image couldn't be uploaded. Try a different one.");
+    } finally {
+      setUploading(false);
+    }
   }
 
   function handleSubmit(e) {
@@ -107,7 +109,9 @@ export default function EditProfileModal({ onClose }) {
 
     const patch = {
       name: form.name,
-      avatarDataUrl: avatar,
+      avatarStorageId: avatar?.storageId || null,
+      avatarUrl: avatar?.url || null,
+      avatarDataUrl: null,
       phone: form.phone,
       location: form.location,
       headline: form.headline,
@@ -201,12 +205,12 @@ export default function EditProfileModal({ onClose }) {
               <>
                 <div className="flex items-center gap-4 p-3 -mx-1 rounded-2xl bg-secondary/40">
                   <div className="w-16 h-16 rounded-2xl bg-primary shadow-sm flex items-center justify-center text-white text-xl font-bold flex-shrink-0 overflow-hidden">
-                    {avatar ? <img src={avatar} alt="Avatar preview" className="w-full h-full object-cover" /> : initials}
+                    {avatar?.url ? <img src={avatar.url} alt="Avatar preview" className="w-full h-full object-cover" /> : initials}
                   </div>
                   <div>
                     <label className="inline-block text-xs font-semibold text-primary hover:underline cursor-pointer">
                       Change photo
-                      <input type="file" accept="image/*" onChange={handleAvatarChange} className="hidden" />
+                      <input type="file" accept="image/*" onChange={handleAvatarChange} className="hidden" disabled={uploading} />
                     </label>
                     <p className="text-[11px] text-muted-foreground mt-0.5">JPG or PNG, under 800KB</p>
                     {avatar && (

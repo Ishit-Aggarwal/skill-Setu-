@@ -1,6 +1,7 @@
 "use client";
 
 import { useCallback, useEffect, useMemo, useState } from "react";
+import { useStoreVersion } from "../../lib/useLiveStore";
 import DashboardLayout from "../DashboardLayout";
 import Calendar from "../mentorship/Calendar";
 import { useAuth } from "../../lib/auth";
@@ -272,9 +273,10 @@ export default function StudentMentorship() {
     }
   }, [user]);
 
+  const live = useStoreVersion(["mentorshipRequests", "advisees", "users"]);
   useEffect(() => {
     load();
-  }, [load]);
+  }, [load, live]);
 
   const myIds = useMemo(() => new Set(mine.map((m) => m.id)), [mine]);
 

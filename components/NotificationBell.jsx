@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useMemo, useRef, useState } from "react";
-import { listStudentNotifications, update } from "../lib/store";
+import { listStudentNotifications, markNotificationsRead } from "../lib/store";
 import { subscribeToMutations } from "../lib/sync";
 import { relativeTime } from "../lib/match";
 
@@ -50,13 +50,13 @@ export default function NotificationBell({ user, onOpenInbox }) {
 
   function markRead(n) {
     if (n.read) return;
-    update("studentNotifications", n.id, { read: true, readAt: new Date().toISOString() });
+    markNotificationsRead(n.id);
     setVersion((v) => v + 1);
   }
 
   function markAllRead() {
     const now = new Date().toISOString();
-    notifications.filter((n) => !n.read).forEach((n) => update("studentNotifications", n.id, { read: true, readAt: now }));
+    markNotificationsRead(notifications.filter((n) => !n.read).map((n) => n.id));
     setVersion((v) => v + 1);
   }
 

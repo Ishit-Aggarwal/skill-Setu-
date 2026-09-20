@@ -3,7 +3,7 @@
 import { useEffect, useMemo, useState } from "react";
 import { Badge, Card, Section } from "./ui/Kit";
 import { relativeTime } from "../lib/match";
-import { listStudentNotifications, update } from "../lib/store";
+import { listStudentNotifications, markNotificationsRead } from "../lib/store";
 import { subscribeToMutations } from "../lib/sync";
 
 /**
@@ -33,12 +33,12 @@ export default function StudentInbox({ user }) {
 
   function markRead(n) {
     if (n.read) return;
-    update("studentNotifications", n.id, { read: true });
+    markNotificationsRead(n.id);
     setVersion((v) => v + 1);
   }
 
   function markAllRead() {
-    notifications.filter((n) => !n.read).forEach((n) => update("studentNotifications", n.id, { read: true }));
+    markNotificationsRead(notifications.filter((n) => !n.read).map((n) => n.id));
     setVersion((v) => v + 1);
   }
 

@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import { useStoreVersion } from "../../lib/useLiveStore";
 import DashboardLayout from "../DashboardLayout";
 import TestCard from "../skilltests/TestCard";
 import MyTests from "../skilltests/MyTests";
@@ -25,7 +26,8 @@ function StudentView({ user }) {
     setAttempts(getAttemptsForStudent(user.id));
   }
 
-  useEffect(() => { refresh(); }, [user]);
+  const live = useStoreVersion(["skillTests", "skillTestRegistrations", "assessmentAttempts", "credentials"]);
+  useEffect(() => { refresh(); }, [user, live]);
 
   const filteredTests = tests.filter((t) => {
     if (systemFilter && t.ayushSystem !== systemFilter) return false;

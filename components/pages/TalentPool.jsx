@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useMemo, useState } from "react";
+import { profileImage } from "../../lib/files";
 import DashboardLayout from "../DashboardLayout";
 import CandidateProfileModal from "../CandidateProfileModal";
 import { useAuth } from "../../lib/auth";
@@ -9,7 +10,7 @@ import { DEPARTMENTS } from "../../lib/domains";
 import { AyushSystemSelect } from "../AyushSystemSelect";
 import { ayushSystemLabel, isAyushSystem } from "../../lib/ayush";
 import { SKILL_DOMAINS } from "../../lib/questionBank";
-import { downloadFile, getAssessment, getPortfolio, insert, listUsersByRole, placementStatusFor, remove, findMany, toCsv } from "../../lib/store";
+import { downloadFile, getAssessment, getPortfolio, listSavedSearches, listUsersByRole, placementStatusFor, removeSavedSearch, saveSearch, toCsv } from "../../lib/store";
 
 const DEFAULT_FILTERS = {
   search: "",
@@ -62,7 +63,7 @@ export default function TalentPool() {
   }, []);
 
   const savedSearches = useMemo(
-    () => (ready && user ? findMany("savedSearches", (s) => s.ownerId === user.id) : []),
+    () => (ready && user ? listSavedSearches(user.id) : []),
     [ready, user, version]
   );
 
@@ -156,7 +157,7 @@ export default function TalentPool() {
                   {s.name}
                 </button>
                 <button
-                  onClick={() => { remove("savedSearches", s.id); setVersion((v) => v + 1); }}
+                  onClick={() => { removeSavedSearch(s.id); setVersion((v) => v + 1); }}
                   className="text-muted-foreground hover:text-red-600 leading-none"
                   aria-label={`Delete ${s.name}`}
                 >
@@ -233,7 +234,7 @@ export default function TalentPool() {
                   className="text-left bg-card border border-border rounded-2xl p-5 shadow-[0_1px_2px_rgba(25,25,26,0.04)] hover:shadow-[0_6px_20px_rgba(25,25,26,0.08)] hover:-translate-y-0.5 transition-all duration-200"
                 >
                   <div className="flex items-center gap-3 mb-3.5">
-                    <Avatar name={s.name} size={42} src={s.avatarDataUrl} />
+                    <Avatar name={s.name} size={42} src={profileImage(s, "avatar")} />
                     <div className="min-w-0 flex-1">
                       <div className="text-sm font-semibold text-foreground truncate">{s.name}</div>
                       <div className="text-xs text-muted-foreground truncate">{s.course || "—"}{s.year ? ` · ${s.year}` : ""}</div>
@@ -281,7 +282,7 @@ export default function TalentPool() {
             }
             onCancel={() => setShowSave(false)}
             onSubmit={(name) => {
-              insert("savedSearches", { ownerId: user.id, name, filters, savedAt: new Date().toISOString() });
+              saveSearch(user.id, name, filters);
               setShowSave(false);
               setVersion((v) => v + 1);
               setFlash(`Saved "${name}".`);

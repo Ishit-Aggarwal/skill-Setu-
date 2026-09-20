@@ -97,6 +97,7 @@ export const create = mutation({
     postedAt: v.optional(v.string()),
     minSkillScore: v.optional(v.union(v.number(), v.null())),
     eligibleDepartments: v.optional(v.array(v.string())),
+    updatedAt: v.optional(v.string()),
   },
   handler: async (ctx, args) => {
     const actor = await requireActor(ctx, args.sessionToken);
@@ -115,6 +116,7 @@ export const create = mutation({
       ownerId: actor.id,
       status: fields.status || "Open",
       postedAt: fields.postedAt || new Date().toISOString(),
+      updatedAt: fields.updatedAt || new Date().toISOString(),
       views: 0,
       uniqueViews: 0,
     };
@@ -168,7 +170,7 @@ export const updateByClientId = mutation({
       if (isAyushSystem(safe.ayushSystem)) safe.needsRetagging = false;
       else delete safe.ayushSystem;
     }
-    await ctx.db.patch(doc._id, safe);
+    await ctx.db.patch(doc._id, { ...safe, updatedAt: safe.updatedAt || new Date().toISOString() });
     return { ok: true };
   },
 });

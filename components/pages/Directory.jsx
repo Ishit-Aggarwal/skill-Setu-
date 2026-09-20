@@ -19,7 +19,7 @@ import { subscribeToMutations } from "../../lib/sync";
 import { formatDate } from "../../lib/match";
 import { formatStipendShort } from "../../lib/money";
 import { programmeDates } from "../../lib/dates";
-import { hasFile, openStoredFile } from "../../lib/files";
+import { attachedDocument, hasFile, openStoredFile, profileImage } from "../../lib/files";
 import {
   Avatar,
   Badge,
@@ -189,8 +189,8 @@ export default function Directory() {
               <Card key={institute.name} hover className="flex flex-col">
                 <div className="flex items-start gap-3 mb-3">
                   <div className="w-11 h-11 rounded-xl bg-primary/15 text-primary flex items-center justify-center font-bold flex-shrink-0 overflow-hidden">
-                    {institute.profile.logoDataUrl ? (
-                      <img src={institute.profile.logoDataUrl} alt="" className="w-full h-full object-cover" />
+                    {profileImage(institute.profile, "logo") ? (
+                      <img src={profileImage(institute.profile, "logo")} alt="" className="w-full h-full object-cover" />
                     ) : (
                       institute.name.slice(0, 2).toUpperCase()
                     )}
@@ -240,7 +240,7 @@ export default function Directory() {
             {rows.map((mentor) => (
               <Card key={mentor.id} hover className="flex flex-col">
                 <div className="flex items-start gap-3 mb-3">
-                  <Avatar name={mentor.name} size={42} src={mentor.avatarDataUrl} />
+                  <Avatar name={mentor.name} size={42} src={profileImage(mentor, "avatar")} />
                   <div className="min-w-0">
                     <div className="text-sm font-semibold text-foreground truncate">{mentor.name}</div>
                     <div className="text-[11px] text-muted-foreground truncate">
@@ -287,8 +287,8 @@ export default function Directory() {
               <Card key={company.name} hover className="flex flex-col">
                 <div className="flex items-start gap-3 mb-3">
                   <div className="w-11 h-11 rounded-xl bg-primary/15 text-primary flex items-center justify-center font-bold flex-shrink-0 overflow-hidden">
-                    {company.account?.logoDataUrl ? (
-                      <img src={company.account.logoDataUrl} alt="" className="w-full h-full object-cover" />
+                    {profileImage(company.account, "logo") ? (
+                      <img src={profileImage(company.account, "logo")} alt="" className="w-full h-full object-cover" />
                     ) : (
                       company.name.slice(0, 2).toUpperCase()
                     )}
@@ -411,14 +411,14 @@ function InstituteModal({ institute, onClose }) {
                     </div>
                     {/* Proof is optional by design — see the note on the
                         institution's own placement-stats editor. */}
-                    {rows.some((r) => hasFile({ dataUrl: r.document })) && (
+                    {rows.some((r) => hasFile(attachedDocument(r))) && (
                       <div className="mt-2 flex flex-wrap gap-2">
                         {rows
-                          .filter((r) => hasFile({ dataUrl: r.document }))
+                          .filter((r) => hasFile(attachedDocument(r)))
                           .map((r) => (
                             <button
                               key={`${r.id}-doc`}
-                              onClick={() => openStoredFile({ dataUrl: r.document, fileName: r.documentName })}
+                              onClick={() => openStoredFile(attachedDocument(r))}
                               className="text-[11px] text-primary hover:underline"
                             >
                               📎 {r.department} verification
@@ -474,7 +474,7 @@ function MentorModal({ mentor, alreadyRequested, onRequest, onClose }) {
     >
       <div className="space-y-5">
         <div className="flex items-center gap-3.5">
-          <Avatar name={mentor.name} size={52} src={mentor.avatarDataUrl} />
+          <Avatar name={mentor.name} size={52} src={profileImage(mentor, "avatar")} />
           <div className="min-w-0">
             <div className="text-sm text-primary font-medium truncate">{mentor.institution}</div>
             {mentor.experienceYears && (
@@ -517,12 +517,12 @@ function MentorModal({ mentor, alreadyRequested, onRequest, onClose }) {
                       {o.venue || o.journalOrConference}
                       {o.year ? ` · ${o.year}` : ""}
                     </div>
-                    {(o.url || hasFile({ dataUrl: o.fileDataUrl })) && (
+                    {(o.url || hasFile(o.file) || hasFile({ dataUrl: o.fileDataUrl })) && (
                       <button
-                        onClick={() => openStoredFile({ dataUrl: o.fileDataUrl, url: o.url, fileName: o.fileName })}
+                        onClick={() => openStoredFile({ dataUrl: o.fileDataUrl, url: o.file?.url || o.url, fileName: o.fileName })}
                         className="text-[11px] text-primary hover:underline mt-1"
                       >
-                        {o.fileDataUrl ? `📄 ${o.fileName || "Open PDF"}` : "🔗 Open publication"}
+                        {o.file || o.fileDataUrl ? `📄 ${o.fileName || "Open PDF"}` : "🔗 Open publication"}
                       </button>
                     )}
                   </div>

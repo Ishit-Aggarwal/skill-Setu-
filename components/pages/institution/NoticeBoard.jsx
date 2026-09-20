@@ -1,11 +1,13 @@
 "use client";
 
 import { useEffect, useMemo, useState } from "react";
+import { useStoreVersion } from "../../../lib/useLiveStore";
 import DashboardLayout from "../../DashboardLayout";
 import { useAuth } from "../../../lib/auth";
 import { Badge, Button, Card, EmptyState, Field, Flash, IconTile, Modal, PageHeader, Section, Select, StatGrid, TextArea, TextInput, useFlash } from "../../ui/Kit";
 import { relativeTime } from "../../../lib/match";
 import { downloadStoredFile, hasFile } from "../../../lib/files";
+import { uploadToStorage } from "../../../lib/uploads";
 import {
   createAnnouncement,
   deleteAnnouncement,
@@ -46,10 +48,11 @@ export default function NoticeBoard() {
   const [editingNotice, setEditingNotice] = useState(null);
 
   useEffect(() => setReady(true), []);
+  const live = useStoreVersion(["announcements", "users", "notifyBatches"]);
 
-  const notices = useMemo(() => (ready && instituteName ? listAnnouncements(instituteName) : []), [instituteName, ready, version]);
-  const roster = useMemo(() => (ready && instituteName ? buildRoster(instituteName) : []), [instituteName, ready, version]);
-  const batches = useMemo(() => (ready && instituteName ? listNotifyBatches(instituteName) : []), [instituteName, ready, version]);
+  const notices = useMemo(() => (ready && instituteName ? listAnnouncements(instituteName) : []), [instituteName, ready, version, live]);
+  const roster = useMemo(() => (ready && instituteName ? buildRoster(instituteName) : []), [instituteName, ready, version, live]);
+  const batches = useMemo(() => (ready && instituteName ? listNotifyBatches(instituteName) : []), [instituteName, ready, version, live]);
 
   const pinned = notices.filter((n) => n.pinned);
   const rest = notices.filter((n) => !n.pinned);
@@ -231,18 +234,24 @@ function ComposeForm({ initialData, roster, onCancel, onSubmit }) {
   const [attachment, setAttachment] = useState(initialData?.attachment || null);
   const reach = resolveAudience(audience, roster).length;
 
-  function handleFile(e) {
+  const [attachError, setAttachError] = useState(null);
+
+  async function handleFile(e) {
     const file = e.target.files?.[0];
     if (!file) return;
-    const reader = new FileReader();
-    reader.onload = () => {
+    setAttachError(null);
+    try {
+      // The attachment goes to shared storage so every student's device can
+      // download it; the notice keeps the reference.
+      const uploaded = await uploadToStorage(file, { kind: "document" });
       setAttachment({
         name: file.name,
         size: `${(file.size / 1024).toFixed(0)} KB`,
-        dataUrl: reader.result,
+        ...uploaded,
       });
-    };
-    reader.readAsDataURL(file);
+    } catch (err) {
+      setAttachError(err?.message || "That file could not be uploaded.");
+    }
   }
 
   return (
@@ -285,6 +294,7 @@ function ComposeForm({ initialData, roster, onCancel, onSubmit }) {
             className="w-full text-xs text-muted-foreground file:mr-3 file:py-2 file:px-3.5 file:rounded-xl file:border file:border-border file:text-xs file:font-semibold file:bg-secondary file:text-foreground hover:file:bg-muted cursor-pointer"
           />
         )}
+        {attachError && <p className="text-xs text-red-600 mt-1.5">{attachError}</p>}
       </Field>
 
       <label className="flex items-center gap-2 text-sm text-foreground">

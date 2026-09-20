@@ -40,7 +40,7 @@ export default function PlacementDrives() {
   useEffect(() => setReady(true), []);
 
   useEffect(() => {
-    const unsub = subscribeToMutations(["drives", "driveInvites", "mous"], () => {
+    const unsub = subscribeToMutations(["drives", "driveInvites", "driveEligibility", "mous"], () => {
       setVersion((v) => v + 1);
     });
     return unsub;

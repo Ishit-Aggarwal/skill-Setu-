@@ -1,12 +1,13 @@
 import { query, mutation } from "./_generated/server";
 import { v } from "convex/values";
-import { authError, publicUser, requireActor, requireOwner } from "./_lib/authz";
+import { authError, canRead, publicUser, requireActor, requireOwner } from "./_lib/authz";
 import { gradeSubmission, publicQuestionsFor, questionCountFor } from "./_lib/questionBank";
 import { SKILL_DOMAINS } from "../lib/questionBank";
 import { isAyushSystem } from "../lib/ayush";
 import { normalisePaper, validatePaper } from "../lib/questions";
 import { paperType } from "../lib/grading";
-import { findTestByClientId, questionsForTest } from "./_lib/tests";
+import { findTestByClientId, findUserById, questionsForTest } from "./_lib/tests";
+import { findByClientId, publicRow } from "./_lib/rows";
 import { recalculateAssessment, writeAttempt } from "./_lib/assessment";
 
 /**
@@ -19,6 +20,7 @@ import { recalculateAssessment, writeAttempt } from "./_lib/assessment";
  */
 
 const TEST_WEIGHT = { Online: 1, Offline: 1.5 };
+const HOST_ROLES = ["industry", "academician", "institution", "admin"];
 
 export const listAll = query({
   handler: async (ctx) => {
@@ -46,48 +48,122 @@ export const listRegistrationsForUser = query({
   args: { userId: v.string(), sessionToken: v.optional(v.string()) },
   handler: async (ctx, args) => {
     const actor = await requireActor(ctx, args.sessionToken);
-    // Your own registrations, or anyone's if you are staff.
-    if (actor.id !== args.userId && !["institution", "academician", "industry", "admin"].includes(actor.role)) {
-      throw authError("You can only read your own registrations.");
-    }
-    return await ctx.db
+    const rows = await ctx.db
       .query("skillTestRegistrations")
       .withIndex("by_user", (q) => q.eq("userId", args.userId))
       .collect();
+    if (actor.id === args.userId || actor.role === "admin") return rows.map(publicRow);
+    // Somebody else's registrations: only the rows the reader is entitled to
+    // (the host of that test, or staff of the student's own institution).
+    const visible = [];
+    for (const row of rows) if (await canRead(ctx, actor, "skillTestRegistrations", row)) visible.push(publicRow(row));
+    return visible;
   },
 });
 
 /**
  * Register for a test. The registration is always written for the signed-in
  * account — the caller cannot register somebody else.
+ *
+ * `id` is the browser's own record id: the registration is written locally
+ * first and mirrored here under the same id, so a retry updates the existing
+ * row instead of registering twice.
  */
 export const register = mutation({
   args: {
     sessionToken: v.string(),
+    id: v.optional(v.string()),
     testId: v.string(),
-    slot: v.optional(v.string()),
+    slot: v.optional(v.union(v.string(), v.null())),
     paid: v.optional(v.boolean()),
+    name: v.optional(v.string()),
+    email: v.optional(v.string()),
+    institution: v.optional(v.string()),
+    course: v.optional(v.string()),
+    year: v.optional(v.string()),
+    phone: v.optional(v.string()),
+    registeredAt: v.optional(v.string()),
+    updatedAt: v.optional(v.string()),
   },
   handler: async (ctx, args) => {
     const actor = await requireActor(ctx, args.sessionToken);
+    const { sessionToken, id, ...fields } = args;
 
     const existing = await ctx.db
       .query("skillTestRegistrations")
       .withIndex("by_test", (q) => q.eq("testId", args.testId))
       .filter((q) => q.eq(q.field("userId"), actor.id))
       .first();
-    if (existing) return existing._id;
 
-    return await ctx.db.insert("skillTestRegistrations", {
-      testId: args.testId,
+    const row = {
+      ...fields,
       userId: actor.id,
-      slot: args.slot,
-      paid: args.paid,
       paymentStatus: args.paid ? "paid" : "not_required",
-      missedRecorded: false,
-      attended: false,
-      registeredAt: new Date().toISOString(),
+      registeredAt: fields.registeredAt || new Date().toISOString(),
+      updatedAt: fields.updatedAt || new Date().toISOString(),
+    };
+    if (existing) {
+      await ctx.db.patch(existing._id, { ...row, id: existing.id || id, missedRecorded: existing.missedRecorded, attended: existing.attended });
+      return existing._id;
+    }
+    return await ctx.db.insert("skillTestRegistrations", { ...row, id, missedRecorded: false, attended: false });
+  },
+});
+
+/**
+ * Attendance and outcome patches on a registration. The student may only
+ * confirm their own attendance; the host of the test may mark attendance,
+ * a missed sitting and a score.
+ */
+export const updateRegistrationByClientId = mutation({
+  args: { sessionToken: v.string(), id: v.string(), patch: v.any() },
+  handler: async (ctx, args) => {
+    const actor = await requireActor(ctx, args.sessionToken);
+    const row = await findByClientId(ctx, "skillTestRegistrations", args.id);
+    if (!row) return { ok: false, reason: "NOT_FOUND" };
+
+    const test = await findTestByClientId(ctx, row.testId);
+    const isHost = Boolean(test && test.ownerId === actor.id) || actor.role === "admin";
+    const isStudent = row.userId === actor.id;
+    if (!isHost && !isStudent) throw authError("That registration is not yours to change.");
+
+    const allowed = isHost ? ["attended", "attendedAt", "missedRecorded", "score"] : ["attended", "attendedAt"];
+    const safe = {};
+    Object.entries(args.patch || {}).forEach(([k, value]) => {
+      if (allowed.includes(k)) safe[k] = value;
     });
+    if (!Object.keys(safe).length) return { ok: true, ignored: true };
+    await ctx.db.patch(row._id, { ...safe, updatedAt: new Date().toISOString() });
+    return { ok: true };
+  },
+});
+
+/**
+ * Every registration on every test the caller hosts, with the student's
+ * public profile attached — what a host's roster and certificate dialog need.
+ */
+export const listRegistrationsForMyTests = query({
+  args: { sessionToken: v.string() },
+  handler: async (ctx, args) => {
+    const actor = await requireActor(ctx, args.sessionToken);
+    if (!HOST_ROLES.includes(actor.role)) return [];
+    const tests = await ctx.db
+      .query("skillTests")
+      .withIndex("by_owner", (q) => q.eq("ownerId", actor.id))
+      .collect();
+    const rows = [];
+    for (const test of tests) {
+      if (!test.id) continue;
+      const registrations = await ctx.db
+        .query("skillTestRegistrations")
+        .withIndex("by_test", (q) => q.eq("testId", test.id))
+        .collect();
+      for (const reg of registrations) {
+        const student = await findUserById(ctx, reg.userId);
+        rows.push({ ...publicRow(reg), student: publicUser(student) });
+      }
+    }
+    return rows;
   },
 });
 
@@ -161,7 +237,7 @@ export const submitAttempt = mutation({
       .withIndex("by_test", (q) => q.eq("testId", args.testId))
       .filter((q) => q.eq(q.field("userId"), actor.id))
       .first();
-    if (registration) await ctx.db.patch(registration._id, { attended: true, missedRecorded: true });
+    if (registration) await ctx.db.patch(registration._id, { attended: true, missedRecorded: true, updatedAt: new Date().toISOString() });
 
     const assessment = await recalculateAssessment(ctx, actor.id);
 
@@ -239,7 +315,7 @@ export const recordMissed = mutation({
       .withIndex("by_test", (q) => q.eq("testId", args.testId))
       .filter((q) => q.eq(q.field("userId"), actor.id))
       .first();
-    if (registration) await ctx.db.patch(registration._id, { missedRecorded: true });
+    if (registration) await ctx.db.patch(registration._id, { missedRecorded: true, updatedAt: new Date().toISOString() });
     await recalculateAssessment(ctx, actor.id);
     return { ok: true };
   },
@@ -321,8 +397,6 @@ export const rosterForTest = query({
    Hosting a test: the row, its settings and its paper
    ============================================================ */
 
-const HOST_ROLES = ["industry", "academician", "institution", "admin"];
-
 /** Everything a host may set on a test row. The paper is handled separately. */
 const TEST_FIELDS = {
   title: v.string(),
@@ -348,6 +422,7 @@ const TEST_FIELDS = {
   autoDisqualifyAfter: v.optional(v.union(v.number(), v.null())),
   issueCertificate: v.optional(v.boolean()),
   minCertificateScore: v.optional(v.union(v.number(), v.null())),
+  updatedAt: v.optional(v.string()),
 };
 
 async function attemptsStarted(ctx, testId) {
@@ -424,6 +499,7 @@ export const publishTest = mutation({
       ownerId: actor.id,
       status: fields.status || "Open",
       postedAt: fields.postedAt || new Date().toISOString(),
+      updatedAt: fields.updatedAt || new Date().toISOString(),
       proctored: fields.mode === "Online" ? fields.proctored !== false : false,
     };
 
@@ -462,7 +538,7 @@ export const updateByClientId = mutation({
     if ("autoDisqualifyAfter" in safe && safe.autoDisqualifyAfter != null) {
       safe.autoDisqualifyAfter = Math.max(1, Math.round(Number(safe.autoDisqualifyAfter) || 1));
     }
-    await ctx.db.patch(test._id, safe);
+    await ctx.db.patch(test._id, { ...safe, updatedAt: safe.updatedAt || new Date().toISOString() });
     return { ok: true };
   },
 });

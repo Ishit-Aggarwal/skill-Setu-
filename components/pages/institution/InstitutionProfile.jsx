@@ -8,18 +8,10 @@ import { ACCREDITATION_BODIES, DEPARTMENTS, INSTITUTION_TYPES } from "../../../l
 import { formatDate } from "../../../lib/match";
 import { getInstitutionProfile, logActivity, saveInstitutionProfile, listInstitutionDocs, addInstitutionDoc, removeInstitutionDoc } from "../../../lib/store";
 import { useInstitutionName } from "./useInstitution";
-import { downloadStoredFile } from "../../../lib/files";
+import { downloadStoredFile, profileImage } from "../../../lib/files";
+import { uploadToStorage } from "../../../lib/uploads";
 
 const MAX_FILE_BYTES = 1.5 * 1024 * 1024;
-
-function readFileAsDataUrl(file) {
-  return new Promise((resolve, reject) => {
-    const reader = new FileReader();
-    reader.onload = () => resolve(reader.result);
-    reader.onerror = reject;
-    reader.readAsDataURL(file);
-  });
-}
 
 const EMPTY = {
   instituteType: INSTITUTION_TYPES[0],
@@ -31,6 +23,8 @@ const EMPTY = {
   website: "",
   established: "",
   logoDataUrl: null,
+  logoStorageId: null,
+  logoUrl: null,
   accreditations: [],
   departments: [],
   placementCell: { officer: "", designation: "", email: "", phone: "" },
@@ -79,13 +73,17 @@ export default function InstitutionProfile() {
     if (!docTitle.trim() || !docFile) return setError("Please enter a title and select a PDF document.");
     if (docFile.size > 5 * 1024 * 1024) return setError("Document must be under 5MB.");
     setError(null);
-    const dataUrl = await readFileAsDataUrl(docFile);
+    let uploaded;
+    try {
+      uploaded = await uploadToStorage(docFile, { kind: "document" });
+    } catch (err) {
+      return setError(err?.message || "That document could not be uploaded.");
+    }
     addInstitutionDoc(instituteName, {
       title: docTitle.trim(),
       category: docCategory,
-      fileName: docFile.name,
       fileSize: `${(docFile.size / 1024).toFixed(0)} KB`,
-      dataUrl,
+      ...uploaded,
       uploadedBy: user?.name || "Admin",
     });
     setDocs(listInstitutionDocs(instituteName));
@@ -106,17 +104,27 @@ export default function InstitutionProfile() {
     if (!file) return;
     if (file.size > MAX_FILE_BYTES) return setError("Please choose an image under 1.5MB.");
     setError(null);
-    set("logoDataUrl", await readFileAsDataUrl(file));
+    try {
+      const uploaded = await uploadToStorage(file, { kind: "image" });
+      setForm((f) => ({ ...f, logoStorageId: uploaded.storageId, logoUrl: uploaded.url, logoDataUrl: null }));
+    } catch (err) {
+      setError(err?.message || "That image could not be uploaded.");
+    }
   }
 
   async function handleAccreditationDoc(index, file) {
     if (!file) return;
     if (file.size > MAX_FILE_BYTES) return setError("Please choose a file under 1.5MB.");
     setError(null);
-    const dataUrl = await readFileAsDataUrl(file);
+    let uploaded;
+    try {
+      uploaded = await uploadToStorage(file, { kind: String(file.type || "").startsWith("image/") ? "image" : "document" });
+    } catch (err) {
+      return setError(err?.message || "That file could not be uploaded.");
+    }
     setForm((f) => {
       const next = [...f.accreditations];
-      next[index] = { ...next[index], document: dataUrl, documentName: file.name, status: "Verified" };
+      next[index] = { ...next[index], document: uploaded.url, documentFile: uploaded, documentName: uploaded.fileName, status: "Verified" };
       return { ...f, accreditations: next };
     });
   }
@@ -208,11 +216,11 @@ export default function InstitutionProfile() {
           <Card>
             <div className="flex items-center gap-4 mb-5">
               <div className="w-16 h-16 rounded-2xl bg-primary flex items-center justify-center text-white text-xl font-bold flex-shrink-0 overflow-hidden">
-                {form.logoDataUrl ? <img src={form.logoDataUrl} alt="Institution logo" className="w-full h-full object-cover" /> : initials}
+                {profileImage(form, "logo") ? <img src={profileImage(form, "logo")} alt="Institution logo" className="w-full h-full object-cover" /> : initials}
               </div>
               <div className="flex-1 min-w-0">
                 <label className="inline-block text-sm font-medium text-primary hover:underline cursor-pointer">
-                  {form.logoDataUrl ? "Change logo" : "Upload logo"}
+                  {profileImage(form, "logo") ? "Change logo" : "Upload logo"}
                   <input type="file" accept="image/*" onChange={handleLogo} className="hidden" />
                 </label>
                 <p className="text-xs text-muted-foreground mt-0.5">JPG or PNG, under 1.5MB</p>
@@ -421,7 +429,7 @@ export default function InstitutionProfile() {
                             which is why these saved but would not open. */}
                         <button
                           type="button"
-                          onClick={() => downloadStoredFile({ dataUrl: d.dataUrl, fileName: d.fileName })}
+                          onClick={() => downloadStoredFile({ url: d.url, dataUrl: d.dataUrl, fileName: d.fileName })}
                           className="px-3 py-1.5 rounded-lg bg-primary text-white text-xs font-medium hover:bg-accent transition-colors"
                         >
                           Download PDF

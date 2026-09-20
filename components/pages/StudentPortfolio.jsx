@@ -18,7 +18,8 @@ import { isPlausibleDate, todayIso } from "../../lib/dates";
 import { useNav } from "../../lib/nav";
 import { Badge, Button, Card, EmptyState, Field, Modal, ProgressRing, Section, Select, StatGrid, Tabs, TextArea, TextInput } from "../ui/Kit";
 import TagInput from "../TagInput";
-import { hasFile, openStoredFile, downloadStoredFile } from "../../lib/files";
+import { hasFile, openStoredFile, downloadStoredFile, profileImage } from "../../lib/files";
+import { uploadToStorage } from "../../lib/uploads";
 
 const levelTone = {
   Advanced: "primary",
@@ -191,17 +192,18 @@ function validateFile(file, { allowed, maxBytes, label }) {
 /** Where a certificate sits in the verification chain, for the status badge. */
 function certStatus(cert) {
   if (cert.verifiedAt) return { label: "Verified", tone: "green", hint: "Checked by an institution or issuer on Skill Setu." };
-  if (cert.dataUrl) return { label: "Pending verification", tone: "amber", hint: "Proof uploaded — awaiting review by your institution." };
+  if (hasFile(cert)) return { label: "Pending verification", tone: "amber", hint: "Proof uploaded — awaiting review by your institution." };
   return { label: "No proof", tone: "muted", hint: "Added before proof was required." };
 }
 
-function readFileAsDataUrl(file) {
-  return new Promise((resolve, reject) => {
-    const reader = new FileReader();
-    reader.onload = () => resolve(reader.result);
-    reader.onerror = reject;
-    reader.readAsDataURL(file);
-  });
+/**
+ * Proofs and documents go to shared file storage; the portfolio keeps
+ * { storageId, url, fileName, mimeType, bytes } and `size` for the labels.
+ * Images and PDFs are both accepted, each under its own limit.
+ */
+async function uploadProof(file) {
+  const uploaded = await uploadToStorage(file, { kind: String(file.type || "").startsWith("image/") ? "image" : "document" });
+  return { ...uploaded, size: uploaded.bytes };
 }
 
 function formatBytes(bytes) {
@@ -348,14 +350,17 @@ export default function StudentPortfolio() {
     if (problem) return setError(problem);
     try {
       setError(null);
-      updateProfile({ [field]: await readFileAsDataUrl(file) });
-    } catch {
-      setError(`${label} could not be read. Try a different file.`);
+      // The image goes to shared storage; the account keeps the reference and
+      // the resolved URL, and the legacy inline copy is cleared.
+      const uploaded = await uploadToStorage(file, { kind: "image" });
+      updateProfile({ [`${field}StorageId`]: uploaded.storageId, [`${field}Url`]: uploaded.url, [`${field}DataUrl`]: null });
+    } catch (err) {
+      setError(err?.message || `${label} could not be read. Try a different file.`);
     }
   }
 
-  const handleBannerUpload = (e) => handleImageUpload(e, "bannerDataUrl", "Banner image");
-  const handleAvatarUpload = (e) => handleImageUpload(e, "avatarDataUrl", "Profile photo");
+  const handleBannerUpload = (e) => handleImageUpload(e, "banner", "Banner image");
+  const handleAvatarUpload = (e) => handleImageUpload(e, "avatar", "Profile photo");
 
   function handlePrint() {
     setPrinting(true);
@@ -393,9 +398,9 @@ export default function StudentPortfolio() {
     if (problem) return setError(problem);
     try {
       setError(null);
-      setCertFile({ fileName: file.name, size: file.size, dataUrl: await readFileAsDataUrl(file) });
-    } catch {
-      setError("That certificate file could not be read. Try a different one.");
+      setCertFile(await uploadProof(file));
+    } catch (err) {
+      setError(err?.message || "That certificate file could not be read. Try a different one.");
     }
   }
 
@@ -418,7 +423,9 @@ export default function StudentPortfolio() {
           ...certForm,
           fileName: certFile.fileName,
           fileSize: certFile.size,
-          dataUrl: certFile.dataUrl,
+          storageId: certFile.storageId,
+          url: certFile.url,
+          mimeType: certFile.mimeType,
           uploadedAt: new Date().toISOString(),
           verifiedAt: null,
         },
@@ -472,9 +479,9 @@ export default function StudentPortfolio() {
     if (problem) return setError(problem);
     try {
       setError(null);
-      setEduFile({ fileName: file.name, size: file.size, dataUrl: await readFileAsDataUrl(file) });
-    } catch {
-      setError("That degree certificate could not be read. Try a different file.");
+      setEduFile(await uploadProof(file));
+    } catch (err) {
+      setError(err?.message || "That degree certificate could not be read. Try a different file.");
     }
   }
 
@@ -494,7 +501,7 @@ export default function StudentPortfolio() {
         {
           id: newId("edu"),
           ...eduForm,
-          ...(eduFile ? { fileName: eduFile.fileName, fileSize: eduFile.size, dataUrl: eduFile.dataUrl, uploadedAt: new Date().toISOString(), verifiedAt: null } : {}),
+          ...(eduFile ? { fileName: eduFile.fileName, fileSize: eduFile.size, storageId: eduFile.storageId, url: eduFile.url, mimeType: eduFile.mimeType, uploadedAt: new Date().toISOString(), verifiedAt: null } : {}),
         },
       ],
     });
@@ -533,14 +540,19 @@ export default function StudentPortfolio() {
     }
     setError(null);
     setUploading(true);
-    const dataUrl = await readFileAsDataUrl(file);
-    persist({
-      documents: [
-        ...(portfolio.documents || []),
-        { id: newId("doc"), type: docType, fileName: file.name, size: file.size, dataUrl, uploadedAt: new Date().toISOString() },
-      ],
-    });
-    setUploading(false);
+    try {
+      const uploaded = await uploadProof(file);
+      persist({
+        documents: [
+          ...(portfolio.documents || []),
+          { id: newId("doc"), type: docType, ...uploaded, uploadedAt: new Date().toISOString() },
+        ],
+      });
+    } catch (err) {
+      setError(err?.message || "That file could not be uploaded. Try a different one.");
+    } finally {
+      setUploading(false);
+    }
     e.target.value = "";
   }
 
@@ -553,7 +565,7 @@ export default function StudentPortfolio() {
     list[index] = {
       ...list[index],
       ...data,
-      ...(file ? { fileName: file.fileName, fileSize: file.size, dataUrl: file.dataUrl } : {}),
+      ...(file ? { fileName: file.fileName, fileSize: file.size, storageId: file.storageId, url: file.url, mimeType: file.mimeType } : {}),
     };
     persist({ certifications: list });
     setEditingCert(null);
@@ -579,7 +591,7 @@ export default function StudentPortfolio() {
         ? {
             ...ed,
             ...data,
-            ...(file ? { fileName: file.fileName, fileSize: file.size, dataUrl: file.dataUrl } : {}),
+            ...(file ? { fileName: file.fileName, fileSize: file.size, storageId: file.storageId, url: file.url, mimeType: file.mimeType } : {}),
           }
         : ed
     );
@@ -600,7 +612,7 @@ export default function StudentPortfolio() {
         ? {
             ...doc,
             ...data,
-            ...(file ? { fileName: file.fileName, size: file.size, dataUrl: file.dataUrl } : {}),
+            ...(file ? { fileName: file.fileName, size: file.size, storageId: file.storageId, url: file.url, mimeType: file.mimeType } : {}),
           }
         : doc
     );
@@ -647,8 +659,8 @@ export default function StudentPortfolio() {
           {/* Banner: the olive gradient stays as the default, so a portfolio
               with no upload still looks finished rather than unfinished. */}
           <div className="h-28 bg-gradient-to-r from-primary/80 to-accent/60 relative">
-            {user.bannerDataUrl ? (
-              <img src={user.bannerDataUrl} alt="" className="w-full h-full object-cover" />
+            {profileImage(user, "banner") ? (
+              <img src={profileImage(user, "banner")} alt="" className="w-full h-full object-cover" />
             ) : (
               <div className="absolute inset-0 opacity-20" style={{ backgroundImage: "radial-gradient(circle at 20% 50%, white 0%, transparent 60%)" }} />
             )}
@@ -657,12 +669,12 @@ export default function StudentPortfolio() {
                 title={BANNER_GUIDANCE}
                 className="cursor-pointer text-[11px] font-medium px-2.5 py-1.5 rounded-lg bg-black/45 text-white hover:bg-black/60 backdrop-blur-sm transition-colors focus-within:outline focus-within:outline-2 focus-within:outline-offset-2 focus-within:outline-white"
               >
-                {user.bannerDataUrl ? "Change banner" : "Add banner"}
+                {profileImage(user, "banner") ? "Change banner" : "Add banner"}
                 <input type="file" accept={IMAGE_TYPES.join(",")} onChange={handleBannerUpload} className="sr-only" />
               </label>
-              {user.bannerDataUrl && (
+              {profileImage(user, "banner") && (
                 <button
-                  onClick={() => updateProfile({ bannerDataUrl: null })}
+                  onClick={() => updateProfile({ bannerDataUrl: null, bannerStorageId: null, bannerUrl: null })}
                   className="text-[11px] font-medium px-2.5 py-1.5 rounded-lg bg-black/45 text-white hover:bg-black/60 backdrop-blur-sm transition-colors"
                 >
                   Remove
@@ -675,7 +687,7 @@ export default function StudentPortfolio() {
               <div className="flex items-end gap-4">
                 <div className="relative flex-shrink-0">
                   <div className="w-20 h-20 rounded-2xl bg-primary flex items-center justify-center text-white text-2xl font-bold border-4 border-card shadow-md overflow-hidden">
-                    {user.avatarDataUrl ? <img src={user.avatarDataUrl} alt="" className="w-full h-full object-cover" /> : userInitials}
+                    {profileImage(user, "avatar") ? <img src={profileImage(user, "avatar")} alt="" className="w-full h-full object-cover" /> : userInitials}
                   </div>
                   <label
                     title="Upload a profile photo — square works best, under 2MB."
@@ -1013,7 +1025,7 @@ export default function StudentPortfolio() {
                   <div className="flex flex-wrap items-center gap-1.5 mt-1.5">
                     {ed.pursuing ? (
                       <Badge tone="blue" dot>Currently pursuing</Badge>
-                    ) : ed.dataUrl ? (
+                    ) : hasFile(ed) ? (
                       <Badge tone="amber" dot>Degree uploaded · pending verification</Badge>
                     ) : (
                       <Badge tone="muted" dot>No degree proof</Badge>
@@ -1173,7 +1185,7 @@ export default function StudentPortfolio() {
                         Open PDF
                       </button>
                     )}
-                    {!cert.dataUrl && cert.credentialUrl && (
+                    {!hasFile(cert) && cert.credentialUrl && (
                       <a href={cert.credentialUrl} target="_blank" rel="noreferrer" className="text-xs text-primary hover:underline flex-shrink-0">
                         Verify ↗
                       </a>
@@ -1423,8 +1435,12 @@ export default function StudentPortfolio() {
                     if (!file) return;
                     const problem = validateFile(file, { allowed: PROOF_TYPES, maxBytes: MAX_DOC_BYTES, label: "Degree proof" });
                     if (problem) return setError(problem);
-                    const dataUrl = await readFileAsDataUrl(file);
-                    setEditingEdu((prev) => ({ ...prev, file: { fileName: file.name, size: file.size, dataUrl } }));
+                    try {
+                      const uploaded = await uploadProof(file);
+                      setEditingEdu((prev) => ({ ...prev, file: uploaded }));
+                    } catch (err) {
+                      setError(err?.message || "That file could not be uploaded.");
+                    }
                   }}
                   className="sr-only"
                 />
@@ -1495,8 +1511,12 @@ export default function StudentPortfolio() {
                     if (!file) return;
                     const problem = validateFile(file, { allowed: PROOF_TYPES, maxBytes: MAX_DOC_BYTES, label: "Certificate file" });
                     if (problem) return setError(problem);
-                    const dataUrl = await readFileAsDataUrl(file);
-                    setEditingCert((prev) => ({ ...prev, file: { fileName: file.name, size: file.size, dataUrl } }));
+                    try {
+                      const uploaded = await uploadProof(file);
+                      setEditingCert((prev) => ({ ...prev, file: uploaded }));
+                    } catch (err) {
+                      setError(err?.message || "That file could not be uploaded.");
+                    }
                   }}
                   className="sr-only"
                 />
@@ -1667,12 +1687,16 @@ export default function StudentPortfolio() {
                       setError("Please choose a file under 2MB.");
                       return;
                     }
-                    const dataUrl = await readFileAsDataUrl(file);
-                    setEditingDoc((prev) => ({
-                      ...prev,
-                      data: { ...prev.data, fileName: prev.data.fileName || file.name },
-                      file: { fileName: file.name, size: file.size, dataUrl },
-                    }));
+                    try {
+                      const uploaded = await uploadProof(file);
+                      setEditingDoc((prev) => ({
+                        ...prev,
+                        data: { ...prev.data, fileName: prev.data.fileName || file.name },
+                        file: uploaded,
+                      }));
+                    } catch (err) {
+                      setError(err?.message || "That file could not be uploaded.");
+                    }
                   }}
                   className="sr-only"
                 />

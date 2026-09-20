@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useMemo, useState } from "react";
+import { useStoreVersion } from "../../../lib/useLiveStore";
 import DashboardLayout from "../../DashboardLayout";
 import { useAuth } from "../../../lib/auth";
 import {
@@ -69,8 +70,9 @@ export default function MyStudents() {
   const [recommendTo, setRecommendTo] = useState(null);
 
   useEffect(() => setReady(true), []);
+  const live = useStoreVersion(["users", "advisees", "mentorNotes", "applications", "assessments", "internships"]);
 
-  const students = useMemo(() => (ready && user ? buildFacultyStudents(user) : []), [user, ready, version]);
+  const students = useMemo(() => (ready && user ? buildFacultyStudents(user) : []), [user, ready, version, live]);
   const postings = useMemo(() => (ready ? listInternships().filter((i) => i.status !== "Closed") : []), [ready]);
 
   const batches = useMemo(() => ["All", ...[...new Set(students.map((s) => s.batch).filter(Boolean))].sort()], [students]);

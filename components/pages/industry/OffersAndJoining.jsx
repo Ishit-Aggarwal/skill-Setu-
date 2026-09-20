@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useMemo, useState } from "react";
+import { useStoreVersion } from "../../../lib/useLiveStore";
 import DashboardLayout from "../../DashboardLayout";
 import { useAuth } from "../../../lib/auth";
 import { Avatar, Badge, Button, Card, DataTable, EmptyState, Field, Flash, Modal, PageHeader, ProgressRing, Select, StatGrid, TextArea, TextInput, useFlash } from "../../ui/Kit";
@@ -34,10 +35,11 @@ export default function OffersAndJoining() {
   const [viewingStudent, setViewingStudent] = useState(null);
 
   useEffect(() => setReady(true), []);
+  const live = useStoreVersion(["applications", "internships"]);
 
   const hired = useMemo(
     () => (ready && user ? listApplicationsForOwner(user.id).filter((a) => a.status === "Hired") : []),
-    [user, ready, version]
+    [user, ready, version, live]
   );
 
   const rows = useMemo(() => {

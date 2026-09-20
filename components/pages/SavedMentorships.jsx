@@ -1,6 +1,7 @@
 "use client";
 
 import { useCallback, useEffect, useMemo, useState } from "react";
+import { useStoreVersion } from "../../lib/useLiveStore";
 import DashboardLayout from "../DashboardLayout";
 import { useAuth } from "../../lib/auth";
 import { useNav } from "../../lib/nav";
@@ -47,9 +48,10 @@ export default function SavedMentorships() {
     }
   }, [user]);
 
+  const live = useStoreVersion(["savedMentorships"]);
   useEffect(() => {
     load();
-  }, [load]);
+  }, [load, live]);
 
   const bookedIds = useMemo(() => new Set(booked.map((b) => b.id)), [booked]);
   const liveById = useMemo(() => new Map(available.map((s) => [s.id, s])), [available]);

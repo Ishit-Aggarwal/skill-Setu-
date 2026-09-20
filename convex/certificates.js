@@ -1,8 +1,10 @@
 import { query, mutation } from "./_generated/server";
 import { v } from "convex/values";
 import { authError, requireActor } from "./_lib/authz";
-import { resolveBranding } from "./_lib/certificates";
-import { findTestByClientId } from "./_lib/tests";
+import { certificateNumber, resolveBranding, verifyCode } from "./_lib/certificates";
+import { findTestByClientId, findUserById } from "./_lib/tests";
+import { findByClientId } from "./_lib/rows";
+import { isCredentialKind } from "../lib/credentials";
 import { CERTIFICATES } from "../lib/settings";
 
 /**
@@ -223,5 +225,107 @@ export const verify = query({
       certificateNo: row.certificateNo,
       issuedAt: row.issuedAt,
     };
+  },
+});
+
+/* ---------------- manually issued certificates ---------------- */
+
+/**
+ * A partner issuing a certificate to a student by hand (an internship
+ * completion, a training, a merit award). The browser writes the row locally
+ * with placeholders and mirrors it here under its own id; the certificate
+ * number and verification code are decided HERE and handed back, so the
+ * printed record is the one `/verify` will recognise from any device.
+ */
+export const issueManual = mutation({
+  args: {
+    sessionToken: v.string(),
+    id: v.string(),
+    studentId: v.string(),
+    title: v.string(),
+    kind: v.string(),
+    testId: v.optional(v.union(v.string(), v.null())),
+    score: v.optional(v.union(v.string(), v.null())),
+    grade: v.optional(v.union(v.string(), v.null())),
+    remarks: v.optional(v.string()),
+    issuedAt: v.optional(v.string()),
+  },
+  handler: async (ctx, args) => {
+    const actor = await requireHost(ctx, args.sessionToken);
+    if (!isCredentialKind(args.kind)) throw new Error("Choose a valid certificate kind.");
+    const student = await findUserById(ctx, args.studentId);
+    if (!student) throw new Error("That student does not have an account on Skill Setu yet.");
+
+    const host = actor.user;
+    const issuerName = host.companyName || host.instituteName || host.institution || host.name || "Skill Setu Partner";
+    const existing = await findByClientId(ctx, "credentials", args.id);
+    if (existing && existing.issuerId !== actor.id && actor.role !== "admin") throw authError("That certificate was issued by another account.");
+
+    const now = new Date().toISOString();
+    const record = {
+      id: args.id,
+      studentId: student.id,
+      studentName: student.name || "Student",
+      studentEmail: student.email || "",
+      title: args.title || "Certificate of Achievement",
+      issuer: issuerName,
+      issuerId: actor.id,
+      issuerRole: actor.role,
+      kind: args.kind,
+      testId: args.testId || null,
+      score: args.score || null,
+      grade: args.grade || null,
+      remarks: args.remarks || "",
+      certificateNo: existing?.certificateNo || (await certificateNumber(ctx, actor.id, issuerName)),
+      verifyCode: existing?.verifyCode || verifyCode(),
+      issuedAt: existing?.issuedAt || args.issuedAt || now,
+      revokedAt: existing?.revokedAt || null,
+      updatedAt: now,
+    };
+    if (existing) await ctx.db.patch(existing._id, record);
+    else await ctx.db.insert("credentials", record);
+
+    // The recipient's inbox row is written here as well, so the student sees
+    // it on whichever device they open next.
+    await ctx.db.insert("studentNotifications", {
+      id: `studentNotifications_${Date.now().toString(36)}_${Math.random().toString(36).slice(2, 8)}`,
+      studentId: student.id,
+      senderId: actor.id,
+      credentialId: args.id,
+      message: `${issuerName} issued you a certificate: "${record.title}". Open your portfolio to view or download it.`,
+      from: issuerName,
+      sentAt: now,
+      read: false,
+      updatedAt: now,
+    });
+
+    return { ok: true, certificateNo: record.certificateNo, verifyCode: record.verifyCode, issuedAt: record.issuedAt };
+  },
+});
+
+/** Only the issuer may revoke. */
+export const revoke = mutation({
+  args: { sessionToken: v.string(), id: v.string() },
+  handler: async (ctx, args) => {
+    const actor = await requireActor(ctx, args.sessionToken);
+    const row = await findByClientId(ctx, "credentials", args.id);
+    if (!row) return { ok: false, reason: "NOT_FOUND" };
+    if (row.issuerId !== actor.id && actor.role !== "admin") throw authError("Only the issuer can revoke a certificate.");
+    const now = new Date().toISOString();
+    await ctx.db.patch(row._id, { revokedAt: row.revokedAt || now, updatedAt: now });
+    return { ok: true };
+  },
+});
+
+/** Everything the signed-in account has issued (its own certificate log). */
+export const listIssuedByMe = query({
+  args: { sessionToken: v.string() },
+  handler: async (ctx, args) => {
+    const actor = await requireActor(ctx, args.sessionToken);
+    const rows = await ctx.db
+      .query("credentials")
+      .withIndex("by_issuer", (q) => q.eq("issuerId", actor.id))
+      .collect();
+    return rows.map(publicCredential);
   },
 });

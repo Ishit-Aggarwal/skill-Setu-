@@ -102,9 +102,24 @@ export const insertAccount = internalMutation({
       .query("users")
       .withIndex("by_email", (q) => q.eq("email", email))
       .first();
-    if (existing) throw new Error("User already exists with this email");
-
     const now = new Date().toISOString();
+
+    /* A roster placeholder the student's institution created (`invited`, no
+       password) is claimed by the signup rather than treated as a duplicate:
+       the password lands on it, the institution link is kept, and whatever
+       the roster knew (roll number, batch) survives unless the student typed
+       something else. */
+    if (existing) {
+      const claimable = existing.invited === true && !existing.passwordHash && existing.role === "student" && args.doc.role === "student";
+      if (!claimable) throw new Error("User already exists with this email");
+      const { id: _ignoredId, ...incoming } = args.doc;
+      const patch = { email, emailVerified: true, verifiedAt: now, invited: false, updatedAt: now };
+      Object.entries(incoming).forEach(([k, value]) => {
+        if (value !== undefined && value !== null && value !== "") patch[k] = value;
+      });
+      await ctx.db.patch(existing._id, patch);
+      return await ctx.db.get(existing._id);
+    }
     const id = args.doc.id || `user_${Date.now().toString(36)}_${Math.random().toString(36).slice(2, 8)}`;
     const _id = await ctx.db.insert("users", {
       ...args.doc,

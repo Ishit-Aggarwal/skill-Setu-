@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useMemo, useState } from "react";
+import { useStoreVersion } from "../../lib/useLiveStore";
 import {
   Bar,
   BarChart,
@@ -76,11 +77,12 @@ export default function StudentAnalytics() {
   const [selectedAttempt, setSelectedAttempt] = useState(null);
 
   useEffect(() => setReady(true), []);
+  const live = useStoreVersion(["applications", "credentials", "assessmentAttempts", "assessments", "users"]);
 
-  const assessment = useMemo(() => (ready && user ? getAssessment(user.id) : null), [ready, user]);
-  const attempts = useMemo(() => (ready && user ? getAttemptsForStudent(user.id) : []), [ready, user]);
-  const applications = useMemo(() => (ready && user ? listApplicationsForStudent(user.id) : []), [ready, user]);
-  const credentials = useMemo(() => (ready && user ? listCredentialsForStudent(user.id) : []), [ready, user]);
+  const assessment = useMemo(() => (ready && user ? getAssessment(user.id) : null), [ready, user, live]);
+  const attempts = useMemo(() => (ready && user ? getAttemptsForStudent(user.id) : []), [ready, user, live]);
+  const applications = useMemo(() => (ready && user ? listApplicationsForStudent(user.id) : []), [ready, user, live]);
+  const credentials = useMemo(() => (ready && user ? listCredentialsForStudent(user.id) : []), [ready, user, live]);
   const tests = useMemo(() => (ready ? listSkillTests() : []), [ready]);
 
   const competency = useMemo(() => scoresFor(user, assessment), [user, assessment]);

@@ -2,12 +2,10 @@
 
 import { useEffect, useRef, useState } from "react";
 import { getResume, savePortfolio, getPortfolio } from "../lib/store";
-import { formatBytes, openStoredFile, readFileAsDataUrl } from "../lib/files";
+import { formatBytes, openStoredFile } from "../lib/files";
+import { uploadToStorage } from "../lib/uploads";
 import { formatStipend } from "../lib/money";
 import { Button, Field, IconTile, Modal, TextArea } from "./ui/Kit";
-
-const MAX_RESUME_BYTES = 2 * 1024 * 1024;
-const RESUME_TYPES = ["application/pdf", "image/png", "image/jpeg"];
 
 /**
  * The last step before an application exists.
@@ -38,30 +36,24 @@ export default function ApplyConfirmModal({ internship, user, onConfirm, onClose
     event.target.value = "";
     if (!file) return;
 
-    if (!RESUME_TYPES.includes(file.type)) {
-      return setError("Your resume needs to be a PDF, PNG or JPG.");
-    }
-    if (file.size > MAX_RESUME_BYTES) {
-      return setError(`That file is ${formatBytes(file.size)}. Please keep it under ${formatBytes(MAX_RESUME_BYTES)}.`);
-    }
-
     setError(null);
     setUploading(true);
     try {
+      // The file goes to shared storage; the portfolio keeps a reference to it.
+      const uploaded = await uploadToStorage(file, { kind: "document" });
       const doc = {
         id: `doc_${Date.now().toString(36)}`,
         type: "Resume",
         name: file.name,
-        fileName: file.name,
-        size: file.size,
-        dataUrl: await readFileAsDataUrl(file),
+        size: uploaded.bytes,
+        ...uploaded,
         uploadedAt: new Date().toISOString(),
       };
       const existing = getPortfolio(user.id)?.documents || [];
       savePortfolio(user.id, { documents: [...existing, doc] });
       setResume(doc);
-    } catch {
-      setError("That file couldn't be read. Try a different one.");
+    } catch (err) {
+      setError(err?.message || "That file couldn't be read. Try a different one.");
     } finally {
       setUploading(false);
     }

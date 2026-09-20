@@ -1,12 +1,14 @@
 "use client";
 
 import { useEffect, useMemo, useState } from "react";
+import { useStoreVersion } from "../../../lib/useLiveStore";
 import DashboardLayout from "../../DashboardLayout";
 import { useAuth } from "../../../lib/auth";
 import { Avatar, Badge, Button, Card, Field, Flash, Modal, PageHeader, ProgressRing, Section, Select, StatGrid, TextArea, TextInput, useFlash } from "../../ui/Kit";
 import { COLLAB_EXPERTISE, DEPARTMENTS } from "../../../lib/domains";
 import { addResearchOutput, listAdvisees, listCollabListingsByOwner, listCredentialsForStudent, listPrograms, listResearchOutputs, removeResearchOutput, updateResearchOutput } from "../../../lib/store";
-import { hasFile, openStoredFile, readFileAsDataUrl } from "../../../lib/files";
+import { hasFile, openStoredFile, profileImage } from "../../../lib/files";
+import { uploadToStorage } from "../../../lib/uploads";
 import TagInput from "../../TagInput";
 import { AyushSystemSelect } from "../../AyushSystemSelect";
 import { api } from "../../../convex/_generated/api";
@@ -76,13 +78,14 @@ export default function FacultyProfile() {
   }, [user]);
 
   const [pubVersion, setPubVersion] = useState(0);
+  const live = useStoreVersion(["researchOutputs", "collabListings", "advisees", "credentials"]);
   const [editingPub, setEditingPub] = useState(null);
 
-  const outputs = useMemo(() => (ready && user ? listResearchOutputs(user.id) : []), [user, ready, pubVersion]);
-  const listings = useMemo(() => (ready && user ? listCollabListingsByOwner(user.id) : []), [user, ready]);
-  const advisees = useMemo(() => (ready && user ? listAdvisees(user.id) : []), [user, ready]);
-  const credentials = useMemo(() => (ready && user ? listCredentialsForStudent(user.id) : []), [user, ready]);
-  const programs = useMemo(() => (ready && user ? listPrograms().filter((p) => p.ownerId === user.id) : []), [user, ready]);
+  const outputs = useMemo(() => (ready && user ? listResearchOutputs(user.id) : []), [user, ready, pubVersion, live]);
+  const listings = useMemo(() => (ready && user ? listCollabListingsByOwner(user.id) : []), [user, ready, live]);
+  const advisees = useMemo(() => (ready && user ? listAdvisees(user.id) : []), [user, ready, live]);
+  const credentials = useMemo(() => (ready && user ? listCredentialsForStudent(user.id) : []), [user, ready, live]);
+  const programs = useMemo(() => (ready && user ? listPrograms().filter((p) => p.ownerId === user.id) : []), [user, ready, live]);
 
   const set = (k, v) => setForm((f) => ({ ...f, [k]: v }));
 
@@ -177,7 +180,7 @@ export default function FacultyProfile() {
         <form onSubmit={submit} className="space-y-5">
           <Card>
             <div className="flex items-center gap-4 mb-5">
-              <Avatar name={form.name} size={64} src={user?.avatarDataUrl} />
+              <Avatar name={form.name} size={64} src={profileImage(user, "avatar")} />
               <div className="min-w-0">
                 <div className="text-lg font-semibold text-foreground truncate">{form.name || "Your name"}</div>
                 <div className="text-sm text-muted-foreground truncate">{form.designation} · {form.department || "Department"}</div>
@@ -327,13 +330,13 @@ export default function FacultyProfile() {
                           {o.venue || o.journalOrConference || "Independent"}
                           {o.year ? ` · ${o.year}` : ""}
                         </div>
-                        {(o.url || hasFile({ dataUrl: o.fileDataUrl })) && (
+                        {(o.url || hasFile(o.file) || hasFile({ dataUrl: o.fileDataUrl })) && (
                           <button
                             type="button"
-                            onClick={() => openStoredFile({ dataUrl: o.fileDataUrl, url: o.url, fileName: o.fileName })}
+                            onClick={() => openStoredFile({ dataUrl: o.fileDataUrl, url: o.file?.url || o.url, fileName: o.fileName })}
                             className="inline-flex items-center gap-1 text-[11px] text-primary hover:underline font-medium mt-1.5"
                           >
-                            {o.fileDataUrl ? `📄 ${o.fileName || "View PDF"}` : "🔗 View publication ↗"}
+                            {o.file || o.fileDataUrl ? `📄 ${o.fileName || "View PDF"}` : "🔗 View publication ↗"}
                           </button>
                         )}
                       </div>
@@ -392,19 +395,23 @@ function PublicationModal({ pub, onCancel, onSave }) {
   const [year, setYear] = useState(pub?.year ? String(pub.year) : "");
   const [url, setUrl] = useState(pub?.url || "");
   const [fileName, setFileName] = useState(pub?.fileName || "");
-  const [fileDataUrl, setFileDataUrl] = useState(pub?.fileDataUrl || "");
+  // { storageId, url, mimeType, bytes } for a PDF in shared storage; a
+  // publication saved before the move may still carry an inline fileDataUrl.
+  const [storedFile, setStoredFile] = useState(pub?.file || null);
+  const [fileError, setFileError] = useState(null);
   const [uploading, setUploading] = useState(false);
 
   async function handleFileChange(e) {
     const file = e.target.files?.[0];
     if (!file) return;
     setUploading(true);
+    setFileError(null);
     try {
-      const dataUrl = await readFileAsDataUrl(file);
-      setFileName(file.name);
-      setFileDataUrl(dataUrl);
-    } catch {
-      // ignore
+      const uploaded = await uploadToStorage(file, { kind: "document" });
+      setFileName(uploaded.fileName);
+      setStoredFile({ storageId: uploaded.storageId, url: uploaded.url, fileName: uploaded.fileName, mimeType: uploaded.mimeType, bytes: uploaded.bytes });
+    } catch (err) {
+      setFileError(err?.message || "That file could not be uploaded.");
     } finally {
       setUploading(false);
     }
@@ -420,7 +427,8 @@ function PublicationModal({ pub, onCancel, onSave }) {
       year: year.trim(),
       url: url.trim() || undefined,
       fileName: fileName || undefined,
-      fileDataUrl: fileDataUrl || undefined,
+      file: storedFile || undefined,
+      fileDataUrl: undefined,
     });
   }
 
@@ -481,9 +489,11 @@ function PublicationModal({ pub, onCancel, onSave }) {
               type="file"
               accept=".pdf,application/pdf"
               onChange={handleFileChange}
+              disabled={uploading}
               className="text-xs text-muted-foreground file:mr-2.5 file:py-1.5 file:px-3 file:rounded-lg file:border-0 file:text-xs file:font-medium file:bg-primary/10 file:text-primary hover:file:bg-primary/20"
             />
             {uploading && <div className="text-xs text-muted-foreground">Reading file...</div>}
+            {fileError && <div className="text-xs text-red-600">{fileError}</div>}
             {fileName && !uploading && (
               <div className="flex items-center gap-2 text-xs text-foreground bg-secondary/50 px-2.5 py-1.5 rounded-lg">
                 <span>📄 {fileName}</span>
@@ -491,7 +501,7 @@ function PublicationModal({ pub, onCancel, onSave }) {
                   type="button"
                   onClick={() => {
                     setFileName("");
-                    setFileDataUrl("");
+                    setStoredFile(null);
                   }}
                   className="text-xs text-red-500 hover:underline ml-auto"
                 >

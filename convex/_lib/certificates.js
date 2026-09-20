@@ -25,14 +25,14 @@ export async function resolveBranding(ctx, test) {
   return { source: "none", branding: null };
 }
 
-function verifyCode() {
+export function verifyCode() {
   const alphabet = "ABCDEFGHJKLMNPQRSTUVWXYZ23456789";
   let out = "";
   for (let i = 0; i < 8; i += 1) out += alphabet[Math.floor(Math.random() * alphabet.length)];
   return out;
 }
 
-async function certificateNumber(ctx, issuerId, issuerName) {
+export async function certificateNumber(ctx, issuerId, issuerName) {
   const issued = await ctx.db
     .query("credentials")
     .withIndex("by_issuer", (q) => q.eq("issuerId", issuerId))

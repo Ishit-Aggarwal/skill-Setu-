@@ -17,21 +17,13 @@ import {
   mouStatus,
   updateMou,
 } from "../../../lib/store";
-import { openStoredFile } from "../../../lib/files";
+import { attachedDocument, hasFile, openStoredFile } from "../../../lib/files";
+import { uploadToStorage } from "../../../lib/uploads";
 import { subscribeToMutations } from "../../../lib/sync";
 import { buildRoster, useInstitutionName } from "./useInstitution";
 
 const STATUS_TONE = { Active: "green", "Renewal due": "amber", Expired: "red" };
 const MAX_DOC_BYTES = 1.5 * 1024 * 1024;
-
-function readFileAsDataUrl(file) {
-  return new Promise((resolve, reject) => {
-    const reader = new FileReader();
-    reader.onload = () => resolve(reader.result);
-    reader.onerror = reject;
-    reader.readAsDataURL(file);
-  });
-}
 
 /**
  * MOU tracking with the structure a placement cell is actually audited on —
@@ -179,12 +171,12 @@ export default function Partnerships() {
 
                 <div className="flex flex-wrap items-center gap-2 pt-1">
                   <Button size="sm" variant="outline" onClick={() => setEditing(m)}>Edit</Button>
-                  {m.documentDataUrl ? (
+                  {hasFile(attachedDocument(m)) || m.documentDataUrl ? (
                     // Opened through lib/files — a data: URL in an anchor is
                     // refused as a top-level navigation and opens nothing.
                     <button
                       type="button"
-                      onClick={() => openStoredFile({ dataUrl: m.documentDataUrl, fileName: m.documentName })}
+                      onClick={() => openStoredFile(attachedDocument(m) || { dataUrl: m.documentDataUrl, fileName: m.documentName })}
                       className="text-xs text-primary font-medium hover:underline"
                     >
                       View MOU document
@@ -255,8 +247,11 @@ function MouModal({ instituteName, actor, mou, onClose, onDone, onDelete }) {
     notes: mou?.notes || "",
   });
   const [scope, setScope] = useState(mou?.scope || []);
-  const [doc, setDoc] = useState(mou?.documentDataUrl || null);
+  // { storageId, url, fileName, mimeType, bytes } in shared storage; an MOU
+  // saved before the move still carries an inline documentDataUrl on this device.
+  const [doc, setDoc] = useState(mou?.document || null);
   const [docName, setDocName] = useState(mou?.documentName || "");
+  const [uploading, setUploading] = useState(false);
   const [error, setError] = useState(null);
   const set = (k, v) => setForm((f) => ({ ...f, [k]: v }));
 
@@ -268,13 +263,21 @@ function MouModal({ instituteName, actor, mou, onClose, onDone, onDelete }) {
     if (!file) return;
     if (file.size > MAX_DOC_BYTES) return setError("Please choose a file under 1.5MB.");
     setError(null);
-    setDoc(await readFileAsDataUrl(file));
-    setDocName(file.name);
+    setUploading(true);
+    try {
+      const uploaded = await uploadToStorage(file, { kind: "document" });
+      setDoc(uploaded);
+      setDocName(uploaded.fileName);
+    } catch (err) {
+      setError(err?.message || "That document could not be uploaded.");
+    } finally {
+      setUploading(false);
+    }
   }
 
   function submit(e) {
     e.preventDefault();
-    const payload = { ...form, scope, documentDataUrl: doc, documentName: docName };
+    const payload = { ...form, scope, document: doc, documentDataUrl: null, documentName: docName };
     // A partner who has their own account owns their own identity: their name
     // and contact details are read from their profile, never written from here.
     if (registeredPartner) {

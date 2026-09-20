@@ -3,7 +3,7 @@
 import { useEffect, useState } from "react";
 import { findOne, getAssessment, getPortfolio } from "../lib/store";
 import { scoresFor } from "../lib/taxonomy";
-import { downloadStoredFile, hasFile, openStoredFile } from "../lib/files";
+import { downloadStoredFile, hasFile, openStoredFile, profileImage } from "../lib/files";
 import { Badge, IconTile, Overlay } from "./ui/Kit";
 import { AYUSH_SYSTEM_FIELD_LABEL, ayushSystemLabel } from "../lib/ayush";
 
@@ -68,8 +68,8 @@ export default function StudentProfileModal({ studentId, student: propStudent, a
         <div className="p-6 border-b border-border bg-card flex items-start justify-between gap-4">
           <div className="flex items-center gap-4 min-w-0">
             <div className="w-14 h-14 rounded-2xl bg-primary/15 text-primary flex items-center justify-center text-lg font-bold flex-shrink-0 shadow-[0_1px_2px_rgba(25,25,26,0.06)]">
-              {student?.avatarDataUrl ? (
-                <img src={student.avatarDataUrl} alt={name} className="w-full h-full rounded-2xl object-cover" />
+              {profileImage(student, "avatar") ? (
+                <img src={profileImage(student, "avatar")} alt={name} className="w-full h-full rounded-2xl object-cover" />
               ) : (
                 initials(name)
               )}

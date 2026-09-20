@@ -30,19 +30,10 @@ import {
 import { subscribeToMutations } from "../../../lib/sync";
 import TagInput from "../../TagInput";
 import { downloadStoredFile } from "../../../lib/files";
+import { uploadToStorage } from "../../../lib/uploads";
 
 const TYPE_TONE = { Industry: "blue", Academic: "purple", Govt: "green" };
 const OUTPUT_TYPES = ["Journal Paper", "Conference Paper", "Book Chapter", "Patent", "Technical Report"];
-const MAX_FILE_BYTES = 1.5 * 1024 * 1024;
-
-function readFileAsDataUrl(file) {
-  return new Promise((resolve, reject) => {
-    const reader = new FileReader();
-    reader.onload = () => resolve(reader.result);
-    reader.onerror = reject;
-    reader.readAsDataURL(file);
-  });
-}
 
 /**
  * The research hub. Previously a faculty member could only accept or decline
@@ -366,12 +357,15 @@ function Workspace({ collab, user, onChange }) {
   async function handleFile(e) {
     const file = e.target.files?.[0];
     if (!file) return;
-    if (file.size > MAX_FILE_BYTES) return setError("Please choose a file under 1.5MB.");
     setError(null);
-    const dataUrl = await readFileAsDataUrl(file);
-    addCollabFile(collab.id, { name: file.name, size: file.size, dataUrl, uploadedBy: user.name });
+    try {
+      const uploaded = await uploadToStorage(file, { kind: String(file.type || "").startsWith("image/") ? "image" : "document" });
+      addCollabFile(collab.id, { name: file.name, size: uploaded.bytes, ...uploaded, uploadedBy: user.name });
+      onChange("File added to the shared area.");
+    } catch (err) {
+      setError(err?.message || "That file could not be uploaded.");
+    }
     e.target.value = "";
-    onChange("File added to the shared area.");
   }
 
   return (
@@ -503,7 +497,7 @@ function Workspace({ collab, user, onChange }) {
                         looked like it worked and produced a broken file. */}
                     <button
                       type="button"
-                      onClick={() => downloadStoredFile({ dataUrl: f.dataUrl, fileName: f.name })}
+                      onClick={() => downloadStoredFile({ url: f.url, dataUrl: f.dataUrl, fileName: f.name })}
                       className="text-sm text-primary hover:underline truncate block text-left w-full"
                     >
                       {f.name}

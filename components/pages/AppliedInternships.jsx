@@ -233,9 +233,9 @@ export default function AppliedInternships() {
                     <Button size="sm" variant="outline" onClick={() => setDetail(application)}>
                       View details
                     </Button>
-                    {hasFile(application) === false && !application.resumeDataUrl ? null : (
+                    {!hasFile(application) ? null : (
                       <button
-                        onClick={() => openStoredFile({ dataUrl: application.resumeDataUrl, fileName: application.resumeFileName })}
+                        onClick={() => openStoredFile({ url: application.resumeUrl, dataUrl: application.resumeDataUrl, fileName: application.resumeFileName })}
                         className="text-xs text-primary hover:underline"
                       >
                         Resume sent
@@ -343,9 +343,9 @@ export default function AppliedInternships() {
 
             <div>
               <div className="text-xs font-semibold text-muted-foreground uppercase tracking-wider mb-2">Resume sent with this application</div>
-              {detail.resumeDataUrl ? (
+              {hasFile(detail) ? (
                 <button
-                  onClick={() => openStoredFile({ dataUrl: detail.resumeDataUrl, fileName: detail.resumeFileName })}
+                  onClick={() => openStoredFile({ url: detail.resumeUrl, dataUrl: detail.resumeDataUrl, fileName: detail.resumeFileName })}
                   className="text-sm text-primary font-medium hover:underline"
                 >
                   {detail.resumeFileName || "Open resume"}

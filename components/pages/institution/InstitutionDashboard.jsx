@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useMemo, useState } from "react";
+import { useStoreVersion } from "../../../lib/useLiveStore";
 import DashboardLayout from "../../DashboardLayout";
 import { useAuth } from "../../../lib/auth";
 import { useNav } from "../../../lib/nav";
@@ -17,6 +18,7 @@ import {
   mouStatus,
 } from "../../../lib/store";
 import { PLACEMENT_TONE, useInstitutionName, useRoster } from "./useInstitution";
+import { institutionNeedsOwner } from "../../../lib/institutionSync";
 
 /**
  * The institution home page. Previously this was four stat tiles and a single
@@ -30,14 +32,15 @@ export default function InstitutionDashboard() {
   const [ready, setReady] = useState(false);
 
   useEffect(() => setReady(true), []);
+  const live = useStoreVersion(["institutionProfiles", "drives", "mous", "announcements", "activityLog", "institutionAdmins", "users", "applications"]);
 
   const roster = useRoster(instituteName, [ready]);
-  const profile = useMemo(() => (ready ? getInstitutionProfile(instituteName) : null), [instituteName, ready]);
-  const drives = useMemo(() => (ready ? listDrives(instituteName) : []), [instituteName, ready]);
-  const mous = useMemo(() => (ready ? listMous(instituteName) : []), [instituteName, ready]);
-  const notices = useMemo(() => (ready ? listAnnouncements(instituteName) : []), [instituteName, ready]);
-  const activity = useMemo(() => (ready ? listActivity(instituteName, 6) : []), [instituteName, ready]);
-  const admins = useMemo(() => (ready ? listInstitutionAdmins(instituteName) : []), [instituteName, ready]);
+  const profile = useMemo(() => (ready ? getInstitutionProfile(instituteName) : null), [instituteName, ready, live]);
+  const drives = useMemo(() => (ready ? listDrives(instituteName) : []), [instituteName, ready, live]);
+  const mous = useMemo(() => (ready ? listMous(instituteName) : []), [instituteName, ready, live]);
+  const notices = useMemo(() => (ready ? listAnnouncements(instituteName) : []), [instituteName, ready, live]);
+  const activity = useMemo(() => (ready ? listActivity(instituteName, 6) : []), [instituteName, ready, live]);
+  const admins = useMemo(() => (ready ? listInstitutionAdmins(instituteName) : []), [instituteName, ready, live]);
 
   const placed = roster.filter((r) => r.status === "Placed").length;
   const inProcess = roster.filter((r) => r.status === "In Process").length;
@@ -96,6 +99,15 @@ export default function InstitutionDashboard() {
             </>
           }
         />
+
+        {/* Records written before institution data was keyed by account can only
+            be attached to an institution by name; where that name matched more
+            than one account (or none) the row is left for a human. */}
+        {institutionNeedsOwner() && (
+          <div className="rounded-xl border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-800">
+            Some records from before the account link could not be matched to this institution. Contact support with your institution name.
+          </div>
+        )}
 
         <StatGrid stats={stats} columns={5} />
 

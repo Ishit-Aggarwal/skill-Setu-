@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useMemo, useState } from "react";
+import { useStoreVersion } from "../../../lib/useLiveStore";
 import DashboardLayout from "../../DashboardLayout";
 import { useAuth } from "../../../lib/auth";
 import { Avatar, Badge, Button, Card, DataTable, EmptyState, Field, Flash, Modal, PageHeader, Section, Select, StatGrid, TextInput, useFlash } from "../../ui/Kit";
@@ -36,9 +37,10 @@ export default function TeamActivity() {
   const [showAdd, setShowAdd] = useState(false);
 
   useEffect(() => setReady(true), []);
+  const live = useStoreVersion(["institutionAdmins", "activityLog"]);
 
-  const admins = useMemo(() => (ready && instituteName ? listInstitutionAdmins(instituteName) : []), [instituteName, ready, version]);
-  const activity = useMemo(() => (ready && instituteName ? listActivity(instituteName, 60) : []), [instituteName, ready, version]);
+  const admins = useMemo(() => (ready && instituteName ? listInstitutionAdmins(instituteName) : []), [instituteName, ready, version, live]);
+  const activity = useMemo(() => (ready && instituteName ? listActivity(instituteName, 60) : []), [instituteName, ready, version, live]);
 
   function bump(msg) {
     setVersion((v) => v + 1);

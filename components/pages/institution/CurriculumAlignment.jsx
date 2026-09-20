@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useMemo, useState } from "react";
+import { useStoreVersion } from "../../../lib/useLiveStore";
 import DashboardLayout from "../../DashboardLayout";
 import { useAuth } from "../../../lib/auth";
 import { Badge, Button, Card, EmptyState, Flash, IconTile, PageHeader, ProgressBar, Section, StatGrid, useFlash } from "../../ui/Kit";
@@ -24,8 +25,9 @@ export default function CurriculumAlignment() {
   const [flash, setFlash] = useFlash();
 
   useEffect(() => setReady(true), []);
+  const live = useStoreVersion(["users", "applications", "assessments"]);
 
-  const roster = useMemo(() => (ready && instituteName ? buildRoster(instituteName) : []), [instituteName, ready]);
+  const roster = useMemo(() => (ready && instituteName ? buildRoster(instituteName) : []), [instituteName, ready, live]);
   const demand = useMemo(() => (ready ? industrySkillDemand(14) : []), [ready]);
   const postings = useMemo(() => (ready ? listInternships().filter((i) => i.status !== "Closed") : []), [ready]);
 

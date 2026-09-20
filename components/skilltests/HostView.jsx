@@ -4,8 +4,8 @@ import { useEffect, useState } from "react";
 import Link from "next/link";
 import { SKILL_DOMAINS } from "../../lib/questionBank";
 import {
-  all,
   findOne,
+  listRegistrationsForHost,
   listSkillTestsByOwner,
   insert,
   setSkillTestMeetingLink,
@@ -19,6 +19,7 @@ import {
 } from "../../lib/store";
 import { TEST_LEAD_HOURS, checkLeadTime, earliestDateAfter } from "../../lib/dates";
 import { publishSkillTest } from "../../lib/skillTestSync";
+import { subscribeToMutations } from "../../lib/sync";
 import { api } from "../../convex/_generated/api";
 import { backendErrorMessage, backendMutation, backendQuery, isBackendConfigured } from "../../lib/convexBrowser";
 import { AYUSH_SYSTEM_FIELD_LABEL, ayushSystemLabel, isAyushSystem, needsAyushRetag } from "../../lib/ayush";
@@ -236,11 +237,15 @@ export default function HostView({ user }) {
 
   function refresh() {
     setTests(listSkillTestsByOwner(user.id));
-    setRegistrations(all("skillTestRegistrations"));
+    setRegistrations(listRegistrationsForHost());
   }
 
   useEffect(() => {
     refresh();
+    // Registrations and certificates arrive from other devices through the
+    // store's background pull; re-read when it broadcasts.
+    return subscribeToMutations(["skillTestRegistrations", "skillTests", "credentials"], refresh);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [user]);
 
   function set(key, value) {
@@ -260,7 +265,7 @@ export default function HostView({ user }) {
     return registrations
       .filter((r) => r.testId === testId)
       .map((r) => {
-        const student = findOne("users", (u) => u.id === r.userId);
+        const student = findOne("users", (u) => u.id === r.userId) || r.student;
         const attempt = getAttemptForTest(r.userId, testId);
         return {
           id: r.userId,

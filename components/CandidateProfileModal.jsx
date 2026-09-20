@@ -4,7 +4,7 @@ import { useEffect, useState } from "react";
 import { findOne, getAssessment, getPortfolio, listRecruiters, updateApplicationRecruiterFields, updateApplicationStatus, PIPELINE_STAGES } from "../lib/store";
 import { useAuth } from "../lib/auth";
 import { formatDate } from "../lib/match";
-import { hasFile, openStoredFile } from "../lib/files";
+import { hasFile, openStoredFile, profileImage } from "../lib/files";
 import { scoresFor } from "../lib/taxonomy";
 import { Avatar, Badge, IconTile, Overlay } from "./ui/Kit";
 
@@ -126,7 +126,7 @@ export default function CandidateProfileModal({ application, onClose, onUpdated 
       <div className="relative z-10 bg-card border border-border rounded-2xl w-full max-w-lg shadow-xl animate-fade-slide max-h-[88vh] overflow-y-auto">
         <div className="sticky top-0 bg-card border-b border-border p-5 flex items-start justify-between gap-3 z-10">
           <div className="flex items-center gap-3 min-w-0">
-            <Avatar name={application.studentName} size={44} src={student?.avatarDataUrl} />
+            <Avatar name={application.studentName} size={44} src={profileImage(student, "avatar")} />
             <div className="min-w-0">
               <div className="text-sm font-semibold text-foreground truncate">{application.studentName}</div>
               <div className="text-xs text-muted-foreground truncate">

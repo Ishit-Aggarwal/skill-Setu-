@@ -9,7 +9,7 @@ import {
   listInternships,
   listSavedInternships,
   listStudentNotifications,
-  update,
+  markNotificationsRead,
 } from "../../lib/store";
 import { subscribeToMutations } from "../../lib/sync";
 import { daysUntil, formatDate, relativeTime } from "../../lib/match";
@@ -83,12 +83,12 @@ export default function Notifications() {
 
   function markRead(n) {
     if (n.read) return;
-    update("studentNotifications", n.id, { read: true, readAt: new Date().toISOString() });
+    markNotificationsRead(n.id);
     setVersion((v) => v + 1);
   }
 
   function markAllRead() {
-    unread.forEach((n) => update("studentNotifications", n.id, { read: true, readAt: new Date().toISOString() }));
+    markNotificationsRead(unread.map((n) => n.id));
     setVersion((v) => v + 1);
   }
 

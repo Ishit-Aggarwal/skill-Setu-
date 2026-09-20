@@ -23,7 +23,8 @@ import {
 } from "../../../lib/store";
 import { subscribeToMutations } from "../../../lib/sync";
 import { DEPARTMENTS } from "../../../lib/domains";
-import { hasFile, openStoredFile, readFileAsDataUrl } from "../../../lib/files";
+import { attachedDocument, hasFile, openStoredFile } from "../../../lib/files";
+import { uploadToStorage } from "../../../lib/uploads";
 import { PLACEMENT_TONE, buildRoster, useInstitutionName } from "./useInstitution";
 
 const STAGE_ORDER = PIPELINE_STAGES;
@@ -566,10 +567,10 @@ export default function InstitutionAnalytics() {
                         align: "center",
                         hideBelow: "hidden md:table-cell",
                         render: (r) =>
-                          r.document ? (
+                          hasFile(attachedDocument(r)) ? (
                             <button
                               type="button"
-                              onClick={() => openStoredFile({ dataUrl: r.document, fileName: r.documentName })}
+                              onClick={() => openStoredFile(attachedDocument(r))}
                               className="text-xs text-primary hover:underline font-medium inline-flex items-center gap-1"
                               title="Open verified proof"
                             >
@@ -674,11 +675,12 @@ function BatchRecordModal({ record, onClose, onSave, departments, instituteName 
     }
     setUploadingDoc(true);
     try {
-      const dataUrl = await readFileAsDataUrl(file);
-      setDocument(dataUrl);
-      setDocumentName(file.name);
-    } catch {
-      setError("Could not read document file.");
+      // The proof goes to shared storage; the record keeps the reference.
+      const uploaded = await uploadToStorage(file, { kind: String(file.type || "").startsWith("image/") ? "image" : "document" });
+      setDocument(uploaded);
+      setDocumentName(uploaded.fileName);
+    } catch (err) {
+      setError(err?.message || "Could not read document file.");
     } finally {
       setUploadingDoc(false);
     }

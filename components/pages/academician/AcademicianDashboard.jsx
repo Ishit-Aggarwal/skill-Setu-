@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useMemo, useState } from "react";
+import { useStoreVersion } from "../../../lib/useLiveStore";
 import DashboardLayout from "../../DashboardLayout";
 import { useAuth } from "../../../lib/auth";
 import { useNav } from "../../../lib/nav";
@@ -33,13 +34,14 @@ export default function AcademicianDashboard() {
   const [ready, setReady] = useState(false);
 
   useEffect(() => setReady(true), []);
+  const live = useStoreVersion(["users", "advisees", "mentorNotes", "collabListings", "researchOutputs", "collabInterests", "programs"]);
 
-  const students = useMemo(() => (ready && user ? buildFacultyStudents(user) : []), [user, ready]);
+  const students = useMemo(() => (ready && user ? buildFacultyStudents(user) : []), [user, ready, live]);
   const advisees = useMemo(() => students.filter((s) => s.isAdvisee), [students]);
   const programs = useMemo(() => (ready ? listPrograms() : []), [ready]);
   const myPrograms = useMemo(() => programs.filter((p) => p.ownerId === user?.id), [programs, user]);
-  const listings = useMemo(() => (ready && user ? listCollabListingsByOwner(user.id) : []), [user, ready]);
-  const outputs = useMemo(() => (ready && user ? listResearchOutputs(user.id) : []), [user, ready]);
+  const listings = useMemo(() => (ready && user ? listCollabListingsByOwner(user.id) : []), [user, ready, live]);
+  const outputs = useMemo(() => (ready && user ? listResearchOutputs(user.id) : []), [user, ready, live]);
   /* Office hours live in Convex now, because they are two-sided — a slot
      published here has to be bookable by a student on another device. */
   const [slots, setSlots] = useState([]);

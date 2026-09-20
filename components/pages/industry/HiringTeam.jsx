@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useMemo, useState } from "react";
+import { useStoreVersion } from "../../../lib/useLiveStore";
 import DashboardLayout from "../../DashboardLayout";
 import { useAuth } from "../../../lib/auth";
 import { Avatar, Badge, Button, Card, DataTable, EmptyState, Field, Flash, IconTile, Modal, PageHeader, Section, Select, StatGrid, TextInput, useFlash } from "../../ui/Kit";
@@ -38,10 +39,11 @@ export default function HiringTeam() {
   const [showAdd, setShowAdd] = useState(false);
 
   useEffect(() => setReady(true), []);
+  const live = useStoreVersion(["recruiters", "internships", "applications"]);
 
-  const recruiters = useMemo(() => (ready && user ? listRecruiters(user.id) : []), [user, ready, version]);
-  const postings = useMemo(() => (ready && user ? listInternshipsByOwner(user.id) : []), [user, ready, version]);
-  const applications = useMemo(() => (ready && user ? listApplicationsForOwner(user.id) : []), [user, ready, version]);
+  const recruiters = useMemo(() => (ready && user ? listRecruiters(user.id) : []), [user, ready, version, live]);
+  const postings = useMemo(() => (ready && user ? listInternshipsByOwner(user.id) : []), [user, ready, version, live]);
+  const applications = useMemo(() => (ready && user ? listApplicationsForOwner(user.id) : []), [user, ready, version, live]);
 
   const workload = useMemo(() => {
     const byRecruiter = {};

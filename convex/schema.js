@@ -44,6 +44,20 @@ export default defineSchema({
     deanName: v.optional(v.string()),
     avatar: v.optional(v.string()),
     avatarDataUrl: v.optional(v.union(v.string(), v.null())),
+    /* Profile images live in file storage; the URL is resolved when the
+       reference is written so every reader of the account gets it for free. */
+    avatarStorageId: v.optional(v.union(v.id("_storage"), v.null())),
+    avatarUrl: v.optional(v.union(v.string(), v.null())),
+    bannerStorageId: v.optional(v.union(v.id("_storage"), v.null())),
+    bannerUrl: v.optional(v.union(v.string(), v.null())),
+    bannerDataUrl: v.optional(v.union(v.string(), v.null())),
+    logoStorageId: v.optional(v.union(v.id("_storage"), v.null())),
+    logoUrl: v.optional(v.union(v.string(), v.null())),
+    /* Students an institution invited from its roster: no password yet, and
+       institutionId links them to the account that invited them. */
+    institutionId: v.optional(v.string()),
+    invitedAt: v.optional(v.string()),
+    updatedAt: v.optional(v.string()),
     employeeId: v.optional(v.string()),
     // Industry/company profile (editable by the company itself).
     companyDomain: v.optional(v.string()),
@@ -87,7 +101,8 @@ export default defineSchema({
     showScoresToRecruiters: v.optional(v.boolean()),
   })
     .index("by_email", ["email"])
-    .index("by_role", ["role"]),
+    .index("by_role", ["role"])
+    .index("by_institution", ["institutionId"]),
 
   /**
    * Server-owned sign-in sessions.
@@ -146,6 +161,7 @@ export default defineSchema({
     ownerId: v.string(),
     status: v.string(), // "Open" | "Closed"
     postedAt: v.string(),
+    updatedAt: v.optional(v.string()),
   })
     .index("by_owner", ["ownerId"])
     .index("by_status", ["status"]),
@@ -170,6 +186,17 @@ export default defineSchema({
        submission rather than looked up later. */
     resumeFileName: v.optional(v.string()),
     resumeDataUrl: v.optional(v.union(v.string(), v.null())),
+    resumeStorageId: v.optional(v.union(v.id("_storage"), v.null())),
+    resumeMimeType: v.optional(v.union(v.string(), v.null())),
+    resumeUrl: v.optional(v.union(v.string(), v.null())),
+    studentDepartment: v.optional(v.string()),
+    /* Where the match figure came from: recomputed here when the student has a
+       server-side assessment, otherwise carried over from the device that
+       applied and marked as such. */
+    matchSource: v.optional(v.string()),
+    rejectedAt: v.optional(v.union(v.string(), v.null())),
+    offerSentAt: v.optional(v.union(v.string(), v.null())),
+    updatedAt: v.optional(v.string()),
     /* Structured feedback the reviewer leaves — visible to the candidate,
        unlike recruiterNotes. */
     feedback: v.optional(v.any()),
@@ -177,7 +204,7 @@ export default defineSchema({
     interviewMode: v.optional(v.string()), // "Physical" | "Online"
     interviewAt: v.optional(v.string()),
     recruiterNotes: v.optional(v.string()),
-    rejectionReason: v.optional(v.string()),
+    rejectionReason: v.optional(v.union(v.string(), v.null())),
     // Post-hire tracking: the pipeline doesn't end at "Hired".
     offerStage: v.optional(v.string()),
     offerUpdatedAt: v.optional(v.string()),
@@ -186,7 +213,8 @@ export default defineSchema({
     joiningDate: v.optional(v.string()),
   })
     .index("by_internship", ["internshipId"])
-    .index("by_student", ["studentId"]),
+    .index("by_student", ["studentId"])
+    .index("by_client_id", ["id"]),
 
   programs: defineTable({
     id: v.optional(v.string()),
@@ -273,6 +301,7 @@ export default defineSchema({
        minimum percentage. */
     issueCertificate: v.optional(v.boolean()),
     minCertificateScore: v.optional(v.union(v.number(), v.null())),
+    updatedAt: v.optional(v.string()),
   }).index("by_owner", ["ownerId"]),
 
   /**
@@ -411,18 +440,47 @@ export default defineSchema({
     savedAt: v.string(),
   }).index("by_test", ["testId"]),
 
+
+  /* ============================================================
+     Mirrored collections.
+
+     Everything below used to live only in the creating browser's
+     localStorage. Each table now carries the client's own record id
+     (`id`, indexed as by_client_id so a retried mirror upserts rather
+     than duplicates), an `updatedAt` stamp for the merge rule in
+     lib/mergeRows.js, and an index on the field that names its owner.
+
+     Tables whose rows are free-form profile bags (an institution's
+     profile, a drive, an MOU, a notice) are declared with a permissive
+     document validator: the browser writes whatever the form holds, and
+     the mutation, not the schema, is what forces the owner id and strips
+     anything a client may not set. The security-relevant fields are
+     still validated in the mutation's own argument validators.
+     ============================================================ */
+
   skillTestRegistrations: defineTable({
+    id: v.optional(v.string()),
     testId: v.string(),
     userId: v.string(),
+    name: v.optional(v.string()),
+    email: v.optional(v.string()),
+    institution: v.optional(v.string()),
+    course: v.optional(v.string()),
+    year: v.optional(v.string()),
+    phone: v.optional(v.string()),
     paymentStatus: v.optional(v.string()),
     missedRecorded: v.optional(v.boolean()),
     attended: v.optional(v.boolean()),
+    attendedAt: v.optional(v.union(v.string(), v.null())),
+    score: v.optional(v.union(v.number(), v.null())),
     registeredAt: v.string(),
-    slot: v.optional(v.string()),
+    slot: v.optional(v.union(v.string(), v.null())),
     paid: v.optional(v.boolean()),
+    updatedAt: v.optional(v.string()),
   })
     .index("by_test", ["testId"])
-    .index("by_user", ["userId"]),
+    .index("by_user", ["userId"])
+    .index("by_client_id", ["id"]),
 
   assessmentAttempts: defineTable({
     studentId: v.string(),
@@ -449,64 +507,68 @@ export default defineSchema({
     updatedAt: v.string(),
   }).index("by_student", ["studentId"]),
 
-  portfolios: defineTable({
-    studentId: v.string(),
-    bio: v.optional(v.string()),
-    headline: v.optional(v.string()),
-    location: v.optional(v.string()),
-    links: v.optional(v.any()),
-    skillBadges: v.optional(v.any()),
-    certifications: v.optional(v.array(v.any())),
-    projects: v.optional(v.array(v.any())),
-    education: v.optional(v.array(v.any())),
-    achievements: v.optional(v.array(v.any())),
-    timeline: v.optional(v.array(v.any())),
-    documents: v.optional(v.array(v.any())),
-  }).index("by_student", ["studentId"]),
+  /* Documents, banner and photo are storage references
+     ({ storageId, fileName, mimeType, bytes }); the query resolves `url`. */
+  portfolios: defineTable(v.any()).index("by_student", ["studentId"]).index("by_client_id", ["id"]),
 
   collabResponses: defineTable({
+    id: v.optional(v.string()),
     collabId: v.string(),
+    ownerId: v.optional(v.string()),
     response: v.string(),
-  }).index("by_collab", ["collabId"]),
+    updatedAt: v.optional(v.string()),
+  })
+    .index("by_collab", ["collabId"])
+    .index("by_owner", ["ownerId"])
+    .index("by_client_id", ["id"]),
 
   activityLog: defineTable({
     id: v.optional(v.string()),
     scope: v.string(),
+    institutionId: v.optional(v.string()),
+    needsOwner: v.optional(v.boolean()),
     actor: v.string(),
     action: v.string(),
     detail: v.optional(v.string()),
     at: v.string(),
-  }).index("by_scope", ["scope"]),
+    updatedAt: v.optional(v.string()),
+  })
+    .index("by_scope", ["scope"])
+    .index("by_institution", ["institutionId"])
+    .index("by_client_id", ["id"]),
 
   advisees: defineTable({
     id: v.optional(v.string()),
     facultyId: v.string(),
     studentId: v.string(),
     since: v.string(),
+    updatedAt: v.optional(v.string()),
   })
     .index("by_faculty", ["facultyId"])
-    .index("by_student", ["studentId"]),
+    .index("by_student", ["studentId"])
+    .index("by_client_id", ["id"]),
 
-  announcements: defineTable({
-    id: v.optional(v.string()),
-    instituteName: v.string(),
-    title: v.string(),
-    body: v.string(),
-    target: v.optional(v.string()),
-    department: v.optional(v.string()),
-    author: v.optional(v.string()),
-    postedAt: v.string(),
-  }).index("by_institute", ["instituteName"]),
+  announcements: defineTable(v.any())
+    .index("by_institute", ["instituteName"])
+    .index("by_institution", ["institutionId"])
+    .index("by_client_id", ["id"]),
 
   collabFiles: defineTable({
     id: v.optional(v.string()),
     collabId: v.string(),
     name: v.string(),
-    size: v.optional(v.string()),
-    url: v.optional(v.string()),
+    size: v.optional(v.union(v.string(), v.number())),
+    storageId: v.optional(v.union(v.id("_storage"), v.null())),
+    fileName: v.optional(v.string()),
+    mimeType: v.optional(v.string()),
+    bytes: v.optional(v.number()),
     uploadedBy: v.optional(v.string()),
+    uploadedById: v.optional(v.string()),
     uploadedAt: v.string(),
-  }).index("by_collab", ["collabId"]),
+    updatedAt: v.optional(v.string()),
+  })
+    .index("by_collab", ["collabId"])
+    .index("by_client_id", ["id"]),
 
   collabInterests: defineTable({
     id: v.optional(v.string()),
@@ -517,128 +579,97 @@ export default defineSchema({
     message: v.optional(v.string()),
     status: v.string(),
     at: v.string(),
+    updatedAt: v.optional(v.string()),
   })
     .index("by_listing", ["listingId"])
-    .index("by_user", ["userId"]),
+    .index("by_user", ["userId"])
+    .index("by_client_id", ["id"]),
 
-  collabListings: defineTable({
-    id: v.optional(v.string()),
-    ownerId: v.string(),
-    ownerName: v.string(),
-    title: v.string(),
-    domain: v.optional(v.string()),
-    departments: v.optional(v.array(v.string())),
-    description: v.optional(v.string()),
-    deliverables: v.optional(v.string()),
-    status: v.string(),
-    createdAt: v.string(),
-  })
+  collabListings: defineTable(v.any())
     .index("by_owner", ["ownerId"])
-    .index("by_status", ["status"]),
+    .index("by_status", ["status"])
+    .index("by_client_id", ["id"]),
 
   collabMessages: defineTable({
     id: v.optional(v.string()),
     collabId: v.string(),
     author: v.string(),
+    authorId: v.optional(v.string()),
     body: v.string(),
     at: v.string(),
-  }).index("by_collab", ["collabId"]),
+    updatedAt: v.optional(v.string()),
+  })
+    .index("by_collab", ["collabId"])
+    .index("by_client_id", ["id"]),
 
   collabMilestones: defineTable({
     id: v.optional(v.string()),
     collabId: v.string(),
     title: v.string(),
     due: v.optional(v.string()),
+    owner: v.optional(v.string()),
     done: v.boolean(),
     createdAt: v.string(),
     completedAt: v.optional(v.union(v.string(), v.null())),
-  }).index("by_collab", ["collabId"]),
+    updatedAt: v.optional(v.string()),
+  })
+    .index("by_collab", ["collabId"])
+    .index("by_client_id", ["id"]),
 
+  /* Reviews are public and keyed by company name; `authorId` says which
+     side of the demo wall a review belongs to. */
   companyReviews: defineTable({
     id: v.optional(v.string()),
     company: v.string(),
+    authorId: v.optional(v.string()),
+    author: v.optional(v.string()),
     authorName: v.optional(v.string()),
     role: v.optional(v.string()),
     rating: v.number(),
+    body: v.optional(v.string()),
     pros: v.optional(v.string()),
     cons: v.optional(v.string()),
     createdAt: v.string(),
-  }).index("by_company", ["company"]),
+    updatedAt: v.optional(v.string()),
+  })
+    .index("by_company", ["company"])
+    .index("by_author", ["authorId"])
+    .index("by_client_id", ["id"]),
 
   driveEligibility: defineTable({
     id: v.optional(v.string()),
     driveId: v.string(),
     studentId: v.string(),
     taggedAt: v.string(),
+    updatedAt: v.optional(v.string()),
   })
     .index("by_drive", ["driveId"])
-    .index("by_student", ["studentId"]),
+    .index("by_student", ["studentId"])
+    .index("by_client_id", ["id"]),
 
-  driveInvites: defineTable({
-    id: v.optional(v.string()),
-    driveId: v.string(),
-    company: v.string(),
-    contactEmail: v.optional(v.string()),
-    roleOffered: v.optional(v.string()),
-    stipend: v.optional(v.string()),
-    rsvp: v.string(),
-    invitedAt: v.string(),
-    rsvpAt: v.optional(v.string()),
-  }).index("by_drive", ["driveId"]),
+  driveInvites: defineTable(v.any())
+    .index("by_drive", ["driveId"])
+    .index("by_client_id", ["id"]),
 
-  drives: defineTable({
-    id: v.optional(v.string()),
-    instituteName: v.string(),
-    title: v.string(),
-    date: v.string(),
-    venue: v.optional(v.string()),
-    status: v.string(),
-    eligibleBatches: v.optional(v.array(v.string())),
-    createdAt: v.string(),
-    // A drive card is the student's whole brief for the day — it needs to
-    // carry the criteria, the deadline and who to ask, not just a date.
-    description: v.optional(v.string()),
-    eligibilityCriteria: v.optional(v.string()),
-    eligibleDepartments: v.optional(v.array(v.string())),
-    minSkillScore: v.optional(v.union(v.number(), v.null())),
-    registrationDeadline: v.optional(v.string()),
-    capacity: v.optional(v.union(v.number(), v.null())),
-    coordinatorName: v.optional(v.string()),
-    coordinatorEmail: v.optional(v.string()),
-    coordinatorPhone: v.optional(v.string()),
-    tags: v.optional(v.array(v.string())),
-  }).index("by_institute", ["instituteName"]),
-
-  institutionAdmins: defineTable({
-    id: v.optional(v.string()),
-    instituteName: v.string(),
-    name: v.string(),
-    email: v.string(),
-    role: v.string(),
-    designation: v.optional(v.string()),
-    status: v.string(),
-    addedAt: v.string(),
-  })
+  drives: defineTable(v.any())
     .index("by_institute", ["instituteName"])
-    .index("by_email", ["email"]),
+    .index("by_institution", ["institutionId"])
+    .index("by_client_id", ["id"]),
 
-  institutionProfiles: defineTable({
-    id: v.optional(v.string()),
-    instituteName: v.string(),
-    code: v.optional(v.string()),
-    instituteType: v.optional(v.string()),
-    address: v.optional(v.string()),
-    city: v.optional(v.string()),
-    state: v.optional(v.string()),
-    website: v.optional(v.string()),
-    contactEmail: v.optional(v.string()),
-    contactPhone: v.optional(v.string()),
-    naacGrade: v.optional(v.string()),
-    nirfRank: v.optional(v.string()),
-    departments: v.optional(v.array(v.string())),
-    placementPolicy: v.optional(v.string()),
-    updatedAt: v.optional(v.string()),
-  }).index("by_name", ["instituteName"]),
+  institutionAdmins: defineTable(v.any())
+    .index("by_institute", ["instituteName"])
+    .index("by_institution", ["institutionId"])
+    .index("by_client_id", ["id"]),
+
+  institutionDocs: defineTable(v.any())
+    .index("by_institute", ["instituteName"])
+    .index("by_institution", ["institutionId"])
+    .index("by_client_id", ["id"]),
+
+  institutionProfiles: defineTable(v.any())
+    .index("by_name", ["instituteName"])
+    .index("by_institution", ["institutionId"])
+    .index("by_client_id", ["id"]),
 
   mentorBookings: defineTable({
     id: v.optional(v.string()),
@@ -664,32 +695,46 @@ export default defineSchema({
     updatedAt: v.string(),
   })
     .index("by_faculty", ["facultyId"])
-    .index("by_student", ["studentId"]),
+    .index("by_student", ["studentId"])
+    .index("by_client_id", ["id"]),
 
-  mous: defineTable({
+  mentorshipRequests: defineTable({
     id: v.optional(v.string()),
-    instituteName: v.string(),
-    partnerName: v.string(),
-    partnerType: v.optional(v.string()),
-    signedOn: v.optional(v.string()),
-    validUntil: v.optional(v.string()),
-    expiryDate: v.optional(v.string()),
-    status: v.optional(v.string()),
-    scopes: v.optional(v.array(v.string())),
-    contactPerson: v.optional(v.string()),
-    contactEmail: v.optional(v.string()),
-    timeline: v.optional(v.array(v.any())),
-    createdAt: v.string(),
-  }).index("by_institute", ["instituteName"]),
+    studentId: v.string(),
+    studentName: v.optional(v.string()),
+    studentDepartment: v.optional(v.string()),
+    studentInstitution: v.optional(v.string()),
+    facultyId: v.string(),
+    facultyName: v.optional(v.string()),
+    message: v.optional(v.string()),
+    status: v.string(), // "Pending" | "Accepted" | "Declined"
+    requestedAt: v.string(),
+    respondedAt: v.optional(v.union(v.string(), v.null())),
+    updatedAt: v.optional(v.string()),
+  })
+    .index("by_student", ["studentId"])
+    .index("by_faculty", ["facultyId"])
+    .index("by_client_id", ["id"]),
+
+  mous: defineTable(v.any())
+    .index("by_institute", ["instituteName"])
+    .index("by_institution", ["institutionId"])
+    .index("by_client_id", ["id"]),
 
   notifyBatches: defineTable({
     id: v.optional(v.string()),
-    instituteName: v.string(),
+    instituteName: v.optional(v.string()),
+    institutionId: v.optional(v.string()),
+    needsOwner: v.optional(v.boolean()),
     recipients: v.number(),
     message: v.string(),
     from: v.string(),
     sentAt: v.string(),
-  }).index("by_institute", ["instituteName"]),
+    updatedAt: v.optional(v.string()),
+  })
+    .index("by_institute", ["instituteName"])
+    .index("by_institution", ["institutionId"])
+    .index("by_client_id", ["id"]),
 
   officeHours: defineTable({
     id: v.optional(v.string()),
@@ -706,6 +751,7 @@ export default defineSchema({
     title: v.optional(v.string()),
     durationMins: v.optional(v.number()),
     notes: v.optional(v.string()),
+    audience: v.optional(v.string()),
     /* Online slots with no joining link get pushed back a day at a time and
        cancelled on the third push. Both counters live on the slot so the
        escalation can be replayed from the record itself. */
@@ -714,22 +760,10 @@ export default defineSchema({
     cancelledReason: v.optional(v.string()),
   }).index("by_faculty", ["facultyId"]),
 
-  placementHistory: defineTable({
-    id: v.optional(v.string()),
-    instituteName: v.string(),
-    batch: v.union(v.string(), v.number()),
-    department: v.string(),
-    students: v.number(),
-    placed: v.number(),
-    medianStipend: v.optional(v.number()),
-    topRecruiter: v.optional(v.string()),
-    /* Supporting proof is encouraged but never required — making it mandatory
-       would keep institutions from publishing their record at all. */
-    document: v.optional(v.union(v.string(), v.null())),
-    documentName: v.optional(v.string()),
-    notes: v.optional(v.string()),
-    updatedAt: v.optional(v.string()),
-  }).index("by_institute", ["instituteName"]),
+  placementHistory: defineTable(v.any())
+    .index("by_institute", ["instituteName"])
+    .index("by_institution", ["institutionId"])
+    .index("by_client_id", ["id"]),
 
   programFeedback: defineTable({
     id: v.optional(v.string()),
@@ -751,38 +785,34 @@ export default defineSchema({
     accessLevel: v.string(),
     notesVisible: v.optional(v.boolean()),
     addedAt: v.string(),
+    updatedAt: v.optional(v.string()),
   })
     .index("by_owner", ["companyOwnerId"])
-    .index("by_email", ["email"]),
+    .index("by_email", ["email"])
+    .index("by_client_id", ["id"]),
 
-  researchOutputs: defineTable({
-    id: v.optional(v.string()),
-    facultyId: v.string(),
-    title: v.string(),
-    type: v.string(),
-    journalOrConference: v.optional(v.string()),
-    venue: v.optional(v.string()),
-    year: v.optional(v.string()),
-    doi: v.optional(v.string()),
-    /* Either a link or an uploaded PDF — a publication nobody can open is
-       just a claim. */
-    url: v.optional(v.string()),
-    fileName: v.optional(v.string()),
-    fileDataUrl: v.optional(v.union(v.string(), v.null())),
-    collaborators: v.optional(v.array(v.string())),
-    addedAt: v.string(),
-  }).index("by_faculty", ["facultyId"]),
+  /* `file` is a storage reference for an uploaded PDF; `url` a link. */
+  researchOutputs: defineTable(v.any())
+    .index("by_faculty", ["facultyId"])
+    .index("by_client_id", ["id"]),
 
   studentNotifications: defineTable({
     id: v.optional(v.string()),
-    studentId: v.string(),
-    batchId: v.optional(v.string()),
+    studentId: v.string(), // the recipient — faculty receive rows here too
+    batchId: v.optional(v.union(v.string(), v.null())),
+    testId: v.optional(v.union(v.string(), v.null())),
+    credentialId: v.optional(v.union(v.string(), v.null())),
+    slotId: v.optional(v.union(v.string(), v.null())),
+    senderId: v.optional(v.string()),
     message: v.string(),
     from: v.string(),
     sentAt: v.string(),
     read: v.boolean(),
-    readAt: v.optional(v.string()),
-  }).index("by_student", ["studentId"]),
+    readAt: v.optional(v.union(v.string(), v.null())),
+    updatedAt: v.optional(v.string()),
+  })
+    .index("by_student", ["studentId"])
+    .index("by_client_id", ["id"]),
 
   savedSearches: defineTable({
     id: v.optional(v.string()),
@@ -790,7 +820,10 @@ export default defineSchema({
     name: v.string(),
     filters: v.any(),
     savedAt: v.string(),
-  }).index("by_owner", ["ownerId"]),
+    updatedAt: v.optional(v.string()),
+  })
+    .index("by_owner", ["ownerId"])
+    .index("by_client_id", ["id"]),
 
   // Certificates a company / institution / faculty member issues to a student.
   // Only the issuer writes these; the student's own portfolio certifications
@@ -813,6 +846,7 @@ export default defineSchema({
     verifyCode: v.optional(v.string()),
     issuedAt: v.string(),
     revokedAt: v.optional(v.union(v.string(), v.null())),
+    updatedAt: v.optional(v.string()),
     /* Automatic certificates freeze everything the PDF is drawn from at issue
        time, so a later branding change can never alter an issued record. */
     attemptId: v.optional(v.union(v.string(), v.null())),
@@ -831,7 +865,10 @@ export default defineSchema({
     studentId: v.string(),
     internshipId: v.string(),
     savedAt: v.string(),
-  }).index("by_student", ["studentId"]),
+    updatedAt: v.optional(v.string()),
+  })
+    .index("by_student", ["studentId"])
+    .index("by_client_id", ["id"]),
 
   /* Office-hour slots a student has bookmarked but not booked — the mentorship
      equivalent of savedInternships, so "Saved Mentorships" has something real
@@ -840,7 +877,11 @@ export default defineSchema({
     id: v.optional(v.string()),
     studentId: v.string(),
     slotId: v.string(),
-    facultyId: v.optional(v.string()),
+    facultyId: v.optional(v.union(v.string(), v.null())),
+    snapshot: v.optional(v.any()),
     savedAt: v.string(),
-  }).index("by_student", ["studentId"]),
+    updatedAt: v.optional(v.string()),
+  })
+    .index("by_student", ["studentId"])
+    .index("by_client_id", ["id"]),
 });
