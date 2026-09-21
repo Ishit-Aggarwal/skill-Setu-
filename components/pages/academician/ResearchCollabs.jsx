@@ -130,7 +130,7 @@ export default function ResearchCollabs() {
               return (
                 <Card key={c.id} hover>
                   <div className="flex flex-wrap items-start justify-between gap-3 mb-3">
-                    <div className="flex-1 min-w-0">
+                    <div className="flex-1 min-w-[12rem]">
                       <div className="text-sm font-semibold text-foreground mb-1">{c.title}</div>
                       <div className="text-xs text-muted-foreground">{c.initiator}</div>
                     </div>

@@ -39,6 +39,11 @@ export default function CertificateCard({ credential, status, minScore, compact 
   if (status === "below_minimum") {
     return <div className="rounded-xl border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-800">Certificate not issued — minimum score not met.{minScore != null ? ` (${minScore}% required)` : ""}</div>;
   }
+  /* An in-person or hybrid sitting: the mark is in, and the host releases
+     the certificates for the whole sitting once it has ended. */
+  if (status === "pending_release") {
+    return <div className="rounded-xl border border-border bg-secondary px-4 py-3 text-sm text-muted-foreground">🏅 Your mark is recorded. The host releases certificates for this sitting once it has ended — yours will appear here.</div>;
+  }
   if (!credential) return null;
 
   async function download() {

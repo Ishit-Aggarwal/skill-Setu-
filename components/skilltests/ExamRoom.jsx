@@ -9,6 +9,7 @@ import { getAssessment, insert, findOne, recordGradedAttempt } from "../../lib/s
 import { EXAM } from "../../lib/settings";
 import { autoSubmitMessage } from "../../lib/examState";
 import { startFaceMonitor } from "../../lib/faceMonitor";
+import { startVoiceMonitor } from "../../lib/voiceMonitor";
 import { TYPE_LABEL } from "../../lib/questions";
 import { Badge, Button, ProgressBar } from "../ui/Kit";
 import ExamResult from "./ExamResult";
@@ -20,10 +21,18 @@ import ExamResult from "./ExamResult";
  * camera/microphone permission → a live device check → fullscreen, and only
  * then does the server start the clock and hand over the paper (with no
  * answer key in it). While the paper is open the room records continuously
- * in short chunks, watches fullscreen, tab focus, blocked shortcuts,
- * sustained microphone noise and device loss, and reports every event to
- * the server — which keeps the count, decides when the limit forces a
- * submission, and grades the paper.
+ * in short chunks, watches fullscreen, blocked shortcuts, the face in front
+ * of the camera (and whether it is still the same face), voices in the
+ * room, sustained noise and device loss, and reports every event to the
+ * server — which keeps the counts, decides when a limit ends the attempt,
+ * and grades the paper.
+ *
+ * Leaving the window is different from every other rule: a tab switch,
+ * Alt+Tab, minimising, a three-finger swipe, closing the tab or a reload
+ * cannot be blocked from a web page, so it is not paused and charged — the
+ * attempt is over. The browser reports it if it can (a keepalive beacon on
+ * the way out), and a paper whose "still here" pings stop is closed by the
+ * server anyway.
  *
  * Nothing here claims cheating is impossible. The copy is the one line from
  * lib/settings.js: recorded and monitored, flagged for the host's review.
@@ -37,6 +46,18 @@ const BLOCKED_KEYS = [
   { test: (e) => (e.ctrlKey || e.metaKey) && ["c", "x", "v"].includes(e.key.toLowerCase()), name: "Copy / cut / paste" },
   { test: (e) => (e.ctrlKey || e.metaKey) && e.altKey && ["i", "j", "c", "u"].includes(e.key.toLowerCase()), name: "Developer tools shortcut" },
 ];
+
+/** The server-kept verdict on a graded attempt, laid over the raw marking. */
+function pickGrading(attempt) {
+  return {
+    score: attempt.score,
+    points: attempt.rawPoints != null && attempt.penaltyPoints != null ? Math.max(0, attempt.rawPoints - attempt.penaltyPoints) : undefined,
+    rawPoints: attempt.rawPoints,
+    penaltyPoints: attempt.penaltyPoints,
+    violations: attempt.violationCount,
+    failed: Boolean(attempt.failed),
+  };
+}
 
 function formatClock(ms) {
   const total = Math.max(0, Math.round(ms / 1000));
@@ -135,6 +156,9 @@ export default function ExamRoom({ test, user, onClose, onGraded }) {
   const [endConfirm, setEndConfirm] = useState(false);
   const monitorVideoRef = useRef(null);
   const faceUnavailableLoggedRef = useRef(false);
+  const voiceUnavailableLoggedRef = useRef(false);
+  const referenceSentRef = useRef(false);
+  const leavingRef = useRef(false);
   const configRef = useRef(null);
   configRef.current = config;
 
@@ -273,6 +297,49 @@ export default function ExamRoom({ test, user, onClose, onGraded }) {
     },
     [applyGraded, elapsedMs, flushEvents]
   );
+
+  /**
+   * The window was left. TAB_SWITCH is logged and flushed at once — the
+   * server fails the attempt on it and hands back the graded result — and
+   * if that round trip cannot complete, the paper is submitted as failed.
+   */
+  const failForLeaving = useCallback(
+    async (detail) => {
+      if (leavingRef.current || submittingRef.current || phaseRef.current !== "paper") return;
+      leavingRef.current = true;
+      setPhase("grading");
+      eventQueueRef.current.push({ type: "TAB_SWITCH", atMs: elapsedMs(), detail, durationMs: null });
+      clearTimeout(flushTimerRef.current);
+      const out = await flushEvents();
+      if (out?.state === "GRADED") return;
+      await submit({ auto: true, reason: "window_left" });
+    },
+    [elapsedMs, flushEvents, submit]
+  );
+
+  /* The last word on the way out. A closing or reloading tab gets no time
+     for a normal request; a keepalive POST to the shared database's HTTP
+     endpoint is allowed to outlive the page. */
+  const beaconWindowClosed = useCallback(() => {
+    const att = attemptRef.current;
+    const url = process.env.NEXT_PUBLIC_CONVEX_URL;
+    const token = getSessionToken();
+    if (!att || !url || !token || phaseRef.current !== "paper") return;
+    try {
+      fetch(`${url}/api/mutation`, {
+        method: "POST",
+        keepalive: true,
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          path: "exams:logEvents",
+          format: "json",
+          args: { sessionToken: token, attemptId: att.id, events: [{ type: "WINDOW_CLOSED", atMs: elapsedMs(), detail: "The tab or window was closed, reloaded or navigated away from", durationMs: null }] },
+        }),
+      }).catch(() => {});
+    } catch {
+      /* the heartbeat sweep closes it from the server side */
+    }
+  }, [elapsedMs]);
 
   /* ------------------------------------------------------------------ */
   /* Media                                                                */
@@ -505,6 +572,25 @@ export default function ExamRoom({ test, user, onClose, onGraded }) {
         setAttempt(out.attempt);
         attemptRef.current = out.attempt;
         const state = out.attempt.state;
+        if (out.closedOnReturn && out.graded) {
+          // The paper was open when this room was last closed: the server
+          // has just failed and graded it. Show that, not a fresh paper.
+          applyGraded(out.graded);
+          return;
+        }
+        if (out.failedEarlier) {
+          // A failed attempt is final; the room reopens on its result.
+          const review = await backendQuery(api.exams.review, { attemptId: out.attempt.id });
+          if (cancelled) return;
+          if (review?.ok) {
+            startedAtRef.current = review.attempt.startedAt ? new Date(review.attempt.startedAt).getTime() : null;
+            applyGraded({ result: { ...review.result, ...pickGrading(review.attempt) }, certificate: review.certificate, autoSubmitReason: review.attempt.autoSubmitReason, disqualified: review.attempt.disqualified });
+          } else {
+            setError("Your earlier attempt at this test was failed, so it cannot be sat again.");
+            setPhase("error");
+          }
+          return;
+        }
         if (["IN_PROGRESS", "PAUSED_VIOLATION"].includes(state)) {
           // A reload mid-test: the clock is still running on the server.
           if (proctored) setPhase("consent");
@@ -677,6 +763,36 @@ export default function ExamRoom({ test, user, onClose, onGraded }) {
     return () => clearTimeout(saveTimerRef.current);
   }, [answers, phase, attempt]);
 
+  // "Still here" while the paper is open; the server fails a paper whose
+  // pings stop (a window closed without the beacon getting out).
+  useEffect(() => {
+    if (phase !== "paper" || !attempt) return undefined;
+    const seconds = config?.heartbeatSeconds || EXAM.HEARTBEAT_SECONDS;
+    const ping = () => backendMutation(api.exams.heartbeat, { attemptId: attempt.id }).catch(() => {});
+    ping();
+    const timer = setInterval(ping, seconds * 1000);
+    return () => clearInterval(timer);
+  }, [phase, attempt, config?.heartbeatSeconds]);
+
+  // Closing, reloading or navigating away while the paper is open ends the
+  // attempt. The browser's own "leave site?" prompt gives one chance to stay;
+  // once the page really goes, the beacon reports it.
+  useEffect(() => {
+    if (phase !== "paper" || !proctored) return undefined;
+    const onBeforeUnload = (e) => {
+      e.preventDefault();
+      e.returnValue = "Leaving this page ends your test and fails the attempt.";
+      return e.returnValue;
+    };
+    const onPageHide = () => beaconWindowClosed();
+    window.addEventListener("beforeunload", onBeforeUnload);
+    window.addEventListener("pagehide", onPageHide);
+    return () => {
+      window.removeEventListener("beforeunload", onBeforeUnload);
+      window.removeEventListener("pagehide", onPageHide);
+    };
+  }, [phase, proctored, beaconWindowClosed]);
+
   /*
    * Pause / resume.
    *
@@ -698,7 +814,8 @@ export default function ExamRoom({ test, user, onClose, onGraded }) {
       setPauseLeft(seconds ?? 0);
       if (reason === "fullscreen") logEvent("FULLSCREEN_EXIT", "Left fullscreen", null, { immediate: true });
       try {
-        await backendMutation(api.exams.pause, { attemptId: attemptRef.current.id, reason: reason === "device" ? "device_disconnected" : "fullscreen_exit" });
+        const why = reason === "device" ? "device_disconnected" : reason === "window" ? "window_left" : "fullscreen_exit";
+        await backendMutation(api.exams.pause, { attemptId: attemptRef.current.id, reason: why });
       } catch {
         /* the pause still holds locally */
       }
@@ -753,6 +870,23 @@ export default function ExamRoom({ test, user, onClose, onGraded }) {
           logEvent("FACE_MONITOR_UNAVAILABLE", status.error || "model failed to load", null);
         }
       },
+      /* The still the identity check was seeded with, kept with the
+         recording so the host can see who sat down. Best effort. */
+      onReference: async (blob) => {
+        const att = attemptRef.current;
+        if (!att || referenceSentRef.current) return;
+        referenceSentRef.current = true;
+        try {
+          const url = await backendMutation(api.exams.generateUploadUrl, { attemptId: att.id });
+          const res = await fetch(url, { method: "POST", headers: { "Content-Type": "image/jpeg" }, body: blob });
+          if (!res.ok) throw new Error(`upload ${res.status}`);
+          const { storageId } = await res.json();
+          await backendMutation(api.exams.registerReferenceFace, { attemptId: att.id, storageId });
+        } catch (err) {
+          referenceSentRef.current = false;
+          console.warn("[exam] reference still not saved:", err?.message || err);
+        }
+      },
     });
     return () => {
       stop();
@@ -761,12 +895,30 @@ export default function ExamRoom({ test, user, onClose, onGraded }) {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [phase, proctored, config?.faceMonitoring]);
 
+  /* On-device voice monitoring: voices in the room, from the same
+     microphone the recording uses. */
+  useEffect(() => {
+    if (phase !== "paper" || !proctored || !streamRef.current) return undefined;
+    const stop = startVoiceMonitor(streamRef.current, {
+      onEvent: (type, detail, durationMs) => logEvent(type, detail, durationMs),
+      onStatus: (status) => {
+        if (status.state === "unavailable" && !voiceUnavailableLoggedRef.current) {
+          voiceUnavailableLoggedRef.current = true;
+          logEvent("VOICE_MONITOR_UNAVAILABLE", status.error || "model failed to load", null);
+        }
+      },
+    });
+    return stop;
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [phase, proctored]);
+
   // Monitoring listeners while the paper is open.
   useEffect(() => {
     if (phase !== "paper" || !proctored) return undefined;
 
     const onFullscreen = () => {
       if (document.fullscreenElement) return;
+      if (leavingRef.current) return;
       beginPause("fullscreen");
       // Browsers only re-enter fullscreen from a user gesture, so this is
       // usually refused — but where it is honoured the paper is back at once.
@@ -776,15 +928,20 @@ export default function ExamRoom({ test, user, onClose, onGraded }) {
         endPause();
       }).catch(() => {});
     };
+    /* Leaving the window — a tab switch, Alt+Tab, minimising, or a touchpad
+       gesture (three-finger swipe to the desktop or Task View). None of these
+       can be prevented from a web page; the OS handles them before the browser
+       sees them. So the attempt ends the moment it happens. */
+    const leftWindow = (detail) => failForLeaving(detail);
     const onVisibility = () => {
-      if (document.visibilityState === "hidden") logEvent("TAB_SWITCH", "Tab hidden or window minimised");
+      if (document.visibilityState === "hidden") leftWindow("Tab hidden or window minimised");
     };
     const onBlur = () => {
-      // A tab switch fires blur and then visibilitychange; wait for the
-      // second so one switch is one violation, not two.
+      // Focus can move to a permission prompt or the browser's own chrome for
+      // an instant; only a focus that stays gone is the window being left.
       setTimeout(() => {
-        if (document.visibilityState === "visible" && !document.hasFocus()) logEvent("TAB_SWITCH", "Focus moved to another window");
-      }, 200);
+        if (document.visibilityState === "visible" && !document.hasFocus()) leftWindow("Focus moved to another window or app");
+      }, 300);
     };
     const blocked = (name, e) => {
       e.preventDefault();
@@ -871,7 +1028,7 @@ export default function ExamRoom({ test, user, onClose, onGraded }) {
       clearInterval(trackPoll);
       clearTimeout(muteTimer);
     };
-  }, [phase, proctored, beginPause, endPause, logEvent]);
+  }, [phase, proctored, beginPause, endPause, logEvent, failForLeaving]);
 
   async function reconnectDevices() {
     try {
@@ -899,6 +1056,15 @@ export default function ExamRoom({ test, user, onClose, onGraded }) {
     } catch {
       setError("Fullscreen was blocked. Click the button again and allow fullscreen when your browser asks.");
     }
+  }
+
+  /* Back from a tab switch, a minimised window or a touchpad gesture. The
+     window is usually still fullscreen; if it is not, that is put right on
+     the same click so the candidate is not asked twice. */
+  async function returnToPaper() {
+    if (!document.fullscreenElement) return returnToFullscreen();
+    lockKeyboard();
+    await endPause();
   }
 
   // Cleanup on unmount.
@@ -987,8 +1153,8 @@ export default function ExamRoom({ test, user, onClose, onGraded }) {
           </div>
           <div className="rounded-xl border border-border bg-card px-4 py-4 text-sm text-foreground leading-relaxed space-y-3">
             <p>
-              This test is recorded and monitored for academic integrity. Your camera and microphone will record continuously for the entire duration of the test. The system will also automatically
-              detect and flag things like leaving fullscreen, switching tabs or windows, and unusual background noise. Your professor will be able to review the recording and the flagged moments after you
+              This test is recorded and monitored for academic integrity. Your camera and microphone will record continuously for the entire duration of the test. The system automatically checks
+              that you stay in front of the camera and that nobody else is in the room or speaking, and flags leaving fullscreen and unusual background noise. <strong>Leaving the test window in any way — switching tabs or apps, minimising, a touchpad gesture such as a three-finger swipe, closing or reloading the tab — ends the test at once and fails the attempt.</strong> Your professor will be able to review the recording and the flagged moments after you
               submit. Recordings are automatically deleted after {EXAM.RETENTION_DAYS} days.
             </p>
             <p className="text-xs text-muted-foreground">{EXAM.MONITORING_NOTICE}</p>
@@ -1093,7 +1259,7 @@ export default function ExamRoom({ test, user, onClose, onGraded }) {
         <div className="space-y-5 text-center py-8">
           <h1 className="text-xl font-semibold text-foreground">Click below to enter fullscreen and begin your test.</h1>
           <p className="text-sm text-muted-foreground">
-            {questions.length || test.questionCount || ""}{test.questionCount ? ` questions · ` : ""}{attempt?.durationMins || ""} minutes. The clock starts when you enter fullscreen. Leaving fullscreen, switching tabs, or looking away from the camera costs points; if the penalties use up the paper, or your camera is switched off, the test is failed.
+            {questions.length || test.questionCount || ""}{test.questionCount ? ` questions · ` : ""}{attempt?.durationMins || ""} minutes. The clock starts when you enter fullscreen. Leaving fullscreen or looking away from the camera costs points; {config?.monitorViolationLimit || EXAM.MONITOR_VIOLATION_LIMIT} camera or microphone violations fail the test. Switching tabs or apps, minimising the window (a three-finger swipe does this), closing or reloading the tab ends the test immediately and fails it.
           </p>
           {error && <div className="rounded-xl border border-red-200 bg-red-50 px-4 py-3 text-xs text-red-700">{error}</div>}
           <Button size="lg" onClick={enterFullscreenAndStart}>
@@ -1132,7 +1298,9 @@ export default function ExamRoom({ test, user, onClose, onGraded }) {
       {paused && (
         <div className="fixed inset-0 z-20 bg-black/70 flex items-center justify-center p-4">
           <div className="bg-card rounded-2xl p-6 max-w-md w-full space-y-4 text-center">
-            <h2 className="text-lg font-semibold text-foreground">{paused.reason === "device" ? "Your camera/microphone has been disconnected." : "You have left fullscreen."}</h2>
+            <h2 className="text-lg font-semibold text-foreground">
+              {paused.reason === "device" ? "Your camera/microphone has been disconnected." : "You have left fullscreen."}
+            </h2>
             <p className="text-sm text-muted-foreground">
               {paused.reason === "device"
                 ? `Restore it within ${config?.deviceGraceSeconds ?? EXAM.DEVICE_GRACE_SECONDS} seconds or the test is failed and handed in.`
@@ -1142,8 +1310,8 @@ export default function ExamRoom({ test, user, onClose, onGraded }) {
             </p>
             {paused.reason === "device" && <div className="text-4xl font-bold text-red-600 tabular-nums">{pauseLeft}</div>}
             {error && <div className="rounded-xl border border-red-200 bg-red-50 px-4 py-3 text-xs text-red-700">{error}</div>}
-            <Button className="w-full" onClick={paused.reason === "device" ? reconnectDevices : returnToFullscreen}>
-              {paused.reason === "device" ? "Reconnect devices" : "Return to Fullscreen"}
+            <Button className="w-full" onClick={paused.reason === "device" ? reconnectDevices : paused.reason === "window" ? returnToPaper : returnToFullscreen}>
+              {paused.reason === "device" ? "Reconnect devices" : paused.reason === "window" ? "Return to the paper" : "Return to Fullscreen"}
             </Button>
             <p className="text-[11px] text-muted-foreground">The timer is paused. Recording continues.</p>
           </div>

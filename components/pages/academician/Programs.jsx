@@ -137,7 +137,7 @@ export default function Programs() {
     return (
       <Card hover>
         <div className="flex flex-wrap items-start justify-between gap-3 mb-3">
-          <div className="flex-1 min-w-0">
+          <div className="flex-1 min-w-[12rem]">
             <div className="text-sm font-semibold text-foreground mb-0.5">{program.title}</div>
             <div className="text-xs text-muted-foreground">{program.organiser}</div>
           </div>

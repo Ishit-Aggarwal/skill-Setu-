@@ -228,6 +228,34 @@ body {
   color: var(--foreground);
 }
 
+/* Phones.
+   A grid item defaults to min-width:auto, so one card whose contents cannot
+   shrink (a chart, a progress row, a long unbreakable token) widens its
+   column and pushes the whole page past the right edge of a phone. Letting
+   every grid item shrink is what keeps a single-column layout single-column.
+   Long words (emails, verify codes, URLs typed by hand) wrap instead of
+   overflowing, and anything that still escapes cannot open a sideways scroll. */
+.grid > * {
+  min-width: 0;
+}
+
+@media (max-width: 767px) {
+  html,
+  body {
+    overflow-x: hidden;
+  }
+  body {
+    /* break-word, not anywhere: "anywhere" also shrinks a text's minimum
+       width to one character, which lets a badge row squeeze the title
+       beside it into a column of syllables. */
+    overflow-wrap: break-word;
+  }
+  /* Tables keep their columns and scroll inside their own frame instead. */
+  table {
+    overflow-wrap: normal;
+  }
+}
+
 @keyframes fadeSlideIn {
   from {
     opacity: 0;

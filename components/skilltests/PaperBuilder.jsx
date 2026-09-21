@@ -4,6 +4,7 @@ import { useCallback, useEffect, useRef, useState } from "react";
 import QuestionEditor from "./QuestionEditor";
 import AiGenerateModal from "./AiGenerateModal";
 import ImportPaperModal from "./ImportPaperModal";
+import SampleQuestionsModal from "./SampleQuestionsModal";
 import RecheckDialog from "./RecheckDialog";
 import { api } from "../../convex/_generated/api";
 import { backendErrorMessage, backendMutation } from "../../lib/convexBrowser";
@@ -47,9 +48,11 @@ export function clearPaperDraft(key) {
   }
 }
 
-export default function PaperBuilder({ questions, onChange, ayushSystem = "", testId = null, draftKey = null, defaultTopic = "", locked = false, onSaved }) {
+export default function PaperBuilder({ questions, onChange, ayushSystem = "", testId = null, draftKey = null, defaultTopic = "", locked = false, samplePapers = [], onSaved }) {
   const [showGenerate, setShowGenerate] = useState(false);
   const [showImport, setShowImport] = useState(false);
+  const [showSamples, setShowSamples] = useState(false);
+  const uploadedSamples = (Array.isArray(samplePapers) ? samplePapers : []).filter((p) => p && p.url);
   const [importNote, setImportNote] = useState(null);
   const [generateMode, setGenerateMode] = useState("replace");
   const [recheck, setRecheck] = useState(null); // { question, result }
@@ -203,6 +206,20 @@ export default function PaperBuilder({ questions, onChange, ayushSystem = "", te
           >
             📄 Import from PDF
           </Button>
+          {uploadedSamples.length > 0 && (
+            <Button
+              type="button"
+              size="sm"
+              variant="outline"
+              title="Read the attached sample papers and write new questions on the same concepts"
+              onClick={() => {
+                setGenerateMode(empty ? "replace" : "append");
+                setShowSamples(true);
+              }}
+            >
+              🧪 From sample paper{uploadedSamples.length === 1 ? "" : "s"}
+            </Button>
+          )}
           {empty ? (
             <Button type="button" size="sm" variant="outline" onClick={() => handleChange([blankQuestion({ ayushSystem })])}>
               ✍️ Write manually
@@ -254,6 +271,25 @@ export default function PaperBuilder({ questions, onChange, ayushSystem = "", te
             if (summary.generatedKeys) bits.push(`${summary.generatedKeys} had no answer key in the paper — the answers were generated and are badged AI-generated; please check them.`);
             if (summary.generatedExplanations) bits.push(`${summary.generatedExplanations} explanation${summary.generatedExplanations === 1 ? " was" : "s were"} generated.`);
             if (summary.dropped?.length) bits.push(`${summary.dropped.length} could not be read and were skipped.`);
+            setImportNote(bits.join(" "));
+          }}
+        />
+      )}
+
+      {showSamples && (
+        <SampleQuestionsModal
+          samplePapers={uploadedSamples}
+          defaultTopic={defaultTopic}
+          ayushSystem={ayushSystem}
+          onClose={() => setShowSamples(false)}
+          onGenerated={(generated, summary) => {
+            const existing = questions.filter((q) => q.text?.trim() || (q.options || []).some((o) => o.text?.trim()));
+            handleChange(generateMode === "append" ? [...existing, ...generated] : generated);
+            setShowSamples(false);
+            const bits = [`Wrote ${summary.generated} new question${summary.generated === 1 ? "" : "s"} on the concepts of ${summary.sampleQuestions} sample question${summary.sampleQuestions === 1 ? "" : "s"}.`];
+            if (summary.dropped) bits.push(`${summary.dropped} that copied a sample question ${summary.dropped === 1 ? "was" : "were"} dropped.`);
+            if (summary.generated < summary.requested) bits.push(`${summary.requested - summary.generated} fewer than requested — generate again to add more.`);
+            bits.push("Every question is badged AI-generated; please review each one.");
             setImportNote(bits.join(" "));
           }}
         />

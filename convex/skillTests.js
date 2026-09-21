@@ -11,6 +11,7 @@ import { recalculateAssessment, writeAttempt } from "./_lib/assessment";
 import { issueCertificateForAttempt } from "./_lib/certificates";
 import { clampPenalty, paperType } from "../lib/grading";
 import { EXAM } from "../lib/settings";
+import { scheduledStartMsUTC, testPhase } from "../lib/testWindow";
 
 /**
  * Skill tests and their marking.
@@ -296,20 +297,79 @@ export const recordOfflineResult = mutation({
     });
     const assessment = await recalculateAssessment(ctx, args.studentId);
 
-    // In-person and hybrid sittings earn the same automatic certificate as
-    // an online paper, from the mark the host just entered.
-    let certificate = { status: "not_enabled", credential: null };
-    const student = await findUserById(ctx, args.studentId);
-    if (test && student && test.issueCertificate) {
-      certificate = await issueCertificateForAttempt(ctx, {
+    // The mark is recorded; the certificate is not issued here. An in-person
+    // or hybrid sitting's certificates go out together when the host releases
+    // them (`releaseCertificates`), which is only possible once the sitting
+    // has ended — so a mark entered mid-sitting never produces a certificate
+    // before the room has emptied.
+    const status = test?.issueCertificate ? "pending_release" : "not_enabled";
+    return { ok: true, score, assessment, certificate: { status, credential: null } };
+  },
+});
+
+/**
+ * Releases the certificates of an in-person or hybrid sitting.
+ *
+ * Only the host, only for a test that is not an online paper (those certify
+ * themselves on grading), and only after the sitting has ended — its start,
+ * pressed or scheduled, plus its duration, on the server's clock. Every
+ * candidate with a host-entered mark is considered: a mark at or above the
+ * minimum earns a certificate, one already issued for the same mark is left
+ * alone, and a corrected mark refreshes the certificate already held.
+ */
+export const releaseCertificates = mutation({
+  args: { sessionToken: v.string(), testId: v.string() },
+  handler: async (ctx, args) => {
+    const actor = await requireActor(ctx, args.sessionToken);
+    const test = await findTestByClientId(ctx, args.testId);
+    if (!test) throw new Error("This test no longer exists.");
+    requireOwner(actor, test, { what: "this test" });
+    if (test.mode === "Online") throw new Error("An online paper issues its certificates automatically when it is graded.");
+    if (!test.issueCertificate) throw new Error("Certificates are switched off for this test. Turn them on in the test's certificate settings first.");
+    const phase = testPhase(test, Date.now(), { serverSide: true });
+    if (phase === "unscheduled" || phase === "upcoming") throw new Error("This sitting hasn't started yet.");
+    if (phase !== "ended") throw new Error("This sitting is still in progress. Certificates can be released once it has ended.");
+
+    const attempts = await ctx.db
+      .query("assessmentAttempts")
+      .withIndex("by_test", (q) => q.eq("testId", test.id))
+      .collect();
+
+    const counts = { issued: 0, refreshed: 0, unchanged: 0, belowMinimum: 0 };
+    const credentials = [];
+    for (const attempt of attempts) {
+      if (attempt.missed || !String(attempt.gradedBy || "").startsWith("host")) continue;
+      const student = await findUserById(ctx, attempt.studentId);
+      if (!student) continue;
+
+      const held = await ctx.db
+        .query("credentials")
+        .withIndex("by_student", (q) => q.eq("studentId", attempt.studentId))
+        .filter((q) => q.eq(q.field("testId"), test.id))
+        .first();
+      if (held && !held.revokedAt && held.scorePercent === attempt.score) {
+        counts.unchanged += 1;
+        continue;
+      }
+
+      const out = await issueCertificateForAttempt(ctx, {
         test,
-        attempt: { id: `host_${test.id}_${args.studentId}`, correctCount: null, totalQuestions: null },
+        attempt: { id: `host_${test.id}_${attempt.studentId}`, correctCount: null, totalQuestions: null },
         student,
-        score,
+        score: attempt.score,
       });
+      if (out.status === "issued") {
+        counts[held && !held.revokedAt ? "refreshed" : "issued"] += 1;
+        const { _id, _creationTime, snapshot, ...credential } = out.credential;
+        credentials.push(credential);
+      } else if (out.status === "below_minimum") {
+        counts.belowMinimum += 1;
+      }
     }
-    const { _id, _creationTime, snapshot, ...credential } = certificate.credential || {};
-    return { ok: true, score, assessment, certificate: { status: certificate.status, credential: certificate.credential ? credential : null } };
+
+    const releasedAt = new Date().toISOString();
+    await ctx.db.patch(test._id, { certificatesReleasedAt: releasedAt, updatedAt: releasedAt });
+    return { ok: true, releasedAt, ...counts, considered: credentials.length + counts.unchanged + counts.belowMinimum, credentials };
   },
 });
 
@@ -424,6 +484,7 @@ const TEST_FIELDS = {
   price: v.number(),
   scheduledAt: v.optional(v.string()),
   scheduledTime: v.optional(v.string()),
+  scheduledAtMs: v.optional(v.union(v.number(), v.null())),
   reportingTime: v.optional(v.string()),
   venue: v.optional(v.string()),
   description: v.string(),
@@ -431,7 +492,8 @@ const TEST_FIELDS = {
   certification: v.optional(v.string()),
   rules: v.optional(v.array(v.string())),
   documentsRequired: v.optional(v.array(v.string())),
-  meetingLink: v.optional(v.string()),
+  meetingLink: v.optional(v.union(v.string(), v.null())),
+  meetingMode: v.optional(v.union(v.string(), v.null())),
   status: v.optional(v.string()),
   postedAt: v.optional(v.string()),
   proctored: v.optional(v.boolean()),
@@ -440,9 +502,22 @@ const TEST_FIELDS = {
   minCertificateScore: v.optional(v.union(v.number(), v.null())),
   violationPenalty: v.optional(v.union(v.number(), v.null())),
   faceMonitoring: v.optional(v.boolean()),
+  monitorViolationLimit: v.optional(v.union(v.number(), v.null())),
   samplePapers: v.optional(v.array(v.any())),
   updatedAt: v.optional(v.string()),
 };
+
+/** "live" or "none"; anything else is read as "none" (the exam room monitors on its own). */
+function cleanMeetingMode(value) {
+  return value === "live" ? "live" : "none";
+}
+
+/** A whole number of camera/microphone violations, 0 = off; null keeps the default. */
+function cleanMonitorLimit(value) {
+  if (value == null || value === "") return null;
+  const n = Math.round(Number(value));
+  return Number.isFinite(n) ? Math.max(0, Math.min(50, n)) : null;
+}
 
 /** Sample papers are storage references only — never inline files — and at most EXAM.MAX_SAMPLE_PAPERS. */
 function cleanSamplePapers(list) {
@@ -536,7 +611,13 @@ export const publishTest = mutation({
       updatedAt: fields.updatedAt || new Date().toISOString(),
       proctored: fields.mode === "Online" ? fields.proctored !== false : false,
       violationPenalty: cleanPenalty(fields.violationPenalty, Array.isArray(questions) ? questions.length : undefined),
+      monitorViolationLimit: cleanMonitorLimit(fields.monitorViolationLimit),
+      meetingMode: cleanMeetingMode(fields.meetingMode),
+      meetingLink: cleanMeetingMode(fields.meetingMode) === "live" && typeof fields.meetingLink === "string" && fields.meetingLink.trim() ? fields.meetingLink.trim() : null,
       samplePapers: cleanSamplePapers(fields.samplePapers),
+      // The browser sends the absolute instant; a client that did not is
+      // read as IST rather than as UTC (lib/testWindow.js).
+      scheduledAtMs: Number.isFinite(fields.scheduledAtMs) ? fields.scheduledAtMs : scheduledStartMsUTC(fields),
     };
 
     let test = await findTestByClientId(ctx, args.id);
@@ -579,7 +660,16 @@ export const updateByClientId = mutation({
       safe.autoDisqualifyAfter = Math.max(1, Math.round(Number(safe.autoDisqualifyAfter) || 1));
     }
     if ("violationPenalty" in safe) safe.violationPenalty = cleanPenalty(safe.violationPenalty, test.questionCount);
+    if ("monitorViolationLimit" in safe) safe.monitorViolationLimit = cleanMonitorLimit(safe.monitorViolationLimit);
+    if ("meetingMode" in safe) safe.meetingMode = cleanMeetingMode(safe.meetingMode);
+    if ("meetingLink" in safe) safe.meetingLink = typeof safe.meetingLink === "string" && safe.meetingLink.trim() ? safe.meetingLink.trim() : null;
     if ("samplePapers" in safe) safe.samplePapers = cleanSamplePapers(safe.samplePapers) || [];
+    // A reschedule sends the new instant; a client that only sent the strings
+    // gets it derived here. Only `releaseCertificates` ever sets a release time.
+    if ("scheduledAt" in safe || "scheduledTime" in safe) {
+      if (!Number.isFinite(safe.scheduledAtMs)) safe.scheduledAtMs = scheduledStartMsUTC({ ...test, ...safe, scheduledAtMs: undefined });
+    }
+    if ("certificatesReleasedAt" in safe && safe.certificatesReleasedAt != null) delete safe.certificatesReleasedAt;
     await ctx.db.patch(test._id, { ...safe, updatedAt: safe.updatedAt || new Date().toISOString() });
     return { ok: true };
   },

@@ -75,7 +75,7 @@ export default function TestCertificateSettings({ user, testId, issueCertificate
         <span>
           Issue certificate on completion
           <span className="block text-[11px] text-muted-foreground">
-            {mode === "Online" ? "Generated automatically the moment a candidate's attempt is graded." : "Generated automatically when you record a candidate's mark for this sitting."} Off by default.
+            {mode === "Online" ? "Generated automatically the moment a candidate's attempt is graded." : "Earned from the marks you record, and held until you release the sitting's certificates from its card once it has ended."} Off by default.
           </span>
         </span>
       </label>

@@ -8,21 +8,25 @@ import {
   listRegistrationsForHost,
   listSkillTestsByOwner,
   insert,
+  update,
   setSkillTestMeetingLink,
+  setSkillTestMeetingMode,
   startSkillTest,
   getAttemptForTest,
   hasCredentialForTest,
   rescheduleSkillTest,
   patchSkillTest,
-  hasTestEnded,
   getTestEndTimestamp,
+  scheduledAtMsFor,
 } from "../../lib/store";
+import { canEditMeeting, isLive, joinWindowMinutes, meetingEditNote, meetingMode, testPhase } from "../../lib/testWindow";
 import { TEST_LEAD_HOURS, checkLeadTime, earliestDateAfter, latestScheduleDate } from "../../lib/dates";
 import { uploadToStorage } from "../../lib/uploads";
 import { clampPenalty, violationsToFail } from "../../lib/grading";
 import { openStoredFile } from "../../lib/files";
 import { publishSkillTest } from "../../lib/skillTestSync";
 import { subscribeToMutations } from "../../lib/sync";
+import { useClock } from "../../lib/useLiveStore";
 import { api } from "../../convex/_generated/api";
 import { backendErrorMessage, backendMutation, backendQuery, isBackendConfigured } from "../../lib/convexBrowser";
 import { AYUSH_SYSTEM_FIELD_LABEL, ayushSystemLabel, isAyushSystem, needsAyushRetag } from "../../lib/ayush";
@@ -35,7 +39,7 @@ import IssueCredentialModal from "../IssueCredentialModal";
 import RecordResultsModal from "./RecordResultsModal";
 import PaperBuilder, { clearPaperDraft, readPaperDraft } from "./PaperBuilder";
 import TestCertificateSettings from "../certificates/TestCertificateSettings";
-import { Badge, Button, Card, EmptyState, Field, Flash, Modal, PageHeader, Select, TextArea, TextInput, useFlash } from "../ui/Kit";
+import { Badge, Button, Card, EmptyState, Field, Flash, Modal, PageHeader, Select, Tabs, TextArea, TextInput, useFlash } from "../ui/Kit";
 
 /**
  * Hosting tests.
@@ -62,13 +66,13 @@ const EMPTY_TEST_FORM = {
   venue: "",
   reportingTime: "",
   documentsRequired: "",
+  meetingMode: "none",
   meetingLink: "",
   questions: [],
   proctored: true,
   faceMonitoring: true,
   violationPenalty: String(EXAM.DEFAULT_VIOLATION_PENALTY),
-  autoDisqualifyOn: false,
-  autoDisqualifyAfter: String(EXAM.VIOLATION_LIMIT),
+  monitorViolationLimit: String(EXAM.MONITOR_VIOLATION_LIMIT),
   issueCertificate: false,
   minCertificateScore: "",
   samplePapers: [],
@@ -97,15 +101,17 @@ function ExamSettings({ form, set }) {
         <input type="checkbox" checked={form.proctored} onChange={(e) => set("proctored", e.target.checked)} className="mt-0.5" />
         <span>
           Record and monitor this test
-          <span className="block text-[11px] text-muted-foreground">{EXAM.MONITORING_NOTICE} Fullscreen is enforced and Esc is locked; leaving fullscreen or switching tabs is charged the penalty below.</span>
+          <span className="block text-[11px] text-muted-foreground">
+            {EXAM.MONITORING_NOTICE} Fullscreen is enforced and Esc is locked. Leaving the test window in any way — switching tabs or apps, minimising, a three-finger touchpad swipe, closing or reloading the tab — fails the attempt at once. Leaving fullscreen pauses the paper and is charged the penalty below.
+          </span>
         </span>
       </label>
       <label className="flex items-start gap-2 text-xs text-foreground">
         <input type="checkbox" checked={form.faceMonitoring !== false} onChange={(e) => set("faceMonitoring", e.target.checked)} className="mt-0.5" disabled={!form.proctored} />
         <span>
-          Camera face check
+          Camera and microphone checks
           <span className="block text-[11px] text-muted-foreground">
-            Runs on the candidate's own device: no face for {EXAM.FACE.NO_FACE_SECONDS}s, more than one face, or looking away for {EXAM.FACE.LOOK_AWAY_SECONDS}s each count as a violation. A camera switched off fails the test outright.
+            Run on the candidate's own device: no face for {EXAM.FACE.NO_FACE_SECONDS}s, more than one face, looking away for {EXAM.FACE.LOOK_AWAY_SECONDS}s, a different face from the one that started the paper, or voices heard in the room each count as a violation. A camera switched off fails the test outright.
           </span>
         </span>
       </label>
@@ -135,21 +141,24 @@ function ExamSettings({ form, set }) {
         </span>
       </label>
       <label className="flex items-start gap-2 text-xs text-foreground">
-        <input type="checkbox" checked={form.autoDisqualifyOn} onChange={(e) => set("autoDisqualifyOn", e.target.checked)} className="mt-0.5" disabled={!form.proctored} />
+        <span className="mt-0.5 w-3.5 flex-shrink-0" aria-hidden="true" />
         <span className="flex-1">
-          Auto-disqualify after{" "}
+          Fail the test after{" "}
           <input
             type="number"
-            min="1"
+            min="0"
             max="50"
-            value={form.autoDisqualifyAfter}
-            onChange={(e) => set("autoDisqualifyAfter", e.target.value)}
-            disabled={!form.autoDisqualifyOn || !form.proctored}
-            aria-label="Violations before automatic disqualification"
+            step="1"
+            value={form.monitorViolationLimit}
+            onChange={(e) => set("monitorViolationLimit", e.target.value)}
+            disabled={!form.proctored || form.faceMonitoring === false}
+            aria-label="Camera or microphone violations before the test fails"
             className="w-14 mx-1 bg-background border border-border rounded-lg px-2 py-1 text-xs text-center"
           />{" "}
-          violations
-          <span className="block text-[11px] text-muted-foreground">Off by default. When on, the attempt is marked disqualified pending your review; you can reverse it from the proctoring report.</span>
+          camera / microphone violations
+          <span className="block text-[11px] text-muted-foreground">
+            Each one is still charged the penalty above; at this many the attempt fails outright, scores 0 and gets no certificate. 0 turns the limit off. Leaving the window is not counted here — it fails the attempt immediately.
+          </span>
         </span>
       </label>
     </div>
@@ -192,7 +201,9 @@ function SamplePapers({ papers, onChange }) {
   return (
     <div className="rounded-xl border border-border p-3.5 space-y-2">
       <div className="text-xs font-semibold text-primary uppercase tracking-wider">Sample papers (optional)</div>
-      <p className="text-[11px] text-muted-foreground">Up to {EXAM.MAX_SAMPLE_PAPERS} PDFs candidates can download before the test — a past paper, a specimen, a syllabus.</p>
+      <p className="text-[11px] text-muted-foreground">
+        Up to {EXAM.MAX_SAMPLE_PAPERS} PDFs candidates can open from the test card before they register — a past paper, a specimen, a syllabus. Once attached, the question paper section can also generate fresh questions on the same concepts (never the same questions).
+      </p>
       {list.length > 0 && (
         <ul className="space-y-1">
           {list.map((p) => (
@@ -215,6 +226,49 @@ function SamplePapers({ papers, onChange }) {
       )}
       {busy && <div className="text-[11px] text-muted-foreground">Uploading…</div>}
       {error && <div className="text-[11px] text-red-600">{error}</div>}
+    </div>
+  );
+}
+
+/* ---------------- The optional live meeting ---------------- */
+
+/**
+ * An online sitting is monitored by the exam room on its own; a meeting is
+ * the host's choice. Whichever they pick, and the link, can still change on
+ * the card until EXAM.MEETING_LINK_LEAD_HOURS before the start.
+ */
+function MeetingChoice({ form, set, hybrid = false }) {
+  const live = form.meetingMode === "live";
+  return (
+    <div className="rounded-xl border border-border p-3.5 space-y-2">
+      <div className="text-xs font-semibold text-primary uppercase tracking-wider">Live meeting (optional)</div>
+      <p className="text-[11px] text-muted-foreground">
+        {hybrid
+          ? "Will you run a Google Meet / Zoom call for the online part of this sitting?"
+          : "Will you also run a Google Meet / Zoom call during the test? The secure exam room records and monitors every candidate either way, so a meeting is not required."}
+      </p>
+      <div className="flex flex-wrap gap-2">
+        {[
+          ["none", "No — monitor automatically"],
+          ["live", "Yes — I'll host a meeting"],
+        ].map(([key, label]) => (
+          <button
+            key={key}
+            type="button"
+            onClick={() => set("meetingMode", key)}
+            aria-pressed={form.meetingMode === key}
+            className={`text-xs px-3 py-2 rounded-full border font-medium ${form.meetingMode === key ? "bg-primary text-white border-transparent" : "bg-card border-border text-muted-foreground hover:border-primary/40"}`}
+          >
+            {label}
+          </button>
+        ))}
+      </div>
+      {live && (
+        <Field label="Meeting link (add now or later)" hint="Only registered candidates ever see it, from a day before the test.">
+          <TextInput value={form.meetingLink} onChange={(e) => set("meetingLink", e.target.value)} placeholder="https://meet.google.com/…" />
+        </Field>
+      )}
+      <p className="text-[11px] text-muted-foreground">You can change this choice and the link on the test card until {EXAM.MEETING_LINK_LEAD_HOURS} hours before the start.</p>
     </div>
   );
 }
@@ -311,6 +365,7 @@ function EditPaperModal({ test, onClose, onSaved }) {
           testId={test.id}
           defaultTopic={test.title}
           locked={locked}
+          samplePapers={test.samplePapers}
           onSaved={(out) => onSaved?.(out)}
         />
       )}
@@ -337,6 +392,8 @@ export default function HostView({ user }) {
   const [rescheduleError, setRescheduleError] = useState(null);
   const [registrations, setRegistrations] = useState([]);
   const [retagging, setRetagging] = useState(null);
+  const [releasing, setReleasing] = useState(null);
+  const [tab, setTab] = useState("active");
   const [flash, setFlash] = useFlash();
 
   const draftKey = `${user.id}`;
@@ -353,6 +410,10 @@ export default function HostView({ user }) {
     return subscribeToMutations(["skillTestRegistrations", "skillTests", "credentials"], refresh);
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [user]);
+
+  // The cards follow the clock as well: a sitting's joining window closes
+  // and its end (which unlocks releasing certificates) arrives on their own.
+  useClock(30000);
 
   function set(key, value) {
     setForm((f) => ({ ...f, [key]: value }));
@@ -404,11 +465,12 @@ export default function HostView({ user }) {
       if (!isBackendConfigured()) return setFormError("Publishing a paper needs a connection to the shared database. Please try again shortly.");
     }
 
-    if (form.mode === "Online" && form.meetingLink.trim()) {
-      const scheduled = new Date(`${form.scheduledAt}T${form.scheduledTime || "00:00"}`).getTime();
-      if (scheduled && scheduled - Date.now() < 24 * 60 * 60 * 1000) {
-        return setFormError("The meeting link must be set at least 24 hours before the test's scheduled start time. Leave it blank and add it later if the test is sooner than that.");
-      }
+    if (form.mode !== "Offline" && form.meetingMode === "live" && form.meetingLink.trim() && !/^https?:\/\/\S+$/i.test(form.meetingLink.trim())) {
+      return setFormError("Enter the full meeting link, starting with https://");
+    }
+    if (form.mode === "Online" && form.proctored) {
+      const limit = Number(form.monitorViolationLimit);
+      if (!Number.isInteger(limit) || limit < 0 || limit > 50) return setFormError("The camera/microphone violation limit must be a whole number between 0 and 50 (0 turns it off).");
     }
     if (form.issueCertificate && form.minCertificateScore !== "") {
       const min = Number(form.minCertificateScore);
@@ -436,15 +498,18 @@ export default function HostView({ user }) {
       rules: form.rules.split("\n").map((r) => r.trim()).filter(Boolean),
       scheduledAt: form.scheduledAt,
       scheduledTime: form.scheduledTime,
+      scheduledAtMs: scheduledAtMsFor(form.scheduledAt, form.scheduledTime),
       venue: form.mode !== "Online" ? form.venue : undefined,
       reportingTime: form.mode !== "Online" ? form.reportingTime : undefined,
       documentsRequired: form.mode !== "Online" ? form.documentsRequired.split(",").map((d) => d.trim()).filter(Boolean) : undefined,
-      meetingLink: form.mode !== "Offline" ? form.meetingLink.trim() || undefined : undefined,
+      meetingMode: form.mode !== "Offline" ? (form.meetingMode === "live" ? "live" : "none") : undefined,
+      meetingLink: form.mode !== "Offline" && form.meetingMode === "live" ? form.meetingLink.trim() || undefined : undefined,
       proctored: form.mode === "Online" ? form.proctored : false,
       faceMonitoring: form.mode === "Online" ? form.proctored && form.faceMonitoring !== false : false,
       violationPenalty: form.mode === "Online" && form.proctored ? clampPenalty(form.violationPenalty, form.questions.length) : null,
+      monitorViolationLimit: form.mode === "Online" && form.proctored ? Math.max(0, Math.round(Number(form.monitorViolationLimit) || 0)) : null,
       samplePapers: form.samplePapers,
-      autoDisqualifyAfter: form.mode === "Online" && form.proctored && form.autoDisqualifyOn ? Math.max(1, Math.round(Number(form.autoDisqualifyAfter) || EXAM.VIOLATION_LIMIT)) : null,
+      autoDisqualifyAfter: null,
       issueCertificate: Boolean(form.issueCertificate),
       minCertificateScore: form.issueCertificate && form.minCertificateScore !== "" ? Number(form.minCertificateScore) : null,
       ownerId: user.id,
@@ -488,9 +553,25 @@ export default function HostView({ user }) {
   function saveLink(testId) {
     try {
       setSkillTestMeetingLink(testId, (linkDrafts[testId] || "").trim());
+      setLinkDrafts((d) => {
+        const next = { ...d };
+        delete next[testId];
+        return next;
+      });
       setLinkErrors((e) => ({ ...e, [testId]: null }));
       refresh();
-      setFlash("Meeting link saved successfully.");
+      setFlash("Meeting link saved. Registered candidates see it from a day before the test.");
+    } catch (err) {
+      setLinkErrors((e) => ({ ...e, [testId]: err.message }));
+    }
+  }
+
+  function changeMeetingMode(testId, mode) {
+    try {
+      setSkillTestMeetingMode(testId, mode);
+      setLinkErrors((e) => ({ ...e, [testId]: null }));
+      refresh();
+      setFlash(mode === "live" ? "This test will run with a live meeting — add its link below." : "This test is monitored automatically by the exam room; no meeting link is needed.");
     } catch (err) {
       setLinkErrors((e) => ({ ...e, [testId]: err.message }));
     }
@@ -498,16 +579,43 @@ export default function HostView({ user }) {
 
   function handleStart(testId) {
     const targetTest = tests.find((t) => t.id === testId);
-    if (targetTest?.mode === "Online" && !targetTest?.meetingLink?.trim()) {
-      setFlash("⚠️ Cannot start online test: Please add and save a valid meeting link first.");
-      return;
-    }
     try {
       startSkillTest(testId);
       refresh();
-      setFlash("Test is now live! Registered students can now join.");
+      setFlash(`Test is now live! Registered candidates can join for the next ${joinWindowMinutes(targetTest)} minutes; after that nobody new can come in.`);
     } catch (err) {
       setFlash(`⚠️ ${err.message}`);
+    }
+  }
+
+  /**
+   * In-person and hybrid sittings: the marks entered in "Record results" do
+   * not certify anyone by themselves. Once the sitting has ended the host
+   * releases them together, and every qualifying candidate's certificate is
+   * issued on the server in one go and mirrored here.
+   */
+  async function handleRelease(test) {
+    if (!isBackendConfigured()) return setFlash("⚠️ Releasing certificates needs a connection to the shared database.");
+    setReleasing(test.id);
+    try {
+      const out = await backendMutation(api.skillTests.releaseCertificates, { testId: test.id });
+      (out?.credentials || []).forEach((credential) => {
+        const held = findOne("credentials", (c) => c.id === credential.id);
+        if (held) update("credentials", credential.id, credential);
+        else insert("credentials", credential);
+      });
+      patchSkillTest(test.id, { certificatesReleasedAt: out?.releasedAt || new Date().toISOString() });
+      const parts = [];
+      if (out?.issued) parts.push(`${out.issued} issued`);
+      if (out?.refreshed) parts.push(`${out.refreshed} updated`);
+      if (out?.unchanged) parts.push(`${out.unchanged} already held`);
+      if (out?.belowMinimum) parts.push(`${out.belowMinimum} below the minimum score`);
+      setFlash(parts.length ? `Certificates released — ${parts.join(", ")}.` : "No marks recorded yet — enter results first, then release.");
+      refresh();
+    } catch (err) {
+      setFlash(`⚠️ ${backendErrorMessage(err, "Could not release the certificates.")}`);
+    } finally {
+      setReleasing(null);
     }
   }
 
@@ -546,14 +654,28 @@ export default function HostView({ user }) {
   }
 
   const untagged = tests.filter(needsAyushRetag);
+  /* A sitting that is over leaves the working list: it belongs with the
+     previous tests, where its attempts, results and certificates still are. */
+  const activeTests = tests.filter((t) => testPhase(t) !== "ended");
+  const previousTests = tests.filter((t) => testPhase(t) === "ended").sort((a, b) => (getTestEndTimestamp(b) || 0) - (getTestEndTimestamp(a) || 0));
+  const shown = tab === "previous" ? previousTests : activeTests;
 
   return (
     <div className="animate-fade-slide space-y-5">
       <PageHeader
         eyebrow="Test Hosting"
         title="Your Skill Tests"
-        subtitle={`${tests.length} test${tests.length === 1 ? "" : "s"} hosted`}
+        subtitle={`${activeTests.length} active · ${previousTests.length} previous`}
         actions={<Button onClick={openCreate}>+ Host a Skill Test</Button>}
+      />
+
+      <Tabs
+        tabs={[
+          { key: "active", label: `Active (${activeTests.length})` },
+          { key: "previous", label: `Previous tests (${previousTests.length})` },
+        ]}
+        value={tab}
+        onChange={setTab}
       />
 
       {untagged.length > 0 && (
@@ -562,13 +684,32 @@ export default function HostView({ user }) {
         </div>
       )}
 
-      {tests.length === 0 ? (
-        <EmptyState icon="📝" title="No tests hosted yet">
-          Host an online or offline skill test to help students showcase relevant skills.
-        </EmptyState>
+      {tab === "previous" && previousTests.length > 0 && (
+        <p className="text-xs text-muted-foreground">Sittings that have ended. Candidates only see a previous test if they sat it.</p>
+      )}
+
+      {shown.length === 0 ? (
+        tab === "previous" ? (
+          <EmptyState icon="🗂️" title="No previous tests yet">
+            A test moves here once its sitting has ended.
+          </EmptyState>
+        ) : (
+          <EmptyState icon="📝" title="No active tests">
+            Host an online or offline skill test to help students showcase relevant skills.
+          </EmptyState>
+        )
       ) : (
         <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-4">
-          {tests.map((test) => (
+          {shown.map((test) => {
+            /* Where the sitting is on its own clock: pressed or scheduled
+               start, joining window, end. The card's actions follow it. */
+            const phase = testPhase(test);
+            const live = isLive(phase);
+            const ended = phase === "ended";
+            const inPerson = test.mode !== "Online";
+            const endsAt = getTestEndTimestamp(test);
+            const endsLabel = endsAt ? new Date(endsAt).toLocaleString("en-IN", { day: "numeric", month: "short", hour: "numeric", minute: "2-digit" }) : null;
+            return (
             <Card key={test.id} className="flex flex-col">
               <div className="flex items-center gap-1.5 flex-wrap mb-3">
                 <Badge tone="neutral">{test.mode}</Badge>
@@ -576,7 +717,9 @@ export default function HostView({ user }) {
                 <Badge tone="neutral">{test.domain}</Badge>
                 {paperTypeBadge(test)}
                 {test.proctored && <Badge tone="red">🔴 Recorded</Badge>}
-                {test.status === "In Progress" && <Badge tone="green">In Progress · Live</Badge>}
+                {phase === "open" && <Badge tone="green">In Progress · Joining open</Badge>}
+                {phase === "locked" && <Badge tone="amber">In Progress · Joining closed</Badge>}
+                {ended && <Badge tone="muted">Ended</Badge>}
                 <Badge tone="primary" className="ml-auto">{test.price > 0 ? `₹${test.price}` : "Free"}</Badge>
               </div>
               <div className="text-sm font-semibold text-foreground mb-1">{test.title}</div>
@@ -591,28 +734,58 @@ export default function HostView({ user }) {
                 <RetagPrompt row={test} what="This test" saving={retagging === test.id} onSave={(slug) => retag(test, slug)} />
               </div>
 
-              {test.mode === "Online" && (
-                <div className="mb-3">
-                  <label className="block text-[10px] font-semibold text-muted-foreground uppercase tracking-wider mb-1">Meeting Link</label>
-                  {test.meetingLink && linkDrafts[test.id] === undefined ? (
-                    <div className="flex items-center gap-2">
-                      <a href={test.meetingLink} target="_blank" rel="noreferrer" className="text-xs text-primary hover:underline truncate flex-1">{test.meetingLink}</a>
-                      <button onClick={() => setLinkDrafts((d) => ({ ...d, [test.id]: test.meetingLink }))} className="text-[10px] text-muted-foreground hover:text-foreground flex-shrink-0">Edit</button>
+              {test.mode !== "Offline" && !ended && (() => {
+                const mode = meetingMode(test);
+                const editable = canEditMeeting(test);
+                return (
+                  <div className="mb-3 rounded-lg border border-border p-2.5 space-y-1.5">
+                    <div className="flex items-center justify-between gap-2">
+                      <span className="text-[10px] font-semibold text-muted-foreground uppercase tracking-wider">Live meeting</span>
+                      <div className="flex rounded-lg border border-border overflow-hidden text-[10px] font-medium">
+                        <button
+                          type="button"
+                          disabled={!editable}
+                          onClick={() => mode !== "none" && changeMeetingMode(test.id, "none")}
+                          className={`px-2 py-1 ${mode === "none" ? "bg-primary text-white" : "text-muted-foreground hover:text-foreground"} disabled:opacity-60`}
+                        >
+                          No
+                        </button>
+                        <button
+                          type="button"
+                          disabled={!editable}
+                          onClick={() => mode !== "live" && changeMeetingMode(test.id, "live")}
+                          className={`px-2 py-1 ${mode === "live" ? "bg-primary text-white" : "text-muted-foreground hover:text-foreground"} disabled:opacity-60`}
+                        >
+                          Yes
+                        </button>
+                      </div>
                     </div>
-                  ) : (
-                    <div className="flex items-center gap-2">
-                      <input
-                        value={linkDrafts[test.id] ?? ""}
-                        onChange={(e) => setLinkDrafts((d) => ({ ...d, [test.id]: e.target.value }))}
-                        placeholder="https://meet.google.com/…"
-                        className="flex-1 min-w-0 bg-background border border-border rounded-lg px-2.5 py-1.5 text-xs focus:outline-none focus:ring-2 focus:ring-primary/30"
-                      />
-                      <button onClick={() => saveLink(test.id)} className="text-[10px] font-medium text-primary hover:underline flex-shrink-0">Save</button>
-                    </div>
-                  )}
-                  {linkErrors[test.id] && <p className="text-[10px] text-red-600 mt-1">{linkErrors[test.id]}</p>}
-                </div>
-              )}
+                    {mode === "none" ? (
+                      <p className="text-[11px] text-muted-foreground leading-relaxed">
+                        🛡️ {test.mode === "Online" ? "Monitored automatically by the secure exam room — no meeting link needed." : "The online part is monitored automatically by the exam room."}
+                      </p>
+                    ) : test.meetingLink && linkDrafts[test.id] === undefined ? (
+                      <div className="flex items-center gap-2">
+                        <a href={test.meetingLink} target="_blank" rel="noreferrer" className="text-xs text-primary hover:underline truncate flex-1">{test.meetingLink}</a>
+                        {editable && <button onClick={() => setLinkDrafts((d) => ({ ...d, [test.id]: test.meetingLink }))} className="text-[10px] text-muted-foreground hover:text-foreground flex-shrink-0">Edit</button>}
+                      </div>
+                    ) : (
+                      <div className="flex items-center gap-2">
+                        <input
+                          value={linkDrafts[test.id] ?? ""}
+                          onChange={(e) => setLinkDrafts((d) => ({ ...d, [test.id]: e.target.value }))}
+                          placeholder="https://meet.google.com/…"
+                          disabled={!editable}
+                          className="flex-1 min-w-0 bg-background border border-border rounded-lg px-2.5 py-1.5 text-xs focus:outline-none focus:ring-2 focus:ring-primary/30 disabled:opacity-60"
+                        />
+                        <button onClick={() => saveLink(test.id)} disabled={!editable} className="text-[10px] font-medium text-primary hover:underline flex-shrink-0 disabled:opacity-60">Save</button>
+                      </div>
+                    )}
+                    <p className="text-[10px] text-muted-foreground">{meetingEditNote(test)}</p>
+                    {linkErrors[test.id] && <p className="text-[10px] text-red-600">{linkErrors[test.id]}</p>}
+                  </div>
+                );
+              })()}
 
               {(() => {
                 const stats = registrantStats(test.id);
@@ -624,17 +797,17 @@ export default function HostView({ user }) {
               })()}
 
               <div className="mt-auto space-y-2">
-                {test.mode === "Online" && !test.meetingLink?.trim() && (
+                {test.mode !== "Offline" && !ended && meetingMode(test) === "live" && !test.meetingLink?.trim() && (
                   <div className="text-[11px] text-amber-700 bg-amber-50 border border-amber-200 rounded-lg p-2 text-center">
-                    ⚠️ Add a meeting link above before starting this online test
+                    ⚠️ You chose a live meeting — add its link above, or switch to automatic monitoring
                   </div>
                 )}
                 <button
                   onClick={() => handleStart(test.id)}
-                  disabled={test.status === "In Progress" || (test.mode === "Online" && !test.meetingLink?.trim())}
+                  disabled={live || ended || (test.mode !== "Offline" && meetingMode(test) === "live" && !test.meetingLink?.trim())}
                   className="w-full text-xs font-medium py-2 rounded-xl bg-primary/10 text-primary hover:bg-primary hover:text-white disabled:opacity-50 disabled:hover:bg-primary/10 disabled:hover:text-primary transition-all duration-150"
                 >
-                  {test.status === "In Progress" ? "Test Started (Live)" : "Start Test"}
+                  {ended ? `Ended${endsLabel ? ` · ${endsLabel}` : ""}` : live ? `In Progress${endsLabel ? ` · ends ${endsLabel}` : ""}` : "Start Test"}
                 </button>
                 {test.mode === "Online" && (
                   <div className="grid grid-cols-2 gap-2">
@@ -649,26 +822,47 @@ export default function HostView({ user }) {
                 <button onClick={() => openReschedule(test)} className="w-full text-xs font-medium py-2 rounded-xl border border-border text-muted-foreground hover:border-primary/40 hover:text-primary transition-all duration-150">
                   🗓️ Reschedule Test
                 </button>
-                {test.mode === "Offline" && (
+                {inPerson && (
                   <button onClick={() => setResultsTest(test)} className="w-full text-xs font-medium py-2 rounded-xl border border-border text-muted-foreground hover:border-primary/40 hover:text-primary transition-all duration-150">
                     ✍️ Record results
                   </button>
                 )}
-                {hasTestEnded(test) ? (
+                {/* In-person and hybrid sittings: the marks are held until the
+                    host releases the certificates, which is only offered once
+                    the sitting has ended — its start plus its duration. */}
+                {inPerson && test.issueCertificate && ended && (
+                  <button
+                    onClick={() => handleRelease(test)}
+                    disabled={releasing === test.id}
+                    className="w-full text-xs font-semibold py-2 rounded-xl bg-emerald-600 text-white hover:bg-emerald-700 disabled:opacity-60 transition-all duration-150"
+                  >
+                    {releasing === test.id ? "Releasing…" : test.certificatesReleasedAt ? "🏅 Release certificates again" : "🏅 Release certificates"}
+                  </button>
+                )}
+                {inPerson && test.issueCertificate && ended && test.certificatesReleasedAt && (
+                  <div className="text-[11px] text-muted-foreground text-center">
+                    Released {new Date(test.certificatesReleasedAt).toLocaleString("en-IN", { day: "numeric", month: "short", hour: "numeric", minute: "2-digit" })} · marks entered since then go out on the next release
+                  </div>
+                )}
+                {ended ? (
                   <button onClick={() => setCertifyTest(test)} className="w-full text-xs font-medium py-2 rounded-xl border border-border text-muted-foreground hover:border-primary/40 hover:text-primary transition-all duration-150">
-                    🏅 Issue certificates
+                    🏅 Issue certificates manually
                   </button>
                 ) : (
                   <div className="text-[11px] text-muted-foreground bg-secondary/60 border border-border rounded-lg p-2 text-center leading-relaxed">
-                    🏅 {test.issueCertificate ? "Certificates are issued automatically on grading" : "Manual certificates unlock when this test finishes"}
-                    {!test.issueCertificate && getTestEndTimestamp(test)
-                      ? ` — ${new Date(getTestEndTimestamp(test)).toLocaleString("en-IN", { day: "numeric", month: "short", hour: "numeric", minute: "2-digit" })}`
-                      : ""}
+                    🏅{" "}
+                    {inPerson && test.issueCertificate
+                      ? "Certificates can be released once the sitting ends"
+                      : test.issueCertificate
+                      ? "Certificates are issued automatically on grading"
+                      : "Manual certificates unlock when this test finishes"}
+                    {(inPerson || !test.issueCertificate) && endsLabel ? ` — ${endsLabel}` : ""}
                   </div>
                 )}
               </div>
             </Card>
-          ))}
+            );
+          })}
         </div>
       )}
 
@@ -783,10 +977,12 @@ export default function HostView({ user }) {
                   </Select>
                 </Field>
 
+                <SamplePapers papers={form.samplePapers} onChange={(papers) => set("samplePapers", papers)} />
+
                 <div className="border-t border-border pt-4">
                   <div className="text-xs font-semibold text-primary uppercase tracking-wider mb-1">Question paper</div>
                   <p className="text-[11px] text-muted-foreground mb-3">
-                    Every question is worth one point. Write it yourself or generate it with AI — either way you review every answer key before publishing.
+                    Every question is worth one point. Write it yourself, generate it with AI, or have it written from the sample papers above — either way you review every answer key before publishing.
                   </p>
                   <PaperBuilder
                     questions={form.questions}
@@ -794,14 +990,13 @@ export default function HostView({ user }) {
                     ayushSystem={form.ayushSystem}
                     draftKey={draftKey}
                     defaultTopic={form.title}
+                    samplePapers={form.samplePapers}
                   />
                 </div>
 
                 <ExamSettings form={form} set={set} />
 
-                <Field label="Meeting Link (optional — add now or later)" hint="Must be set at least 24 hours before the scheduled start. Only registered candidates ever see it.">
-                  <TextInput value={form.meetingLink} onChange={(e) => set("meetingLink", e.target.value)} placeholder="https://meet.google.com/…" />
-                </Field>
+                <MeetingChoice form={form} set={set} />
               </>
             ) : (
               <>
@@ -817,15 +1012,10 @@ export default function HostView({ user }) {
                 <Field label="Documents Required (comma separated)">
                   <TextInput value={form.documentsRequired} onChange={(e) => set("documentsRequired", e.target.value)} placeholder="Photo ID, Printed resume" />
                 </Field>
-                {form.mode === "Hybrid" && (
-                  <Field label="Meeting Link (optional — add now or later)" hint="For the online part of a hybrid sitting. Only registered candidates ever see it.">
-                    <TextInput value={form.meetingLink} onChange={(e) => set("meetingLink", e.target.value)} placeholder="https://meet.google.com/…" />
-                  </Field>
-                )}
+                {form.mode === "Hybrid" && <MeetingChoice form={form} set={set} hybrid />}
+                <SamplePapers papers={form.samplePapers} onChange={(papers) => set("samplePapers", papers)} />
               </>
             )}
-
-            <SamplePapers papers={form.samplePapers} onChange={(papers) => set("samplePapers", papers)} />
 
             <Field label="Prerequisites">
               <TextInput value={form.prerequisites} onChange={(e) => set("prerequisites", e.target.value)} placeholder="What should candidates know beforehand?" />

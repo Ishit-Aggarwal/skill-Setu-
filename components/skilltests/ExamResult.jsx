@@ -1,7 +1,7 @@
 "use client";
 
 import CertificateCard from "../certificates/CertificateCard";
-import { autoSubmitMessage } from "../../lib/examState";
+import { AUTO_SUBMIT_REASONS, autoSubmitMessage } from "../../lib/examState";
 import { TYPE_LABEL } from "../../lib/questions";
 import { Badge, Button } from "../ui/Kit";
 
@@ -34,7 +34,13 @@ export default function ExamResult({ test, result, onClose }) {
       )}
       {result.failed ? (
         <div className="rounded-xl border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700">
-          This attempt has failed. {result.penaltyPoints > 0 ? `Violation penalties took ${result.penaltyPoints} of the paper's ${result.total ?? result.totalQuestions} points` : "The monitoring rules for this test were broken"}, so it scores 0 and no certificate is issued. Your answers were still marked and are shown below.
+          This attempt has failed.{" "}
+          {result.autoSubmitReason === "penalty_limit_reached" && result.penaltyPoints > 0
+            ? `Violation penalties took ${result.penaltyPoints} of the paper's ${result.total ?? result.totalQuestions} points`
+            : result.autoSubmitReason && AUTO_SUBMIT_REASONS[result.autoSubmitReason]
+            ? AUTO_SUBMIT_REASONS[result.autoSubmitReason].replace(/^./, (c) => c.toUpperCase())
+            : "The monitoring rules for this test were broken"}
+          , so it scores 0 and no certificate is issued. Your answers were still marked and are shown below.
         </div>
       ) : result.disqualified ? (
         <div className="rounded-xl border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700">

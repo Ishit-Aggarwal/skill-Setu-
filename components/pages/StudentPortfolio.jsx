@@ -713,7 +713,7 @@ export default function StudentPortfolio() {
                   </p>
                 </div>
               </div>
-              <div className="flex items-center gap-2 flex-wrap flex-shrink-0 print:hidden">
+              <div className="flex items-center gap-2 flex-wrap w-full sm:w-auto sm:flex-shrink-0 print:hidden">
                 {/* Two resumes, each named for what it is. "ATS" is jargon most
                     students have never met, so it is never the whole label and
                     always travels with its explanation. */}

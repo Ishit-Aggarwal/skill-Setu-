@@ -275,6 +275,10 @@ export default defineSchema({
     price: v.number(),
     scheduledAt: v.optional(v.string()),
     scheduledTime: v.optional(v.string()),
+    /* The scheduled start as an absolute instant, computed by the host's
+       browser; the two strings above are their local wall clock and this
+       runtime is on UTC (lib/testWindow.js). */
+    scheduledAtMs: v.optional(v.union(v.number(), v.null())),
     reportingTime: v.optional(v.string()),
     venue: v.optional(v.string()),
     description: v.string(),
@@ -282,8 +286,15 @@ export default defineSchema({
     certification: v.optional(v.string()),
     rules: v.optional(v.array(v.string())),
     documentsRequired: v.optional(v.array(v.string())),
-    meetingLink: v.optional(v.string()),
-    startedAt: v.optional(v.string()),
+    meetingLink: v.optional(v.union(v.string(), v.null())),
+    /* "none" = the exam room monitors the sitting by itself (default);
+       "live" = the host also runs a meeting and publishes its link. */
+    meetingMode: v.optional(v.union(v.string(), v.null())),
+    /* Set when the host presses "Start Test"; cleared by a reschedule. */
+    startedAt: v.optional(v.union(v.string(), v.null())),
+    /* In-person / hybrid sittings: when the host last released the
+       certificates earned from the marks they entered. */
+    certificatesReleasedAt: v.optional(v.union(v.string(), v.null())),
     ownerId: v.string(),
     status: v.string(),
     postedAt: v.string(),
@@ -307,6 +318,9 @@ export default defineSchema({
     violationPenalty: v.optional(v.union(v.number(), v.null())),
     /* On-device face monitoring (no face / extra faces / looking away). */
     faceMonitoring: v.optional(v.boolean()),
+    /* Camera/microphone violations that fail the attempt outright (0 = off;
+       null = EXAM.MONITOR_VIOLATION_LIMIT). */
+    monitorViolationLimit: v.optional(v.union(v.number(), v.null())),
     /* Sample papers candidates may download, as storage references. */
     samplePapers: v.optional(v.array(v.any())),
     updatedAt: v.optional(v.string()),
@@ -363,6 +377,14 @@ export default defineSchema({
     mode: v.optional(v.string()),
     violationCount: v.optional(v.number()),
     violationsByType: v.optional(v.any()),
+    /* The camera/microphone subset of the count, against the test's limit. */
+    monitorViolationCount: v.optional(v.number()),
+    /* Last "still here" ping from the open paper; a stale one means the
+       window was closed. */
+    lastSeenAt: v.optional(v.union(v.number(), v.null())),
+    /* A still of the face that was in front of the camera when the paper
+       opened — what the identity check compares against, shown to the host. */
+    referenceFaceStorageId: v.optional(v.union(v.id("_storage"), v.null())),
     autoSubmitReason: v.optional(v.union(v.string(), v.null())),
     disqualified: v.optional(v.boolean()),
     disqualifiedAt: v.optional(v.union(v.string(), v.null())),
@@ -389,7 +411,8 @@ export default defineSchema({
     .index("by_student_test", ["studentId", "testId"])
     .index("by_test", ["testId"])
     .index("by_student", ["studentId"])
-    .index("by_owner", ["ownerId"]),
+    .index("by_owner", ["ownerId"])
+    .index("by_state", ["state"]),
 
   /* Kept permanently — the retention sweep never touches consent. */
   examConsents: defineTable({
@@ -511,9 +534,14 @@ export default defineSchema({
     totalQuestions: v.optional(v.number()),
     breakdown: v.optional(v.array(v.any())),
     gradedBy: v.optional(v.string()), // "server" for real graded attempts
+    /* An attempt the exam room failed outright (window left, camera lost,
+       too many flagged violations) and why — it scores 0 and cannot be resat. */
+    failed: v.optional(v.boolean()),
+    autoSubmitReason: v.optional(v.union(v.string(), v.null())),
   })
     .index("by_student", ["studentId"])
-    .index("by_student_test", ["studentId", "testId"]),
+    .index("by_student_test", ["studentId", "testId"])
+    .index("by_test", ["testId"]),
 
   assessments: defineTable({
     studentId: v.string(),

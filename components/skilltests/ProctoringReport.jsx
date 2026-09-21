@@ -23,8 +23,14 @@ import { Badge, Button, Card, PageHeader } from "../ui/Kit";
 const MARKER_TONE = {
   FULLSCREEN_EXIT: "#DC2626",
   TAB_SWITCH: "#D97706",
+  WINDOW_CLOSED: "#B91C1C",
   BLOCKED_ACTION: "#7C3AED",
   AUDIO_FLAG: "#2563EB",
+  VOICE_DETECTED: "#0891B2",
+  NO_FACE: "#EA580C",
+  MULTIPLE_FACES: "#C2410C",
+  LOOKING_AWAY: "#F59E0B",
+  FACE_MISMATCH: "#9F1239",
   DEVICE_DISCONNECTED: "#DB2777",
   RECORDING_UPLOAD_FAILURE: "#6B7280",
   AUTO_SUBMIT_TRIGGERED: "#111827",
@@ -181,10 +187,18 @@ export default function ProctoringReport({ attemptId }) {
             {/* Summary */}
             <Card className="space-y-3">
               <div className="grid sm:grid-cols-2 lg:grid-cols-4 gap-3 text-xs">
-                <div>
-                  <div className="text-[10px] uppercase tracking-wider text-muted-foreground">Student</div>
-                  <div className="font-medium text-foreground">{data.student?.name || attempt.studentId}</div>
-                  <div className="text-muted-foreground">{data.student?.institution || ""}</div>
+                <div className="flex items-start gap-3">
+                  {/* The still the identity check was seeded with: who sat
+                      down when the paper opened. */}
+                  {data.referenceFaceUrl && (
+                    <img src={data.referenceFaceUrl} alt="Candidate as the paper opened" title="Face on camera when the paper opened — what the identity check compared against" className="w-14 h-14 rounded-lg object-cover border border-border flex-shrink-0" />
+                  )}
+                  <div>
+                    <div className="text-[10px] uppercase tracking-wider text-muted-foreground">Student</div>
+                    <div className="font-medium text-foreground">{data.student?.name || attempt.studentId}</div>
+                    <div className="text-muted-foreground">{data.student?.institution || ""}</div>
+                    {data.referenceFaceUrl && <div className="text-[10px] text-muted-foreground mt-0.5">Still taken as the paper opened</div>}
+                  </div>
                 </div>
                 <div>
                   <div className="text-[10px] uppercase tracking-wider text-muted-foreground">Sitting</div>
@@ -211,11 +225,20 @@ export default function ProctoringReport({ attemptId }) {
                   </div>
                   <ul className="mt-1 space-y-0.5 text-muted-foreground">
                     <li>Fullscreen exits: {counts.FULLSCREEN_EXIT || 0}</li>
-                    <li>Tab switches: {counts.TAB_SWITCH || 0}</li>
+                    <li>Left / closed the window: {(counts.TAB_SWITCH || 0) + (counts.WINDOW_CLOSED || 0)}</li>
                     <li>Blocked actions: {counts.BLOCKED_ACTION || 0}</li>
-                    <li>Audio flags: {counts.AUDIO_FLAG || 0}</li>
+                    <li>
+                      Camera: {(counts.NO_FACE || 0) + (counts.MULTIPLE_FACES || 0) + (counts.LOOKING_AWAY || 0)}
+                      {counts.FACE_MISMATCH ? <span className="text-red-600 font-semibold"> · different face ×{counts.FACE_MISMATCH}</span> : ""}
+                    </li>
+                    <li>Voices heard: {counts.VOICE_DETECTED || 0} · noise: {counts.AUDIO_FLAG || 0}</li>
                     <li>Device disconnects: {counts.DEVICE_DISCONNECTED || 0}</li>
                   </ul>
+                  {data.test?.monitorViolationLimit > 0 && (
+                    <div className="mt-1 text-[10px] text-muted-foreground">
+                      Camera/microphone violations: {attempt.monitorViolationCount || 0} of {data.test.monitorViolationLimit} allowed
+                    </div>
+                  )}
                 </div>
               </div>
 

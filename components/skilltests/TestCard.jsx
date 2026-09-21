@@ -3,7 +3,8 @@
 import { useState } from "react";
 import RegisterModal from "./RegisterModal";
 import TakeTestModal from "./TakeTestModal";
-import { getRegistrationStatus, formatScheduled, isLinkRevealWindow, STATUS_LABEL, STATUS_TONE } from "../../lib/testStatus";
+import { canTakeNow, getRegistrationStatus, formatScheduled, isLinkRevealWindow, joinClosedMessage, STATUS_LABEL, STATUS_TONE } from "../../lib/testStatus";
+import { isLive, meetingMode, testPhase } from "../../lib/testWindow";
 import { registerForSkillTest, confirmOfflineAttendance } from "../../lib/store";
 import { Badge, Button, Card } from "../ui/Kit";
 import { openStoredFile } from "../../lib/files";
@@ -20,6 +21,10 @@ export default function TestCard({ test, user, registration, attempt, onRefresh 
   const [showTest, setShowTest] = useState(false);
 
   const status = registration ? getRegistrationStatus(test, registration, attempt) : null;
+  /* The sitting's own clock, independent of this candidate: whether it is
+     running right now (registration closes) or already over. */
+  const phase = testPhase(test);
+  const live = isLive(phase);
 
   function handleConfirmRegister(info) {
     registerForSkillTest(test.id, user.id, info);
@@ -35,6 +40,12 @@ export default function TestCard({ test, user, registration, attempt, onRefresh 
     onRefresh();
   }
 
+  /* The exam room monitors an online sitting by itself; a meeting only
+     exists if the host chose to run one. */
+  const liveMeeting = test.mode !== "Offline" && meetingMode(test) === "live" && phase !== "ended";
+  const showMeetingLink = liveMeeting && registration && (isLinkRevealWindow(test) || live);
+  const samplePapers = Array.isArray(test.samplePapers) ? test.samplePapers : [];
+
   return (
     <Card hover className="flex flex-col">
       <div className="flex items-center gap-1.5 flex-wrap mb-3">
@@ -42,8 +53,10 @@ export default function TestCard({ test, user, registration, attempt, onRefresh 
         {isAyushSystem(test.ayushSystem) && <Badge tone="primary">{ayushSystemLabel(test.ayushSystem)}</Badge>}
         <Badge tone="neutral">{test.domain}</Badge>
         {test.price > 0 ? <Badge tone="muted">₹{test.price}</Badge> : <Badge tone="primary">Free</Badge>}
+        {samplePapers.length > 0 && <Badge tone="blue">📄 Sample paper available</Badge>}
         {status && <Badge tone={STATUS_TONE[status]} className="ml-auto">{STATUS_LABEL[status]}</Badge>}
-        {!status && test.status === "In Progress" && <Badge tone="amber" className="ml-auto">In Progress · Cannot join</Badge>}
+        {!status && live && <Badge tone="amber" className="ml-auto">In Progress · Cannot join</Badge>}
+        {!status && phase === "ended" && <Badge tone="muted" className="ml-auto">Ended</Badge>}
       </div>
 
       <div className="text-sm font-semibold text-foreground mb-0.5">{test.title}</div>
@@ -59,11 +72,14 @@ export default function TestCard({ test, user, registration, attempt, onRefresh 
         {/* The joining details belong to the people sitting the test. Showing
             the link (or the venue) on a public card handed anyone who scrolled
             past a way into a paper they never registered for. */}
-        {test.mode !== "Offline" && !registration && <div>🔗 Joining details are sent to registered candidates.</div>}
-        {test.mode !== "Offline" && registration && !isLinkRevealWindow(test) && test.status !== "In Progress" && (
+        {test.mode !== "Offline" && !liveMeeting && phase !== "ended" && (
+          <div>🛡️ {test.mode === "Online" ? "Taken in the secure exam room — monitored automatically, no meeting to join." : "The online part runs in the secure exam room — monitored automatically."}</div>
+        )}
+        {liveMeeting && !registration && <div>🔗 Joining details are sent to registered candidates.</div>}
+        {liveMeeting && registration && !showMeetingLink && (
           <div>🔗 Meeting link will appear here 1 day before the test.</div>
         )}
-        {test.mode !== "Offline" && registration && (isLinkRevealWindow(test) || test.status === "In Progress") && (
+        {showMeetingLink && (
           test.meetingLink ? (
             <div>🔗 <a href={test.meetingLink} target="_blank" rel="noreferrer" className="text-primary hover:underline font-medium">Join meeting ↗</a></div>
           ) : (
@@ -72,25 +88,38 @@ export default function TestCard({ test, user, registration, attempt, onRefresh 
         )}
         {/* Sample papers are for everyone: they are what a candidate reads
             before deciding whether to register. */}
-        {Array.isArray(test.samplePapers) && test.samplePapers.length > 0 && (
-          <div className="flex flex-wrap items-center gap-x-2 gap-y-1">
-            <span>📄 Sample paper{test.samplePapers.length === 1 ? "" : "s"}:</span>
-            {test.samplePapers.map((p, i) => (
-              <button key={p.id || p.storageId || i} type="button" onClick={() => openStoredFile(p)} className="text-primary hover:underline font-medium">
-                {p.fileName || `Paper ${i + 1}`}
-              </button>
-            ))}
+        {samplePapers.length > 0 && (
+          <div className="rounded-lg border border-blue-200 bg-blue-50/60 px-2.5 py-2 space-y-1">
+            <div className="text-[11px] font-semibold text-blue-800">📄 Sample paper{samplePapers.length === 1 ? "" : "s"} available</div>
+            <div className="flex flex-wrap gap-1.5">
+              {samplePapers.map((p, i) => (
+                <button
+                  key={p.id || p.storageId || i}
+                  type="button"
+                  onClick={() => openStoredFile(p)}
+                  className="text-[11px] font-medium text-primary bg-card border border-border rounded-lg px-2 py-1 hover:border-primary/40"
+                >
+                  Open {p.fileName || `paper ${i + 1}`} ↗
+                </button>
+              ))}
+            </div>
           </div>
         )}
       </div>
 
-      {!registration && test.status === "In Progress" && (
+      {!registration && live && (
         <div className="mt-auto text-center text-xs font-semibold text-amber-700 bg-amber-50 rounded-xl py-2.5 px-3">
           In Progress · Cannot join
         </div>
       )}
 
-      {!registration && test.status !== "In Progress" && (
+      {!registration && phase === "ended" && (
+        <div className="mt-auto text-center text-xs font-medium text-muted-foreground bg-secondary rounded-xl py-2.5 px-3">
+          This sitting has ended
+        </div>
+      )}
+
+      {!registration && !live && phase !== "ended" && (
         <Button onClick={() => setShowRegister(true)} className="mt-auto w-full">
           Register
         </Button>
@@ -102,17 +131,17 @@ export default function TestCard({ test, user, registration, attempt, onRefresh 
         </div>
       )}
 
-      {registration && (status === "available" || status === "in-progress") && (
+      {registration && canTakeNow(test, status) && (
         test.mode === "Online" ? (
           <button
             onClick={() => setShowTest(true)}
             className={`mt-auto w-full py-2.5 rounded-xl text-sm font-semibold transition-all duration-150 ${
-              test.status === "In Progress"
+              status === "in-progress"
                 ? "bg-emerald-600 hover:bg-emerald-700 text-white shadow-md animate-pulse"
                 : "bg-primary text-white hover:bg-accent"
             }`}
           >
-            {test.status === "In Progress" ? "In Progress · Join test now" : "Take the test"}
+            {status === "in-progress" ? "In Progress · Join test now" : "Take the test"}
           </button>
         ) : (
           <button
@@ -122,6 +151,18 @@ export default function TestCard({ test, user, registration, attempt, onRefresh 
             Confirm I attended
           </button>
         )
+      )}
+
+      {registration && status === "locked" && (
+        <div className="mt-auto text-center text-xs font-medium text-amber-700 bg-amber-50 rounded-xl py-2.5 px-3 leading-relaxed">
+          {joinClosedMessage(test)}
+        </div>
+      )}
+
+      {registration && status === "ended" && test.mode === "Online" && (
+        <div className="mt-auto text-center text-xs font-medium text-muted-foreground bg-secondary rounded-xl py-2.5 px-3 leading-relaxed">
+          This sitting has ended — no attempt was recorded.
+        </div>
       )}
 
       {registration && status === "awaiting-result" && (
@@ -138,6 +179,13 @@ export default function TestCard({ test, user, registration, attempt, onRefresh 
               {attempt.correctCount}/{attempt.totalQuestions} correct
             </span>
           ) : null}
+        </div>
+      )}
+
+      {registration && status === "failed" && (
+        <div className="mt-auto text-center text-xs font-semibold text-red-600 bg-red-50 rounded-xl py-2.5 px-3">
+          Failed · 0%
+          <span className="block font-normal text-[11px] text-red-500 mt-0.5">The exam room ended this attempt; it cannot be sat again.</span>
         </div>
       )}
 

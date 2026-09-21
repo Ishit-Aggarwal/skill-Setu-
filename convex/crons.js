@@ -11,4 +11,7 @@ const crons = cronJobs();
 
 crons.daily("purge expired proctoring recordings", { hourUTC: 21, minuteUTC: 30 }, internal.exams.purgeExpiredRecordings);
 
+// A paper whose browser stopped pinging is a closed window: fail it.
+crons.interval("fail abandoned exam attempts", { minutes: 2 }, internal.exams.failAbandonedAttempts);
+
 export default crons;

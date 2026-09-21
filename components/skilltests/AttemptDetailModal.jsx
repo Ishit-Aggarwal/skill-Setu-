@@ -3,6 +3,7 @@
 import { Badge, Button, Modal, ProgressBar } from "../ui/Kit";
 import { formatDateTime } from "../../lib/match";
 import { formatScheduled, STATUS_LABEL, STATUS_TONE } from "../../lib/testStatus";
+import { testPhase } from "../../lib/testWindow";
 import { findOne } from "../../lib/store";
 import { autoSubmitMessage } from "../../lib/examState";
 import CertificateCard from "../certificates/CertificateCard";
@@ -49,10 +50,20 @@ export default function AttemptDetailModal({ test, registration, attempt, status
      the paper is graded, so it can be downloaded again from here any time. */
   const credential = attempt?.credentialId ? findOne("credentials", (c) => c.id === attempt.credentialId && !c.revokedAt) : findOne("credentials", (c) => c.testId === test?.id && c.studentId === attempt?.studentId && !c.revokedAt);
 
-  /* A completed online paper can be sat again — the store replaces the earlier
-     attempt rather than stacking two scores for one test. An in-person result
-     entered by the host is not the candidate's to redo. */
-  const canRetake = Boolean(onRetake && test?.mode === "Online" && status !== "upcoming" && attempt?.gradedBy !== "host");
+  /* A completed online paper can be sat again while the sitting's joining
+     window is still open — the store replaces the earlier attempt rather
+     than stacking two scores for one test. Once joining has closed the
+     server refuses a new attempt, so the button is not offered. An
+     in-person result entered by the host is not the candidate's to redo. */
+  const hostGraded = typeof attempt?.gradedBy === "string" && attempt.gradedBy.startsWith("host");
+  const canRetake = Boolean(onRetake && test?.mode === "Online" && (status === "in-progress" || status === "available" || (status === "completed" && testPhase(test) === "open")) && !hostGraded);
+  /* A mark the host entered for an in-person sitting waits for the host to
+     release the sitting's certificates; say so rather than showing nothing. */
+  const releasedAt = test?.certificatesReleasedAt ? Date.parse(test.certificatesReleasedAt) : null;
+  const markedAt = attempt?.completedAt ? Date.parse(attempt.completedAt) : null;
+  const pendingRelease = Boolean(
+    attempt && !attempt.missed && hostGraded && test?.issueCertificate && (releasedAt == null || (markedAt != null && markedAt > releasedAt))
+  );
 
   return (
     <Modal
@@ -91,6 +102,7 @@ export default function AttemptDetailModal({ test, registration, attempt, status
             {attempt.autoSubmitReason && <p className="text-xs text-amber-800 bg-amber-50 border border-amber-200 rounded-xl px-3.5 py-2.5">{autoSubmitMessage(attempt.autoSubmitReason)}</p>}
             {credential && <CertificateCard credential={credential} status="issued" compact />}
             {!credential && attempt.certificateStatus === "below_minimum" && <CertificateCard status="below_minimum" minScore={test?.minCertificateScore} compact />}
+            {!credential && pendingRelease && <CertificateCard status="pending_release" compact />}
             <div className="flex items-center gap-4">
               <div
                 className={`w-20 h-20 rounded-2xl flex flex-col items-center justify-center flex-shrink-0 ${

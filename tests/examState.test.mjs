@@ -39,6 +39,15 @@ test("Section 0.3 — the exam limits live in one config", () => {
   assert.equal(EXAM.RETENTION_DAYS, 90);
   assert.equal(EXAM.DEFAULT_VIOLATION_PENALTY, 2);
   assert.equal(EXAM.DEVICE_GRACE_SECONDS, 3);
-  assert.deepEqual(EXAM.VIOLATION_TYPES, ["FULLSCREEN_EXIT", "TAB_SWITCH", "BLOCKED_ACTION", "NO_FACE", "MULTIPLE_FACES", "LOOKING_AWAY"]);
+  assert.deepEqual(EXAM.VIOLATION_TYPES, ["FULLSCREEN_EXIT", "TAB_SWITCH", "BLOCKED_ACTION", "NO_FACE", "MULTIPLE_FACES", "LOOKING_AWAY", "FACE_MISMATCH", "VOICE_DETECTED"]);
   EXAM.VIOLATION_TYPES.forEach((t) => assert.ok(EXAM.EVENT_TYPES.includes(t), t + " is a known event"));
+  // Camera/microphone violations are a subset of the penalised ones, with their own limit.
+  assert.equal(EXAM.MONITOR_VIOLATION_LIMIT, 3);
+  EXAM.MONITOR_VIOLATION_TYPES.forEach((t) => assert.ok(EXAM.VIOLATION_TYPES.includes(t), t + " is penalised"));
+  assert.ok(!EXAM.MONITOR_VIOLATION_TYPES.includes("TAB_SWITCH"));
+  // Leaving the window is not a penalty: it ends the attempt.
+  assert.deepEqual(EXAM.INSTANT_FAIL_TYPES, ["TAB_SWITCH", "WINDOW_CLOSED"]);
+  EXAM.INSTANT_FAIL_TYPES.forEach((t) => assert.ok(EXAM.EVENT_TYPES.includes(t), t + " is a known event"));
+  assert.ok(EXAM.HEARTBEAT_TIMEOUT_SECONDS > EXAM.HEARTBEAT_SECONDS * 2);
+  assert.equal(EXAM.MEETING_LINK_LEAD_HOURS, 3);
 });

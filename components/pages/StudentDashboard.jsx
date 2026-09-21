@@ -39,6 +39,7 @@ import {
   TERMINAL_STAGES,
 } from "../../lib/store";
 import StudentInbox from "../StudentInbox";
+import { useNarrowerThan } from "../../lib/useLiveStore";
 import MentoringPanel from "../MentoringPanel";
 import { computeMatch, daysUntil, formatDate, formatDateTime, relativeTime } from "../../lib/match";
 import { formatStipendShort } from "../../lib/money";
@@ -167,6 +168,15 @@ export default function StudentDashboard() {
     () => competency.rows.map(({ skill, score }) => ({ skill, value: score ?? 0 })),
     [competency]
   );
+  /* On a phone the radar is ~340px across, and "AYUSH Research & Clinical
+     Documentation" drawn at the rim runs off the card. Short labels there;
+     the full name is still in the tooltip. */
+  const narrow = useNarrowerThan(640);
+  const radarLabel = (name) => {
+    if (!narrow) return name;
+    const short = String(name).replace(/^AYUSH /, "").replace(/ & .*$/, "");
+    return short.length > 16 ? `${short.slice(0, 15)}…` : short;
+  };
 
   /* Score over time, so a student can see whether they're actually improving
      rather than only where they stand today. */
@@ -613,7 +623,7 @@ export default function StudentDashboard() {
               <ResponsiveContainer width="100%" height={210}>
                 <RadarChart data={radarData}>
                   <PolarGrid stroke="var(--border)" />
-                  <PolarAngleAxis dataKey="skill" tick={{ fontSize: 10, fill: "var(--muted-foreground)" }} tickLine={false} />
+                  <PolarAngleAxis dataKey="skill" tick={{ fontSize: narrow ? 9 : 10, fill: "var(--muted-foreground)" }} tickFormatter={radarLabel} tickLine={false} />
                   <PolarRadiusAxis domain={[0, 100]} tick={false} axisLine={false} />
                   <Radar dataKey="value" stroke="var(--primary)" fill="var(--primary)" fillOpacity={0.18} strokeWidth={2} />
                   <Tooltip contentStyle={{ background: "var(--card)", border: "1px solid var(--border)", borderRadius: 10, fontSize: 12, color: "var(--foreground)" }} />

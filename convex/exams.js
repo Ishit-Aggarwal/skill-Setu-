@@ -7,6 +7,7 @@ import { recalculateAssessment, writeAttempt } from "./_lib/assessment";
 import { issueCertificateForAttempt } from "./_lib/certificates";
 import { SKILL_DOMAINS } from "../lib/questionBank";
 import { EXAM } from "../lib/settings";
+import { joinWindowMinutes, testEndMs, testPhase } from "../lib/testWindow";
 import { LIVE_STATES, canTransition, isClosed } from "../lib/examState";
 import { applyPenalty, clampPenalty, gradePaper } from "../lib/grading";
 import { sanitizeForCandidate } from "../lib/questions";
@@ -37,6 +38,12 @@ const HOST_ROLES = ["industry", "academician", "institution", "admin"];
 function penaltyFor(test, totalPoints) {
   const raw = test && test.violationPenalty != null ? test.violationPenalty : EXAM.DEFAULT_VIOLATION_PENALTY;
   return clampPenalty(raw, totalPoints);
+}
+
+/** Milliseconds into the sitting right now. */
+function elapsedOf(attempt) {
+  const started = attempt?.startedAt ? new Date(attempt.startedAt).getTime() : null;
+  return started ? Math.max(0, Date.now() - started) : 0;
 }
 
 function newId(prefix) {
@@ -144,6 +151,8 @@ async function gradeAttempt(ctx, attempt, answers) {
     totalQuestions: result.totalQuestions,
     breakdown: result.breakdown,
     gradedBy: "server",
+    failed: failedOutright,
+    autoSubmitReason: attempt.autoSubmitReason || null,
   });
 
   const registration = await ctx.db
@@ -166,7 +175,20 @@ async function gradeAttempt(ctx, attempt, answers) {
   return { result, assessment, certificate, attempt: { ...graded, certificateStatus: certificate.status, credentialId: certificate.credential?.id || null } };
 }
 
-const FAILING_REASONS = ["penalty_limit_reached", "device_lost"];
+const FAILING_REASONS = ["penalty_limit_reached", "device_lost", "window_left", "window_closed", "monitor_limit_reached"];
+
+/** Camera/microphone violations that fail the attempt; 0 = off. */
+function monitorLimitFor(test) {
+  const raw = test && test.monitorViolationLimit != null ? Number(test.monitorViolationLimit) : EXAM.MONITOR_VIOLATION_LIMIT;
+  return Number.isFinite(raw) ? Math.max(0, Math.round(raw)) : EXAM.MONITOR_VIOLATION_LIMIT;
+}
+
+/** The reason an instant-fail event type ends the attempt with. */
+function instantFailReason(type) {
+  if (type === "WINDOW_CLOSED") return "window_closed";
+  if (type === "TAB_SWITCH") return "window_left";
+  return null;
+}
 
 async function autoSubmit(ctx, attempt, reason, atMs) {
   await logEvent(ctx, attempt, "AUTO_SUBMIT_TRIGGERED", atMs, reason);
@@ -192,6 +214,8 @@ async function configFor(ctx, attempt) {
     penaltyPerViolation,
     deviceGraceSeconds: EXAM.DEVICE_GRACE_SECONDS,
     faceMonitoring: Boolean(test?.faceMonitoring !== false),
+    monitorViolationLimit: monitorLimitFor(test),
+    heartbeatSeconds: EXAM.HEARTBEAT_SECONDS,
     // Kept for browsers still running the previous exam room.
     violationLimit: EXAM.VIOLATION_LIMIT,
     fullscreenGraceSeconds: EXAM.FULLSCREEN_GRACE_SECONDS,
@@ -233,11 +257,55 @@ export const begin = mutation({
       .collect();
     const live = open.find((a) => !isClosed(a.state));
     if (live) {
+      // The paper was open and the room is being opened again: the window
+      // was closed, reloaded or navigated away from. That ends the attempt.
+      // A candidate still in the pre-test steps (consent, device check)
+      // simply carries on from where they were.
+      if (LIVE_STATES.includes(live.state)) {
+        await logEvent(ctx, live, "WINDOW_CLOSED", elapsedOf(live), "The exam room was reopened after the paper was left");
+        const graded = await autoSubmit(ctx, live, "window_closed", elapsedOf(live));
+        const { _id, _creationTime, answers, ...rest } = graded.attempt;
+        return {
+          ok: true,
+          attempt: rest,
+          resumed: false,
+          closedOnReturn: true,
+          graded: {
+            result: graded.result,
+            certificate: { status: graded.certificate.status, credential: stripCredential(graded.certificate.credential) },
+            assessment: graded.assessment,
+            autoSubmitReason: "window_closed",
+            disqualified: true,
+          },
+        };
+      }
       const { _id, _creationTime, answers, ...rest } = live;
       return { ok: true, attempt: rest, resumed: true };
     }
 
+    // A failed attempt is final: leaving the window, a lost camera or too
+    // many flagged violations cannot be undone by opening the paper again.
+    // The room shows that attempt's result instead of a fresh paper.
+    const failed = open.find((a) => a.failed || (a.autoSubmitReason && FAILING_REASONS.includes(a.autoSubmitReason)));
+    if (failed) {
+      const { _id, _creationTime, answers, ...rest } = failed;
+      return { ok: true, attempt: rest, resumed: false, failedEarlier: true };
+    }
+
     const test = await findTestByClientId(ctx, args.testId);
+    // A fresh attempt only while the sitting is open. The phase is read on
+    // this clock, not the browser's: once the joining window has closed the
+    // candidate is not coming in part-way, whatever their card said.
+    if (test) {
+      const phase = testPhase(test, Date.now(), { serverSide: true });
+      if (phase === "upcoming") throw new Error("This test hasn't started yet. The paper opens at the scheduled time.");
+      if (phase === "locked") {
+        const minutes = joinWindowMinutes(test);
+        throw new Error(`The test is in progress and joining closed ${minutes} minute${minutes === 1 ? "" : "s"} after it started. You can't join a test part-way through.`);
+      }
+      if (phase === "ended") throw new Error("This test has ended.");
+    }
+
     let source;
     let domain;
     let title;
@@ -343,17 +411,25 @@ export const start = mutation({
     const paper = await paperFor(ctx, attempt);
     if (!paper.length) throw new Error("This test has no question paper yet.");
     const now = Date.now();
+    // The sitting ends when the sitting ends. A candidate who opened the
+    // paper late in the joining window gets the time that is left, not a
+    // full allowance running past everyone else's finish.
+    let deadlineAt = now + (attempt.durationMins || 15) * 60000;
+    const test = await findTestByClientId(ctx, attempt.testId);
+    const sittingEnds = test ? testEndMs(test, { serverSide: true }) : null;
+    if (sittingEnds != null && sittingEnds > now && sittingEnds < deadlineAt) deadlineAt = sittingEnds;
     const next = await transition(ctx, attempt, "IN_PROGRESS", "started");
     await ctx.db.patch(next._id, {
       startedAt: new Date(now).toISOString(),
-      deadlineAt: now + (attempt.durationMins || 15) * 60000,
+      deadlineAt,
+      lastSeenAt: now,
       questionIds: paper.map((q) => q.id),
     });
     return {
       ok: true,
       startedAt: now,
       serverNow: now,
-      deadlineAt: now + (attempt.durationMins || 15) * 60000,
+      deadlineAt,
       questions: paper.map(sanitizeForCandidate),
       config: await configFor(ctx, attempt),
     };
@@ -437,41 +513,56 @@ export const logEvents = mutation({
     if (isClosed(attempt.state)) return { ok: false, state: attempt.state, violationCount: attempt.violationCount || 0 };
 
     let violationCount = attempt.violationCount || 0;
+    let monitorViolationCount = attempt.monitorViolationCount || 0;
     const byType = { ...(attempt.violationsByType || {}) };
+    let fatal = null;
     for (const e of args.events) {
       if (!EXAM.EVENT_TYPES.includes(e.type)) continue;
       await logEvent(ctx, attempt, e.type, e.atMs, e.detail, e.durationMs);
       byType[e.type] = (byType[e.type] || 0) + 1;
       if (EXAM.VIOLATION_TYPES.includes(e.type)) violationCount += 1;
+      if (EXAM.MONITOR_VIOLATION_TYPES.includes(e.type)) monitorViolationCount += 1;
+      if (!fatal && EXAM.INSTANT_FAIL_TYPES.includes(e.type)) fatal = instantFailReason(e.type);
     }
 
     const config = await configFor(ctx, attempt);
     const penaltyPoints = violationCount * config.penaltyPerViolation;
     const pointsLeft = Math.max(0, config.totalPoints - penaltyPoints);
     const test = await findTestByClientId(ctx, attempt.testId);
-    const patch = { violationCount, violationsByType: byType, penaltyPoints };
+    const patch = { violationCount, monitorViolationCount, violationsByType: byType, penaltyPoints, lastSeenAt: Date.now() };
     if (test?.autoDisqualifyAfter != null && violationCount >= test.autoDisqualifyAfter && !attempt.disqualified) {
       patch.disqualified = true;
       patch.disqualifiedAt = new Date().toISOString();
     }
     await ctx.db.patch(attempt._id, patch);
     const updated = { ...attempt, ...patch };
-    const summary = { violationCount, penaltyPerViolation: config.penaltyPerViolation, penaltyPoints, pointsLeft, totalPoints: config.totalPoints };
+    const summary = {
+      violationCount,
+      monitorViolationCount,
+      monitorViolationLimit: config.monitorViolationLimit,
+      penaltyPerViolation: config.penaltyPerViolation,
+      penaltyPoints,
+      pointsLeft,
+      totalPoints: config.totalPoints,
+    };
 
-    // Penalties have used up the paper (or, for a test with penalties off,
-    // the legacy count limit was hit): the attempt is over.
+    // Three ways the attempt ends here, in order of severity: the window was
+    // left or closed (over at once); the camera/microphone checks reached
+    // the test's limit; the penalties used up the paper (or, for a test with
+    // penalties off, the legacy count limit was hit).
     const penaltiesExhausted = config.penaltyPerViolation > 0 && config.totalPoints > 0 && penaltyPoints >= config.totalPoints;
     const legacyLimit = config.penaltyPerViolation === 0 && violationCount >= EXAM.VIOLATION_LIMIT;
-    if ((penaltiesExhausted || legacyLimit) && LIVE_STATES.includes(attempt.state)) {
+    const monitorLimitHit = config.monitorViolationLimit > 0 && monitorViolationCount >= config.monitorViolationLimit;
+    if ((fatal || monitorLimitHit || penaltiesExhausted || legacyLimit) && LIVE_STATES.includes(attempt.state)) {
       const lastMs = args.events.length ? args.events[args.events.length - 1].atMs : 0;
-      const reason = penaltiesExhausted ? "penalty_limit_reached" : "violation_limit_reached";
+      const reason = fatal || (monitorLimitHit ? "monitor_limit_reached" : penaltiesExhausted ? "penalty_limit_reached" : "violation_limit_reached");
       const graded = await autoSubmit(ctx, updated, reason, lastMs);
       return {
         ok: true,
         state: "GRADED",
         ...summary,
         autoSubmitReason: reason,
-        disqualified: penaltiesExhausted || Boolean(patch.disqualified),
+        disqualified: FAILING_REASONS.includes(reason) || Boolean(patch.disqualified),
         result: graded.result,
         certificate: { status: graded.certificate.status, credential: stripCredential(graded.certificate.credential) },
         assessment: graded.assessment,
@@ -499,7 +590,7 @@ export const submit = mutation({
     const withAnswers = { ...attempt, answers: args.answers || {} };
 
     if (args.auto) {
-      const reason = ["time_up", "fullscreen_timeout", "device_timeout", "device_lost"].includes(args.reason) ? args.reason : "time_up";
+      const reason = ["time_up", "fullscreen_timeout", "device_timeout", "device_lost", "window_left", "window_closed"].includes(args.reason) ? args.reason : "time_up";
       const graded = await autoSubmit(ctx, withAnswers, reason, args.atMs || 0);
       return {
         ok: true,
@@ -522,6 +613,36 @@ export const submit = mutation({
       assessment: graded.assessment,
       disqualified: Boolean(attempt.disqualified),
     };
+  },
+});
+
+/**
+ * "Still here", every EXAM.HEARTBEAT_SECONDS while the paper is open. A
+ * paper whose pings stop is a window that was closed without the browser
+ * getting a last word in; failAbandonedAttempts closes it from here.
+ */
+export const heartbeat = mutation({
+  args: { sessionToken: v.string(), attemptId: v.string() },
+  handler: async (ctx, args) => {
+    const { attempt } = await requireAttemptAccess(ctx, args.sessionToken, args.attemptId, { studentOnly: true });
+    if (!LIVE_STATES.includes(attempt.state)) return { ok: false, state: attempt.state };
+    await ctx.db.patch(attempt._id, { lastSeenAt: Date.now() });
+    return { ok: true };
+  },
+});
+
+/**
+ * The still of the candidate's face taken as the paper opened — what the
+ * on-device identity check compares every later frame with. Kept with the
+ * recording and shown to the host beside any mismatch.
+ */
+export const registerReferenceFace = mutation({
+  args: { sessionToken: v.string(), attemptId: v.string(), storageId: v.id("_storage") },
+  handler: async (ctx, args) => {
+    const { attempt } = await requireAttemptAccess(ctx, args.sessionToken, args.attemptId, { studentOnly: true });
+    if (attempt.referenceFaceStorageId) return { ok: true, kept: true };
+    await ctx.db.patch(attempt._id, { referenceFaceStorageId: args.storageId });
+    return { ok: true };
   },
 });
 
@@ -671,16 +792,18 @@ export const report = query({
       .first();
 
     const { _id, _creationTime, answers, ...rest } = attempt;
+    const referenceFaceUrl = attempt.referenceFaceStorageId ? await ctx.storage.getUrl(attempt.referenceFaceStorageId) : null;
     return {
       ok: true,
       attempt: rest,
       student: student ? { id: student.id, name: student.name, email: student.email, institution: student.institution } : null,
       test: test
-        ? { id: test.id, title: test.title, autoDisqualifyAfter: test.autoDisqualifyAfter ?? null, violationPenalty: penaltyFor(test, attempt.totalQuestions || 0) }
-        : { id: attempt.testId, title: attempt.testTitle, autoDisqualifyAfter: null, violationPenalty: penaltyFor(null, attempt.totalQuestions || 0) },
+        ? { id: test.id, title: test.title, autoDisqualifyAfter: test.autoDisqualifyAfter ?? null, violationPenalty: penaltyFor(test, attempt.totalQuestions || 0), monitorViolationLimit: monitorLimitFor(test) }
+        : { id: attempt.testId, title: attempt.testTitle, autoDisqualifyAfter: null, violationPenalty: penaltyFor(null, attempt.totalQuestions || 0), monitorViolationLimit: monitorLimitFor(null) },
       events,
       chunks,
       gaps,
+      referenceFaceUrl,
       consentedAt: consent?.at || null,
       retentionDays: EXAM.RETENTION_DAYS,
       violationLimit: EXAM.VIOLATION_LIMIT,
@@ -739,9 +862,45 @@ export const purgeExpiredRecordings = internalMutation({
         .withIndex("by_attempt", (q) => q.eq("attemptId", attempt.id))
         .collect();
       for (const e of events) await ctx.db.delete(e._id);
-      await ctx.db.patch(attempt._id, { recordingDeletedAt: new Date().toISOString() });
+      if (attempt.referenceFaceStorageId) {
+        try {
+          await ctx.storage.delete(attempt.referenceFaceStorageId);
+        } catch {
+          /* already gone */
+        }
+      }
+      await ctx.db.patch(attempt._id, { recordingDeletedAt: new Date().toISOString(), referenceFaceStorageId: null });
       purged += 1;
     }
     return { purged, retentionDays: EXAM.RETENTION_DAYS };
+  },
+});
+
+/**
+ * A paper whose "still here" pings stopped is a window that was closed
+ * (or a machine that died) without the browser reporting it. After
+ * EXAM.HEARTBEAT_TIMEOUT_SECONDS of silence the attempt is failed exactly as
+ * if the browser had said so. Scheduled from convex/crons.js.
+ */
+export const failAbandonedAttempts = internalMutation({
+  handler: async (ctx) => {
+    const cutoff = Date.now() - EXAM.HEARTBEAT_TIMEOUT_SECONDS * 1000;
+    let failed = 0;
+    for (const state of LIVE_STATES) {
+      const rows = await ctx.db
+        .query("examAttempts")
+        .withIndex("by_state", (q) => q.eq("state", state))
+        .collect();
+      for (const attempt of rows) {
+        const seen = attempt.lastSeenAt || (attempt.startedAt ? new Date(attempt.startedAt).getTime() : null);
+        if (!seen || seen > cutoff) continue;
+        // A candidate paused for a lost camera is still on the page and still
+        // pinging; only silence counts.
+        await logEvent(ctx, attempt, "WINDOW_CLOSED", elapsedOf(attempt), `No response from the exam room for ${Math.round((Date.now() - seen) / 1000)}s`);
+        await autoSubmit(ctx, attempt, "window_closed", elapsedOf(attempt));
+        failed += 1;
+      }
+    }
+    return { failed };
   },
 });

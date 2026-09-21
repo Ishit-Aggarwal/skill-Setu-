@@ -2,10 +2,10 @@ import Link from "next/link";
 
 export default function NotFound() {
   const personas = [
-    { title: "Student Dashboard", desc: "Access verified skill scores, applications & career roadmaps", href: "/dashboard", icon: "🎓" },
-    { title: "AYUSH Industry", desc: "Manage AYUSH talent pipelines, candidate shortlists & postings", href: "/industry", icon: "💼" },
-    { title: "Academician Portal", desc: "Track student cohorts, curriculum mappings & research", href: "/academician", icon: "🔬" },
-    { title: "Institution & TPO", desc: "Monitor institutional placements, drives & partnerships", href: "/institution", icon: "🏛️" },
+    { title: "Student Dashboard", desc: "Access verified skill scores, applications & career roadmaps", href: "/dashboard/student", icon: "🎓" },
+    { title: "AYUSH Industry", desc: "Manage AYUSH talent pipelines, candidate shortlists & postings", href: "/dashboard/industry", icon: "💼" },
+    { title: "Academician Portal", desc: "Track student cohorts, curriculum mappings & research", href: "/dashboard/academician", icon: "🔬" },
+    { title: "Institution & TPO", desc: "Monitor institutional placements, drives & partnerships", href: "/dashboard/institution", icon: "🏛️" },
   ];
 
   return (

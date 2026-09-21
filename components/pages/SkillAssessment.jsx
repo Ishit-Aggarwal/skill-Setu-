@@ -1,12 +1,13 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { useStoreVersion } from "../../lib/useLiveStore";
+import { useClock, useStoreVersion } from "../../lib/useLiveStore";
 import DashboardLayout from "../DashboardLayout";
 import TestCard from "../skilltests/TestCard";
 import MyTests from "../skilltests/MyTests";
 import { useAuth } from "../../lib/auth";
 import { listSkillTests, listRegistrationsForStudent, getAttemptsForStudent, getRegistration, checkAndRecordMissedTests } from "../../lib/store";
+import { testPhase } from "../../lib/testWindow";
 import HostView from "../skilltests/HostView";
 import { AyushSystemFilter } from "../AyushSystemSelect";
 import { EmptyState, PageHeader, Tabs } from "../ui/Kit";
@@ -27,9 +28,22 @@ function StudentView({ user }) {
   }
 
   const live = useStoreVersion(["skillTests", "skillTestRegistrations", "assessmentAttempts", "credentials"]);
-  useEffect(() => { refresh(); }, [user, live]);
+  // Cards change with the clock too: a sitting opens, closes to late joiners
+  // and ends without anything in the store moving.
+  const clock = useClock(30000);
+  useEffect(() => { refresh(); }, [user, live, clock]);
+
+  /* A sitting that has ended leaves the catalogue. It stays visible only to
+     the candidates who sat it, under "Previous tests". */
+  const sat = (t) => {
+    const attempt = attempts.find((a) => a.testId === t.id);
+    const reg = registrations.find((r) => r.testId === t.id);
+    return Boolean(attempt || reg?.attended);
+  };
+  const previousTests = tests.filter((t) => testPhase(t) === "ended" && sat(t));
 
   const filteredTests = tests.filter((t) => {
+    if (testPhase(t) === "ended") return false;
     if (systemFilter && t.ayushSystem !== systemFilter) return false;
     const q = searchQuery.trim().toLowerCase();
     if (!q) return true;
@@ -49,6 +63,7 @@ function StudentView({ user }) {
         tabs={[
           { key: "browse", label: "Browse Tests" },
           { key: "mine", label: "My Tests" },
+          { key: "previous", label: `Previous tests${previousTests.length ? ` (${previousTests.length})` : ""}` },
         ]}
         value={tab}
         onChange={setTab}
@@ -58,7 +73,7 @@ function StudentView({ user }) {
         <>
           <div className="flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-3">
             <p className="text-sm text-muted-foreground flex-1">
-              Tests hosted by industry partners and academic institutions. Register first — for online tests, the meeting link appears here 1 day before the scheduled time; offline tests confirm your reporting details.
+              Tests hosted by industry partners and academic institutions. Register first — online tests open in the secure exam room at the scheduled time (if the host also runs a meeting, its link appears here a day before); offline tests confirm your reporting details.
             </p>
             <div className="relative min-w-[260px]">
               <span className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground text-xs">🔍</span>
@@ -97,6 +112,30 @@ function StudentView({ user }) {
       )}
 
       {tab === "mine" && <MyTests registrations={registrations} tests={tests} attempts={attempts} user={user} onRefresh={refresh} />}
+
+      {tab === "previous" && (
+        <>
+          <p className="text-sm text-muted-foreground">Sittings that have ended. Only candidates who sat a test can see it here.</p>
+          {previousTests.length === 0 ? (
+            <EmptyState icon="🗂️" title="No previous tests yet">
+              A test you have sat appears here once its sitting has ended.
+            </EmptyState>
+          ) : (
+            <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-4">
+              {previousTests.map((test) => (
+                <TestCard
+                  key={test.id}
+                  test={test}
+                  user={user}
+                  registration={getRegistration(test.id, user.id)}
+                  attempt={attempts.find((a) => a.testId === test.id)}
+                  onRefresh={refresh}
+                />
+              ))}
+            </div>
+          )}
+        </>
+      )}
     </div>
   );
 }

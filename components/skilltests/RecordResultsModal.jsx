@@ -3,7 +3,7 @@
 import { useState } from "react";
 import { api } from "../../convex/_generated/api";
 import { backendErrorMessage, backendMutation, isBackendConfigured } from "../../lib/convexBrowser";
-import { findOne, insert, recordHostEnteredScore } from "../../lib/store";
+import { recordHostEnteredScore } from "../../lib/store";
 import { Avatar, Badge, Button, Flash, Modal } from "../ui/Kit";
 
 /**
@@ -36,7 +36,7 @@ export default function RecordResultsModal({ test, issuer, recipients, onClose, 
 
     setSaving(true);
     let saved = 0;
-    let certified = 0;
+    let pending = 0;
     try {
       for (const [studentId, value] of entered) {
         const score = Number(value);
@@ -47,20 +47,16 @@ export default function RecordResultsModal({ test, issuer, recipients, onClose, 
             domain: test.domain,
             score,
           });
-          // An in-person or hybrid sitting earns its certificate from the mark
-          // just entered, exactly as an online paper does on grading.
-          const credential = out?.certificate?.credential;
-          if (credential) {
-            certified += 1;
-            if (!findOne("credentials", (c) => c.id === credential.id)) insert("credentials", credential);
-          }
+          // The mark alone. An in-person or hybrid sitting's certificates
+          // are released together, from the test card, once it has ended.
+          if (out?.certificate?.status === "pending_release") pending += 1;
         }
         // Mirror locally so this device's roster and the student's cached
         // profile agree with what the server now holds.
         recordHostEnteredScore(studentId, test, score, issuer?.id);
         saved += 1;
       }
-      setFlash(`Recorded ${saved} result${saved === 1 ? "" : "s"}${certified ? ` · ${certified} certificate${certified === 1 ? "" : "s"} issued` : ""}.`);
+      setFlash(`Recorded ${saved} result${saved === 1 ? "" : "s"}${pending ? " · certificates go out when you release them after the sitting ends" : ""}.`);
       onSaved?.(saved);
     } catch (err) {
       setError(backendErrorMessage(err, "Could not record these results."));
