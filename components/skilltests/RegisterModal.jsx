@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import Link from "next/link";
 import { formatScheduled } from "../../lib/testStatus";
 import { Button, Field, Modal, Select, TextInput } from "../ui/Kit";
 
@@ -48,11 +49,16 @@ export default function RegisterModal({ test, user, onConfirm, onClose }) {
           {test.prerequisites}
         </div>
       )}
-      {test.certification && (
-        <div className="bg-primary/8 rounded-xl p-3 mb-4 text-xs text-primary font-medium">
-          🏅 On passing, you'll earn: {test.certification}
+      <div className="bg-primary/8 rounded-xl p-3 mb-4 text-xs text-primary font-medium space-y-1">
+        {test.certification && <div>🏅 On passing, you'll earn: {test.certification}</div>}
+        {/* Caught here, before issue: a certificate never changes afterwards. */}
+        <div className="text-[11px] font-normal text-foreground">
+          Name on the certificate: <span className="font-semibold">{user.certificateName || user.name}</span>{" "}
+          <Link href="/settings?tab=account" className="text-primary underline" target="_blank" rel="noreferrer">
+            Edit
+          </Link>
         </div>
-      )}
+      </div>
 
       <form onSubmit={handleSubmit} className="space-y-3">
         <div className="grid grid-cols-2 gap-3">

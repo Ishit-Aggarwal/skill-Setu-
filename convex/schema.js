@@ -99,10 +99,15 @@ export default defineSchema({
     notifyAnnouncements: v.optional(v.boolean()),
     showContactToRecruiters: v.optional(v.boolean()),
     showScoresToRecruiters: v.optional(v.boolean()),
+    /* The name printed on certificates, exactly as the student wants it
+       (falls back to `name`). A Latin spelling here is also what the PDF
+       uses when `name` is in a script its fonts cannot print. */
+    certificateName: v.optional(v.string()),
   })
     .index("by_email", ["email"])
     .index("by_role", ["role"])
-    .index("by_institution", ["institutionId"]),
+    .index("by_institution", ["institutionId"])
+    .index("by_client_id", ["id"]),
 
   /**
    * Server-owned sign-in sessions.
@@ -324,7 +329,38 @@ export default defineSchema({
     /* Sample papers candidates may download, as storage references. */
     samplePapers: v.optional(v.array(v.any())),
     updatedAt: v.optional(v.string()),
-  }).index("by_owner", ["ownerId"]),
+    /* Length of one sitting in whole minutes (5–600). `duration` above is
+       still written as a readable string for anything that reads only it. */
+    durationMinutes: v.optional(v.union(v.number(), v.null())),
+    /* "fixed" = one sitting at scheduledAt (legacy rows have no value and
+       read as fixed); "window" = take it any time between the two instants
+       below, online only (lib/testWindow.js). */
+    scheduleType: v.optional(v.union(v.string(), v.null())),
+    windowOpensAtMs: v.optional(v.union(v.number(), v.null())),
+    windowClosesAtMs: v.optional(v.union(v.number(), v.null())),
+    /* Each candidate gets the questions and options in their own order. */
+    shuffle: v.optional(v.boolean()),
+    /* Give each candidate this many questions drawn from the paper (null = all). */
+    poolSize: v.optional(v.union(v.number(), v.null())),
+    /* "public" (anyone) or "community" (only active members of communityId). */
+    audience: v.optional(v.union(v.string(), v.null())),
+    communityId: v.optional(v.union(v.string(), v.null())),
+    communityName: v.optional(v.union(v.string(), v.null())),
+    /* A window test cancelled before anyone sat it; kept so registrants' cards explain. */
+    cancelledAt: v.optional(v.union(v.string(), v.null())),
+  })
+    .index("by_owner", ["ownerId"])
+    .index("by_window_close", ["windowClosesAtMs"])
+    .index("by_community", ["communityId"])
+    .index("by_client_id", ["id"]),
+
+  /* One reminder per (test, candidate, kind), so the cron never repeats itself. */
+  testReminders: defineTable({
+    testId: v.string(),
+    userId: v.string(),
+    kind: v.string(), // "window_open" | "last_start_24h" | "last_start_2h"
+    sentAt: v.number(),
+  }).index("by_test_user_kind", ["testId", "userId", "kind"]),
 
   /**
    * The questions behind a host-authored test. This table is the only place
@@ -344,6 +380,9 @@ export default defineSchema({
     ayushSystem: v.optional(v.string()),
     topic: v.optional(v.string()),
     difficulty: v.optional(v.string()),
+    bloom: v.optional(v.string()),
+    /* Where a question written from the host's documents came from. */
+    citation: v.optional(v.union(v.null(), v.object({ fileName: v.string(), locator: v.string(), quote: v.string() }))),
     createdAt: v.string(),
     updatedAt: v.string(),
     recheckHistory: v.optional(v.array(v.any())),
@@ -370,6 +409,9 @@ export default defineSchema({
     endedAt: v.optional(v.string()),
     answers: v.optional(v.any()),
     questionIds: v.optional(v.array(v.string())),
+    /* A pooled paper: the questions this candidate was dealt (seeded by the
+       attempt id). Grading, review and the report all use exactly this set. */
+    drawnQuestionIds: v.optional(v.union(v.array(v.string()), v.null())),
     paperSource: v.optional(v.string()), // "authored" | "bank"
     domain: v.optional(v.string()),
     testTitle: v.optional(v.string()),
@@ -516,6 +558,10 @@ export default defineSchema({
     slot: v.optional(v.union(v.string(), v.null())),
     paid: v.optional(v.boolean()),
     updatedAt: v.optional(v.string()),
+    /* Set when the registration no longer stands: "removed_from_community",
+       "test_cancelled". A cancelled registration cannot start the test. */
+    cancelledAt: v.optional(v.union(v.string(), v.null())),
+    cancelReason: v.optional(v.union(v.string(), v.null())),
   })
     .index("by_test", ["testId"])
     .index("by_user", ["userId"])
@@ -854,9 +900,219 @@ export default defineSchema({
     read: v.boolean(),
     readAt: v.optional(v.union(v.string(), v.null())),
     updatedAt: v.optional(v.string()),
+    /* What the notification is about, so the inbox can draw an icon, filter
+       by kind and open the right page on a click. Rows written before these
+       fields existed carry none of them and render as "Other". */
+    kind: v.optional(v.union(v.string(), v.null())),
+    link: v.optional(v.union(v.string(), v.null())),
+    communityId: v.optional(v.union(v.string(), v.null())),
+    postId: v.optional(v.union(v.string(), v.null())),
   })
     .index("by_student", ["studentId"])
     .index("by_client_id", ["id"]),
+
+  /**
+   * Who uploaded which stored file, and what for. The AI routes resolve a
+   * storage id through this table, so a host can never feed somebody else's
+   * private resume into a model by guessing its id.
+   */
+  uploads: defineTable({
+    storageId: v.id("_storage"),
+    ownerId: v.string(),
+    fileName: v.string(),
+    mimeType: v.string(),
+    bytes: v.number(),
+    purpose: v.string(), // "source" | "resume" | "material" | "cover" | "document" | "image"
+    createdAt: v.number(),
+  })
+    .index("by_storage", ["storageId"])
+    .index("by_owner", ["ownerId"]),
+
+  /* ============================================================
+     Communities: spaces a professor or an institution runs for
+     students. Every rule (who can see, join, post, moderate) is
+     decided in convex/communities.js via lib/communityRules.js.
+     ============================================================ */
+
+  communities: defineTable({
+    id: v.string(),
+    ownerId: v.string(),
+    ownerRole: v.string(), // "academician" | "institution"
+    ownerName: v.optional(v.string()),
+    institutionId: v.optional(v.union(v.string(), v.null())),
+    institutionName: v.optional(v.union(v.string(), v.null())),
+    name: v.string(),
+    nameKey: v.string(), // lower-case name, unique per owner
+    slug: v.string(),
+    description: v.optional(v.string()),
+    ayushSystem: v.string(),
+    subject: v.optional(v.union(v.string(), v.null())),
+    courseLevel: v.optional(v.union(v.string(), v.null())),
+    coverImage: v.optional(v.any()), // { storageId, fileName, mimeType, bytes }
+    visibility: v.string(), // "open" | "closed" | "invite"
+    sameInstitutionOnly: v.boolean(),
+    memberCap: v.optional(v.union(v.number(), v.null())),
+    allowComments: v.boolean(),
+    rules: v.optional(v.string()),
+    inviteCode: v.string(),
+    inviteCodeExpiresAt: v.optional(v.union(v.number(), v.null())),
+    inviteCodeMaxUses: v.optional(v.union(v.number(), v.null())),
+    inviteCodeUses: v.number(),
+    memberCount: v.number(),
+    pendingCount: v.number(),
+    /* The last time owners were told about join requests (the hourly digest). */
+    requestDigestAt: v.optional(v.union(v.number(), v.null())),
+    archivedAt: v.optional(v.union(v.number(), v.null())),
+    createdAt: v.number(),
+    updatedAt: v.number(),
+  })
+    .index("by_client_id", ["id"])
+    .index("by_owner", ["ownerId"])
+    .index("by_owner_name", ["ownerId", "nameKey"])
+    .index("by_institution", ["institutionId"])
+    .index("by_visibility", ["visibility"])
+    .index("by_invite_code", ["inviteCode"]),
+
+  /* One row per (community, user); a status change patches it. */
+  communityMembers: defineTable({
+    communityId: v.string(),
+    userId: v.string(),
+    userName: v.optional(v.string()),
+    role: v.string(), // "owner" | "moderator" | "member"
+    status: v.string(), // "active" | "pending" | "invited" | "removed" | "banned" | "left" | "declined"
+    requestNote: v.optional(v.union(v.string(), v.null())),
+    invitedBy: v.optional(v.union(v.string(), v.null())),
+    joinedAt: v.optional(v.union(v.number(), v.null())),
+    statusChangedAt: v.number(),
+    statusChangedBy: v.optional(v.union(v.string(), v.null())),
+    banReason: v.optional(v.union(v.string(), v.null())),
+    notificationsMuted: v.boolean(),
+    lastSeenAt: v.optional(v.union(v.number(), v.null())),
+  })
+    .index("by_community_status", ["communityId", "status"])
+    .index("by_user_status", ["userId", "status"])
+    .index("by_community_user", ["communityId", "userId"]),
+
+  communityPosts: defineTable({
+    id: v.string(),
+    communityId: v.string(),
+    authorId: v.string(),
+    authorName: v.string(),
+    type: v.string(), // "announcement" | "material" | "link" | "test"
+    title: v.string(),
+    body: v.string(),
+    attachments: v.array(v.any()), // [{ fileId, storageId, fileName, mimeType, bytes }]
+    links: v.array(v.any()), // [{ url, title }]
+    testId: v.optional(v.union(v.string(), v.null())),
+    pinned: v.boolean(),
+    pinnedAt: v.optional(v.union(v.number(), v.null())),
+    pinOrder: v.optional(v.union(v.number(), v.null())),
+    editedAt: v.optional(v.union(v.number(), v.null())),
+    deletedAt: v.optional(v.union(v.number(), v.null())),
+    /* Set once the deleted post's files have been removed from storage. */
+    filesPurgedAt: v.optional(v.union(v.number(), v.null())),
+    createdAt: v.number(),
+  })
+    .index("by_client_id", ["id"])
+    .index("by_community_created", ["communityId", "createdAt"])
+    .index("by_community_pinned", ["communityId", "pinned"])
+    .index("by_deleted", ["deletedAt"]),
+
+  communityComments: defineTable({
+    id: v.string(),
+    postId: v.string(),
+    communityId: v.string(),
+    authorId: v.string(),
+    authorName: v.string(),
+    body: v.string(),
+    deletedAt: v.optional(v.union(v.number(), v.null())),
+    deletedBy: v.optional(v.union(v.string(), v.null())),
+    createdAt: v.number(),
+  })
+    .index("by_client_id", ["id"])
+    .index("by_post", ["postId"])
+    .index("by_community", ["communityId"]),
+
+  communityDownloads: defineTable({
+    communityId: v.string(),
+    postId: v.string(),
+    fileId: v.string(),
+    userId: v.string(),
+    at: v.number(),
+  })
+    .index("by_post_file_user", ["postId", "fileId", "userId"])
+    .index("by_community", ["communityId"]),
+
+  communityReports: defineTable({
+    communityId: v.string(),
+    postId: v.optional(v.union(v.string(), v.null())),
+    commentId: v.optional(v.union(v.string(), v.null())),
+    reporterId: v.string(),
+    reason: v.string(),
+    status: v.string(), // "open" | "resolved"
+    createdAt: v.number(),
+  }).index("by_community_status", ["communityId", "status"]),
+
+  /* Every moderation action leaves a trail the owner can read. */
+  communityAudit: defineTable({
+    communityId: v.string(),
+    actorId: v.string(),
+    actorName: v.optional(v.string()),
+    action: v.string(),
+    targetId: v.optional(v.union(v.string(), v.null())),
+    detail: v.optional(v.union(v.string(), v.null())),
+    at: v.number(),
+  }).index("by_community", ["communityId", "at"]),
+
+  /* A post's notification fan-out, remembered so a retry never double-sends. */
+  communityFanouts: defineTable({
+    key: v.string(), // postId, or postId + ":repin:" + time
+    communityId: v.string(),
+    delivered: v.number(),
+    doneAt: v.optional(v.union(v.number(), v.null())),
+    createdAt: v.number(),
+  }).index("by_key", ["key"]),
+
+  /**
+   * Resume Coach. A resume is personal data (DPDP Act 2023): readable only by
+   * its student, deleted on request, and purged after RESUME.RETENTION_DAYS.
+   * Contact details are stripped from `result` before it is stored.
+   */
+  resumeAnalyses: defineTable({
+    id: v.string(),
+    studentId: v.string(),
+    resumeStorageId: v.optional(v.union(v.id("_storage"), v.null())),
+    resumeFileName: v.optional(v.union(v.string(), v.null())),
+    source: v.string(), // "upload" | "portfolio"
+    target: v.optional(v.any()), // { kind: "track" | "posting", title, internshipId? }
+    result: v.any(),
+    model: v.optional(v.string()),
+    consentAt: v.number(),
+    createdAt: v.number(),
+    expiresAt: v.number(),
+  })
+    .index("by_client_id", ["id"])
+    .index("by_student", ["studentId", "createdAt"])
+    .index("by_expires", ["expiresAt"]),
+
+  /* Ticked study-plan topics, so progress follows the student across devices. */
+  studyPlanProgress: defineTable({
+    studentId: v.string(),
+    analysisId: v.string(),
+    topicId: v.string(),
+    done: v.boolean(),
+    doneAt: v.optional(v.union(v.number(), v.null())),
+  })
+    .index("by_analysis", ["analysisId", "topicId"])
+    .index("by_student", ["studentId"]),
+
+  /* AI runs per account per day (IST), counted before the model is called. */
+  aiUsage: defineTable({
+    userId: v.string(),
+    day: v.string(), // yyyy-mm-dd in IST
+    route: v.string(), // the limit's bucket: "host_questions" | "resume"
+    count: v.number(),
+  }).index("by_user_day_route", ["userId", "day", "route"]),
 
   savedSearches: defineTable({
     id: v.optional(v.string()),
@@ -898,6 +1154,11 @@ export default defineSchema({
     scorePercent: v.optional(v.union(v.number(), v.null())),
     snapshot: v.optional(v.any()),
     pdfStorageId: v.optional(v.union(v.id("_storage"), v.null())),
+    /* The student's own display choices: on their portfolio and public
+       profile (default on), and among their featured few. Nothing else about
+       a certificate can be changed by its student. */
+    showOnProfile: v.optional(v.boolean()),
+    featured: v.optional(v.boolean()),
   })
     .index("by_student", ["studentId"])
     .index("by_issuer", ["issuerId"])

@@ -448,6 +448,10 @@ export default function BrandingEditor({ user, initial, prefilledFromProfile = f
               <input type="checkbox" checked={design.seal} onChange={(e) => updateDesign({ seal: e.target.checked })} />
               Score seal in the footer
             </label>
+            <label className="text-[11px] text-muted-foreground flex items-center gap-2">
+              <input type="checkbox" checked={design.showGrade !== false} onChange={(e) => updateDesign({ showGrade: e.target.checked })} />
+              Show grade (O, A+, A, B+, B, Pass) after the score
+            </label>
             <label className="text-[11px] text-muted-foreground sm:col-span-2">
               Tagline (before the course name)
               <input value={design.tagline} onChange={(e) => updateDesign({ tagline: e.target.value })} maxLength={80} className="w-full mt-1 bg-background border border-border rounded-lg px-2 py-1.5 text-xs text-foreground" />

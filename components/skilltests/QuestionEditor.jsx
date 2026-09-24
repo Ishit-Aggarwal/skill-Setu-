@@ -2,6 +2,32 @@
 
 import { useEffect, useMemo, useRef, useState } from "react";
 import { Badge, Button, TextArea, TextInput } from "../ui/Kit";
+import { BLOOM_LABEL, DIFFICULTY_LABEL } from "../../lib/topicMap";
+
+/**
+ * Where a question written from the host's documents came from: the file and
+ * the place in it, expanding to the short quote it was based on, so the
+ * professor can check the answer key against the source.
+ */
+function CitationChip({ citation }) {
+  const [open, setOpen] = useState(false);
+  return (
+    <div className="text-[11px]">
+      <button
+        type="button"
+        onClick={() => setOpen((o) => !o)}
+        aria-expanded={open}
+        disabled={!citation.quote}
+        className="inline-flex items-center gap-1 px-2 py-1 rounded-lg bg-secondary text-muted-foreground hover:text-foreground disabled:cursor-default"
+      >
+        📄 {citation.fileName}
+        {citation.locator ? ` · ${citation.locator}` : ""}
+        {citation.quote ? <span aria-hidden="true">{open ? " ▴" : " ▾"}</span> : null}
+      </button>
+      {open && citation.quote && <blockquote className="mt-1.5 border-l-2 border-primary/40 pl-2.5 text-muted-foreground italic">“{citation.quote}”</blockquote>}
+    </div>
+  );
+}
 import { MAX_OPTIONS, MIN_OPTIONS, TYPE_LABEL, blankOption, blankQuestion, duplicateQuestion, validateQuestion } from "../../lib/questions";
 import { paperCounter, paperTypeLabel } from "../../lib/grading";
 
@@ -196,6 +222,11 @@ export default function QuestionEditor({
               <QuestionTypeTag type={q.type} />
               <span className="text-xs text-foreground flex-1 min-w-0 truncate">{truncate(q.text) || <span className="text-muted-foreground italic">Untitled question</span>}</span>
               <Badge tone={q.source === "ai_generated" ? "purple" : "neutral"}>{q.source === "ai_generated" ? "AI-generated" : "Manual"}</Badge>
+              {(q.difficulty || q.bloom) && (
+                <Badge tone="blue" className="hidden sm:inline-flex">
+                  {[DIFFICULTY_LABEL[q.difficulty], BLOOM_LABEL[q.bloom]].filter(Boolean).join(" · ")}
+                </Badge>
+              )}
               {hasErrors && <Badge tone="red">Needs attention</Badge>}
               {status === "saving" && <span className="text-[10px] text-muted-foreground">Saving…</span>}
               {status === "saved" && <span className="text-[10px] text-emerald-700">Saved</span>}
@@ -204,6 +235,7 @@ export default function QuestionEditor({
 
             {open && (
               <div className="px-3 pb-3 pt-1 space-y-3 border-t border-border">
+                {q.citation?.fileName && <CitationChip citation={q.citation} />}
                 {/* Type toggle */}
                 <div className="flex flex-wrap items-center gap-2">
                   <span className="text-[11px] text-muted-foreground">Type</span>

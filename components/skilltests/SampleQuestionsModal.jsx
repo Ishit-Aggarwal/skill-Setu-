@@ -51,7 +51,7 @@ export default function SampleQuestionsModal({ samplePapers = [], defaultTopic =
         method: "POST",
         headers: { "Content-Type": "application/json", ...authHeaders() },
         body: JSON.stringify({
-          papers: papers.map((p) => ({ url: p.url, fileName: p.fileName })),
+          papers: papers.map((p) => ({ url: p.url, fileName: p.fileName, mimeType: p.mimeType })),
           count: n,
           ayushSystem: system,
           mix,

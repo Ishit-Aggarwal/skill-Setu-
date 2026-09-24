@@ -1,6 +1,6 @@
 import { query, mutation } from "./_generated/server";
 import { v } from "convex/values";
-import { authError, canRead, publicUser, requireActor, requireOwner } from "./_lib/authz";
+import { authError, canRead, getActor, publicUser, requireActor, requireOwner } from "./_lib/authz";
 import { gradeSubmission, publicQuestionsFor, questionCountFor } from "./_lib/questionBank";
 import { SKILL_DOMAINS } from "../lib/questionBank";
 import { isAyushSystem } from "../lib/ayush";
@@ -9,9 +9,14 @@ import { findTestByClientId, findUserById, questionsForTest } from "./_lib/tests
 import { findByClientId, publicRow } from "./_lib/rows";
 import { recalculateAssessment, writeAttempt } from "./_lib/assessment";
 import { issueCertificateForAttempt } from "./_lib/certificates";
-import { clampPenalty, paperType } from "../lib/grading";
+import { clampPenalty, paperType, withholdAnswers } from "../lib/grading";
 import { EXAM } from "../lib/settings";
-import { scheduledStartMsUTC, testPhase } from "../lib/testWindow";
+import { canRevealAnswers, durationMinutes, isWindowTest, lastStartMs, scheduledStartMsUTC, testPhase, testStartMs, validateWindow } from "../lib/testWindow";
+import { durationString } from "../lib/duration";
+import { TEST_LEAD_HOURS } from "../lib/dates";
+import { LIVE_STATES } from "../lib/examState";
+import { activeCommunityIds, memberAccessForTest } from "./_lib/communityAccess";
+import { announceCommunityTest } from "./_lib/communityCore";
 
 /**
  * Skill tests and their marking.
@@ -25,25 +30,30 @@ import { scheduledStartMsUTC, testPhase } from "../lib/testWindow";
 const TEST_WEIGHT = { Online: 1, Offline: 1.5, Hybrid: 1.5 };
 const HOST_ROLES = ["industry", "academician", "institution", "admin"];
 
+/**
+ * The catalogue: every public test, plus the community-only tests of
+ * communities the caller is an active member of, plus the caller's own.
+ * A community test never appears to anyone else — not in the list and not
+ * by id — whatever they send.
+ */
 export const listAll = query({
-  handler: async (ctx) => {
-    return await ctx.db.query("skillTests").collect();
+  args: { sessionToken: v.optional(v.string()) },
+  handler: async (ctx, args) => {
+    const actor = args.sessionToken ? await getActor(ctx, args.sessionToken) : null;
+    const memberOf = actor ? await activeCommunityIds(ctx, actor.id) : new Set();
+    const rows = await ctx.db.query("skillTests").collect();
+    return rows.filter((t) => t.audience !== "community" || (actor && (t.ownerId === actor.id || actor.role === "admin")) || memberOf.has(t.communityId));
   },
 });
 
 export const getById = query({
-  args: { id: v.string() },
+  args: { id: v.string(), sessionToken: v.optional(v.string()) },
   handler: async (ctx, args) => {
-    const byCustomId = await ctx.db
-      .query("skillTests")
-      .filter((q) => q.eq(q.field("id"), args.id))
-      .first();
-    if (byCustomId) return byCustomId;
-    try {
-      return await ctx.db.get(args.id);
-    } catch {
-      return null;
-    }
+    const test = await findTestByClientId(ctx, args.id);
+    if (!test) return null;
+    const actor = args.sessionToken ? await getActor(ctx, args.sessionToken) : null;
+    const access = await memberAccessForTest(ctx, actor, test);
+    return access.ok ? test : null;
   },
 });
 
@@ -92,6 +102,20 @@ export const register = mutation({
     const actor = await requireActor(ctx, args.sessionToken);
     const { sessionToken, id, ...fields } = args;
 
+    // Who may register, decided here: not for a cancelled test, only a member
+    // for a community test, and for a window only while a start is still
+    // possible (so nobody registers for a paper they can no longer sit).
+    const test = await findTestByClientId(ctx, args.testId);
+    if (test) {
+      if (test.cancelledAt) throw new Error("This test was cancelled by its host.");
+      const access = await memberAccessForTest(ctx, actor, test);
+      if (!access.ok) throw authError(access.reason);
+      if (isWindowTest(test)) {
+        const last = lastStartMs(test, { serverSide: true });
+        if (last != null && Date.now() >= last) throw new Error("Registration has closed — this window no longer accepts new starts.");
+      }
+    }
+
     const existing = await ctx.db
       .query("skillTestRegistrations")
       .withIndex("by_test", (q) => q.eq("testId", args.testId))
@@ -106,7 +130,8 @@ export const register = mutation({
       updatedAt: fields.updatedAt || new Date().toISOString(),
     };
     if (existing) {
-      await ctx.db.patch(existing._id, { ...row, id: existing.id || id, missedRecorded: existing.missedRecorded, attended: existing.attended });
+      // Re-registering (a student let back into the community) restores a cancelled registration.
+      await ctx.db.patch(existing._id, { ...row, id: existing.id || id, missedRecorded: existing.missedRecorded, attended: existing.attended, cancelledAt: null, cancelReason: null });
       return existing._id;
     }
     return await ctx.db.insert("skillTestRegistrations", { ...row, id, missedRecorded: false, attended: false });
@@ -354,7 +379,7 @@ export const releaseCertificates = mutation({
 
       const out = await issueCertificateForAttempt(ctx, {
         test,
-        attempt: { id: `host_${test.id}_${attempt.studentId}`, correctCount: null, totalQuestions: null },
+        attempt: { id: `host_${test.id}_${attempt.studentId}`, correctCount: null, totalQuestions: null, startedAt: new Date(testStartMs(test, { serverSide: true }) || Date.now()).toISOString() },
         student,
         score: attempt.score,
       });
@@ -415,7 +440,14 @@ export const attemptsForStudent = query({
       .collect();
     // The per-question breakdown is the student's own; staff see the marks only.
     if (studentId !== actor.id) return attempts.map(({ breakdown, ...rest }) => rest);
-    return attempts;
+    // …and an open window's breakdown loses its answer key until the window closes.
+    const out = [];
+    for (const attempt of attempts) {
+      const test = attempt.breakdown ? await findTestByClientId(ctx, attempt.testId) : null;
+      if (test && !canRevealAnswers(test)) out.push({ ...attempt, breakdown: withholdAnswers({ breakdown: attempt.breakdown }).breakdown, answersWithheld: true });
+      else out.push(attempt);
+    }
+    return out;
   },
 });
 
@@ -505,7 +537,102 @@ const TEST_FIELDS = {
   monitorViolationLimit: v.optional(v.union(v.number(), v.null())),
   samplePapers: v.optional(v.array(v.any())),
   updatedAt: v.optional(v.string()),
+  durationMinutes: v.optional(v.union(v.number(), v.null())),
+  scheduleType: v.optional(v.union(v.string(), v.null())),
+  windowOpensAtMs: v.optional(v.union(v.number(), v.null())),
+  windowClosesAtMs: v.optional(v.union(v.number(), v.null())),
+  shuffle: v.optional(v.boolean()),
+  poolSize: v.optional(v.union(v.number(), v.null())),
+  audience: v.optional(v.union(v.string(), v.null())),
+  communityId: v.optional(v.union(v.string(), v.null())),
+  pinInCommunity: v.optional(v.boolean()),
 };
+
+/** A pool is a whole number between EXAM.MIN_POOL_QUESTIONS and the paper's size; anything else is "no pool". */
+function cleanPoolSize(value, paperSize) {
+  if (value == null || value === "") return null;
+  const n = Math.round(Number(value));
+  if (!Number.isFinite(n) || n < EXAM.MIN_POOL_QUESTIONS) return null;
+  if (paperSize && n >= paperSize) return null;
+  return n;
+}
+
+/**
+ * The schedule fields of a test, normalised and checked here — the browser's
+ * checks are a convenience. A window is online-only with no meeting; a new
+ * fixed sitting still needs its three days' notice.
+ */
+function scheduleFields(fields, { isNew, now = Date.now() }) {
+  const minutes = durationMinutes(fields);
+  const out = { durationMinutes: minutes, duration: durationString(minutes) };
+  if (fields.scheduleType === "window") {
+    const problem = validateWindow({
+      opensAtMs: fields.windowOpensAtMs,
+      closesAtMs: fields.windowClosesAtMs,
+      duration: minutes,
+      now,
+      latestMs: now + 366 * 24 * 3600000,
+      allowPastOpen: !isNew,
+    });
+    if (problem) throw new Error(problem);
+    Object.assign(out, {
+      scheduleType: "window",
+      windowOpensAtMs: fields.windowOpensAtMs,
+      windowClosesAtMs: fields.windowClosesAtMs,
+      scheduledAtMs: fields.windowOpensAtMs,
+      mode: "Online",
+      meetingMode: "none",
+      meetingLink: null,
+      startedAt: null,
+      // Shuffling is on for a window unless the host switched it off.
+      shuffle: fields.shuffle !== false,
+    });
+  } else {
+    out.scheduleType = "fixed";
+    out.windowOpensAtMs = null;
+    out.windowClosesAtMs = null;
+    out.shuffle = Boolean(fields.shuffle);
+    const start = Number.isFinite(fields.scheduledAtMs) ? fields.scheduledAtMs : scheduledStartMsUTC(fields);
+    // The three days' notice, on this clock. Ten minutes of slack for a
+    // host who filled the form in at the very edge of the rule.
+    if (isNew && start != null && start - now < TEST_LEAD_HOURS * 3600000 - 10 * 60000) {
+      throw new Error(`A skill test must be at least ${TEST_LEAD_HOURS} hours (3 days) from now.`);
+    }
+  }
+  return out;
+}
+
+async function anyAttempt(ctx, testId) {
+  return Boolean(
+    await ctx.db
+      .query("examAttempts")
+      .withIndex("by_test", (q) => q.eq("testId", testId))
+      .first()
+  );
+}
+
+async function liveAttempt(ctx, testId) {
+  const rows = await ctx.db
+    .query("examAttempts")
+    .withIndex("by_test", (q) => q.eq("testId", testId))
+    .collect();
+  return rows.some((a) => LIVE_STATES.includes(a.state));
+}
+
+async function requireCommunityHost(ctx, actor, communityId) {
+  const community = await ctx.db
+    .query("communities")
+    .withIndex("by_client_id", (q) => q.eq("id", communityId))
+    .first();
+  if (!community || community.archivedAt) throw new Error("Choose a community you own or moderate.");
+  const membership = await ctx.db
+    .query("communityMembers")
+    .withIndex("by_community_user", (q) => q.eq("communityId", communityId).eq("userId", actor.id))
+    .first();
+  const staff = membership?.status === "active" && (membership.role === "owner" || membership.role === "moderator");
+  if (!staff && actor.role !== "admin") throw authError("Only the owner or a moderator of that community can host a test for it.");
+  return community;
+}
 
 /** "live" or "none"; anything else is read as "none" (the exam room monitors on its own). */
 function cleanMeetingMode(value) {
@@ -571,6 +698,8 @@ async function writePaper(ctx, actor, test, questions) {
       ayushSystem: q.ayushSystem || test.ayushSystem || undefined,
       topic: q.topic || undefined,
       difficulty: q.difficulty || undefined,
+      bloom: q.bloom || undefined,
+      citation: q.citation || null,
       createdAt: q.createdAt,
       updatedAt: q.updatedAt,
       recheckHistory: q.recheckHistory || [],
@@ -600,8 +729,23 @@ export const publishTest = mutation({
 
     const { sessionToken, questions, ...fields } = args;
     const hostName = actor.user.companyName || actor.user.instituteName || actor.user.institution || fields.hostName || actor.user.name || "Host";
+    const prior = await findTestByClientId(ctx, args.id);
+    const schedule = scheduleFields(fields, { isNew: !prior });
+    // A community test is free and only for its members; the host must run the community.
+    let audience = { audience: "public", communityId: null, communityName: null };
+    let community = null;
+    if (fields.audience === "community") {
+      if (!fields.communityId) throw new Error("Choose the community this test is for.");
+      community = await requireCommunityHost(ctx, actor, fields.communityId);
+      audience = { audience: "community", communityId: community.id, communityName: community.name, price: 0 };
+    }
+    const paperSize = Array.isArray(questions) ? questions.length : prior?.questionCount || 0;
+    const { pinInCommunity, ...rowFields } = fields;
     const row = {
-      ...fields,
+      ...rowFields,
+      ...schedule,
+      ...audience,
+      poolSize: cleanPoolSize(fields.poolSize, paperSize),
       ayushSystem: isAyushSystem(fields.ayushSystem) ? fields.ayushSystem : undefined,
       needsRetagging: !isAyushSystem(fields.ayushSystem),
       hostName,
@@ -609,18 +753,19 @@ export const publishTest = mutation({
       status: fields.status || "Open",
       postedAt: fields.postedAt || new Date().toISOString(),
       updatedAt: fields.updatedAt || new Date().toISOString(),
-      proctored: fields.mode === "Online" ? fields.proctored !== false : false,
+      proctored: schedule.mode === "Online" || fields.mode === "Online" ? fields.proctored !== false : false,
       violationPenalty: cleanPenalty(fields.violationPenalty, Array.isArray(questions) ? questions.length : undefined),
       monitorViolationLimit: cleanMonitorLimit(fields.monitorViolationLimit),
-      meetingMode: cleanMeetingMode(fields.meetingMode),
-      meetingLink: cleanMeetingMode(fields.meetingMode) === "live" && typeof fields.meetingLink === "string" && fields.meetingLink.trim() ? fields.meetingLink.trim() : null,
+      meetingMode: schedule.scheduleType === "window" ? "none" : cleanMeetingMode(fields.meetingMode),
+      meetingLink:
+        schedule.scheduleType !== "window" && cleanMeetingMode(fields.meetingMode) === "live" && typeof fields.meetingLink === "string" && fields.meetingLink.trim() ? fields.meetingLink.trim() : null,
       samplePapers: cleanSamplePapers(fields.samplePapers),
       // The browser sends the absolute instant; a client that did not is
       // read as IST rather than as UTC (lib/testWindow.js).
-      scheduledAtMs: Number.isFinite(fields.scheduledAtMs) ? fields.scheduledAtMs : scheduledStartMsUTC(fields),
+      scheduledAtMs: schedule.scheduleType === "window" ? schedule.windowOpensAtMs : Number.isFinite(fields.scheduledAtMs) ? fields.scheduledAtMs : scheduledStartMsUTC(fields),
     };
 
-    let test = await findTestByClientId(ctx, args.id);
+    let test = prior;
     if (test) {
       requireOwner(actor, test, { what: "this test" });
       await ctx.db.patch(test._id, row);
@@ -631,7 +776,9 @@ export const publishTest = mutation({
     }
 
     let paper = { questionCount: test.questionCount || 0, paperType: test.paperType || null };
-    if (Array.isArray(questions) && fields.mode === "Online") paper = await writePaper(ctx, actor, test, questions);
+    if (Array.isArray(questions) && row.mode === "Online") paper = await writePaper(ctx, actor, test, questions);
+    // A new community test is posted in its community and every member is told.
+    if (community && !prior) await announceCommunityTest(ctx, { actor, community, test, pin: Boolean(args.pinInCommunity) });
     // The penalty can never exceed the paper now that its size is known.
     if (row.violationPenalty != null && paper.questionCount && row.violationPenalty > paper.questionCount) {
       await ctx.db.patch(test._id, { violationPenalty: paper.questionCount });
@@ -648,7 +795,47 @@ export const updateByClientId = mutation({
     const test = await findTestByClientId(ctx, args.id);
     if (!test) return { ok: false, reason: "NOT_FOUND" };
     requireOwner(actor, test, { what: "this test" });
-    const { ownerId, id, _id, _creationTime, questionCount, paperType: pt, ...safe } = args.patch || {};
+    const { ownerId, id, _id, _creationTime, questionCount, paperType: pt, audience, communityId, cancelledAt, scheduleType, ...safe } = args.patch || {};
+    const now = Date.now();
+    const attempted = await anyAttempt(ctx, test.id);
+    // Once anyone has sat the paper its length is part of their result.
+    if (("durationMinutes" in safe || "duration" in safe) && attempted) {
+      const next = durationMinutes({ ...test, ...safe });
+      if (next !== durationMinutes(test)) throw new Error("Candidates have already started this test, so its duration can no longer change.");
+    }
+    if ("durationMinutes" in safe || "duration" in safe) {
+      const minutes = durationMinutes({ ...test, ...safe });
+      safe.durationMinutes = minutes;
+      safe.duration = durationString(minutes);
+    }
+    if ("poolSize" in safe) {
+      if (attempted) delete safe.poolSize;
+      else safe.poolSize = cleanPoolSize(safe.poolSize, test.questionCount || 0);
+    }
+    // A window's dates: anything before it opens (the 24-hour minimum still
+    // holds); after it opens the close may be extended freely, but brought
+    // forward only while nobody is mid-paper and there is still an hour
+    // before the last start.
+    if (isWindowTest(test) && ("windowOpensAtMs" in safe || "windowClosesAtMs" in safe)) {
+      const opensAtMs = "windowOpensAtMs" in safe ? safe.windowOpensAtMs : test.windowOpensAtMs;
+      const closesAtMs = "windowClosesAtMs" in safe ? safe.windowClosesAtMs : test.windowClosesAtMs;
+      const minutes = durationMinutes({ ...test, ...safe });
+      const opened = now >= test.windowOpensAtMs;
+      if (opened && opensAtMs !== test.windowOpensAtMs) throw new Error("This window is already open, so its opening time can't change.");
+      const problem = validateWindow({ opensAtMs, closesAtMs, duration: minutes, now, latestMs: now + 366 * 24 * 3600000, allowPastOpen: opened });
+      if (problem) throw new Error(problem);
+      if (opened && closesAtMs < test.windowClosesAtMs) {
+        if (closesAtMs - minutes * 60000 < now + 3600000) throw new Error("The window can only be shortened while the last start is still at least an hour away.");
+        if (await liveAttempt(ctx, test.id)) throw new Error("Someone is sitting the paper right now, so the window can't be shortened.");
+      }
+      safe.windowOpensAtMs = opensAtMs;
+      safe.windowClosesAtMs = closesAtMs;
+      safe.scheduledAtMs = opensAtMs;
+    } else if (isWindowTest(test)) {
+      delete safe.startedAt;
+      delete safe.meetingLink;
+      delete safe.meetingMode;
+    }
     if ("ayushSystem" in safe) {
       if (isAyushSystem(safe.ayushSystem)) safe.needsRetagging = false;
       else delete safe.ayushSystem;
@@ -744,6 +931,47 @@ export const recordRecheck = mutation({
     }
     await ctx.db.patch(row._id, patch);
     return { ok: true };
+  },
+});
+
+/**
+ * Cancels an open-window test nobody has sat yet, and tells everyone
+ * registered. A window with attempts cannot be cancelled: those candidates'
+ * results and certificates stand.
+ */
+export const cancelWindowTest = mutation({
+  args: { sessionToken: v.string(), testId: v.string() },
+  handler: async (ctx, args) => {
+    const actor = await requireActor(ctx, args.sessionToken);
+    const test = await findTestByClientId(ctx, args.testId);
+    if (!test) throw new Error("This test no longer exists.");
+    requireOwner(actor, test, { what: "this test" });
+    if (!isWindowTest(test)) throw new Error("Only an open-window test can be cancelled here.");
+    if (test.cancelledAt) return { ok: true, already: true };
+    if (await anyAttempt(ctx, test.id)) throw new Error("Candidates have already started this test, so it can't be cancelled.");
+    const at = new Date().toISOString();
+    await ctx.db.patch(test._id, { cancelledAt: at, status: "Cancelled", updatedAt: at });
+    const registrations = await ctx.db
+      .query("skillTestRegistrations")
+      .withIndex("by_test", (q) => q.eq("testId", test.id))
+      .collect();
+    for (const reg of registrations) {
+      await ctx.db.patch(reg._id, { cancelledAt: at, cancelReason: "test_cancelled", updatedAt: at });
+      await ctx.db.insert("studentNotifications", {
+        id: `notif_cancel_${test.id}_${reg.userId}`,
+        studentId: reg.userId,
+        senderId: actor.id,
+        testId: test.id,
+        kind: "test_cancelled",
+        link: "/skill-assessment",
+        message: `"${test.title}" has been cancelled by ${test.hostName || "its host"}.`,
+        from: test.hostName || "Test host",
+        sentAt: at,
+        read: false,
+        updatedAt: at,
+      });
+    }
+    return { ok: true, notified: registrations.length };
   },
 });
 

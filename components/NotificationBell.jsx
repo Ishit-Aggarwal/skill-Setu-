@@ -3,7 +3,7 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 import { listStudentNotifications, markNotificationsRead } from "../lib/store";
 import { subscribeToMutations } from "../lib/sync";
-import { relativeTime } from "../lib/match";
+import NotificationItem from "./NotificationItem";
 
 /**
  * The header bell used to navigate to the dashboard, which did nothing at all
@@ -48,14 +48,7 @@ export default function NotificationBell({ user, onOpenInbox }) {
 
   const unread = notifications.filter((n) => !n.read).length;
 
-  function markRead(n) {
-    if (n.read) return;
-    markNotificationsRead(n.id);
-    setVersion((v) => v + 1);
-  }
-
   function markAllRead() {
-    const now = new Date().toISOString();
     markNotificationsRead(notifications.filter((n) => !n.read).map((n) => n.id));
     setVersion((v) => v + 1);
   }
@@ -101,25 +94,11 @@ export default function NotificationBell({ user, onOpenInbox }) {
           <div className="max-h-80 overflow-y-auto">
             {notifications.length === 0 ? (
               <p className="text-sm text-muted-foreground text-center py-10 px-4">
-                Notices from your placement cell, mentors and recruiters will appear here.
+                Test reminders, certificates, community posts and notices will appear here.
               </p>
             ) : (
               notifications.slice(0, 12).map((n) => (
-                <button
-                  key={n.id}
-                  onClick={() => markRead(n)}
-                  className={`w-full text-left flex items-start gap-2.5 px-4 py-3 border-b border-border last:border-0 transition-colors ${
-                    n.read ? "hover:bg-secondary/60" : "bg-primary/5 hover:bg-primary/10"
-                  }`}
-                >
-                  <span className={`mt-1.5 w-1.5 h-1.5 rounded-full flex-shrink-0 ${n.read ? "bg-transparent" : "bg-primary"}`} />
-                  <div className="min-w-0 flex-1">
-                    <p className={`text-xs leading-snug ${n.read ? "text-muted-foreground" : "text-foreground"}`}>{n.message}</p>
-                    <div className="text-[10px] text-muted-foreground mt-1">
-                      {n.from} · {relativeTime(n.sentAt)}
-                    </div>
-                  </div>
-                </button>
+                <NotificationItem key={n.id} n={n} compact onChanged={() => setVersion((v) => v + 1)} onNavigate={() => setOpen(false)} />
               ))
             )}
           </div>

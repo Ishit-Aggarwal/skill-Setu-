@@ -52,8 +52,24 @@ EMAIL_PASS=your-16-character-app-password
 - Online tests are sat in the **secure exam room**: consent, camera/mic check, fullscreen with Esc locked (an **End test** control is always in the banner), continuous chunked recording to Convex file storage, on-device face monitoring (MediaPipe Face Landmarker: no face, extra faces, looking away), and server-side grading. Every violation costs a penalty the host sets per test (default 2 points, never more than the paper); when the penalties reach the paper's total, or the camera is switched off, the attempt fails. Hosts open the proctoring report from each test card.
 - Hosts can build a paper with AI, write it by hand, or **import their own PDF** (questions and options copied as written; missing answer keys and explanations are generated and badged). Any test — online, offline or hybrid — can carry up to five sample papers and issue certificates automatically (from the graded paper, or from the mark the host records).
 - Certificates are issued automatically on grading (`/certificate-settings` holds the reusable branding; a test can override it) and downloaded as PDFs from `/api/certificates/<id>`; anyone can verify one at `/verify/<code>`.
+- A test is either a **fixed sitting** or an **open window** (24 hours to 90 days; each candidate may start any time until `close − duration`, so everyone gets the full time). Window papers can shuffle questions and deal each candidate N of a larger pool; answers are revealed only after the window closes.
+- Hosts can generate a paper **from their own documents** (PDF, DOCX, PPTX, XLSX, TXT, Markdown and images): a topic map first, then questions with a citation back to the source, or import an existing paper split across several files.
+- **Communities** (professors and institutions): Open, Closed or Invite-only, with posts, materials, links, members-only tests, moderation and an audit log.
+- **Resume Coach** (students): what the resume claims against what the proctored tests have verified, the next tests to take (only real, visible ones) and a study plan.
+- Every certificate carries the candidate's details and a unique verification code. Students download it, share it to LinkedIn and choose whether it shows on their profile; companies, professors and institutions verify one or up to 50 codes at once at `/verify`. Set `NEXT_PUBLIC_SITE_URL` so the printed verify address is your public domain.
 - Every limit (violation budget, grace timers, retention days, AI caps, upload sizes) lives in `lib/settings.js`.
 - `npm test` runs the grading, question-model, AYUSH-list and exam-state suites with Node's built-in runner.
+
+## Demo walkthrough
+
+A five-minute tour in demo mode (choose **Demo Mode** on the home page, then a persona). Everything below is seeded; no AI key is needed except for step 4. **Reset demo data** in the header puts it all back.
+
+1. **Student → Resume Coach.** The analysis of the sample resume is already there: the "claimed vs verified" radar flags two unverified claims, and the next tests are real ones. **Register** for the Rasa Panchaka Unit Test.
+2. **Student → Communities → Dravyaguna Vigyan.** Read the pinned announcement, download the DOCX notes, then **Tests → Start** the window test (it opens the proctored exam room).
+3. **Student → Notifications → "Certificate issued".** **Download PDF**, open it with **View / Add to portfolio**, toggle **Featured**; the portfolio's Verified certificates list shows it first.
+4. **Professor → Host a test → Generate from my documents** with `public/demo/Dravyaguna-Unit3-Notes.docx` and `public/demo/Rasa-Panchaka-Lecture.pptx` → topic map → generate → source chips → **Open window**, 2 days → duration 1 h 15 m → **Audience: community** → Publish. Members are notified.
+5. **Professor → Communities → Dravyaguna → Members** → open a student's profile → **Ban** with a reason → **Audit log**.
+6. **Industry → Verify a certificate** → paste the demo student's code (on their certificate page) → **Valid** → **View candidate profile**; then bulk-verify three codes, one of them wrong.
 
 ## Build for Production
 

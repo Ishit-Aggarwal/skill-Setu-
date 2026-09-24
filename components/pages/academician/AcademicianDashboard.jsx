@@ -21,6 +21,8 @@ import { FLAG_TONE, PLACEMENT_TONE, averageDomainScores, buildFacultyStudents } 
 import { api } from "../../../convex/_generated/api";
 import { backendQuerySafe, isBackendConfigured } from "../../../lib/convexBrowser";
 import { getSessionToken } from "../../../lib/session";
+import CommunitiesDashboardCard from "../../communities/CommunitiesDashboardCard";
+import VerifyShortcutCard from "../../certificates/VerifyShortcutCard";
 
 /**
  * A real overview page. Previously "Dashboard" and "Programs (FDPs)" in the
@@ -201,6 +203,11 @@ export default function AcademicianDashboard() {
           ]}
           columns={5}
         />
+
+        <div className="grid md:grid-cols-2 gap-3">
+          <CommunitiesDashboardCard role="academician" />
+          <VerifyShortcutCard />
+        </div>
 
         <div className="grid lg:grid-cols-3 gap-5">
           <Card className="lg:col-span-2">

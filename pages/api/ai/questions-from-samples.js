@@ -1,6 +1,7 @@
-import { requireHost } from "../../../lib/apiHost";
+import { chargeAiRun, refundAiRun, requireHost } from "../../../lib/apiHost";
+import { toParts } from "../../../lib/docText";
 import { AI_NOT_CONFIGURED, AYUSH_CONTEXT, GEMINI_MODEL, GeminiError, aiConfigured, generateJson } from "../../../lib/gemini";
-import { AI, EXAM, FILES } from "../../../lib/settings";
+import { AI, EXAM } from "../../../lib/settings";
 import { ayushSystemLabel, isAyushSystem } from "../../../lib/ayush";
 import { DIFFICULTIES, newId, normalisePaper, validateQuestion } from "../../../lib/questions";
 import { filterAgainstSamples } from "../../../lib/similarity";
@@ -130,12 +131,16 @@ function allowedStorageUrl(url) {
   }
 }
 
-async function fetchPdf(paper) {
+/**
+ * A sample paper of any supported type (PDF, Word, slides, a spreadsheet, a
+ * photo) → model parts, through the same reader every AI route uses.
+ */
+async function readSample(paper, index, total) {
   const res = await fetch(paper.url);
   if (!res.ok) throw new Error(`Could not read "${paper.fileName || "sample paper"}" (HTTP ${res.status}).`);
-  const bytes = Buffer.from(await res.arrayBuffer());
-  if (bytes.length > FILES.MAX_DOCUMENT_BYTES) throw new Error(`"${paper.fileName || "A sample paper"}" is too large to read.`);
-  return { mimeType: "application/pdf", data: bytes.toString("base64") };
+  const bytes = new Uint8Array(await res.arrayBuffer());
+  if (bytes.length > AI.MAX_SOURCE_FILE_BYTES) throw new Error(`"${paper.fileName || "A sample paper"}" is too large to read.`);
+  return toParts(bytes, { fileName: paper.fileName || `Sample paper ${index + 1}`, mimeType: paper.mimeType || "", index: index + 1, total }).parts;
 }
 
 export default async function handler(req, res) {
@@ -149,7 +154,7 @@ export default async function handler(req, res) {
   const papers = (Array.isArray(body.papers) ? body.papers : [])
     .filter((p) => p && typeof p === "object" && allowedStorageUrl(p.url))
     .slice(0, MAX_PAPERS)
-    .map((p) => ({ url: String(p.url), fileName: String(p.fileName || "").slice(0, 120) }));
+    .map((p) => ({ url: String(p.url), fileName: String(p.fileName || "").slice(0, 120), mimeType: String(p.mimeType || "").slice(0, 120) }));
   if (!papers.length) return res.status(400).json({ success: false, error: "Attach at least one sample paper to the test first." });
 
   const count = Math.round(Number(body.count));
@@ -174,12 +179,13 @@ export default async function handler(req, res) {
   const audience = String(body.audience || "").slice(0, 200);
   const topic = String(body.topic || "").slice(0, AI.MAX_TOPIC_LENGTH);
 
-  let attachments;
+  let parts;
   try {
-    attachments = await Promise.all(papers.map(fetchPdf));
+    parts = (await Promise.all(papers.map((p, i) => readSample(p, i, papers.length)))).flat();
   } catch (error) {
     return res.status(400).json({ success: false, error: error.message });
   }
+  if (!(await chargeAiRun(host, res, "host_questions"))) return undefined;
 
   const params = { count, singleCount, multipleCount, ayushSystem, difficulty, audience, topic, paperCount: papers.length };
   let lastError = null;
@@ -189,7 +195,7 @@ export default async function handler(req, res) {
   for (let attempt = 0; attempt <= AI.GENERATION_RETRIES + 1; attempt += 1) {
     try {
       const meta = {};
-      const raw = await generateJson({ prompt: buildPrompt({ ...params, avoid }), schema: RESPONSE_SCHEMA, temperature: attempt === 0 ? 0.7 : 0.9, attachments, meta });
+      const raw = await generateJson({ prompt: buildPrompt({ ...params, avoid }), schema: RESPONSE_SCHEMA, temperature: attempt === 0 ? 0.7 : 0.9, parts, meta });
       const checked = validate(raw, params);
       if (checked.questions && (checked.questions.length === count || attempt >= AI.GENERATION_RETRIES + 1)) {
         return res.status(200).json({
@@ -211,6 +217,7 @@ export default async function handler(req, res) {
       console.warn(`[ai] Sample-based paper rejected (attempt ${attempt + 1}): ${lastError}`);
     } catch (error) {
       if (error instanceof GeminiError && !["AI_MALFORMED", "AI_ERROR", "AI_BUSY"].includes(error.code)) {
+        if (error.code !== "AI_MALFORMED") await refundAiRun(host, "host_questions");
         return res.status(error.status).json({ success: false, code: error.code, error: error.message });
       }
       lastError = error.message;

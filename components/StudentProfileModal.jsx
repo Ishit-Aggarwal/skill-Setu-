@@ -5,6 +5,7 @@ import { findOne, getAssessment, getPortfolio } from "../lib/store";
 import { scoresFor } from "../lib/taxonomy";
 import { downloadStoredFile, hasFile, openStoredFile, profileImage } from "../lib/files";
 import { Badge, IconTile, Overlay } from "./ui/Kit";
+import VerifiedCertificates from "./certificates/VerifiedCertificates";
 import { AYUSH_SYSTEM_FIELD_LABEL, ayushSystemLabel } from "../lib/ayush";
 
 function initials(name) {
@@ -207,10 +208,12 @@ export default function StudentProfileModal({ studentId, student: propStudent, a
             </div>
           )}
 
-          {/* Certifications */}
+          {/* Certificates issued on Skill Setu (only those the student shows), then self-reported ones */}
+          <VerifiedCertificates studentId={resolvedId} />
+
           {portfolio?.certifications && portfolio.certifications.length > 0 && (
             <div>
-              <h4 className="text-xs font-semibold text-muted-foreground uppercase tracking-wider mb-2">Verified Certifications</h4>
+              <h4 className="text-xs font-semibold text-muted-foreground uppercase tracking-wider mb-2">Other certifications (self-reported)</h4>
               <div className="space-y-2">
                 {portfolio.certifications.map((c, i) => (
                   <div key={i} className="flex items-center gap-3 bg-background border border-border rounded-xl px-3.5 py-2.5 text-xs">

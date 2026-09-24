@@ -7,6 +7,7 @@ import { useAuth } from "../../lib/auth";
 import { useNav } from "../../lib/nav";
 import { getReduceMotion, setReduceMotion, THEME_OPTIONS, useTheme } from "../../lib/preferences";
 import { getSessionToken } from "../../lib/session";
+import { scriptOf } from "../../lib/credentials";
 import { Badge, Button, Card, Field, Flash, PageHeader, Section, Tabs, TextInput, useFlash } from "../ui/Kit";
 
 /**
@@ -146,6 +147,7 @@ export default function SettingsPage() {
   const [deleting, setDeleting] = useState(false);
   const [recoveryPhone, setRecoveryPhone] = useState(user?.recoveryPhone || "");
   const [deanName, setDeanName] = useState(user?.deanName || "");
+  const [certificateName, setCertificateName] = useState(user?.certificateName || user?.name || "");
 
   useEffect(() => {
     setReduceMotionState(getReduceMotion());
@@ -158,6 +160,25 @@ export default function SettingsPage() {
   useEffect(() => {
     setDeanName(user?.deanName || "");
   }, [user?.deanName]);
+
+  useEffect(() => {
+    setCertificateName(user?.certificateName || user?.name || "");
+  }, [user?.certificateName, user?.name]);
+
+  // /settings?tab=account (the certificate page's "Name on certificates" link).
+  useEffect(() => {
+    const wanted = new URLSearchParams(window.location.search).get("tab");
+    if (wanted && TABS.some((t) => t.key === wanted)) setTab(wanted);
+  }, []);
+
+  async function handleSaveCertificateName(e) {
+    e?.preventDefault();
+    const next = certificateName.replace(/\s+/g, " ").trim();
+    if (!next) return;
+    await updateProfile({ certificateName: next });
+    setCertificateName(next);
+    setFlash("Name on certificates saved. It is used for certificates issued from now on.");
+  }
 
   async function handleSaveRecoveryPhone(e) {
     e?.preventDefault();
@@ -522,6 +543,38 @@ export default function SettingsPage() {
                 </form>
               </Section>
             </Card>
+
+            {user?.role === "student" && (
+              <Card>
+                <Section
+                  title="Name on certificates"
+                  description="Certificates are issued with this name and never change afterwards, so check it before you sit a test."
+                >
+                  <form onSubmit={handleSaveCertificateName} className="space-y-3" id="certificate-name">
+                    <Field label="Name on certificates" hint="Exactly as it should appear on your certificates.">
+                      <div className="flex flex-col sm:flex-row gap-2 max-w-md">
+                        <TextInput
+                          value={certificateName}
+                          onChange={(e) => setCertificateName(e.target.value)}
+                          placeholder={user?.name || "Your full name"}
+                          maxLength={100}
+                          className="flex-1"
+                        />
+                        <Button type="submit" size="sm" disabled={!certificateName.trim() || certificateName.trim() === (user?.certificateName || user?.name || "")}>
+                          Save name
+                        </Button>
+                      </div>
+                    </Field>
+                    {scriptOf(certificateName) === "other" && (
+                      <p className="text-[11px] text-amber-700">
+                        Our PDF font can&apos;t print some of these characters yet, so the PDF would use your account name ({user?.name}) instead.
+                        Devanagari, Urdu, Tamil and Tibetan print as written.
+                      </p>
+                    )}
+                  </form>
+                </Section>
+              </Card>
+            )}
 
             {user?.role === "institution" && (
               <Card>

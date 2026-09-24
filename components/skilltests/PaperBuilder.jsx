@@ -5,6 +5,7 @@ import QuestionEditor from "./QuestionEditor";
 import AiGenerateModal from "./AiGenerateModal";
 import ImportPaperModal from "./ImportPaperModal";
 import SampleQuestionsModal from "./SampleQuestionsModal";
+import DocumentsGenerateModal from "./DocumentsGenerateModal";
 import RecheckDialog from "./RecheckDialog";
 import { api } from "../../convex/_generated/api";
 import { backendErrorMessage, backendMutation } from "../../lib/convexBrowser";
@@ -52,6 +53,7 @@ export default function PaperBuilder({ questions, onChange, ayushSystem = "", te
   const [showGenerate, setShowGenerate] = useState(false);
   const [showImport, setShowImport] = useState(false);
   const [showSamples, setShowSamples] = useState(false);
+  const [showDocuments, setShowDocuments] = useState(false);
   const uploadedSamples = (Array.isArray(samplePapers) ? samplePapers : []).filter((p) => p && p.url);
   const [importNote, setImportNote] = useState(null);
   const [generateMode, setGenerateMode] = useState("replace");
@@ -193,7 +195,19 @@ export default function PaperBuilder({ questions, onChange, ayushSystem = "", te
               setShowGenerate(true);
             }}
           >
-            ✨ Generate with AI
+            ✨ Generate from a topic
+          </Button>
+          <Button
+            type="button"
+            size="sm"
+            variant="outline"
+            title="Upload notes, a syllabus or slides; the AI maps their topics and writes new questions from them"
+            onClick={() => {
+              setGenerateMode(empty ? "replace" : "append");
+              setShowDocuments(true);
+            }}
+          >
+            📚 Generate from my documents
           </Button>
           <Button
             type="button"
@@ -204,7 +218,7 @@ export default function PaperBuilder({ questions, onChange, ayushSystem = "", te
               setShowImport(true);
             }}
           >
-            📄 Import from PDF
+            📄 Import an existing paper
           </Button>
           {uploadedSamples.length > 0 && (
             <Button
@@ -267,10 +281,32 @@ export default function PaperBuilder({ questions, onChange, ayushSystem = "", te
             const existing = questions.filter((q) => q.text?.trim() || (q.options || []).some((o) => o.text?.trim()));
             handleChange(generateMode === "append" ? [...existing, ...imported] : imported);
             setShowImport(false);
-            const bits = [`Imported ${summary.imported} question${summary.imported === 1 ? "" : "s"} from the PDF.`];
+            const fileCount = summary.files?.length || 1;
+            const bits = [`Imported ${summary.imported} question${summary.imported === 1 ? "" : "s"} from ${fileCount} file${fileCount === 1 ? "" : "s"}.`];
+            if (summary.merged) bits.push(`${summary.merged} duplicate${summary.merged === 1 ? "" : "s"} across files ${summary.merged === 1 ? "was" : "were"} merged.`);
+            (summary.skipped || []).forEach((s) => bits.push(s.endsWith(".") ? s : `${s}.`));
+            (summary.truncated || []).forEach((s) => bits.push(s));
             if (summary.generatedKeys) bits.push(`${summary.generatedKeys} had no answer key in the paper — the answers were generated and are badged AI-generated; please check them.`);
             if (summary.generatedExplanations) bits.push(`${summary.generatedExplanations} explanation${summary.generatedExplanations === 1 ? " was" : "s were"} generated.`);
             if (summary.dropped?.length) bits.push(`${summary.dropped.length} could not be read and were skipped.`);
+            setImportNote(bits.join(" "));
+          }}
+        />
+      )}
+
+      {showDocuments && (
+        <DocumentsGenerateModal
+          ayushSystem={ayushSystem}
+          existing={questions.filter((q) => q.text?.trim())}
+          onClose={() => setShowDocuments(false)}
+          onGenerated={(generated, summary) => {
+            const existing = questions.filter((q) => q.text?.trim() || (q.options || []).some((o) => o.text?.trim()));
+            handleChange(generateMode === "append" ? [...existing, ...generated] : generated);
+            setShowDocuments(false);
+            const bits = [`Wrote ${summary.generated} question${summary.generated === 1 ? "" : "s"} across ${summary.topics} topic${summary.topics === 1 ? "" : "s"} from ${summary.files.length} file${summary.files.length === 1 ? "" : "s"}.`];
+            if (summary.generated < summary.requested) bits.push(`${summary.requested - summary.generated} fewer than asked for.`);
+            (summary.failedTopics || []).forEach((f) => bits.push(`"${f.title}" failed: ${f.error}`));
+            bits.push("Each question shows the file it came from — check every answer key before publishing.");
             setImportNote(bits.join(" "));
           }}
         />

@@ -1,7 +1,8 @@
-import { mutation } from "./_generated/server";
+import { internalMutation, mutation } from "./_generated/server";
 import { v } from "convex/values";
 import { authError, requireActor } from "./_lib/authz";
 import { collectStorageIds } from "./_lib/rows";
+import { ensureDemoFeatures } from "./_lib/demoSeed";
 
 /**
  * Resetting the demo tour.
@@ -14,6 +15,10 @@ import { collectStorageIds } from "./_lib/rows";
  *
  * Only a demo persona can call it, and it only ever touches rows whose
  * owner is a demo persona. Real accounts' data is never in scope.
+ *
+ * The rows the tour needs on the server (communities, the community window
+ * test, the Resume Coach analysis, an issued certificate) are written back
+ * straight afterwards by ensureDemoFeatures, as they are on every demo sign-in.
  */
 
 const DEMO_IDS = ["demo-student", "demo-industry", "demo-academician", "demo-institution"];
@@ -63,6 +68,12 @@ const OWNED = [
   ["announcements", "by_institution", "institutionId"],
   ["placementHistory", "by_institution", "institutionId"],
   ["activityLog", "by_institution", "institutionId"],
+  ["communities", "by_owner", "ownerId"],
+  ["communityMembers", "by_user_status", "userId"],
+  ["uploads", "by_owner", "ownerId"],
+  ["resumeAnalyses", "by_student", "studentId"],
+  ["studyPlanProgress", "by_student", "studentId"],
+  ["aiUsage", "by_user_day_route", "userId"],
 ];
 
 /** Child tables reached through a parent row's client id. */
@@ -73,6 +84,7 @@ const CHILDREN = {
     ["skillTestRegistrations", "by_test", "testId"],
     ["examAttempts", "by_test", "testId"],
     ["certificateOverrides", "by_test", "testId"],
+    ["testReminders", "by_test_user_kind", "testId"],
   ],
   examAttempts: [
     ["examEvents", "by_attempt", "attemptId"],
@@ -93,6 +105,14 @@ const CHILDREN = {
   programs: [
     ["programRegistrations", "by_program", "programId"],
     ["programFeedback", "by_program", "programId"],
+  ],
+  communities: [
+    ["communityPosts", "by_community_created", "communityId"],
+    ["communityMembers", "by_community_status", "communityId"],
+    ["communityComments", "by_community", "communityId"],
+    ["communityDownloads", "by_community", "communityId"],
+    ["communityReports", "by_community_status", "communityId"],
+    ["communityAudit", "by_community", "communityId"],
   ],
 };
 
@@ -181,6 +201,13 @@ export const reset = mutation({
         /* already gone */
       }
     }
-    return { ok: true, rows: counts, files: deletedFiles };
+    const seed = await ensureDemoFeatures(ctx);
+    return { ok: true, rows: counts, files: deletedFiles, reseeded: seed.seeded };
   },
+});
+
+/** Run on every demo sign-in: writes the tour's shared rows if they are missing. */
+export const seedFeatures = internalMutation({
+  args: {},
+  handler: async (ctx) => await ensureDemoFeatures(ctx),
 });

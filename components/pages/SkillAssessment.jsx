@@ -7,10 +7,16 @@ import TestCard from "../skilltests/TestCard";
 import MyTests from "../skilltests/MyTests";
 import { useAuth } from "../../lib/auth";
 import { listSkillTests, listRegistrationsForStudent, getAttemptsForStudent, getRegistration, checkAndRecordMissedTests } from "../../lib/store";
-import { testPhase } from "../../lib/testWindow";
+import { isWindowTest, testPhase, upcomingSortMs } from "../../lib/testWindow";
 import HostView from "../skilltests/HostView";
 import { AyushSystemFilter } from "../AyushSystemSelect";
-import { EmptyState, PageHeader, Tabs } from "../ui/Kit";
+import { EmptyState, FilterPills, PageHeader, Tabs } from "../ui/Kit";
+
+const SCHEDULE_FILTERS = [
+  { value: "all", label: "All" },
+  { value: "fixed", label: "Fixed time" },
+  { value: "window", label: "Open window" },
+];
 
 function StudentView({ user }) {
   const [tab, setTab] = useState("browse");
@@ -19,6 +25,7 @@ function StudentView({ user }) {
   const [attempts, setAttempts] = useState([]);
   const [searchQuery, setSearchQuery] = useState("");
   const [systemFilter, setSystemFilter] = useState("");
+  const [scheduleFilter, setScheduleFilter] = useState("all");
 
   function refresh() {
     checkAndRecordMissedTests(user.id);
@@ -42,8 +49,13 @@ function StudentView({ user }) {
   };
   const previousTests = tests.filter((t) => testPhase(t) === "ended" && sat(t));
 
-  const filteredTests = tests.filter((t) => {
-    if (testPhase(t) === "ended") return false;
+  const filteredTests = tests
+    .filter((t) => {
+    if (testPhase(t) === "ended" || t.cancelledAt) return false;
+    // Community-only tests live on their community's page and in My Tests, never in public Browse.
+    if (t.audience === "community") return false;
+    if (scheduleFilter === "window" && !isWindowTest(t)) return false;
+    if (scheduleFilter === "fixed" && isWindowTest(t)) return false;
     if (systemFilter && t.ayushSystem !== systemFilter) return false;
     const q = searchQuery.trim().toLowerCase();
     if (!q) return true;
@@ -53,7 +65,9 @@ function StudentView({ user }) {
       t.hostName?.toLowerCase().includes(q) ||
       t.description?.toLowerCase().includes(q)
     );
-  });
+  })
+    // Soonest first: a window by its last start, a sitting by its start.
+    .sort((a, b) => upcomingSortMs(a) - upcomingSortMs(b));
 
   return (
     <div className="animate-fade-slide space-y-5">
@@ -90,6 +104,7 @@ function StudentView({ user }) {
             </div>
           </div>
           <AyushSystemFilter value={systemFilter} onChange={setSystemFilter} />
+          <FilterPills label="Schedule" options={SCHEDULE_FILTERS} value={scheduleFilter} onChange={setScheduleFilter} />
           {filteredTests.length === 0 ? (
             <EmptyState icon="🔍" title="No tests match your search">
               Try a different keyword or domain to find skill tests.

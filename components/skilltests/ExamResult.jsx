@@ -4,6 +4,7 @@ import CertificateCard from "../certificates/CertificateCard";
 import { AUTO_SUBMIT_REASONS, autoSubmitMessage } from "../../lib/examState";
 import { TYPE_LABEL } from "../../lib/questions";
 import { Badge, Button } from "../ui/Kit";
+import { isWindowTest } from "../../lib/testWindow";
 
 /**
  * The graded result, shown the moment the server has marked the paper.
@@ -16,6 +17,10 @@ import { Badge, Button } from "../ui/Kit";
 export default function ExamResult({ test, result, onClose }) {
   const tone = result.score >= 70 ? "green" : result.score >= 50 ? "amber" : "red";
   const certificate = result.certificate || { status: "not_enabled", credential: null };
+  // An open window keeps the key back until it closes, so the first
+  // candidate can't hand it to the rest.
+  const withheld = Boolean(result.answersWithheld);
+  const closesLabel = isWindowTest(test) && test.windowClosesAtMs ? new Date(test.windowClosesAtMs).toLocaleString("en-IN", { day: "numeric", month: "short", hour: "numeric", minute: "2-digit" }) : "the window closes";
 
   return (
     <div className="space-y-5">
@@ -71,6 +76,12 @@ export default function ExamResult({ test, result, onClose }) {
       {certificate.status === "issued" && <CertificateCard credential={certificate.credential} status="issued" />}
       {certificate.status === "below_minimum" && <CertificateCard status="below_minimum" minScore={test.minCertificateScore} />}
 
+      {withheld && (
+        <div className="rounded-xl border border-blue-200 bg-blue-50 px-4 py-3 text-sm text-blue-800">
+          🔒 Correct answers and explanations will be visible after the window closes on {closesLabel}. Your score{certificate.status === "issued" ? " and certificate are" : " is"} final now.
+        </div>
+      )}
+
       <div>
         <div className="text-xs font-semibold text-muted-foreground uppercase tracking-wider mb-2">Question by question</div>
         <div className="space-y-2">
@@ -85,7 +96,7 @@ export default function ExamResult({ test, result, onClose }) {
                   </div>
                   <div className="text-xs text-foreground leading-relaxed">{row.question}</div>
                   <div className={`text-[11px] ${row.correct ? "text-emerald-700" : "text-red-600"}`}>Your answer: {row.chosenText || "Not answered"}</div>
-                  {!row.correct && <div className="text-[11px] text-emerald-800">✓ Correct answer: {row.correctText}</div>}
+                  {!row.correct && !withheld && <div className="text-[11px] text-emerald-800">✓ Correct answer: {row.correctText}</div>}
                   {row.explanation && <div className="text-[11px] text-muted-foreground bg-secondary/50 rounded-lg px-2.5 py-1.5 leading-relaxed">💡 {row.explanation}</div>}
                 </div>
               </div>

@@ -8,7 +8,8 @@ import { Button } from "../ui/Kit";
  * "Download PDF" for an issued certificate. The file is fetched with the
  * session header (not a bare URL anyone could forward) and handed to the
  * browser as a download, so the same button works today and from the test
- * history months later.
+ * history months later. Resolves to { nameFallback } — true when the name
+ * is in a script the PDF could not print and a Latin or trimmed version was used.
  */
 export async function downloadCertificatePdf(credential) {
   const res = await fetch(`/api/certificates/${encodeURIComponent(credential.id)}`, { headers: authHeaders() });
@@ -30,6 +31,7 @@ export async function downloadCertificatePdf(credential) {
   a.click();
   a.remove();
   setTimeout(() => URL.revokeObjectURL(url), 2000);
+  return { nameFallback: res.headers.get("X-Name-Fallback") === "1" };
 }
 
 export default function CertificateCard({ credential, status, minScore, compact = false }) {

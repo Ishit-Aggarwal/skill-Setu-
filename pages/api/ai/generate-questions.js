@@ -1,4 +1,6 @@
-import { requireHost } from "../../../lib/apiHost";
+import { chargeAiRun, refundAiRun, requireHost } from "../../../lib/apiHost";
+import { allParts, loadSources, skippedNotes } from "../../../lib/docSources";
+import { SOURCE_RULES } from "../../../lib/topicMap";
 import { AI_NOT_CONFIGURED, AYUSH_CONTEXT, GEMINI_MODEL, GeminiError, aiConfigured, generateJson } from "../../../lib/gemini";
 import { AI } from "../../../lib/settings";
 import { ayushSystemLabel, isAyushSystem } from "../../../lib/ayush";
@@ -43,9 +45,11 @@ const RESPONSE_SCHEMA = {
   required: ["questions"],
 };
 
-function buildPrompt({ topic, count, singleCount, multipleCount, ayushSystem, difficulty, audience }) {
+function buildPrompt({ topic, count, singleCount, multipleCount, ayushSystem, difficulty, audience, hasNotes }) {
   return [
     AYUSH_CONTEXT,
+    hasNotes ? SOURCE_RULES : "",
+    hasNotes ? "The professor attached their notes: base the questions on them wherever they cover the topic." : "",
     `AYUSH system for this paper: ${ayushSystemLabel(ayushSystem)}.`,
     `Write exactly ${count} multiple-choice questions on: ${topic}.`,
     audience ? `Candidates are: ${audience}.` : "",
@@ -124,20 +128,30 @@ export default async function handler(req, res) {
   const difficulty = DIFFICULTIES.includes(body.difficulty) ? body.difficulty : "";
   const audience = String(body.audience || "").slice(0, 200);
 
-  const params = { topic, count, singleCount, multipleCount, ayushSystem, difficulty, audience };
+  if (!(await chargeAiRun(host, res, "host_questions"))) return undefined;
+  // Optional notes attached to a topic ("Attach notes").
+  let parts = [];
+  let skipped = [];
+  if (Array.isArray(body.sources) && body.sources.length) {
+    const read = await loadSources(host, body.sources);
+    parts = allParts(read.docs);
+    skipped = skippedNotes(read.skipped);
+  }
+  const params = { topic, count, singleCount, multipleCount, ayushSystem, difficulty, audience, hasNotes: parts.length > 0 };
   let lastError = null;
   for (let attempt = 0; attempt <= AI.GENERATION_RETRIES; attempt += 1) {
     try {
       const meta = {};
-      const raw = await generateJson({ prompt: buildPrompt(params), schema: RESPONSE_SCHEMA, temperature: attempt === 0 ? 0.6 : 0.8, meta });
+      const raw = await generateJson({ prompt: buildPrompt(params), schema: RESPONSE_SCHEMA, temperature: attempt === 0 ? 0.6 : 0.8, parts, meta });
       const checked = validate(raw, params);
       if (checked.questions) {
-        return res.status(200).json({ success: true, questions: checked.questions, model: meta.model || GEMINI_MODEL, retried: attempt > 0 });
+        return res.status(200).json({ success: true, questions: checked.questions, model: meta.model || GEMINI_MODEL, retried: attempt > 0, skipped, aiRunsLeft: host.aiRunsLeft ?? null });
       }
       lastError = checked.error;
       console.warn(`[ai] Generated paper rejected (attempt ${attempt + 1}): ${checked.error}`);
     } catch (error) {
       if (error instanceof GeminiError && !["AI_MALFORMED", "AI_ERROR", "AI_BUSY"].includes(error.code)) {
+        if (error.code !== "AI_MALFORMED") await refundAiRun(host, "host_questions");
         return res.status(error.status).json({ success: false, code: error.code, error: error.message });
       }
       lastError = error.message;

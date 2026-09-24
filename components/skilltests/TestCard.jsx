@@ -4,7 +4,7 @@ import { useState } from "react";
 import RegisterModal from "./RegisterModal";
 import TakeTestModal from "./TakeTestModal";
 import { canTakeNow, getRegistrationStatus, formatScheduled, isLinkRevealWindow, joinClosedMessage, STATUS_LABEL, STATUS_TONE } from "../../lib/testStatus";
-import { isLive, meetingMode, testPhase } from "../../lib/testWindow";
+import { isLive, isWindowTest, meetingMode, testDurationLabel, testPhase, windowFairnessLine, windowStatusLabel } from "../../lib/testWindow";
 import { registerForSkillTest, confirmOfflineAttendance } from "../../lib/store";
 import { Badge, Button, Card } from "../ui/Kit";
 import { openStoredFile } from "../../lib/files";
@@ -25,6 +25,10 @@ export default function TestCard({ test, user, registration, attempt, onRefresh 
      running right now (registration closes) or already over. */
   const phase = testPhase(test);
   const live = isLive(phase);
+  const isWindow = isWindowTest(test);
+  // A window takes registrations for as long as a start is still possible;
+  // a fixed sitting only until it begins.
+  const canRegister = !test.cancelledAt && (isWindow ? phase === "upcoming" || phase === "open" : !live && phase !== "ended");
 
   function handleConfirmRegister(info) {
     registerForSkillTest(test.id, user.id, info);
@@ -54,9 +58,22 @@ export default function TestCard({ test, user, registration, attempt, onRefresh 
         <Badge tone="neutral">{test.domain}</Badge>
         {test.price > 0 ? <Badge tone="muted">₹{test.price}</Badge> : <Badge tone="primary">Free</Badge>}
         {samplePapers.length > 0 && <Badge tone="blue">📄 Sample paper available</Badge>}
-        {status && <Badge tone={STATUS_TONE[status]} className="ml-auto">{STATUS_LABEL[status]}</Badge>}
-        {!status && live && <Badge tone="amber" className="ml-auto">In Progress · Cannot join</Badge>}
-        {!status && phase === "ended" && <Badge tone="muted" className="ml-auto">Ended</Badge>}
+        {test.audience === "community" && <Badge tone="purple">🔒 {test.communityName || "Community only"}</Badge>}
+        {isWindow && <Badge tone="purple">🪟 Open window</Badge>}
+        {test.cancelledAt ? (
+          <Badge tone="muted" className="ml-auto">Cancelled</Badge>
+        ) : isWindow && !["completed", "failed", "missed", "cancelled"].includes(status) ? (
+          <Badge tone={phase === "open" ? "green" : phase === "locked" ? "amber" : phase === "ended" ? "muted" : "blue"} className="ml-auto">
+            {windowStatusLabel(test)}
+            {status ? " · Registered" : ""}
+          </Badge>
+        ) : (
+          <>
+            {status && <Badge tone={STATUS_TONE[status]} className="ml-auto">{STATUS_LABEL[status]}</Badge>}
+            {!status && live && <Badge tone="amber" className="ml-auto">In Progress · Cannot join</Badge>}
+            {!status && phase === "ended" && <Badge tone="muted" className="ml-auto">Ended</Badge>}
+          </>
+        )}
       </div>
 
       <div className="text-sm font-semibold text-foreground mb-0.5">{test.title}</div>
@@ -65,8 +82,9 @@ export default function TestCard({ test, user, registration, attempt, onRefresh 
 
       <div className="text-xs text-muted-foreground mb-4 space-y-1">
         {test.prerequisites && <div>📋 {test.prerequisites}</div>}
-        <div>⏱ {test.duration}</div>
+        <div>⏱ {testDurationLabel(test)}{isWindow ? " once you start" : ""}</div>
         <div>📅 {formatScheduled(test)}</div>
+        {isWindow && !test.cancelledAt && phase !== "ended" && <div className="text-foreground">🪟 {windowFairnessLine(test)}</div>}
         {test.mode !== "Online" && test.venue && registration && <div>📍 {test.venue}</div>}
 
         {/* The joining details belong to the people sitting the test. Showing
@@ -107,9 +125,15 @@ export default function TestCard({ test, user, registration, attempt, onRefresh 
         )}
       </div>
 
-      {!registration && live && (
+      {!registration && live && !canRegister && (
         <div className="mt-auto text-center text-xs font-semibold text-amber-700 bg-amber-50 rounded-xl py-2.5 px-3">
-          In Progress · Cannot join
+          {isWindow ? "Closing · No new starts" : "In Progress · Cannot join"}
+        </div>
+      )}
+
+      {test.cancelledAt && (
+        <div className="mt-auto text-center text-xs font-medium text-muted-foreground bg-secondary rounded-xl py-2.5 px-3">
+          This test was cancelled by {test.hostName || "its host"}.
         </div>
       )}
 
@@ -119,7 +143,7 @@ export default function TestCard({ test, user, registration, attempt, onRefresh 
         </div>
       )}
 
-      {!registration && !live && phase !== "ended" && (
+      {!registration && canRegister && (
         <Button onClick={() => setShowRegister(true)} className="mt-auto w-full">
           Register
         </Button>
@@ -127,7 +151,13 @@ export default function TestCard({ test, user, registration, attempt, onRefresh 
 
       {registration && status === "upcoming" && (
         <div className="mt-auto text-center text-xs font-medium text-muted-foreground bg-secondary rounded-xl py-2.5">
-          {test.mode === "Online" ? "Registered — the paper unlocks at the scheduled time" : "Reporting details confirmed"}
+          {isWindow ? "Registered — you can start once the window opens" : test.mode === "Online" ? "Registered — the paper unlocks at the scheduled time" : "Reporting details confirmed"}
+        </div>
+      )}
+
+      {registration && status === "cancelled" && !test.cancelledAt && (
+        <div className="mt-auto text-center text-xs font-medium text-muted-foreground bg-secondary rounded-xl py-2.5 px-3">
+          Your registration was withdrawn{registration.cancelReason === "removed_from_community" ? " — you're no longer a member of this test's community" : ""}.
         </div>
       )}
 
@@ -136,12 +166,12 @@ export default function TestCard({ test, user, registration, attempt, onRefresh 
           <button
             onClick={() => setShowTest(true)}
             className={`mt-auto w-full py-2.5 rounded-xl text-sm font-semibold transition-all duration-150 ${
-              status === "in-progress"
+              status === "in-progress" && !isWindow
                 ? "bg-emerald-600 hover:bg-emerald-700 text-white shadow-md animate-pulse"
                 : "bg-primary text-white hover:bg-accent"
             }`}
           >
-            {status === "in-progress" ? "In Progress · Join test now" : "Take the test"}
+            {isWindow ? "Start test" : status === "in-progress" ? "In Progress · Join test now" : "Take the test"}
           </button>
         ) : (
           <button
@@ -161,13 +191,13 @@ export default function TestCard({ test, user, registration, attempt, onRefresh 
 
       {registration && status === "ended" && test.mode === "Online" && (
         <div className="mt-auto text-center text-xs font-medium text-muted-foreground bg-secondary rounded-xl py-2.5 px-3 leading-relaxed">
-          This sitting has ended — no attempt was recorded.
+          {isWindow ? "This window has closed — no attempt was recorded." : "This sitting has ended — no attempt was recorded."}
         </div>
       )}
 
       {registration && status === "awaiting-result" && (
         <div className="mt-auto text-center text-xs font-medium text-amber-700 bg-amber-50 rounded-xl py-2.5 px-3 leading-relaxed">
-          Attendance recorded — {test.hostName} will publish your mark.
+          {test.mode === "Online" ? "Submitted — your result is loading. Refresh in a moment." : `Attendance recorded — ${test.hostName} will publish your mark.`}
         </div>
       )}
 

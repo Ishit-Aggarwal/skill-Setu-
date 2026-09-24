@@ -2,6 +2,7 @@
 
 import { normaliseDesign, SAMPLE_CERTIFICATE } from "../../lib/certificateDesign";
 import { CERTIFICATES } from "../../lib/settings";
+import { certificateDetails } from "../../lib/credentials";
 
 /**
  * The certificate as it will print, drawn from the same spec the PDF uses:
@@ -49,7 +50,6 @@ export default function CertificatePreview({ branding, design, data = SAMPLE_CER
   const logo = branding?.logoPreview || branding?.logoUrl || null;
   const signature = branding?.signaturePreview || branding?.signatureUrl || null;
   const title = branding?.title || CERTIFICATES.DEFAULT_TITLE;
-  const date = data?.completedAt ? new Date(data.completedAt).toLocaleDateString("en-IN", { day: "numeric", month: "long", year: "numeric" }) : "";
   const serif = d.titleFont === "serif";
   const titleFamily = serif ? "Georgia, 'Times New Roman', serif" : "inherit";
   const left = d.layout === "left";
@@ -148,15 +148,10 @@ export default function CertificatePreview({ branding, design, data = SAMPLE_CER
         >
           {data?.studentName || "Student Name"}
         </div>
-        <div style={{ marginTop: "1.6cqw", fontSize: "1.8cqw", maxWidth: "80%", lineHeight: 1.5 }}>
-          {d.tagline} <span style={{ fontWeight: 700, color: d.palette.primary }}>{data?.testTitle || "Test title"}</span>
-          {data?.scorePercent != null && (
-            <>
-              {" "}
-              with a score of <span style={{ fontWeight: 700 }}>{data.scorePercent}%</span>
-            </>
-          )}
-          {date ? ` on ${date}` : ""}.
+        {/* The same details sentence the PDF prints (course, roll number,
+            institution, test, AYUSH system, date, score and grade). */}
+        <div style={{ marginTop: "1.6cqw", fontSize: "1.7cqw", maxWidth: "80%", lineHeight: 1.5 }}>
+          {certificateDetails({ ...data, testTitle: data?.testTitle || "Test title", showGrade: d.showGrade !== false, grade: d.showGrade !== false ? data?.grade : null }, d.tagline)}
         </div>
 
         <div className="mt-auto w-full flex items-end justify-between" style={{ paddingTop: "2cqw" }}>

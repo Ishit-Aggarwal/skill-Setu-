@@ -18,9 +18,28 @@ import {
   patchSkillTest,
   getTestEndTimestamp,
   scheduledAtMsFor,
+  rescheduleWindowTest,
 } from "../../lib/store";
-import { canEditMeeting, isLive, joinWindowMinutes, meetingEditNote, meetingMode, testPhase } from "../../lib/testWindow";
-import { TEST_LEAD_HOURS, checkLeadTime, earliestDateAfter, latestScheduleDate } from "../../lib/dates";
+import {
+  canEditMeeting,
+  isLive,
+  isWindowTest,
+  joinWindowMinutes,
+  meetingEditNote,
+  meetingMode,
+  testDurationLabel,
+  durationMinutes as testDurationMinutes,
+  testPhase,
+  validateWindow,
+  windowFairnessLine,
+  windowStatusLabel,
+} from "../../lib/testWindow";
+import { durationString } from "../../lib/duration";
+import { formatScheduled } from "../../lib/testStatus";
+import { FixedFields, ScheduleTypeChoice, WINDOW_DEFAULTS, WindowFields, windowInstants } from "./ScheduleFields";
+import DurationPicker from "../ui/DurationPicker";
+import { useSessionQuery } from "../../lib/useSessionQuery";
+import { TEST_LEAD_HOURS, checkLeadTime, combineDateTime, earliestDateAfter, latestScheduleDate } from "../../lib/dates";
 import { uploadToStorage } from "../../lib/uploads";
 import { clampPenalty, violationsToFail } from "../../lib/grading";
 import { openStoredFile } from "../../lib/files";
@@ -31,7 +50,7 @@ import { api } from "../../convex/_generated/api";
 import { backendErrorMessage, backendMutation, backendQuery, isBackendConfigured } from "../../lib/convexBrowser";
 import { AYUSH_SYSTEM_FIELD_LABEL, ayushSystemLabel, isAyushSystem, needsAyushRetag } from "../../lib/ayush";
 import { AyushSystemSelect, RetagPrompt } from "../AyushSystemSelect";
-import { EXAM } from "../../lib/settings";
+import { AI, EXAM } from "../../lib/settings";
 import { PAPER_TYPE_LABEL, paperCounter } from "../../lib/grading";
 import { validatePaper } from "../../lib/questions";
 import { autoSubmitMessage } from "../../lib/examState";
@@ -55,7 +74,7 @@ const EMPTY_TEST_FORM = {
   domain: SKILL_DOMAINS[0],
   ayushSystem: "",
   mode: "Online",
-  duration: "15 mins",
+  ...WINDOW_DEFAULTS,
   price: "0",
   description: "",
   prerequisites: "",
@@ -76,6 +95,12 @@ const EMPTY_TEST_FORM = {
   issueCertificate: false,
   minCertificateScore: "",
   samplePapers: [],
+  shuffle: false,
+  poolEnabled: false,
+  poolSize: "",
+  audience: "public",
+  communityId: "",
+  pinInCommunity: false,
 };
 
 function genId(prefix = "skillTests") {
@@ -89,6 +114,100 @@ function paperTypeBadge(test) {
 }
 
 /* ---------------- Exam & certificate settings shared by create/edit ---------------- */
+
+/**
+ * Fairness for a paper sat at different times: each candidate gets the
+ * questions (and each question's options) in their own order, and
+ * optionally only N questions drawn from the paper. On by default for an
+ * open window, where the first candidate could otherwise pass the paper on.
+ */
+function FairnessSettings({ form, set }) {
+  const total = Array.isArray(form.questions) ? form.questions.length : 0;
+  const n = Number(form.poolSize);
+  const poolProblem =
+    form.poolEnabled && (!Number.isInteger(n) || n < EXAM.MIN_POOL_QUESTIONS || n >= total)
+      ? total <= EXAM.MIN_POOL_QUESTIONS
+        ? `A pool needs a paper of more than ${EXAM.MIN_POOL_QUESTIONS} questions.`
+        : `Choose between ${EXAM.MIN_POOL_QUESTIONS} and ${total - 1} questions.`
+      : null;
+  return (
+    <div className="rounded-xl border border-border p-3.5 space-y-3">
+      <div className="text-xs font-semibold text-primary uppercase tracking-wider">Fairness</div>
+      <label className="flex items-start gap-2 text-xs text-foreground">
+        <input type="checkbox" checked={Boolean(form.shuffle)} onChange={(e) => set("shuffle", e.target.checked)} className="mt-0.5" />
+        <span>
+          Shuffle questions and options for each candidate
+          <span className="block text-[11px] text-muted-foreground">Every candidate sees the paper in their own order. Marking is unaffected.</span>
+        </span>
+      </label>
+      <label className="flex items-start gap-2 text-xs text-foreground">
+        <input type="checkbox" checked={Boolean(form.poolEnabled)} onChange={(e) => set("poolEnabled", e.target.checked)} className="mt-0.5" />
+        <span className="flex-1">
+          Give each candidate{" "}
+          <input
+            type="number"
+            min={EXAM.MIN_POOL_QUESTIONS}
+            max={Math.max(EXAM.MIN_POOL_QUESTIONS, total - 1)}
+            value={form.poolSize}
+            disabled={!form.poolEnabled}
+            onChange={(e) => set("poolSize", e.target.value)}
+            aria-label="Questions drawn for each candidate"
+            className="w-16 mx-1 bg-background border border-border rounded-lg px-2 py-1 text-xs text-center"
+          />{" "}
+          questions drawn from this paper
+          <span className="block text-[11px] text-muted-foreground">
+            {total ? `The paper has ${total} question${total === 1 ? "" : "s"}.` : "Build the paper first."} The score and the certificate count only the questions each candidate was given.
+          </span>
+          {poolProblem && <span className="block text-[11px] text-red-600">{poolProblem}</span>}
+        </span>
+      </label>
+    </div>
+  );
+}
+
+/** Registered · Started · In progress · Submitted · Failed · Not started, refreshed while the card is on screen. */
+function LiveCounts({ test, onCounts }) {
+  const [counts, setCounts] = useState(null);
+  useEffect(() => {
+    if (!isBackendConfigured()) return undefined;
+    let cancelled = false;
+    const load = () =>
+      backendQuery(api.exams.countsForTest, { testId: test.id })
+        .then((c) => {
+          if (!cancelled && c) {
+            setCounts(c);
+            onCounts?.(c);
+          }
+        })
+        .catch(() => {});
+    load();
+    const t = setInterval(load, 30000);
+    return () => {
+      cancelled = true;
+      clearInterval(t);
+    };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [test.id]);
+  if (!counts) return null;
+  const items = [
+    ["Registered", counts.registered],
+    ["Started", counts.started],
+    ["In progress", counts.inProgress],
+    ["Submitted", counts.submitted],
+    ["Failed", counts.failed],
+    ["Not started", counts.notStarted],
+  ];
+  return (
+    <div className="grid grid-cols-3 gap-1.5 mb-3" aria-label="Live counts">
+      {items.map(([label, value]) => (
+        <div key={label} className="rounded-lg bg-secondary/60 px-2 py-1.5 text-center">
+          <div className="text-sm font-semibold text-foreground tabular-nums">{value}</div>
+          <div className="text-[10px] text-muted-foreground">{label}</div>
+        </div>
+      ))}
+    </div>
+  );
+}
 
 function ExamSettings({ form, set }) {
   const total = Array.isArray(form.questions) ? form.questions.length : 0;
@@ -187,7 +306,7 @@ function SamplePapers({ papers, onChange }) {
     try {
       const added = [];
       for (const file of files) {
-        const uploaded = await uploadToStorage(file, { kind: "document" });
+        const uploaded = await uploadToStorage(file, { kind: "source" });
         added.push({ id: `sample_${Date.now().toString(36)}_${Math.random().toString(36).slice(2, 6)}`, ...uploaded });
       }
       onChange([...list, ...added]);
@@ -202,7 +321,7 @@ function SamplePapers({ papers, onChange }) {
     <div className="rounded-xl border border-border p-3.5 space-y-2">
       <div className="text-xs font-semibold text-primary uppercase tracking-wider">Sample papers (optional)</div>
       <p className="text-[11px] text-muted-foreground">
-        Up to {EXAM.MAX_SAMPLE_PAPERS} PDFs candidates can open from the test card before they register — a past paper, a specimen, a syllabus. Once attached, the question paper section can also generate fresh questions on the same concepts (never the same questions).
+        Up to {EXAM.MAX_SAMPLE_PAPERS} files candidates can open from the test card before they register — a past paper, a specimen, a syllabus (PDF, Word, slides, a spreadsheet or a photo). Once attached, the question paper section can also generate fresh questions on the same concepts (never the same questions).
       </p>
       {list.length > 0 && (
         <ul className="space-y-1">
@@ -217,7 +336,7 @@ function SamplePapers({ papers, onChange }) {
       {list.length < EXAM.MAX_SAMPLE_PAPERS && (
         <input
           type="file"
-          accept=".pdf,application/pdf"
+          accept={AI.SOURCE_TYPES.join(",")}
           multiple
           onChange={handleFiles}
           disabled={busy}
@@ -395,6 +514,13 @@ export default function HostView({ user }) {
   const [releasing, setReleasing] = useState(null);
   const [tab, setTab] = useState("active");
   const [flash, setFlash] = useFlash();
+  const [durationValid, setDurationValid] = useState(true);
+  const [rescheduleValid, setRescheduleValid] = useState(true);
+  const [attemptCounts, setAttemptCounts] = useState({});
+  const [cancelling, setCancelling] = useState(null);
+  // Communities this host owns or moderates: the "Only members of a community" choices.
+  const { data: communityLists } = useSessionQuery(api.communities.mine, {}, { skip: !["academician", "institution"].includes(user.role) });
+  const hostedCommunities = (communityLists?.running || []).filter((c) => !c.archived);
 
   const draftKey = `${user.id}`;
 
@@ -416,17 +542,40 @@ export default function HostView({ user }) {
   useClock(30000);
 
   function set(key, value) {
-    setForm((f) => ({ ...f, [key]: value }));
+    setForm((f) => {
+      const next = { ...f, [key]: value };
+      // An open window is sat online, in the exam room, with no meeting; and
+      // shuffling is its sensible default (the host can still turn it off).
+      if (key === "scheduleType" && value === "window") {
+        next.mode = "Online";
+        next.meetingMode = "none";
+        next.meetingLink = "";
+        if (f.scheduleType !== "window") next.shuffle = true;
+      }
+      if (key === "scheduleType" && value === "fixed" && f.scheduleType !== "fixed") next.shuffle = false;
+      return next;
+    });
   }
 
-  function openCreate() {
+  function openCreate(preset = {}) {
     const draft = readPaperDraft(draftKey);
     // The id is fixed up front so a per-test certificate override can be
     // saved against it before the test itself is published.
-    setForm({ ...EMPTY_TEST_FORM, id: genId(), questions: draft || [] });
+    setForm({ ...EMPTY_TEST_FORM, id: genId(), questions: draft || [], ...preset });
     setFormError(null);
     setShowModal(true);
   }
+
+  // "Create community test" on a community lands here with ?community=<id>:
+  // the form opens with the audience already set to that community.
+  useEffect(() => {
+    if (typeof window === "undefined") return;
+    const communityId = new URLSearchParams(window.location.search).get("community");
+    if (!communityId) return;
+    openCreate({ audience: "community", communityId, price: "0" });
+    window.history.replaceState(null, "", window.location.pathname);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
 
   function recipientsFor(testId) {
     return registrations
@@ -455,9 +604,27 @@ export default function HostView({ user }) {
     e.preventDefault();
     setFormError(null);
 
-    const leadError = checkLeadTime(form.scheduledAt, form.scheduledTime, TEST_LEAD_HOURS, "A skill test");
-    if (leadError) return setFormError(leadError);
+    const isWindow = form.scheduleType === "window";
+    if (!durationValid) return setFormError("Fix the duration first — between 5 minutes and 10 hours.");
+    let windowTimes = null;
+    if (isWindow) {
+      windowTimes = windowInstants(form);
+      const windowError = validateWindow({ ...windowTimes, duration: form.durationMinutes, latestMs: combineDateTime(latestScheduleDate(), "23:59") });
+      if (windowError) return setFormError(windowError);
+    } else {
+      const leadError = checkLeadTime(form.scheduledAt, form.scheduledTime, TEST_LEAD_HOURS, "A skill test");
+      if (leadError) return setFormError(leadError);
+    }
     if (!isAyushSystem(form.ayushSystem)) return setFormError(`Choose the ${AYUSH_SYSTEM_FIELD_LABEL} this test belongs to.`);
+    if (form.audience === "community" && !hostedCommunities.some((c) => c.id === form.communityId)) {
+      return setFormError("Choose one of your communities for this test, or make it public.");
+    }
+    if (form.poolEnabled) {
+      const n = Number(form.poolSize);
+      if (!Number.isInteger(n) || n < EXAM.MIN_POOL_QUESTIONS || n >= form.questions.length) {
+        return setFormError(`The question pool must be a whole number between ${EXAM.MIN_POOL_QUESTIONS} and ${Math.max(EXAM.MIN_POOL_QUESTIONS, form.questions.length - 1)}.`);
+      }
+    }
 
     if (form.mode === "Online") {
       const paperError = validatePaper(form.questions);
@@ -483,27 +650,42 @@ export default function HostView({ user }) {
     }
 
     const hostName = user.companyName || user.instituteName || user.institution || user.name;
+    // A window's Opens is the row's scheduled date and time too, so sorting
+    // and anything that only reads those keeps working.
+    const opensDate = windowTimes ? new Date(windowTimes.opensAtMs) : null;
+    const pad = (n) => String(n).padStart(2, "0");
     const record = {
       id: form.id || genId(),
       title: form.title,
       domain: form.mode === "Online" ? form.domain : form.domain || "General",
       ayushSystem: form.ayushSystem,
       hostName,
-      mode: form.mode,
-      duration: form.duration,
-      price: Number(form.price) || 0,
+      mode: isWindow ? "Online" : form.mode,
+      durationMinutes: form.durationMinutes,
+      duration: durationString(form.durationMinutes),
+      // Community tests are free.
+      price: form.audience === "community" ? 0 : Number(form.price) || 0,
+      audience: form.audience === "community" ? "community" : "public",
+      communityId: form.audience === "community" ? form.communityId : null,
+      communityName: form.audience === "community" ? hostedCommunities.find((c) => c.id === form.communityId)?.name || null : null,
+      pinInCommunity: form.audience === "community" ? Boolean(form.pinInCommunity) : undefined,
       description: form.description,
       prerequisites: form.prerequisites,
       certification: form.certification,
       rules: form.rules.split("\n").map((r) => r.trim()).filter(Boolean),
-      scheduledAt: form.scheduledAt,
-      scheduledTime: form.scheduledTime,
-      scheduledAtMs: scheduledAtMsFor(form.scheduledAt, form.scheduledTime),
+      scheduleType: isWindow ? "window" : "fixed",
+      windowOpensAtMs: windowTimes?.opensAtMs ?? null,
+      windowClosesAtMs: windowTimes?.closesAtMs ?? null,
+      scheduledAt: opensDate ? `${opensDate.getFullYear()}-${pad(opensDate.getMonth() + 1)}-${pad(opensDate.getDate())}` : form.scheduledAt,
+      scheduledTime: opensDate ? `${pad(opensDate.getHours())}:${pad(opensDate.getMinutes())}` : form.scheduledTime,
+      scheduledAtMs: windowTimes ? windowTimes.opensAtMs : scheduledAtMsFor(form.scheduledAt, form.scheduledTime),
+      shuffle: form.mode === "Online" || isWindow ? Boolean(form.shuffle) : false,
+      poolSize: form.poolEnabled ? Number(form.poolSize) : null,
       venue: form.mode !== "Online" ? form.venue : undefined,
       reportingTime: form.mode !== "Online" ? form.reportingTime : undefined,
       documentsRequired: form.mode !== "Online" ? form.documentsRequired.split(",").map((d) => d.trim()).filter(Boolean) : undefined,
-      meetingMode: form.mode !== "Offline" ? (form.meetingMode === "live" ? "live" : "none") : undefined,
-      meetingLink: form.mode !== "Offline" && form.meetingMode === "live" ? form.meetingLink.trim() || undefined : undefined,
+      meetingMode: isWindow ? "none" : form.mode !== "Offline" ? (form.meetingMode === "live" ? "live" : "none") : undefined,
+      meetingLink: !isWindow && form.mode !== "Offline" && form.meetingMode === "live" ? form.meetingLink.trim() || undefined : undefined,
       proctored: form.mode === "Online" ? form.proctored : false,
       faceMonitoring: form.mode === "Online" ? form.proctored && form.faceMonitoring !== false : false,
       violationPenalty: form.mode === "Online" && form.proctored ? clampPenalty(form.violationPenalty, form.questions.length) : null,
@@ -539,7 +721,7 @@ export default function HostView({ user }) {
     setForm(EMPTY_TEST_FORM);
     setShowModal(false);
     refresh();
-    setFlash("Test published.");
+    setFlash(form.audience === "community" ? "Test published. It's posted in the community and members are being notified." : "Test published.");
   }
 
   function retag(test, ayushSystem) {
@@ -621,14 +803,55 @@ export default function HostView({ user }) {
 
   function openReschedule(test) {
     setRescheduleModalTest(test);
-    setRescheduleForm({ scheduledAt: test.scheduledAt || "", scheduledTime: test.scheduledTime || "10:00", reportingTime: test.reportingTime || "09:30 AM" });
+    const opens = isWindowTest(test) ? new Date(test.windowOpensAtMs) : null;
+    const pad = (n) => String(n).padStart(2, "0");
+    setRescheduleForm({
+      scheduledAt: test.scheduledAt || "",
+      scheduledTime: test.scheduledTime || "10:00",
+      reportingTime: test.reportingTime || "09:30 AM",
+      durationMinutes: testDurationMinutes(test),
+      windowOpenNow: false,
+      windowOpenDate: opens ? `${opens.getFullYear()}-${pad(opens.getMonth() + 1)}-${pad(opens.getDate())}` : "",
+      windowOpenTime: opens ? `${pad(opens.getHours())}:${pad(opens.getMinutes())}` : "10:00",
+      windowSpanMs: isWindowTest(test) ? test.windowClosesAtMs - test.windowOpensAtMs : 48 * 3600000,
+    });
     setRescheduleError(null);
+  }
+
+  /** Before it opens: anything. After: the close may move (extend; shorten only when safe). */
+  function handleWindowReschedule() {
+    const test = rescheduleModalTest;
+    const opened = Date.now() >= test.windowOpensAtMs;
+    const times = opened ? { opensAtMs: test.windowOpensAtMs, closesAtMs: test.windowOpensAtMs + Number(rescheduleForm.windowSpanMs) } : windowInstants(rescheduleForm);
+    const problem = validateWindow({ ...times, duration: rescheduleForm.durationMinutes, allowPastOpen: opened, latestMs: combineDateTime(latestScheduleDate(), "23:59") });
+    if (problem) return setRescheduleError(problem);
+    rescheduleWindowTest(test.id, { ...times, durationMinutes: rescheduleForm.durationMinutes });
+    setRescheduleModalTest(null);
+    refresh();
+    setFlash(times.closesAtMs > test.windowClosesAtMs && opened ? "Window extended. Registered candidates have been told." : "Window updated. Registered candidates have been told.");
+  }
+
+  async function handleCancelWindow(test) {
+    if (!window.confirm(`Cancel "${test.title}"? Everyone registered will be told. This can't be undone.`)) return;
+    setCancelling(test.id);
+    try {
+      await backendMutation(api.skillTests.cancelWindowTest, { testId: test.id });
+      patchSkillTest(test.id, { cancelledAt: new Date().toISOString(), status: "Cancelled" });
+      refresh();
+      setFlash("Test cancelled. Registered candidates have been told.");
+    } catch (err) {
+      setFlash(`⚠️ ${backendErrorMessage(err, "Could not cancel the test.")}`);
+    } finally {
+      setCancelling(null);
+    }
   }
 
   function handleRescheduleSubmit(e) {
     e.preventDefault();
     if (!rescheduleModalTest) return;
     setRescheduleError(null);
+    if (!rescheduleValid) return setRescheduleError("Fix the duration first — between 5 minutes and 10 hours.");
+    if (isWindowTest(rescheduleModalTest)) return handleWindowReschedule();
     const leadError = checkLeadTime(rescheduleForm.scheduledAt, rescheduleForm.scheduledTime, TEST_LEAD_HOURS, "A rescheduled test");
     if (leadError) return setRescheduleError(leadError);
     if (rescheduleModalTest.mode === "Offline") {
@@ -644,6 +867,7 @@ export default function HostView({ user }) {
         scheduledAt: rescheduleForm.scheduledAt,
         scheduledTime: rescheduleForm.scheduledTime,
         reportingTime: rescheduleModalTest.mode === "Offline" ? rescheduleForm.reportingTime : undefined,
+        durationMinutes: (attemptCounts[rescheduleModalTest.id]?.started || 0) > 0 ? undefined : rescheduleForm.durationMinutes,
       });
       setRescheduleModalTest(null);
       refresh();
@@ -656,8 +880,8 @@ export default function HostView({ user }) {
   const untagged = tests.filter(needsAyushRetag);
   /* A sitting that is over leaves the working list: it belongs with the
      previous tests, where its attempts, results and certificates still are. */
-  const activeTests = tests.filter((t) => testPhase(t) !== "ended");
-  const previousTests = tests.filter((t) => testPhase(t) === "ended").sort((a, b) => (getTestEndTimestamp(b) || 0) - (getTestEndTimestamp(a) || 0));
+  const activeTests = tests.filter((t) => testPhase(t) !== "ended" && !t.cancelledAt);
+  const previousTests = tests.filter((t) => testPhase(t) === "ended" || t.cancelledAt).sort((a, b) => (getTestEndTimestamp(b) || 0) - (getTestEndTimestamp(a) || 0));
   const shown = tab === "previous" ? previousTests : activeTests;
 
   return (
@@ -666,7 +890,7 @@ export default function HostView({ user }) {
         eyebrow="Test Hosting"
         title="Your Skill Tests"
         subtitle={`${activeTests.length} active · ${previousTests.length} previous`}
-        actions={<Button onClick={openCreate}>+ Host a Skill Test</Button>}
+        actions={<Button onClick={() => openCreate()}>+ Host a Skill Test</Button>}
       />
 
       <Tabs
@@ -707,6 +931,8 @@ export default function HostView({ user }) {
             const live = isLive(phase);
             const ended = phase === "ended";
             const inPerson = test.mode !== "Online";
+            const isWindow = isWindowTest(test);
+            const hasAttempts = (attemptCounts[test.id]?.started || 0) > 0;
             const endsAt = getTestEndTimestamp(test);
             const endsLabel = endsAt ? new Date(endsAt).toLocaleString("en-IN", { day: "numeric", month: "short", hour: "numeric", minute: "2-digit" }) : null;
             return (
@@ -715,17 +941,34 @@ export default function HostView({ user }) {
                 <Badge tone="neutral">{test.mode}</Badge>
                 {isAyushSystem(test.ayushSystem) && <Badge tone="primary">{ayushSystemLabel(test.ayushSystem)}</Badge>}
                 <Badge tone="neutral">{test.domain}</Badge>
+                {test.audience === "community" && <Badge tone="purple">🔒 {test.communityName || "Community"}</Badge>}
                 {paperTypeBadge(test)}
                 {test.proctored && <Badge tone="red">🔴 Recorded</Badge>}
-                {phase === "open" && <Badge tone="green">In Progress · Joining open</Badge>}
-                {phase === "locked" && <Badge tone="amber">In Progress · Joining closed</Badge>}
-                {ended && <Badge tone="muted">Ended</Badge>}
+                {isWindow && <Badge tone="purple">🪟 Open window</Badge>}
+                {test.cancelledAt ? (
+                  <Badge tone="red">Cancelled</Badge>
+                ) : isWindow ? (
+                  <Badge tone={phase === "open" ? "green" : phase === "locked" ? "amber" : phase === "ended" ? "muted" : "blue"}>{windowStatusLabel(test)}</Badge>
+                ) : (
+                  <>
+                    {phase === "open" && <Badge tone="green">In Progress · Joining open</Badge>}
+                    {phase === "locked" && <Badge tone="amber">In Progress · Joining closed</Badge>}
+                    {ended && <Badge tone="muted">Ended</Badge>}
+                  </>
+                )}
                 <Badge tone="primary" className="ml-auto">{test.price > 0 ? `₹${test.price}` : "Free"}</Badge>
               </div>
               <div className="text-sm font-semibold text-foreground mb-1">{test.title}</div>
               <p className="text-xs text-muted-foreground leading-relaxed mb-2">{test.description}</p>
+              <p className="text-[11px] text-muted-foreground mb-2">
+                ⏱ {testDurationLabel(test)}
+                {isWindow ? "" : ` · 📅 ${formatScheduled(test)}`}
+              </p>
+              {isWindow && !test.cancelledAt && <p className="text-[11px] text-foreground bg-secondary/60 rounded-lg px-2.5 py-2 mb-2 leading-relaxed">{windowFairnessLine(test)}</p>}
               <p className="text-[11px] text-muted-foreground mb-3">
                 {test.mode === "Online" ? (test.questionCount ? paperCounter(new Array(test.questionCount).fill(0)) : "Platform question bank") : `${test.mode} sitting`}
+                {test.poolSize ? ` · ${test.poolSize} drawn per candidate` : ""}
+                {test.shuffle ? " · shuffled per candidate" : ""}
                 {test.issueCertificate ? ` · certificate ${test.minCertificateScore != null ? `at ${test.minCertificateScore}%+` : "on completion"}` : ""}
                 {test.mode === "Online" && test.proctored && test.violationPenalty != null ? ` · −${test.violationPenalty} pt${test.violationPenalty === 1 ? "" : "s"} per violation` : ""}
                 {Array.isArray(test.samplePapers) && test.samplePapers.length ? ` · ${test.samplePapers.length} sample paper${test.samplePapers.length === 1 ? "" : "s"}` : ""}
@@ -734,7 +977,11 @@ export default function HostView({ user }) {
                 <RetagPrompt row={test} what="This test" saving={retagging === test.id} onSave={(slug) => retag(test, slug)} />
               </div>
 
-              {test.mode !== "Offline" && !ended && (() => {
+              {test.mode === "Online" && !test.cancelledAt && (
+                <LiveCounts test={test} onCounts={(c) => setAttemptCounts((m) => (m[test.id]?.started === c.started ? m : { ...m, [test.id]: c }))} />
+              )}
+
+              {test.mode !== "Offline" && !ended && !isWindow && (() => {
                 const mode = meetingMode(test);
                 const editable = canEditMeeting(test);
                 return (
@@ -802,13 +1049,16 @@ export default function HostView({ user }) {
                     ⚠️ You chose a live meeting — add its link above, or switch to automatic monitoring
                   </div>
                 )}
-                <button
-                  onClick={() => handleStart(test.id)}
-                  disabled={live || ended || (test.mode !== "Offline" && meetingMode(test) === "live" && !test.meetingLink?.trim())}
-                  className="w-full text-xs font-medium py-2 rounded-xl bg-primary/10 text-primary hover:bg-primary hover:text-white disabled:opacity-50 disabled:hover:bg-primary/10 disabled:hover:text-primary transition-all duration-150"
-                >
-                  {ended ? `Ended${endsLabel ? ` · ${endsLabel}` : ""}` : live ? `In Progress${endsLabel ? ` · ends ${endsLabel}` : ""}` : "Start Test"}
-                </button>
+                {/* A window opens and closes by itself; nobody presses Start. */}
+                {!isWindow && (
+                  <button
+                    onClick={() => handleStart(test.id)}
+                    disabled={live || ended || (test.mode !== "Offline" && meetingMode(test) === "live" && !test.meetingLink?.trim())}
+                    className="w-full text-xs font-medium py-2 rounded-xl bg-primary/10 text-primary hover:bg-primary hover:text-white disabled:opacity-50 disabled:hover:bg-primary/10 disabled:hover:text-primary transition-all duration-150"
+                  >
+                    {ended ? `Ended${endsLabel ? ` · ${endsLabel}` : ""}` : live ? `In Progress${endsLabel ? ` · ends ${endsLabel}` : ""}` : "Start Test"}
+                  </button>
+                )}
                 {test.mode === "Online" && (
                   <div className="grid grid-cols-2 gap-2">
                     <button onClick={() => setPaperTest(test)} className="text-xs font-medium py-2 rounded-xl border border-border text-muted-foreground hover:border-primary/40 hover:text-primary transition-all duration-150">
@@ -819,9 +1069,20 @@ export default function HostView({ user }) {
                     </button>
                   </div>
                 )}
-                <button onClick={() => openReschedule(test)} className="w-full text-xs font-medium py-2 rounded-xl border border-border text-muted-foreground hover:border-primary/40 hover:text-primary transition-all duration-150">
-                  🗓️ Reschedule Test
-                </button>
+                {!test.cancelledAt && !(isWindow && ended) && (
+                  <button onClick={() => openReschedule(test)} className="w-full text-xs font-medium py-2 rounded-xl border border-border text-muted-foreground hover:border-primary/40 hover:text-primary transition-all duration-150">
+                    {isWindow ? (phase === "upcoming" ? "🗓️ Change window" : "🗓️ Extend or shorten window") : "🗓️ Reschedule Test"}
+                  </button>
+                )}
+                {isWindow && !test.cancelledAt && !ended && !hasAttempts && (
+                  <button
+                    onClick={() => handleCancelWindow(test)}
+                    disabled={cancelling === test.id}
+                    className="w-full text-xs font-medium py-2 rounded-xl border border-red-200 text-red-600 hover:bg-red-50 disabled:opacity-60 transition-all duration-150"
+                  >
+                    {cancelling === test.id ? "Cancelling…" : "Cancel this test"}
+                  </button>
+                )}
                 {inPerson && (
                   <button onClick={() => setResultsTest(test)} className="w-full text-xs font-medium py-2 rounded-xl border border-border text-muted-foreground hover:border-primary/40 hover:text-primary transition-all duration-150">
                     ✍️ Record results
@@ -911,7 +1172,34 @@ export default function HostView({ user }) {
         />
       )}
 
-      {rescheduleModalTest && (
+      {rescheduleModalTest && isWindowTest(rescheduleModalTest) && (() => {
+        const opened = Date.now() >= rescheduleModalTest.windowOpensAtMs;
+        const locked = (attemptCounts[rescheduleModalTest.id]?.started || 0) > 0;
+        return (
+          <Modal
+            title={`${opened ? "Change the close of" : "Change"} "${rescheduleModalTest.title}"`}
+            description={opened ? "The window is open: its close can be extended at any time, or brought forward only while nobody is mid-paper and the last start is at least an hour away." : "Nothing has started yet, so anything can change. Registered candidates are told."}
+            onClose={() => setRescheduleModalTest(null)}
+          >
+            <form onSubmit={handleRescheduleSubmit} className="space-y-4">
+              <WindowFields
+                form={rescheduleForm}
+                set={(key, value) => setRescheduleForm((f) => ({ ...f, [key]: value }))}
+                onDurationValid={setRescheduleValid}
+                durationLocked={locked}
+                openLocked={opened}
+              />
+              {rescheduleError && <div className="p-2.5 bg-red-50 border border-red-200 rounded-xl text-xs text-red-700">⚠️ {rescheduleError}</div>}
+              <div className="flex gap-3 pt-2">
+                <Button type="button" variant="outline" className="flex-1" onClick={() => setRescheduleModalTest(null)}>Cancel</Button>
+                <Button type="submit" className="flex-1">Save & Notify Students</Button>
+              </div>
+            </form>
+          </Modal>
+        );
+      })()}
+
+      {rescheduleModalTest && !isWindowTest(rescheduleModalTest) && (
         <Modal title={`Reschedule "${rescheduleModalTest.title}"`} description="Set a new date and time for this test. Registered students will automatically receive a schedule update notification." onClose={() => setRescheduleModalTest(null)}>
           <form onSubmit={handleRescheduleSubmit} className="space-y-4">
             <Field label="New Test Date" hint={`At least ${TEST_LEAD_HOURS} hours from now, so registered students get notice.`}>
@@ -920,6 +1208,13 @@ export default function HostView({ user }) {
             <Field label="New Test Time">
               <TextInput required type="time" value={rescheduleForm.scheduledTime} onChange={(e) => setRescheduleForm((f) => ({ ...f, scheduledTime: e.target.value }))} />
             </Field>
+            <DurationPicker
+              value={rescheduleForm.durationMinutes}
+              onChange={(m) => setRescheduleForm((f) => ({ ...f, durationMinutes: m }))}
+              onValidity={setRescheduleValid}
+              disabled={(attemptCounts[rescheduleModalTest.id]?.started || 0) > 0}
+              lockedNote={(attemptCounts[rescheduleModalTest.id]?.started || 0) > 0 ? "Locked — candidates have already started this test." : null}
+            />
             {rescheduleModalTest.mode === "Offline" && (
               <Field label="New Reporting Time" hint="What candidates are told to arrive by.">
                 <TextInput value={rescheduleForm.reportingTime} onChange={(e) => setRescheduleForm((f) => ({ ...f, reportingTime: e.target.value }))} placeholder="09:30 AM" />
@@ -939,35 +1234,76 @@ export default function HostView({ user }) {
       {showModal && (
         <Modal title="Host a Skill Test" onClose={() => { if (!publishing) { setShowModal(false); setFormError(null); } }} size="lg">
           <form onSubmit={handleCreate} className="space-y-4">
+            {["academician", "institution"].includes(user.role) && (
+              <fieldset className="rounded-xl border border-border p-3.5 space-y-2">
+                <legend className="text-xs font-semibold text-muted-foreground uppercase tracking-wider px-1">Audience</legend>
+                <div className="grid sm:grid-cols-2 gap-2" role="radiogroup" aria-label="Audience">
+                  {[
+                    ["public", "Public (anyone on Skill Setu)"],
+                    ["community", "Only members of a community"],
+                  ].map(([key, label]) => (
+                    <button
+                      key={key}
+                      type="button"
+                      role="radio"
+                      aria-checked={form.audience === key}
+                      disabled={key === "community" && !hostedCommunities.length}
+                      onClick={() => set("audience", key)}
+                      className={`text-left text-xs rounded-xl border px-3 py-2 ${form.audience === key ? "border-primary bg-primary/10 text-primary font-medium" : "border-border text-foreground hover:border-primary/40"} disabled:opacity-50`}
+                    >
+                      {form.audience === key ? "● " : "○ "}
+                      {label}
+                    </button>
+                  ))}
+                </div>
+                {form.audience === "community" && (
+                  <>
+                    <Select value={form.communityId} onChange={(e) => set("communityId", e.target.value)} aria-label="Community">
+                      <option value="">Choose a community…</option>
+                      {hostedCommunities.map((c) => (
+                        <option key={c.id} value={c.id}>
+                          {c.name} ({c.memberCount} member{c.memberCount === 1 ? "" : "s"})
+                        </option>
+                      ))}
+                    </Select>
+                    <p className="text-[11px] text-muted-foreground">Only active members can see, register for and sit it; it never appears in public Browse. It's free, posted in the community, and members are notified.</p>
+                    <label className="flex items-center gap-2 text-xs text-foreground">
+                      <input type="checkbox" checked={Boolean(form.pinInCommunity)} onChange={(e) => set("pinInCommunity", e.target.checked)} />
+                      Pin the announcement in the community
+                    </label>
+                  </>
+                )}
+                {!hostedCommunities.length && <p className="text-[11px] text-muted-foreground">Create a community first to run a members-only test.</p>}
+              </fieldset>
+            )}
             <Field label="Test Title">
               <TextInput required value={form.title} onChange={(e) => set("title", e.target.value)} placeholder="e.g. ASU&H Clinical Fundamentals Quiz" />
             </Field>
-            <div className="grid grid-cols-2 gap-3">
-              <Field label="Mode">
-                <Select value={form.mode} onChange={(e) => set("mode", e.target.value)}>
-                  <option>Online</option>
-                  <option>Offline</option>
-                  <option>Hybrid</option>
-                </Select>
-              </Field>
-              <Field label="Duration">
-                <TextInput value={form.duration} onChange={(e) => set("duration", e.target.value)} placeholder="15 mins" />
-              </Field>
-            </div>
+            <Field label="Mode" hint={form.scheduleType === "window" ? "An open window can only be sat online, in the proctored exam room." : undefined}>
+              <Select value={form.mode} onChange={(e) => set("mode", e.target.value)} disabled={form.scheduleType === "window"}>
+                <option>Online</option>
+                <option disabled={form.scheduleType === "window"}>Offline</option>
+                <option disabled={form.scheduleType === "window"}>Hybrid</option>
+              </Select>
+            </Field>
+            <ScheduleTypeChoice value={form.scheduleType} onChange={(v) => set("scheduleType", v)} />
             <div className="grid grid-cols-2 gap-3">
               <AyushSystemSelect value={form.ayushSystem} onChange={(v) => set("ayushSystem", v)} required hint="Which system this test is for. Candidates filter by it." />
-              <Field label="Price (₹, 0 for free)">
-                <TextInput type="number" min="0" value={form.price} onChange={(e) => set("price", e.target.value)} />
-              </Field>
+              {form.audience === "community" ? (
+                <Field label="Price">
+                  <TextInput value="Free (community test)" readOnly disabled />
+                </Field>
+              ) : (
+                <Field label="Price (₹, 0 for free)">
+                  <TextInput type="number" min="0" value={form.price} onChange={(e) => set("price", e.target.value)} />
+                </Field>
+              )}
             </div>
-            <div className="grid grid-cols-2 gap-3">
-              <Field label="Test Date" hint={`At least ${TEST_LEAD_HOURS} hours (3 days) from today.`}>
-                <TextInput required type="date" min={earliestDateAfter(TEST_LEAD_HOURS)} max={latestScheduleDate()} value={form.scheduledAt} onChange={(e) => set("scheduledAt", e.target.value)} />
-              </Field>
-              <Field label="Start Time">
-                <TextInput required type="time" value={form.scheduledTime} onChange={(e) => set("scheduledTime", e.target.value)} />
-              </Field>
-            </div>
+            {form.scheduleType === "window" ? (
+              <WindowFields form={form} set={set} onDurationValid={setDurationValid} />
+            ) : (
+              <FixedFields form={form} set={set} onDurationValid={setDurationValid} />
+            )}
 
             {form.mode === "Online" ? (
               <>
@@ -996,7 +1332,9 @@ export default function HostView({ user }) {
 
                 <ExamSettings form={form} set={set} />
 
-                <MeetingChoice form={form} set={set} />
+                <FairnessSettings form={form} set={set} />
+
+                {form.scheduleType !== "window" && <MeetingChoice form={form} set={set} />}
               </>
             ) : (
               <>

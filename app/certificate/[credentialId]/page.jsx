@@ -2,8 +2,15 @@
 
 import { use, useEffect, useState } from "react";
 import Link from "next/link";
-import { getCredential } from "../../../lib/store";
+import { applyCredentialDisplay, getCredential } from "../../../lib/store";
+import { subscribeToMutations } from "../../../lib/sync";
 import { formatDate } from "../../../lib/match";
+import { useAuth } from "../../../lib/auth";
+import { api } from "../../../convex/_generated/api";
+import { backendErrorMessage, backendMutation, backendQuerySafe } from "../../../lib/convexBrowser";
+import { certificateDetails, linkedInAddUrl, scriptOf, verifyUrl } from "../../../lib/credentials";
+import { CERTIFICATES } from "../../../lib/settings";
+import { downloadCertificatePdf } from "../../../components/certificates/CertificateCard";
 
 const KIND_LINE = {
   "Skill Test": "for successfully completing the assessment",
@@ -13,24 +20,50 @@ const KIND_LINE = {
   Participation: "for participating in",
 };
 
+/** The site's own address for the verify link: the configured one, else this origin. */
+function siteOrigin() {
+  if (process.env.NEXT_PUBLIC_SITE_URL) return process.env.NEXT_PUBLIC_SITE_URL;
+  return typeof window !== "undefined" ? window.location.origin : "";
+}
+
 /**
- * The printable artefact behind an issued credential. Deliberately rendered as
- * a print-styled page rather than a generated PDF — window.print() to PDF keeps
- * the dependency list unchanged and produces a file the student can attach
- * anywhere. The same approach the FDP certificate page uses.
+ * A preview of an issued credential and what its student can do with it:
+ * download the PDF (drawn on the server from the frozen snapshot), copy the
+ * verification link, add it to LinkedIn, and choose whether it shows on their
+ * portfolio and public profile, and whether it is featured. The student can
+ * never change what the certificate says.
  */
 export default function CredentialCertificatePage({ params }) {
   // Next 14 hands a client page a plain params object; Next 15 hands it a
   // promise. Calling use() on the plain object throws "unsupported type", so
   // only unwrap when it actually is thenable.
   const { credentialId } = typeof params?.then === "function" ? use(params) : params;
+  const { user } = useAuth();
   const [ready, setReady] = useState(false);
+  const [, setTick] = useState(0);
+  // The server's row (undefined while loading): the snapshot for the preview,
+  // and the certificate itself on a device that has not synced it yet.
+  const [remote, setRemote] = useState(undefined);
+  const [busy, setBusy] = useState(null);
+  const [flash, setFlash] = useState(null);
+  const [nameFallback, setNameFallback] = useState(false);
 
   useEffect(() => {
     setReady(true);
-  }, []);
+    const unsub = subscribeToMutations(["credentials"], () => setTick((t) => t + 1));
+    // The frozen snapshot carries the candidate's details for the preview;
+    // only the student and the issuer may read it, and it is optional here.
+    backendQuerySafe(api.certificates.forRender, { credentialId }, null).then((r) => setRemote(r || null));
+    return unsub;
+  }, [credentialId]);
 
-  if (!ready) {
+  const local = ready ? getCredential(credentialId) : null;
+  // This device's copy carries the display choices just made here; the
+  // server's fills in whatever has not synced yet.
+  const credential = local ? { ...remote, ...local } : remote || null;
+  const snapshot = remote?.snapshot || null;
+
+  if (!ready || (!local && remote === undefined)) {
     return (
       <div className="min-h-screen bg-background flex items-center justify-center p-6">
         <div className="text-center space-y-2">
@@ -41,7 +74,6 @@ export default function CredentialCertificatePage({ params }) {
     );
   }
 
-  const credential = getCredential(credentialId);
 
   if (!credential) {
     return (
@@ -51,7 +83,7 @@ export default function CredentialCertificatePage({ params }) {
           <h1 className="text-lg font-semibold text-foreground">Certificate not found</h1>
           <p className="text-xs text-muted-foreground leading-relaxed">
             No credential matches the id{" "}
-            <code className="font-mono text-[11px] bg-secondary px-1 py-0.5 rounded">{credentialId}</code> in this browser.
+            <code className="font-mono text-[11px] bg-secondary px-1 py-0.5 rounded">{credentialId}</code>.
           </p>
           <Link
             href="/portfolio"
@@ -65,6 +97,64 @@ export default function CredentialCertificatePage({ params }) {
   }
 
   const revoked = Boolean(credential.revokedAt);
+  const isOwner = Boolean(user && user.id === credential.studentId);
+  const displayName = snapshot?.studentName || credential.studentName;
+  const details = snapshot?.testTitle ? certificateDetails(snapshot, KIND_LINE[credential.kind] || "for successfully completing") : null;
+  const link = credential.verifyCode ? verifyUrl(siteOrigin(), credential.verifyCode) : null;
+  const shown = credential.showOnProfile !== false;
+  const featured = Boolean(credential.featured);
+  // A name in a script with no bundled font prints trimmed; say so before the
+  // student finds out from the PDF.
+  const unprintable = nameFallback || scriptOf(displayName) === "other";
+
+  function say(kind, text) {
+    setFlash({ kind, text });
+    setTimeout(() => setFlash(null), 3500);
+  }
+
+  async function download() {
+    setBusy("download");
+    try {
+      const out = await downloadCertificatePdf(credential);
+      if (out?.nameFallback) setNameFallback(true);
+    } catch (err) {
+      say("error", err.message);
+    } finally {
+      setBusy(null);
+    }
+  }
+
+  async function copyLink() {
+    try {
+      await navigator.clipboard.writeText(link);
+      say("ok", "Verification link copied.");
+    } catch {
+      say("error", `Could not copy. The link is ${link}`);
+    }
+  }
+
+  async function setDisplay(patch) {
+    setBusy("display");
+    try {
+      await backendMutation(api.certificates.setDisplay, { id: credential.id, ...patch });
+      applyCredentialDisplay(credential.id, patch);
+      setRemote((await backendQuerySafe(api.certificates.forRender, { credentialId }, null)) || remote);
+      say(
+        "ok",
+        patch.featured === true
+          ? "Featured on your portfolio."
+          : patch.featured === false
+            ? "No longer featured."
+            : patch.showOnProfile
+              ? "Shown on your portfolio and profile."
+              : "Hidden from your portfolio and profile."
+      );
+    } catch (err) {
+      say("error", backendErrorMessage(err));
+    } finally {
+      setBusy(null);
+    }
+  }
 
   return (
     <div className="min-h-screen bg-secondary/30 p-4 sm:p-8 flex flex-col items-center">
@@ -79,18 +169,69 @@ export default function CredentialCertificatePage({ params }) {
           <span className="text-xs text-muted-foreground hidden sm:inline">Issued credential · Digital record</span>
         </div>
 
-        <button
-          onClick={() => window.print()}
-          className="inline-flex items-center gap-2 bg-primary hover:bg-accent text-white px-4 py-2 rounded-xl text-xs font-semibold shadow-md transition-all duration-150 hover:scale-[1.02]"
-        >
-          <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round">
-            <polyline points="6 9 6 2 18 2 18 9" />
-            <path d="M6 18H4a2 2 0 0 1-2-2v-5a2 2 0 0 1 2-2h16a2 2 0 0 1 2 2v5a2 2 0 0 1-2 2h-2" />
-            <rect x="6" y="14" width="12" height="8" />
-          </svg>
-          Print / Save as PDF
-        </button>
+        <div className="flex flex-wrap items-center gap-2">
+          {!revoked && (isOwner || user?.id === credential.issuerId) && (
+            <button
+              onClick={download}
+              disabled={busy === "download"}
+              className="inline-flex items-center gap-2 bg-primary hover:bg-accent text-white px-4 py-2 rounded-xl text-xs font-semibold shadow-md transition-colors disabled:opacity-60"
+            >
+              {busy === "download" ? "Preparing…" : "⬇ Download PDF"}
+            </button>
+          )}
+          {!revoked && link && (
+            <button onClick={copyLink} className="inline-flex items-center gap-1.5 bg-card border border-border hover:bg-secondary px-3 py-2 rounded-xl text-xs font-medium text-foreground transition-colors">
+              🔗 Copy verification link
+            </button>
+          )}
+          {!revoked && isOwner && link && (
+            <a
+              href={linkedInAddUrl({ title: credential.title, issuer: credential.issuer, issuedAt: credential.issuedAt, verifyLink: link, certificateNo: credential.certificateNo })}
+              target="_blank"
+              rel="noreferrer"
+              className="inline-flex items-center gap-1.5 bg-[#0a66c2] hover:bg-[#004182] text-white px-3 py-2 rounded-xl text-xs font-medium transition-colors"
+            >
+              Share to LinkedIn
+            </a>
+          )}
+          <button onClick={() => window.print()} className="inline-flex items-center gap-1.5 bg-card border border-border hover:bg-secondary px-3 py-2 rounded-xl text-xs font-medium text-foreground transition-colors">
+            Print
+          </button>
+        </div>
       </header>
+
+      {flash && (
+        <div
+          role="status"
+          className={`w-full max-w-4xl mb-4 rounded-xl border px-4 py-2.5 text-xs no-print ${flash.kind === "error" ? "border-red-200 bg-red-50 text-red-700" : "border-emerald-200 bg-emerald-50 text-emerald-800"}`}
+        >
+          {flash.text}
+        </div>
+      )}
+
+      {isOwner && !revoked && (
+        <section className="w-full max-w-4xl mb-4 rounded-2xl border border-border bg-card px-4 py-3 no-print flex flex-wrap items-center gap-x-6 gap-y-2">
+          <label className="inline-flex items-center gap-2 text-xs text-foreground cursor-pointer">
+            <input type="checkbox" checked={shown} disabled={busy === "display"} onChange={(e) => setDisplay({ showOnProfile: e.target.checked })} className="w-4 h-4 accent-primary" />
+            Show on my portfolio &amp; public profile
+          </label>
+          <label className="inline-flex items-center gap-2 text-xs text-foreground cursor-pointer">
+            <input type="checkbox" checked={featured} disabled={busy === "display"} onChange={(e) => setDisplay({ featured: e.target.checked })} className="w-4 h-4 accent-primary" />
+            ⭐ Featured <span className="text-muted-foreground">(up to {CERTIFICATES.MAX_FEATURED}, shown first)</span>
+          </label>
+          {!credential.verifyCode && <span className="text-[11px] text-muted-foreground">The verification code is being confirmed…</span>}
+        </section>
+      )}
+
+      {isOwner && unprintable && (
+        <div className="w-full max-w-4xl mb-4 rounded-xl border border-amber-200 bg-amber-50 px-4 py-3 text-xs text-amber-800 no-print">
+          Your name contains characters our PDF font can&apos;t print yet; add an English spelling in{" "}
+          <Link href="/settings?tab=account" className="underline font-medium">
+            Settings → Name on certificates
+          </Link>
+          . Certificates already issued keep the name they were issued with.
+        </div>
+      )}
 
       {revoked && (
         <div className="w-full max-w-4xl mb-4 rounded-xl border border-red-200 bg-red-50 px-4 py-3 text-xs text-red-700 no-print">
@@ -125,10 +266,20 @@ export default function CredentialCertificatePage({ params }) {
         <div className="relative z-10 my-8 space-y-2">
           <p className="text-xs sm:text-sm text-muted-foreground italic font-serif">This is proudly presented to</p>
           <div className="text-2xl sm:text-3xl font-bold text-foreground tracking-tight underline decoration-primary/30 decoration-2 underline-offset-8">
-            {credential.studentName}
+            {displayName}
           </div>
         </div>
 
+        {details ? (
+          <div className="relative z-10 max-w-2xl mx-auto my-6 text-xs sm:text-sm text-foreground/80 leading-relaxed">
+            {details}
+            <div className="mt-2">
+              awarded by <span className="font-medium text-foreground">{credential.issuer}</span>
+              {snapshot?.programName ? <> · {snapshot.programName}</> : null}
+            </div>
+            {credential.remarks && <p className="mt-3 text-xs text-muted-foreground italic max-w-xl mx-auto">{credential.remarks}</p>}
+          </div>
+        ) : (
         <div className="relative z-10 max-w-2xl mx-auto my-6 text-xs sm:text-sm text-foreground/80 leading-relaxed">
           {KIND_LINE[credential.kind] || "in recognition of"}
           <div className="font-semibold text-sm sm:text-base my-2 font-serif text-primary">“{credential.title}”</div>
@@ -150,6 +301,7 @@ export default function CredentialCertificatePage({ params }) {
             <p className="mt-3 text-xs text-muted-foreground italic max-w-xl mx-auto">{credential.remarks}</p>
           )}
         </div>
+        )}
 
         <div className="relative z-10 pt-10 mt-10 border-t border-border/80 grid grid-cols-1 sm:grid-cols-3 gap-6 items-end">
           <div className="text-left space-y-1 sm:space-y-1.5 order-2 sm:order-1">
@@ -190,7 +342,14 @@ export default function CredentialCertificatePage({ params }) {
         </div>
 
         <div className="relative z-10 mt-8 pt-4 border-t border-border/40 text-[9px] text-muted-foreground text-center">
-          Skill Setu · Academia–Industry Collaboration Platform · Verify with certificate number and code
+          Skill Setu · Academia–Industry Collaboration Platform ·{" "}
+          {link ? (
+            <>
+              Verify at <span className="font-mono">{link}</span>
+            </>
+          ) : (
+            "Verify with the certificate's verification code"
+          )}
         </div>
       </main>
 

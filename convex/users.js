@@ -137,6 +137,11 @@ export const updateProfile = mutation({
       safe.gallery = resolved;
     }
     safe.updatedAt = new Date().toISOString();
+    // The name certificates are issued with: one line, bounded; blank means "use my name".
+    if ("certificateName" in safe) {
+      const clean = String(safe.certificateName ?? "").replace(/\s+/g, " ").trim().slice(0, 100);
+      safe.certificateName = clean || undefined;
+    }
     // The AYUSH system is one of five slugs or nothing at all — never free text.
     if ("ayushSystem" in safe) {
       if (isAyushSystem(safe.ayushSystem)) safe.needsRetagging = false;

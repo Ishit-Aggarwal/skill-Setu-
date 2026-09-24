@@ -7,10 +7,12 @@ import { recalculateAssessment, writeAttempt } from "./_lib/assessment";
 import { issueCertificateForAttempt } from "./_lib/certificates";
 import { SKILL_DOMAINS } from "../lib/questionBank";
 import { EXAM } from "../lib/settings";
-import { joinWindowMinutes, testEndMs, testPhase } from "../lib/testWindow";
+import { canRevealAnswers, durationMinutes, isWindowTest, joinWindowMinutes, testEndMs, testPhase } from "../lib/testWindow";
 import { LIVE_STATES, canTransition, isClosed } from "../lib/examState";
-import { applyPenalty, clampPenalty, gradePaper } from "../lib/grading";
+import { applyPenalty, clampPenalty, gradePaper, withholdAnswers } from "../lib/grading";
 import { sanitizeForCandidate } from "../lib/questions";
+import { drawPool, shufflePaperFor } from "../lib/shuffle";
+import { memberAccessForTest } from "./_lib/communityAccess";
 
 /**
  * The secure exam room, server side.
@@ -50,11 +52,6 @@ function newId(prefix) {
   return `${prefix}_${Date.now().toString(36)}_${Math.random().toString(36).slice(2, 8)}`;
 }
 
-function durationMinutesOf(duration) {
-  const m = /(\d+)/.exec(String(duration || ""));
-  const minutes = m ? Number(m[1]) : 15;
-  return Math.max(2, Math.min(180, minutes));
-}
 
 async function getAttempt(ctx, id) {
   return await ctx.db
@@ -88,11 +85,35 @@ async function transition(ctx, attempt, to, reason) {
   return { ...attempt, ...patch };
 }
 
-/** The full paper (keys included) behind an attempt. Server-side only. */
+/**
+ * The full paper (keys included) behind an attempt. Server-side only. A
+ * pooled paper is only the questions this candidate was dealt, so grading,
+ * review and the report all count the same set.
+ */
 async function paperFor(ctx, attempt) {
   if (attempt.paperSource === "bank") return bankPaperFor(attempt.domain);
   const rows = await questionsForTest(ctx, attempt.testId);
-  return rows.map(({ _id, _creationTime, ...q }) => q);
+  const paper = rows.map(({ _id, _creationTime, ...q }) => q);
+  if (Array.isArray(attempt.drawnQuestionIds) && attempt.drawnQuestionIds.length) {
+    const dealt = new Set(attempt.drawnQuestionIds);
+    return paper.filter((q) => dealt.has(q.id));
+  }
+  return paper;
+}
+
+/**
+ * What the candidate receives: no keys, no explanations, and — when the host
+ * asked for it — the questions and each question's options in an order
+ * drawn from the attempt id. Marking is by ids, so the order never matters.
+ */
+function candidatePaper(test, attempt, paper) {
+  const ordered = test?.shuffle ? shufflePaperFor(paper, attempt.id) : paper;
+  return ordered.map(sanitizeForCandidate);
+}
+
+/** An open window keeps its answer key from candidates until it closes. */
+function resultForCandidate(test, result) {
+  return test && !canRevealAnswers(test) ? withholdAnswers(result) : result;
 }
 
 async function logEvent(ctx, attempt, type, atMs, detail, durationMs) {
@@ -172,7 +193,15 @@ async function gradeAttempt(ctx, attempt, answers) {
   const graded = await transition(ctx, { ...attempt, state: attempt.state }, "GRADED");
   await ctx.db.patch(graded._id, { certificateStatus: certificate.status, credentialId: certificate.credential?.id || null });
 
-  return { result, assessment, certificate, attempt: { ...graded, certificateStatus: certificate.status, credentialId: certificate.credential?.id || null } };
+  return {
+    result,
+    // What goes back to the candidate's browser: the same result, minus the
+    // answer key while an open window is still running.
+    candidateResult: resultForCandidate(test, result),
+    assessment,
+    certificate,
+    attempt: { ...graded, certificateStatus: certificate.status, credentialId: certificate.credential?.id || null },
+  };
 }
 
 const FAILING_REASONS = ["penalty_limit_reached", "device_lost", "window_left", "window_closed", "monitor_limit_reached"];
@@ -271,7 +300,7 @@ export const begin = mutation({
           resumed: false,
           closedOnReturn: true,
           graded: {
-            result: graded.result,
+            result: graded.candidateResult,
             certificate: { status: graded.certificate.status, credential: stripCredential(graded.certificate.credential) },
             assessment: graded.assessment,
             autoSubmitReason: "window_closed",
@@ -297,13 +326,29 @@ export const begin = mutation({
     // this clock, not the browser's: once the joining window has closed the
     // candidate is not coming in part-way, whatever their card said.
     if (test) {
+      if (test.cancelledAt) throw new Error("This test was cancelled by its host.");
+      const window = isWindowTest(test);
       const phase = testPhase(test, Date.now(), { serverSide: true });
-      if (phase === "upcoming") throw new Error("This test hasn't started yet. The paper opens at the scheduled time.");
+      if (phase === "upcoming") throw new Error(window ? "This test's window hasn't opened yet." : "This test hasn't started yet. The paper opens at the scheduled time.");
       if (phase === "locked") {
+        if (window) throw new Error("This test's window has closed for new starts.");
         const minutes = joinWindowMinutes(test);
         throw new Error(`The test is in progress and joining closed ${minutes} minute${minutes === 1 ? "" : "s"} after it started. You can't join a test part-way through.`);
       }
-      if (phase === "ended") throw new Error("This test has ended.");
+      if (phase === "ended") throw new Error(window ? "This test's window has closed." : "This test has ended.");
+      // Membership is re-checked here, not only at registration: a student
+      // removed from the community since registering does not start.
+      const access = await memberAccessForTest(ctx, actor, test);
+      if (!access.ok) throw authError(access.reason);
+      if (window || test.audience === "community") {
+        const registration = await ctx.db
+          .query("skillTestRegistrations")
+          .withIndex("by_test", (q) => q.eq("testId", test.id))
+          .filter((q) => q.eq(q.field("userId"), actor.id))
+          .first();
+        if (!registration) throw new Error("Register for this test before you start it.");
+        if (registration.cancelledAt) throw new Error("Your registration for this test was cancelled.");
+      }
     }
 
     let source;
@@ -346,7 +391,7 @@ export const begin = mutation({
       paperSource: source,
       domain,
       testTitle: title,
-      durationMins: durationMinutesOf(duration),
+      durationMins: test ? durationMinutes(test) : durationMinutes({ duration }),
       mode,
       violationCount: 0,
       violationsByType: {},
@@ -407,7 +452,20 @@ export const setState = mutation({
 export const start = mutation({
   args: { sessionToken: v.string(), attemptId: v.string() },
   handler: async (ctx, args) => {
-    const { attempt } = await requireAttemptAccess(ctx, args.sessionToken, args.attemptId, { studentOnly: true });
+    const found = await requireAttemptAccess(ctx, args.sessionToken, args.attemptId, { studentOnly: true });
+    let attempt = found.attempt;
+    const test = await findTestByClientId(ctx, attempt.testId);
+    // A pooled paper deals this candidate their own N questions, once, from
+    // the attempt id; the set is stored so everything after uses the same one.
+    if (attempt.paperSource === "authored" && test?.poolSize && !attempt.drawnQuestionIds) {
+      const full = (await questionsForTest(ctx, attempt.testId)).map((q) => q.id);
+      const n = Math.max(EXAM.MIN_POOL_QUESTIONS, Math.round(test.poolSize));
+      if (n < full.length) {
+        const drawnQuestionIds = drawPool(full, n, attempt.id);
+        await ctx.db.patch(attempt._id, { drawnQuestionIds });
+        attempt = { ...attempt, drawnQuestionIds };
+      }
+    }
     const paper = await paperFor(ctx, attempt);
     if (!paper.length) throw new Error("This test has no question paper yet.");
     const now = Date.now();
@@ -415,7 +473,6 @@ export const start = mutation({
     // paper late in the joining window gets the time that is left, not a
     // full allowance running past everyone else's finish.
     let deadlineAt = now + (attempt.durationMins || 15) * 60000;
-    const test = await findTestByClientId(ctx, attempt.testId);
     const sittingEnds = test ? testEndMs(test, { serverSide: true }) : null;
     if (sittingEnds != null && sittingEnds > now && sittingEnds < deadlineAt) deadlineAt = sittingEnds;
     const next = await transition(ctx, attempt, "IN_PROGRESS", "started");
@@ -430,7 +487,7 @@ export const start = mutation({
       startedAt: now,
       serverNow: now,
       deadlineAt,
-      questions: paper.map(sanitizeForCandidate),
+      questions: candidatePaper(test, attempt, paper),
       config: await configFor(ctx, attempt),
     };
   },
@@ -442,7 +499,8 @@ export const paper = query({
   handler: async (ctx, args) => {
     const { attempt } = await requireAttemptAccess(ctx, args.sessionToken, args.attemptId, { studentOnly: true });
     if (!LIVE_STATES.includes(attempt.state)) return { ok: false, state: attempt.state };
-    const questions = (await paperFor(ctx, attempt)).map(sanitizeForCandidate);
+    const test = await findTestByClientId(ctx, attempt.testId);
+    const questions = candidatePaper(test, attempt, await paperFor(ctx, attempt));
     return {
       ok: true,
       state: attempt.state,
@@ -563,7 +621,7 @@ export const logEvents = mutation({
         ...summary,
         autoSubmitReason: reason,
         disqualified: FAILING_REASONS.includes(reason) || Boolean(patch.disqualified),
-        result: graded.result,
+        result: graded.candidateResult,
         certificate: { status: graded.certificate.status, credential: stripCredential(graded.certificate.credential) },
         assessment: graded.assessment,
       };
@@ -596,7 +654,7 @@ export const submit = mutation({
         ok: true,
         state: "GRADED",
         autoSubmitReason: reason,
-        result: graded.result,
+        result: graded.candidateResult,
         certificate: { status: graded.certificate.status, credential: stripCredential(graded.certificate.credential) },
         assessment: graded.assessment,
         disqualified: Boolean(attempt.disqualified) || FAILING_REASONS.includes(reason),
@@ -608,7 +666,7 @@ export const submit = mutation({
     return {
       ok: true,
       state: "GRADED",
-      result: graded.result,
+      result: graded.candidateResult,
       certificate: { status: graded.certificate.status, credential: stripCredential(graded.certificate.credential) },
       assessment: graded.assessment,
       disqualified: Boolean(attempt.disqualified),
@@ -707,10 +765,16 @@ export const myAttempt = query({
 export const review = query({
   args: { sessionToken: v.string(), attemptId: v.string() },
   handler: async (ctx, args) => {
-    const { attempt } = await requireAttemptAccess(ctx, args.sessionToken, args.attemptId);
+    const { attempt, isHost } = await requireAttemptAccess(ctx, args.sessionToken, args.attemptId);
     if (attempt.state !== "GRADED") return { ok: false, state: attempt.state };
     const paper = await paperFor(ctx, attempt);
-    const result = gradePaper(paper, attempt.answers || {});
+    const test = await findTestByClientId(ctx, attempt.testId);
+    // An open window's candidates see right/wrong and their score now, the
+    // correct options and explanations only once the window has closed. The
+    // host always sees everything.
+    const withheld = !isHost && test && !canRevealAnswers(test);
+    const marked = gradePaper(paper, attempt.answers || {});
+    const result = withheld ? withholdAnswers(marked) : marked;
     const credential = attempt.credentialId
       ? await ctx.db
           .query("credentials")
@@ -718,7 +782,13 @@ export const review = query({
           .first()
       : null;
     const { _id, _creationTime, answers, ...rest } = attempt;
-    return { ok: true, attempt: rest, result, certificate: { status: attempt.certificateStatus || "not_enabled", credential: stripCredential(credential) } };
+    return {
+      ok: true,
+      attempt: rest,
+      result,
+      answersHiddenUntil: withheld ? test.windowClosesAtMs : null,
+      certificate: { status: attempt.certificateStatus || "not_enabled", credential: stripCredential(credential) },
+    };
   },
 });
 
@@ -902,5 +972,44 @@ export const failAbandonedAttempts = internalMutation({
       }
     }
     return { failed };
+  },
+});
+
+/**
+ * Live counts for a host's card: registered, started, in progress, submitted,
+ * failed and not started. Host only.
+ */
+export const countsForTest = query({
+  args: { sessionToken: v.string(), testId: v.string() },
+  handler: async (ctx, args) => {
+    const actor = await requireActor(ctx, args.sessionToken);
+    const test = await findTestByClientId(ctx, args.testId);
+    if (!test) return null;
+    if (test.ownerId !== actor.id && actor.role !== "admin") throw authError("Only the host of this test can see its counts.");
+    const registrations = (
+      await ctx.db
+        .query("skillTestRegistrations")
+        .withIndex("by_test", (q) => q.eq("testId", test.id))
+        .collect()
+    ).filter((r) => !r.cancelledAt);
+    const attempts = await ctx.db
+      .query("examAttempts")
+      .withIndex("by_test", (q) => q.eq("testId", test.id))
+      .collect();
+    const began = new Set();
+    let inProgress = 0;
+    let submitted = 0;
+    let failed = 0;
+    for (const a of attempts) {
+      if (a.startedAt) began.add(a.studentId);
+      if (LIVE_STATES.includes(a.state)) inProgress += 1;
+      else if (a.state === "GRADED") {
+        if (a.failed) failed += 1;
+        else submitted += 1;
+      }
+    }
+    const registeredIds = new Set(registrations.map((r) => r.userId));
+    const notStarted = [...registeredIds].filter((id) => !began.has(id)).length;
+    return { registered: registeredIds.size, started: began.size, inProgress, submitted, failed, notStarted };
   },
 });

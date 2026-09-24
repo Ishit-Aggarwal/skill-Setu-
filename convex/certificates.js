@@ -1,11 +1,14 @@
 import { query, mutation } from "./_generated/server";
 import { v } from "convex/values";
 import { authError, requireActor } from "./_lib/authz";
-import { certificateNumber, resolveBranding, verifyCode } from "./_lib/certificates";
+import { certificateNumber, notifyCertificate, resolveBranding, uniqueVerifyCode } from "./_lib/certificates";
 import { findTestByClientId, findUserById } from "./_lib/tests";
 import { findByClientId } from "./_lib/rows";
-import { isCredentialKind } from "../lib/credentials";
+import { buildCertificateSnapshot, isCredentialKind, normaliseVerifyCode } from "../lib/credentials";
 import { CERTIFICATES } from "../lib/settings";
+import { ayushSystemLabel } from "../lib/ayush";
+import { durationMinutes } from "../lib/testWindow";
+import { isDemoId } from "../lib/demoIsolation";
 
 /**
  * Certificate branding and issued certificates.
@@ -203,28 +206,150 @@ export const forRender = query({
   },
 });
 
-/** Public verification: the code on the certificate → who, what, score, issuer. Nothing else. */
+/** What anyone holding the code may learn: who, what, score, issuer. No email, no roll number. */
+function publicVerification(row) {
+  return {
+    code: row.verifyCode,
+    valid: !row.revokedAt,
+    revokedAt: row.revokedAt || null,
+    studentName: row.studentName,
+    title: row.title,
+    testTitle: row.testTitle || row.title,
+    ayushSystem: row.snapshot?.ayushSystem || null,
+    score: row.score || null,
+    grade: row.snapshot?.showGrade === false ? null : row.grade || row.snapshot?.grade || null,
+    issuer: row.issuer,
+    certificateNo: row.certificateNo,
+    issuedAt: row.issuedAt,
+  };
+}
+
+async function byCode(ctx, raw) {
+  const code = normaliseVerifyCode(raw);
+  if (!code) return null;
+  return await ctx.db
+    .query("credentials")
+    .withIndex("by_verify_code", (q) => q.eq("verifyCode", code))
+    .first();
+}
+
+/**
+ * Public verification: the code on the certificate (any case, spaces or
+ * dashes) → the minimal record. One index lookup; nothing about the person
+ * asking is logged.
+ */
 export const verify = query({
   args: { code: v.string() },
   handler: async (ctx, args) => {
-    const code = String(args.code || "").trim().toUpperCase();
-    if (!code) return null;
-    const row = await ctx.db
+    const row = await byCode(ctx, args.code);
+    return row ? publicVerification(row) : null;
+  },
+});
+
+const VERIFIER_ROLES = ["industry", "academician", "institution", "admin"];
+
+/**
+ * The same for a signed-in company, professor or institution — plus the
+ * candidate's id when, and only when, the student shows this certificate on
+ * their profile (so "View candidate profile" can open it).
+ */
+export const verifyDetailed = query({
+  args: { sessionToken: v.string(), codes: v.array(v.string()) },
+  handler: async (ctx, args) => {
+    const actor = await requireActor(ctx, args.sessionToken);
+    if (!VERIFIER_ROLES.includes(actor.role)) throw authError("Verification lookup is for companies, professors and institutions.");
+    const out = [];
+    for (const raw of args.codes.slice(0, CERTIFICATES.BULK_VERIFY_MAX)) {
+      const code = normaliseVerifyCode(raw);
+      const row = await byCode(ctx, code);
+      if (!row) {
+        out.push({ code, found: false });
+        continue;
+      }
+      const visible = row.showOnProfile !== false && isDemoId(row.studentId) === isDemoId(actor.id);
+      out.push({ found: true, ...publicVerification(row), code, studentId: visible ? row.studentId : null });
+    }
+    return out;
+  },
+});
+
+/**
+ * The student's own display choices on a certificate — whether it shows on
+ * their portfolio and public profile, and whether it is one of their (at
+ * most CERTIFICATES.MAX_FEATURED) featured ones. Nothing else about the
+ * certificate can be changed by its student.
+ */
+export const setDisplay = mutation({
+  args: { sessionToken: v.string(), id: v.string(), showOnProfile: v.optional(v.boolean()), featured: v.optional(v.boolean()) },
+  handler: async (ctx, args) => {
+    const actor = await requireActor(ctx, args.sessionToken);
+    const row = await findByClientId(ctx, "credentials", args.id);
+    if (!row || row.studentId !== actor.id) throw authError("You can only change how your own certificates are shown.");
+    const patch = { updatedAt: new Date().toISOString() };
+    if (args.showOnProfile !== undefined) {
+      patch.showOnProfile = args.showOnProfile;
+      if (!args.showOnProfile) patch.featured = false;
+    }
+    if (args.featured !== undefined) {
+      if (args.featured) {
+        const mine = await ctx.db
+          .query("credentials")
+          .withIndex("by_student", (q) => q.eq("studentId", actor.id))
+          .collect();
+        const featured = mine.filter((c) => c.featured && c.id !== row.id && !c.revokedAt).length;
+        if (featured >= CERTIFICATES.MAX_FEATURED) throw new Error(`You can feature at most ${CERTIFICATES.MAX_FEATURED} certificates. Unfeature one first.`);
+        patch.showOnProfile = true;
+      }
+      patch.featured = args.featured;
+    }
+    await ctx.db.patch(row._id, patch);
+    return { ok: true };
+  },
+});
+
+/**
+ * A student's certificates as a reviewer (company, professor, institution)
+ * may see them: only those the student shows on their profile, never revoked
+ * ones. Used by the candidate and student profile views and the talent pool.
+ */
+export const shownForStudent = query({
+  args: { sessionToken: v.string(), studentId: v.string() },
+  handler: async (ctx, args) => {
+    const actor = await requireActor(ctx, args.sessionToken);
+    if (actor.id !== args.studentId && !VERIFIER_ROLES.includes(actor.role)) throw authError("You can't see that student's certificates.");
+    if (isDemoId(args.studentId) !== isDemoId(actor.id)) return [];
+    const rows = await ctx.db
       .query("credentials")
-      .withIndex("by_verify_code", (q) => q.eq("verifyCode", code))
-      .first();
-    if (!row) return null;
-    return {
-      valid: !row.revokedAt,
-      revokedAt: row.revokedAt || null,
-      studentName: row.studentName,
-      title: row.title,
-      testTitle: row.testTitle || row.title,
-      score: row.score || null,
-      issuer: row.issuer,
-      certificateNo: row.certificateNo,
-      issuedAt: row.issuedAt,
-    };
+      .withIndex("by_student", (q) => q.eq("studentId", args.studentId))
+      .collect();
+    return rows
+      .filter((c) => !c.revokedAt && c.showOnProfile !== false)
+      .sort((a, b) => Number(Boolean(b.featured)) - Number(Boolean(a.featured)) || new Date(b.issuedAt) - new Date(a.issuedAt))
+      .map((c) => ({ id: c.id, title: c.title, issuer: c.issuer, score: c.score || null, grade: c.grade || null, issuedAt: c.issuedAt, verifyCode: c.verifyCode, certificateNo: c.certificateNo, featured: Boolean(c.featured) }));
+  },
+});
+
+/**
+ * How many certificates each student shows on their profile, for the Talent
+ * Pool's "N verified certificates" badge and filter. Same rules as
+ * shownForStudent; ids from the other side of the demo wall count as zero.
+ */
+export const shownCounts = query({
+  args: { sessionToken: v.string(), studentIds: v.array(v.string()) },
+  handler: async (ctx, args) => {
+    const actor = await requireActor(ctx, args.sessionToken);
+    if (!VERIFIER_ROLES.includes(actor.role)) throw authError("Only companies, professors and institutions can see this.");
+    const out = {};
+    for (const studentId of [...new Set(args.studentIds)].slice(0, 500)) {
+      if (isDemoId(studentId) !== isDemoId(actor.id)) continue;
+      const rows = await ctx.db
+        .query("credentials")
+        .withIndex("by_student", (q) => q.eq("studentId", studentId))
+        .collect();
+      const n = rows.filter((c) => !c.revokedAt && c.showOnProfile !== false).length;
+      if (n) out[studentId] = n;
+    }
+    return out;
   },
 });
 
@@ -262,10 +387,36 @@ export const issueManual = mutation({
     if (existing && existing.issuerId !== actor.id && actor.role !== "admin") throw authError("That certificate was issued by another account.");
 
     const now = new Date().toISOString();
+    // The same frozen details an automatic certificate carries, drawn with
+    // the issuer's saved branding when they have one.
+    const branding = await ctx.db
+      .query("certificateSettings")
+      .withIndex("by_owner", (q) => q.eq("ownerId", actor.id))
+      .first();
+    const test = args.testId ? await findTestByClientId(ctx, args.testId) : null;
+    const certificateNo = existing?.certificateNo || (await certificateNumber(ctx, actor.id, issuerName));
+    const code = existing?.verifyCode || (await uniqueVerifyCode(ctx));
+    const scoreNumber = args.score && /^\d{1,3}/.test(args.score) ? Math.min(100, Number(/^\d{1,3}/.exec(args.score)[0])) : null;
+    const snapshot = existing?.snapshot || buildCertificateSnapshot({
+      branding: branding ? { ...branding, title: args.title || branding.title } : { title: args.title },
+      brandingSource: branding ? "default" : "none",
+      issuerName,
+      host,
+      student,
+      test: { title: args.title, certification: args.title },
+      score: scoreNumber,
+      testDate: existing?.issuedAt || args.issuedAt || now,
+      durationMinutes: test ? durationMinutes(test) : null,
+      ayushSystemLabel: test?.ayushSystem ? ayushSystemLabel(test.ayushSystem) : "",
+      communityName: test?.audience === "community" ? test.communityName || null : null,
+      certificateNo,
+      verifyCode: code,
+      issuedAt: existing?.issuedAt || args.issuedAt || now,
+    });
     const record = {
       id: args.id,
       studentId: student.id,
-      studentName: student.name || "Student",
+      studentName: snapshot.studentName || student.name || "Student",
       studentEmail: student.email || "",
       title: args.title || "Certificate of Achievement",
       issuer: issuerName,
@@ -276,28 +427,19 @@ export const issueManual = mutation({
       score: args.score || null,
       grade: args.grade || null,
       remarks: args.remarks || "",
-      certificateNo: existing?.certificateNo || (await certificateNumber(ctx, actor.id, issuerName)),
-      verifyCode: existing?.verifyCode || verifyCode(),
+      certificateNo,
+      verifyCode: code,
       issuedAt: existing?.issuedAt || args.issuedAt || now,
       revokedAt: existing?.revokedAt || null,
       updatedAt: now,
+      snapshot,
     };
     if (existing) await ctx.db.patch(existing._id, record);
-    else await ctx.db.insert("credentials", record);
+    else await ctx.db.insert("credentials", { ...record, showOnProfile: true, featured: false });
 
     // The recipient's inbox row is written here as well, so the student sees
     // it on whichever device they open next.
-    await ctx.db.insert("studentNotifications", {
-      id: `studentNotifications_${Date.now().toString(36)}_${Math.random().toString(36).slice(2, 8)}`,
-      studentId: student.id,
-      senderId: actor.id,
-      credentialId: args.id,
-      message: `${issuerName} issued you a certificate: "${record.title}". Open your portfolio to view or download it.`,
-      from: issuerName,
-      sentAt: now,
-      read: false,
-      updatedAt: now,
-    });
+    if (!existing) await notifyCertificate(ctx, record, "certificate_issued");
 
     return { ok: true, certificateNo: record.certificateNo, verifyCode: record.verifyCode, issuedAt: record.issuedAt };
   },
@@ -312,7 +454,8 @@ export const revoke = mutation({
     if (!row) return { ok: false, reason: "NOT_FOUND" };
     if (row.issuerId !== actor.id && actor.role !== "admin") throw authError("Only the issuer can revoke a certificate.");
     const now = new Date().toISOString();
-    await ctx.db.patch(row._id, { revokedAt: row.revokedAt || now, updatedAt: now });
+    await ctx.db.patch(row._id, { revokedAt: row.revokedAt || now, updatedAt: now, featured: false });
+    if (!row.revokedAt) await notifyCertificate(ctx, row, "certificate_revoked");
     return { ok: true };
   },
 });

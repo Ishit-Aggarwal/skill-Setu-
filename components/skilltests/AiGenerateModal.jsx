@@ -6,6 +6,7 @@ import { AI } from "../../lib/settings";
 import { AYUSH_SYSTEM_FIELD_LABEL, isAyushSystem } from "../../lib/ayush";
 import { AyushSystemSelect } from "../AyushSystemSelect";
 import { Button, Field, Modal, Select, TextArea, TextInput } from "../ui/Kit";
+import FileDrop from "../ui/FileDrop";
 
 /**
  * "Generate with AI" — the form in Section 3.2.
@@ -26,6 +27,9 @@ export default function AiGenerateModal({ defaultTopic = "", ayushSystem = "", h
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState(null);
   const [fieldErrors, setFieldErrors] = useState({});
+  const [showNotes, setShowNotes] = useState(false);
+  const [notes, setNotes] = useState([]);
+  const [uploading, setUploading] = useState(false);
 
   const n = Math.round(Number(count));
   const countValid = Number.isInteger(n) && n >= 1 && n <= AI.MAX_QUESTIONS && String(count).trim() === String(n);
@@ -64,6 +68,7 @@ export default function AiGenerateModal({ defaultTopic = "", ayushSystem = "", h
           singleCount: mix === "mixed" ? singleN : undefined,
           difficulty: hasDifficulty ? difficulty : undefined,
           audience: audience.trim(),
+          sources: notes.length ? notes : undefined,
         }),
       });
       let data = {};
@@ -85,7 +90,7 @@ export default function AiGenerateModal({ defaultTopic = "", ayushSystem = "", h
   }
 
   return (
-    <Modal title="Generate with AI" description="Describe the paper; every generated question lands in the editor for you to review before it is published." onClose={busy ? () => {} : onClose} size="lg">
+    <Modal title="Generate from a topic" description="Describe the paper; every generated question lands in the editor for you to review before it is published." onClose={busy ? () => {} : onClose} size="lg">
       <div className="space-y-4">
         <Field label="Topic / prompt">
           <TextArea rows={3} value={topic} onChange={(e) => setTopic(e.target.value)} placeholder="e.g. Basic principles of Ayurvedic Dosha theory" disabled={busy} />
@@ -160,6 +165,17 @@ export default function AiGenerateModal({ defaultTopic = "", ayushSystem = "", h
           </Field>
         </div>
 
+        <div>
+          <button type="button" onClick={() => setShowNotes((s) => !s)} aria-expanded={showNotes} className="text-xs font-medium text-primary hover:underline">
+            {showNotes ? "− Hide notes" : "📎 Attach notes (optional)"}
+          </button>
+          {showNotes && (
+            <div className="mt-2">
+              <FileDrop purpose="source" maxFiles={AI.MAX_SOURCE_FILES} onChange={setNotes} onBusyChange={setUploading} disabled={busy} label="Drop your notes here to write the questions from them" />
+            </div>
+          )}
+        </div>
+
         {busy && (
           <div className="flex items-center gap-3 rounded-xl bg-secondary px-4 py-3 text-xs text-muted-foreground">
             <span className="w-4 h-4 border-2 border-muted-foreground/30 border-t-primary rounded-full animate-spin flex-shrink-0" />
@@ -180,7 +196,7 @@ export default function AiGenerateModal({ defaultTopic = "", ayushSystem = "", h
           <Button type="button" variant="outline" className="flex-1" onClick={onClose} disabled={busy}>
             Cancel
           </Button>
-          <Button type="button" className="flex-1" onClick={generate} disabled={busy}>
+          <Button type="button" className="flex-1" onClick={generate} disabled={busy || uploading}>
             {busy ? "Generating…" : "Generate Questions"}
           </Button>
         </div>

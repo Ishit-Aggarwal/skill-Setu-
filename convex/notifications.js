@@ -35,6 +35,10 @@ export const send = mutation({
         credentialId: v.optional(v.union(v.string(), v.null())),
         slotId: v.optional(v.union(v.string(), v.null())),
         sentAt: v.optional(v.string()),
+        kind: v.optional(v.union(v.string(), v.null())),
+        link: v.optional(v.union(v.string(), v.null())),
+        communityId: v.optional(v.union(v.string(), v.null())),
+        postId: v.optional(v.union(v.string(), v.null())),
       })
     ),
   },
@@ -61,6 +65,11 @@ export const send = mutation({
       testId: meta.testId || null,
       credentialId: meta.credentialId || null,
       slotId: meta.slotId || null,
+      // A link is only ever an in-app path; anything else is dropped.
+      kind: meta.kind || null,
+      link: typeof meta.link === "string" && meta.link.startsWith("/") && !meta.link.startsWith("//") ? meta.link : null,
+      communityId: meta.communityId || null,
+      postId: meta.postId || null,
       message: args.message,
       from: args.from,
       sentAt: meta.sentAt || nowIso(),

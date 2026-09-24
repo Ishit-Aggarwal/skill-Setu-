@@ -11,6 +11,7 @@ import { autoSubmitMessage } from "../../lib/examState";
 import { startFaceMonitor } from "../../lib/faceMonitor";
 import { startVoiceMonitor } from "../../lib/voiceMonitor";
 import { TYPE_LABEL } from "../../lib/questions";
+import { formatDuration } from "../../lib/duration";
 import { Badge, Button, ProgressBar } from "../ui/Kit";
 import ExamResult from "./ExamResult";
 
@@ -1259,7 +1260,7 @@ export default function ExamRoom({ test, user, onClose, onGraded }) {
         <div className="space-y-5 text-center py-8">
           <h1 className="text-xl font-semibold text-foreground">Click below to enter fullscreen and begin your test.</h1>
           <p className="text-sm text-muted-foreground">
-            {questions.length || test.questionCount || ""}{test.questionCount ? ` questions · ` : ""}{attempt?.durationMins || ""} minutes. The clock starts when you enter fullscreen. Leaving fullscreen or looking away from the camera costs points; {config?.monitorViolationLimit || EXAM.MONITOR_VIOLATION_LIMIT} camera or microphone violations fail the test. Switching tabs or apps, minimising the window (a three-finger swipe does this), closing or reloading the tab ends the test immediately and fails it.
+            {questions.length || test.poolSize || test.questionCount || ""}{test.poolSize || test.questionCount ? ` questions · ` : ""}{attempt?.durationMins ? formatDuration(attempt.durationMins) : ""}. The clock starts when you enter fullscreen. Leaving fullscreen or looking away from the camera costs points; {config?.monitorViolationLimit || EXAM.MONITOR_VIOLATION_LIMIT} camera or microphone violations fail the test. Switching tabs or apps, minimising the window (a three-finger swipe does this), closing or reloading the tab ends the test immediately and fails it.
           </p>
           {error && <div className="rounded-xl border border-red-200 bg-red-50 px-4 py-3 text-xs text-red-700">{error}</div>}
           <Button size="lg" onClick={enterFullscreenAndStart}>

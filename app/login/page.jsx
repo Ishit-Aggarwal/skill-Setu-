@@ -130,7 +130,7 @@ function LoginPageInner() {
     // page, or switching accounts via the role switcher) instead of always
     // bouncing back to their existing dashboard.
     if (requestedRole && requestedRole !== user.role) return;
-    router.replace(PAGE_PATHS[roleHomePage(user.role)]);
+    router.replace(safeNext(params) || PAGE_PATHS[roleHomePage(user.role)]);
   }, [authLoading, user, router, params]);
 
   useEffect(() => {
@@ -199,7 +199,7 @@ function LoginPageInner() {
       const found = orgLogin
         ? await login(loginOrganisation, loginPassword, { role, byOrganisation: true })
         : await login(loginEmail, loginPassword);
-      router.push(PAGE_PATHS[roleHomePage(found.role)]);
+      router.push(safeNext(params) || PAGE_PATHS[roleHomePage(found.role)]);
     } catch (err) {
       setError(err.message);
       // "Several accounts under this name" is only actionable by email.
@@ -864,6 +864,15 @@ function LoginPageInner() {
       </div>
     </div>
   );
+}
+
+/**
+ * Where to go after signing in, when a page sent the visitor here (an invite
+ * link, say). Only a path on this site is followed — never another origin.
+ */
+function safeNext(params) {
+  const next = params?.get("next") || "";
+  return next.startsWith("/") && !next.startsWith("//") && !next.startsWith("/\\") ? next : null;
 }
 
 export default function LoginPage() {

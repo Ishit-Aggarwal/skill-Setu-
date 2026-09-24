@@ -7,6 +7,7 @@ import { formatDate } from "../lib/match";
 import { hasFile, openStoredFile, profileImage } from "../lib/files";
 import { scoresFor } from "../lib/taxonomy";
 import { Avatar, Badge, IconTile, Overlay } from "./ui/Kit";
+import VerifiedCertificates from "./certificates/VerifiedCertificates";
 
 /**
  * Read-only candidate profile for a recruiter — opened either from an
@@ -237,9 +238,11 @@ export default function CandidateProfileModal({ application, onClose, onUpdated 
             </div>
           )}
 
+          <VerifiedCertificates studentId={application.studentId} />
+
           {portfolio?.certifications?.length > 0 && (
             <div>
-              <div className="text-xs font-semibold text-muted-foreground uppercase tracking-wider mb-2">Certifications</div>
+              <div className="text-xs font-semibold text-muted-foreground uppercase tracking-wider mb-2">Other certifications (self-reported)</div>
               <div className="space-y-1.5">
                 {portfolio.certifications.map((c, i) => (
                   <div key={i} className="text-sm text-foreground">{c.name} <span className="text-xs text-muted-foreground">— {c.issuer} ({c.year})</span></div>

@@ -2,57 +2,44 @@
 
 import { useState } from "react";
 import { authHeaders } from "../../lib/session";
-import { FILES } from "../../lib/settings";
+import { AI } from "../../lib/settings";
 import { AYUSH_SYSTEM_FIELD_LABEL, isAyushSystem } from "../../lib/ayush";
 import { AyushSystemSelect } from "../AyushSystemSelect";
-import { formatBytes } from "../../lib/files";
+import FileDrop from "../ui/FileDrop";
 import { Button, Modal } from "../ui/Kit";
 
 /**
- * "Import from PDF" — a professor's own paper, read into the editor.
+ * "Import an existing paper" — a professor's own questions, read into the
+ * editor from one to ten files of any supported type: Paper A as a PDF,
+ * Paper B as Word, the answer key as a spreadsheet, a photographed page.
  *
- * The file is sent to the server as base64 (it never goes to storage — this
- * is a one-off read, not an upload) and every question comes back exactly as
- * written. Where the paper had no answer key or explanation the server had
- * the model supply one, and says how many, so the professor knows which
- * questions to check first: those are badged "AI-generated" in the editor.
+ * The files go to storage first (nothing large travels in a request body)
+ * and are read in the order shown here — drag or use the arrows to change
+ * it. Every question comes back exactly as written; a key kept in a separate
+ * file is matched by question number. Where the files had no key or
+ * explanation the server had the model supply one and says how many, so the
+ * professor knows which questions to check first: those are badged
+ * "AI-generated" in the editor.
  */
 export default function ImportPaperModal({ ayushSystem = "", onImported, onClose }) {
-  const [file, setFile] = useState(null);
+  const [files, setFiles] = useState([]);
+  const [uploading, setUploading] = useState(false);
   const [system, setSystem] = useState(ayushSystem);
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState(null);
-
-  function pick(e) {
-    const f = e.target.files?.[0];
-    e.target.value = "";
-    setError(null);
-    if (!f) return;
-    if (String(f.type || "").split(";")[0] !== "application/pdf" && !/\.pdf$/i.test(f.name)) return setError("Please upload a PDF file.");
-    if (f.size > FILES.MAX_DOCUMENT_BYTES) return setError("File is too large — please upload a file under 10MB");
-    setFile(f);
-  }
-
-  function toBase64(f) {
-    return new Promise((resolve, reject) => {
-      const reader = new FileReader();
-      reader.onload = () => resolve(String(reader.result).split(",")[1] || "");
-      reader.onerror = reject;
-      reader.readAsDataURL(f);
-    });
-  }
+  const [notes, setNotes] = useState([]);
 
   async function run() {
     setError(null);
-    if (!file) return setError("Attach the PDF of the question paper.");
+    setNotes([]);
+    if (!files.length) return setError("Upload the question paper — one or more files.");
     if (!isAyushSystem(system)) return setError(`Choose the ${AYUSH_SYSTEM_FIELD_LABEL}.`);
     setBusy(true);
     try {
-      const pdf = await toBase64(file);
       const res = await fetch("/api/ai/import-paper", {
         method: "POST",
         headers: { "Content-Type": "application/json", ...authHeaders() },
-        body: JSON.stringify({ pdf, mimeType: "application/pdf", ayushSystem: system, topic: file.name.replace(/\.pdf$/i, "") }),
+        body: JSON.stringify({ sources: files, ayushSystem: system, topic: (files[0]?.fileName || "").replace(/\.[a-z0-9]+$/i, "") }),
       });
       let data = {};
       try {
@@ -61,12 +48,13 @@ export default function ImportPaperModal({ ayushSystem = "", onImported, onClose
         data = {};
       }
       if (!res.ok || !data.success) {
+        setNotes(data.skipped || []);
         setError(data.error || "The paper could not be read. Please try again.");
         return;
       }
-      onImported(data.questions, data.summary);
+      onImported(data.questions, { ...data.summary, skipped: data.skipped || [], truncated: data.truncated || [] });
     } catch {
-      setError("The paper could not be read. Please try again.");
+      setError("The paper could not be read. Check your connection and try again.");
     } finally {
       setBusy(false);
     }
@@ -74,30 +62,32 @@ export default function ImportPaperModal({ ayushSystem = "", onImported, onClose
 
   return (
     <Modal
-      title="Import from PDF"
-      description="Upload your own question paper. Every question is copied as written; answers and explanations already in the paper are kept, and any that are missing are generated for you to check."
+      title="Import an existing paper"
+      description="Upload your own question paper — in as many files as it takes. Every question is copied as written; answers and explanations already in the files are kept, and any that are missing are generated for you to check."
       onClose={busy ? () => {} : onClose}
       size="md"
     >
       <div className="space-y-4">
-        <div>
-          <AyushSystemSelect value={system} onChange={setSystem} required disabled={busy} />
-        </div>
+        <AyushSystemSelect value={system} onChange={setSystem} required disabled={busy} />
 
-        <div className="rounded-xl border border-dashed border-primary/40 bg-primary/5 p-4 text-center space-y-2">
-          {file ? (
-            <div className="text-sm text-foreground">
-              📄 {file.name} <span className="text-xs text-muted-foreground">({formatBytes(file.size)})</span>
-            </div>
-          ) : (
-            <p className="text-xs text-muted-foreground">A PDF with multiple-choice questions — typed, scanned or exported from Word. Up to {formatBytes(FILES.MAX_DOCUMENT_BYTES)}.</p>
-          )}
-          <label className="inline-block text-xs font-semibold text-primary hover:underline cursor-pointer">
-            {file ? "Choose a different file" : "Choose PDF"}
-            <input type="file" accept=".pdf,application/pdf" onChange={pick} className="hidden" disabled={busy} />
-          </label>
-        </div>
+        <FileDrop
+          purpose="source"
+          maxFiles={AI.MAX_SOURCE_FILES}
+          reorderable
+          onChange={setFiles}
+          onBusyChange={setUploading}
+          disabled={busy}
+          label="Drop the question paper here — PDF, Word, slides, a spreadsheet or a photo"
+        />
+        <p className="text-[11px] text-muted-foreground">Files are read in the order listed. If the answer key is a separate file, include it — keys are matched by question number. Up to {AI.MAX_IMPORT_QUESTIONS} questions.</p>
 
+        {notes.length > 0 && (
+          <ul className="rounded-xl border border-amber-200 bg-amber-50 px-3.5 py-2.5 text-xs text-amber-800 space-y-0.5">
+            {notes.map((n, i) => (
+              <li key={i}>⚠️ {n}</li>
+            ))}
+          </ul>
+        )}
         {error && (
           <div className="flex items-start gap-2 rounded-xl border border-red-200 bg-red-50 px-3.5 py-2.5 text-xs text-red-700">
             <span>⚠️</span>
@@ -109,7 +99,7 @@ export default function ImportPaperModal({ ayushSystem = "", onImported, onClose
           <Button type="button" variant="outline" className="flex-1" onClick={onClose} disabled={busy}>
             Cancel
           </Button>
-          <Button type="button" className="flex-1" onClick={run} disabled={busy || !file}>
+          <Button type="button" className="flex-1" onClick={run} disabled={busy || uploading || !files.length}>
             {busy ? (
               <span className="inline-flex items-center gap-2">
                 <span className="w-3.5 h-3.5 border-2 border-white/40 border-t-white rounded-full animate-spin" />
@@ -120,7 +110,7 @@ export default function ImportPaperModal({ ayushSystem = "", onImported, onClose
             )}
           </Button>
         </div>
-        {busy && <p className="text-[11px] text-muted-foreground text-center">A long paper can take up to a minute.</p>}
+        {busy && <p className="text-[11px] text-muted-foreground text-center">A long paper can take a minute or two.</p>}
       </div>
     </Modal>
   );

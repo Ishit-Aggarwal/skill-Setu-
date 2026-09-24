@@ -1,7 +1,10 @@
 "use client";
 
 import { useEffect, useMemo, useState } from "react";
+import Link from "next/link";
 import { profileImage } from "../../lib/files";
+import { api } from "../../convex/_generated/api";
+import { useSessionQuery } from "../../lib/useSessionQuery";
 import DashboardLayout from "../DashboardLayout";
 import CandidateProfileModal from "../CandidateProfileModal";
 import { useAuth } from "../../lib/auth";
@@ -20,6 +23,7 @@ const DEFAULT_FILTERS = {
   domain: "All",
   minScore: 0,
   availability: "All",
+  minCertificates: 0,
   sortBy: "score",
 };
 
@@ -67,6 +71,12 @@ export default function TalentPool() {
     [ready, user, version]
   );
 
+  // Certificates each student shows on their profile, counted on the server
+  // (revoked and hidden ones never count).
+  const studentIds = useMemo(() => students.map((s) => s.id), [students]);
+  const { data: certCounts } = useSessionQuery(api.certificates.shownCounts, { studentIds }, { skip: !studentIds.length });
+  const certsOf = (s) => certCounts?.[s.id] || 0;
+
   const institutions = useMemo(() => ["All", ...[...new Set(students.map((s) => s.institution).filter(Boolean))].sort()], [students]);
   const departments = useMemo(() => ["All", ...[...new Set(students.map((s) => s.department).filter(Boolean))].sort()], [students]);
   const locations = useMemo(() => [...new Set(students.map((s) => s.location).filter(Boolean))], [students]);
@@ -88,7 +98,8 @@ export default function TalentPool() {
           (filters.department === "All" || s.department === filters.department) &&
           (!filters.ayushSystem || s.ayushSystem === filters.ayushSystem) &&
           (filters.availability === "All" || s.status === filters.availability) &&
-          (filters.minScore === 0 || (domainScore != null && domainScore >= filters.minScore))
+          (filters.minScore === 0 || (domainScore != null && domainScore >= filters.minScore)) &&
+          (!filters.minCertificates || (certCounts?.[s.id] || 0) >= filters.minCertificates)
         );
       })
       .sort((a, b) => {
@@ -98,7 +109,7 @@ export default function TalentPool() {
         }
         return (b.score || 0) - (a.score || 0);
       });
-  }, [students, filters]);
+  }, [students, filters, certCounts]);
 
   function exportShortlist() {
     if (!filtered.length) return setFlash("Nothing to export with these filters.");
@@ -112,6 +123,7 @@ export default function TalentPool() {
         { label: "Course", value: (s) => s.course },
         { label: "Year", value: (s) => s.year },
         { label: "Skill score", value: (s) => s.score ?? "" },
+        { label: "Verified certificates", value: (s) => certsOf(s) },
         { label: "Top skills", value: (s) => s.topSkills.join("; ") },
         { label: "Availability", value: (s) => s.status },
       ])
@@ -131,6 +143,9 @@ export default function TalentPool() {
           subtitle="Search every student who has opted in — not just those who applied to your postings."
           actions={
             <>
+              <Link href="/verify" className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl border border-border bg-card text-xs font-medium text-foreground hover:bg-secondary">
+                🛡 Verify a certificate
+              </Link>
               <Button size="sm" variant="outline" onClick={exportShortlist}>Export ({filtered.length})</Button>
               <Button size="sm" onClick={() => setShowSave(true)}>Save this search</Button>
             </>
@@ -177,7 +192,7 @@ export default function TalentPool() {
               <option value="name">Sort: Name</option>
             </Select>
           </div>
-          <div className="grid sm:grid-cols-2 lg:grid-cols-6 gap-3">
+          <div className="grid sm:grid-cols-2 lg:grid-cols-7 gap-3">
             <AyushSystemSelect value={filters.ayushSystem} onChange={(v) => set("ayushSystem", v)} placeholder="All" />
             <Field label="Institution">
               <Select value={filters.institution} onChange={(e) => set("institution", e.target.value)}>
@@ -211,6 +226,13 @@ export default function TalentPool() {
                 {["All", "Unplaced", "Applied", "In Process", "Placed"].map((a) => <option key={a}>{a}</option>)}
               </Select>
             </Field>
+            <Field label="Verified certificates">
+              <Select value={String(filters.minCertificates)} onChange={(e) => set("minCertificates", Number(e.target.value))}>
+                <option value="0">Any</option>
+                <option value="1">1 or more</option>
+                <option value="3">3 or more</option>
+              </Select>
+            </Field>
           </div>
           {activeFilterCount > 0 && (
             <button onClick={() => setFilters(DEFAULT_FILTERS)} className="text-xs text-muted-foreground hover:text-foreground">
@@ -242,6 +264,13 @@ export default function TalentPool() {
                     <Badge tone={s.status === "Placed" ? "green" : s.status === "Unplaced" ? "primary" : "amber"} dot>{s.status}</Badge>
                   </div>
                   <div className="text-xs text-muted-foreground truncate mb-1">{s.institution}</div>
+                  {certsOf(s) > 0 && (
+                    <div className="mb-1.5">
+                      <Badge tone="green">
+                        ✔ {certsOf(s)} verified certificate{certsOf(s) === 1 ? "" : "s"}
+                      </Badge>
+                    </div>
+                  )}
                   {s.department && <div className="text-[10px] text-muted-foreground truncate mb-3">{s.department}</div>}
                   <div className="flex flex-wrap gap-1.5 mb-3.5">
                     {s.topSkills.map((sk) => <Badge key={sk} tone="primary">{sk}</Badge>)}

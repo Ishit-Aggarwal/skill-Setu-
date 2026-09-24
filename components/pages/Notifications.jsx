@@ -12,7 +12,9 @@ import {
   markNotificationsRead,
 } from "../../lib/store";
 import { subscribeToMutations } from "../../lib/sync";
-import { daysUntil, formatDate, relativeTime } from "../../lib/match";
+import { daysUntil, formatDate } from "../../lib/match";
+import { NOTIFICATION_FILTERS, notificationGroup } from "../../lib/notificationKinds";
+import NotificationItem from "../NotificationItem";
 import { Badge, Button, Card, EmptyState, FilterPills, IconTile, PageHeader, Section, StatGrid } from "../ui/Kit";
 
 /**
@@ -29,13 +31,6 @@ import { Badge, Button, Card, EmptyState, FilterPills, IconTile, PageHeader, Sec
  * would have to be cleaned up to manage that.
  */
 
-const KINDS = ["All", "Unread", "Applications", "Mentorship", "Deadlines", "Campus"];
-
-function classify(message = "") {
-  if (/applicat|shortlist|interview|hired|offer|not taken forward/i.test(message)) return "Applications";
-  if (/mentor|session|office hours|programme|workshop|webinar|cancelled/i.test(message)) return "Mentorship";
-  return "Campus";
-}
 
 export default function Notifications() {
   const { user } = useAuth();
@@ -60,7 +55,7 @@ export default function Notifications() {
   /* Live deadline reminders for saved-but-not-applied roles. Derived, so they
      appear and disappear on their own. */
   const deadlineAlerts = useMemo(() => {
-    if (!ready || !user) return [];
+    if (!ready || !user || user.role !== "student") return [];
     const applied = new Set(listApplicationsForStudent(user.id).map((a) => a.internshipId));
     const savedIds = new Set(listSavedInternships(user.id).map((s) => s.internshipId));
     return listInternships()
@@ -76,16 +71,11 @@ export default function Notifications() {
     if (filter === "Unread") return unread;
     if (filter === "All") return notifications;
     if (filter === "Deadlines") return [];
-    if (filter === "Campus") return notifications.filter((n) => classify(n.message) === "Campus");
-    if (filter === "Mentorship") return notifications.filter((n) => classify(n.message) === "Mentorship");
-    return notifications.filter((n) => classify(n.message) === "Applications");
+    return notifications.filter((n) => notificationGroup(n) === filter);
   }, [notifications, unread, filter]);
 
-  function markRead(n) {
-    if (n.read) return;
-    markNotificationsRead(n.id);
-    setVersion((v) => v + 1);
-  }
+  // Only the filters that can hold something for this role.
+  const filters = user?.role === "student" ? NOTIFICATION_FILTERS : NOTIFICATION_FILTERS.filter((f) => !["Applications", "Deadlines"].includes(f));
 
   function markAllRead() {
     markNotificationsRead(unread.map((n) => n.id));
@@ -98,7 +88,7 @@ export default function Notifications() {
         <PageHeader
           eyebrow="My activity"
           title="Notifications"
-          subtitle="Application updates, mentor recommendations, campus notices and deadline reminders — all kept, not flashed."
+          subtitle={user?.role === "student" ? "Tests, certificates, communities, application updates, mentor recommendations and deadline reminders — all kept, not flashed." : "Join requests, reports, test updates and notices — all kept, not flashed."}
           actions={
             unread.length > 0 && (
               <Button size="sm" variant="outline" onClick={markAllRead}>
@@ -147,35 +137,18 @@ export default function Notifications() {
           </Section>
         )}
 
-        <FilterPills options={KINDS} value={filter} onChange={setFilter} />
+        <FilterPills options={filters} value={filter} onChange={setFilter} />
 
         {shown.length === 0 ? (
           <EmptyState icon="📭" title={filter === "Unread" ? "Nothing unread" : "Nothing here yet"}>
             {filter === "Deadlines"
               ? "Deadline reminders appear above whenever a saved role is about to close."
-              : "Updates on your applications, mentor recommendations and campus notices land here."}
+              : "Test reminders, certificates, community posts and other updates land here."}
           </EmptyState>
         ) : (
           <div className="space-y-2">
             {shown.map((n) => (
-              <Card
-                key={n.id}
-                padded={false}
-                as="button"
-                onClick={() => markRead(n)}
-                className={`w-full text-left flex items-start gap-3 px-4 py-3 ${n.read ? "" : "border-primary/40 bg-primary/[0.04]"}`}
-              >
-                <span className={`mt-1.5 w-2 h-2 rounded-full flex-shrink-0 ${n.read ? "bg-transparent" : "bg-primary"}`} />
-                <div className="min-w-0 flex-1">
-                  <p className={`text-sm leading-relaxed ${n.read ? "text-muted-foreground" : "text-foreground font-medium"}`}>
-                    {n.message}
-                  </p>
-                  <div className="text-[11px] text-muted-foreground mt-1">
-                    {n.from} · {relativeTime(n.sentAt)}
-                  </div>
-                </div>
-                <Badge tone="neutral" className="flex-shrink-0">{classify(n.message)}</Badge>
-              </Card>
+              <NotificationItem key={n.id} n={n} onChanged={() => setVersion((v) => v + 1)} />
             ))}
           </div>
         )}

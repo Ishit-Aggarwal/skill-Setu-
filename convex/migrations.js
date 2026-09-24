@@ -1,6 +1,7 @@
 import { internalMutation, internalQuery } from "./_generated/server";
 import { isAyushSystem } from "../lib/ayush";
 import { resolveInstitutionIdForName } from "../lib/institutionKey";
+import { notifyCertificate, uniqueVerifyCode } from "./_lib/certificates";
 
 /**
  * One-time data migrations, run by hand from the CLI:
@@ -107,5 +108,52 @@ export const keyInstitutionRowsByAccount = internalMutation({
       counts[table] = { scanned: rows.length, matched, needsOwner };
     }
     return counts;
+  },
+});
+
+/**
+ * Verification codes must be unique (certificate numbers need not be).
+ * Codes were once drawn without checking for a clash; these two find and
+ * repair any that collided.
+ *
+ *   npx convex run migrations:findDuplicateVerifyCodes     (read-only report)
+ *   npx convex run migrations:fixDuplicateVerifyCodes      (then --prod if the count > 0)
+ */
+async function duplicateGroups(ctx) {
+  const rows = await ctx.db.query("credentials").collect();
+  const byCode = new Map();
+  for (const r of rows) {
+    if (!r.verifyCode) continue;
+    if (!byCode.has(r.verifyCode)) byCode.set(r.verifyCode, []);
+    byCode.get(r.verifyCode).push(r);
+  }
+  return [...byCode.entries()].filter(([, list]) => list.length > 1).map(([code, list]) => ({ code, rows: list.sort((a, b) => String(a.issuedAt).localeCompare(String(b.issuedAt))) }));
+}
+
+export const findDuplicateVerifyCodes = internalQuery({
+  handler: async (ctx) => {
+    const groups = await duplicateGroups(ctx);
+    return {
+      duplicateCodes: groups.length,
+      certificatesAffected: groups.reduce((n, g) => n + g.rows.length - 1, 0),
+      pairs: groups.map((g) => ({ code: g.code, certificates: g.rows.map((r) => ({ id: r.id, studentId: r.studentId, title: r.title, issuedAt: r.issuedAt })) })),
+    };
+  },
+});
+
+export const fixDuplicateVerifyCodes = internalMutation({
+  handler: async (ctx) => {
+    const groups = await duplicateGroups(ctx);
+    let reassigned = 0;
+    for (const g of groups) {
+      // The oldest certificate keeps the code it was printed with first.
+      for (const row of g.rows.slice(1)) {
+        const code = await uniqueVerifyCode(ctx);
+        await ctx.db.patch(row._id, { verifyCode: code, snapshot: row.snapshot ? { ...row.snapshot, verifyCode: code } : row.snapshot, updatedAt: new Date().toISOString() });
+        await notifyCertificate(ctx, { ...row, verifyCode: code }, "certificate_code_changed");
+        reassigned += 1;
+      }
+    }
+    return { reassigned };
   },
 });

@@ -94,6 +94,15 @@ const IconSend = () => (
 const IconGauge = () => (
   <Icon><path d="M12 20a8 8 0 1 1 8-8" /><path d="m12 12 5-3" /></Icon>
 );
+const IconShield = () => (
+  <Icon><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z" /><polyline points="9 12 11 14 15 10" /></Icon>
+);
+const IconFileText = () => (
+  <Icon><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z" /><polyline points="14 2 14 8 20 8" /><line x1="8" y1="13" x2="16" y2="13" /><line x1="8" y1="17" x2="13" y2="17" /></Icon>
+);
+const IconCommunity = () => (
+  <Icon><circle cx="12" cy="7" r="3" /><circle cx="5" cy="10" r="2" /><circle cx="19" cy="10" r="2" /><path d="M7 21v-2a5 5 0 0 1 10 0v2" /><path d="M2 21v-1a3 3 0 0 1 4-2.8" /><path d="M22 21v-1a3 3 0 0 0-4-2.8" /></Icon>
+);
 
 /**
  * Every nav item points at its own route. An earlier version pointed several
@@ -112,6 +121,7 @@ const NAV = {
     { label: "Skill Tests", short: "Tests", page: "skill-assessment", icon: <IconTarget /> },
     { label: "Internships", short: "Jobs", page: "internship-listings", icon: <IconBriefcase /> },
     { label: "Mentorship", short: "Mentor", page: "student-mentorship", icon: <IconCalendar /> },
+    { label: "Communities", short: "Groups", page: "communities", icon: <IconCommunity /> },
     { label: "Directory", short: "Browse", page: "directory", icon: <IconCompass /> },
 
     /* Applied and Saved were sub-tabs nested under Internships and Mentorship.
@@ -128,6 +138,7 @@ const NAV = {
 
     { section: "My profile", label: "My Portfolio", short: "Profile", page: "student-portfolio", icon: <IconUser /> },
     { label: "Placement Readiness", short: "Ready", page: "placement-readiness", icon: <IconGauge /> },
+    { label: "Resume Coach", short: "Coach", page: "resume-coach", icon: <IconFileText /> },
     { label: "Analytics", short: "Insights", page: "analytics", icon: <IconBarChart /> },
     { label: "Settings", short: "Settings", page: "settings", icon: <IconSettings /> },
   ],
@@ -135,6 +146,7 @@ const NAV = {
     { label: "Dashboard", short: "Home", page: "industry-dashboard", icon: <IconGrid /> },
     { label: "Postings", short: "Posts", page: "internship-listings", icon: <IconBriefcase /> },
     { label: "Talent Pool", short: "Talent", page: "talent-pool", icon: <IconUsers /> },
+    { label: "Verify a certificate", short: "Verify", page: "verify-certificate", icon: <IconShield /> },
     { label: "Offers & Joining", short: "Offers", page: "industry-offers", icon: <IconCheckCircle /> },
     { label: "Analytics", short: "Insights", page: "analytics", icon: <IconBarChart /> },
     { label: "Skill Tests", short: "Tests", page: "skill-assessment", icon: <IconTarget /> },
@@ -146,6 +158,7 @@ const NAV = {
   academician: [
     { label: "Dashboard", short: "Home", page: "academician-dashboard", icon: <IconGrid /> },
     { label: "My Students", short: "Students", page: "academician-students", icon: <IconUsers /> },
+    { label: "Communities", short: "Groups", page: "communities", icon: <IconCommunity /> },
     { label: "Mentorship", short: "Mentor", page: "academician-mentorship", icon: <IconCalendar /> },
     { label: "Research Collabs", short: "Research", page: "academician-collabs", icon: <IconFlask /> },
     { label: "Programs (FDPs)", short: "FDPs", page: "academician-programs", icon: <IconBookOpen /> },
@@ -154,12 +167,14 @@ const NAV = {
     { label: "Analytics", short: "Insights", page: "academician-analytics", icon: <IconBarChart /> },
     { label: "Skill Tests", short: "Tests", page: "skill-assessment", icon: <IconTarget /> },
     { label: "Certificate Settings", short: "Certs", page: "certificate-settings", icon: <IconAward /> },
+    { label: "Verify a certificate", short: "Verify", page: "verify-certificate", icon: <IconShield /> },
     { label: "Faculty Profile", short: "Profile", page: "academician-profile", icon: <IconUser /> },
     { label: "Settings", short: "Settings", page: "settings", icon: <IconSettings /> },
   ],
   institution: [
     { label: "Dashboard", short: "Home", page: "institution-dashboard", icon: <IconGrid /> },
     { label: "Student Roster", short: "Roster", page: "institution-students", icon: <IconUsers /> },
+    { label: "Communities", short: "Groups", page: "communities", icon: <IconCommunity /> },
     { label: "Placement Analytics", short: "Insights", page: "institution-analytics", icon: <IconBarChart /> },
     { label: "Cohort Skill Gaps", short: "Gaps", page: "institution-skill-gaps", icon: <IconGrid3 /> },
     { label: "Curriculum Alignment", short: "Curriculum", page: "institution-curriculum", icon: <IconCompass /> },
@@ -168,6 +183,7 @@ const NAV = {
     { label: "Notice Board", short: "Notices", page: "institution-announcements", icon: <IconMegaphone /> },
     { label: "Skill Tests", short: "Tests", page: "skill-assessment", icon: <IconTarget /> },
     { label: "Certificate Settings", short: "Certs", page: "certificate-settings", icon: <IconAward /> },
+    { label: "Verify a certificate", short: "Verify", page: "verify-certificate", icon: <IconShield /> },
     { label: "Team & Activity", short: "Team", page: "institution-team", icon: <IconUser /> },
     { label: "Institution Profile", short: "Profile", page: "institution-profile", icon: <IconBuilding /> },
     { label: "Settings", short: "Settings", page: "settings", icon: <IconSettings /> },
@@ -390,7 +406,9 @@ export default function DashboardLayout({ children, activePage, title }) {
                 </svg>
               )}
             </button>
-            {role === "student" && <NotificationBell user={user} onOpenInbox={() => navigate("notifications")} />}
+            {/* Faculty and institutions receive notifications too (join
+                requests, reports), so every portal has the bell. */}
+            <NotificationBell user={user} onOpenInbox={() => navigate("notifications")} />
           </div>
         </header>
 

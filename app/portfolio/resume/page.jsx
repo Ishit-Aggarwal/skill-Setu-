@@ -3,7 +3,8 @@
 import { useEffect, useState } from "react";
 import Link from "next/link";
 import { useAuth } from "../../../lib/auth";
-import { getPortfolio, getAssessment, listApplicationsForStudent } from "../../../lib/store";
+import { getPortfolio, getAssessment, listApplicationsForStudent, listCredentialsForStudent } from "../../../lib/store";
+import { formatDate } from "../../../lib/match";
 import { scoresFor } from "../../../lib/taxonomy";
 import RequireAuth from "../../../components/RequireAuth";
 
@@ -12,6 +13,7 @@ function ResumeContent() {
   const [portfolio, setPortfolio] = useState(null);
   const [assessment, setAssessment] = useState(null);
   const [applications, setApplications] = useState([]);
+  const [issued, setIssued] = useState([]);
   const [ready, setReady] = useState(false);
 
   useEffect(() => {
@@ -19,6 +21,12 @@ function ResumeContent() {
     setPortfolio(getPortfolio(user.id) || {});
     setAssessment(getAssessment(user.id));
     setApplications(listApplicationsForStudent(user.id) || []);
+    // Only the certificates the student shows on their profile, featured first.
+    setIssued(
+      listCredentialsForStudent(user.id)
+        .filter((c) => c.showOnProfile !== false)
+        .sort((a, b) => Number(Boolean(b.featured)) - Number(Boolean(a.featured)))
+    );
     setReady(true);
   }, [user]);
 
@@ -71,6 +79,9 @@ function ResumeContent() {
         </div>
 
         <div className="flex items-center gap-2">
+          <Link href="/resume-coach" className="text-xs font-semibold px-3 py-1.5 rounded-xl border border-border bg-card hover:bg-secondary text-foreground">
+            Check it with the Resume Coach →
+          </Link>
           <button
             onClick={handlePrint}
             className="flex items-center gap-2 px-4 py-2 rounded-xl bg-primary hover:bg-accent text-white text-xs font-semibold shadow-sm transition-all"
@@ -240,6 +251,30 @@ function ResumeContent() {
             )}
           </div>
         </section>
+
+        {/* Certificates issued on Skill Setu, each checkable at its verify address */}
+        {issued.length > 0 && (
+          <section className="mb-5 break-inside-avoid">
+            <h2 className="text-xs font-bold uppercase tracking-wider text-slate-800 border-b border-slate-200 pb-1 mb-2.5">
+              Verified Certificates
+            </h2>
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 text-xs">
+              {issued.map((c) => (
+                <div key={c.id} className="p-2 border border-slate-200 rounded-lg">
+                  <div className="font-bold text-slate-900">✔ {c.title}</div>
+                  <div className="text-slate-600 text-[11px] mt-0.5">
+                    {c.issuer} · {formatDate(c.issuedAt)} {c.score ? `(Score: ${c.score})` : ""}
+                  </div>
+                  {c.verifyCode && (
+                    <a href={`/verify/${encodeURIComponent(c.verifyCode)}`} className="text-[10px] text-emerald-700 font-mono break-all">
+                      Verify: {typeof window !== "undefined" ? window.location.host : ""}/verify/{c.verifyCode}
+                    </a>
+                  )}
+                </div>
+              ))}
+            </div>
+          </section>
+        )}
 
         {/* Certifications */}
         {certifications.length > 0 && (

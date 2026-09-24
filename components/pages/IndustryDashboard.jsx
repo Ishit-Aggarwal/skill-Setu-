@@ -3,6 +3,7 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 import DashboardLayout from "../DashboardLayout";
 import CandidateProfileModal from "../CandidateProfileModal";
+import VerifyShortcutCard from "../certificates/VerifyShortcutCard";
 import IssueCredentialModal from "../IssueCredentialModal";
 import { useAuth } from "../../lib/auth";
 import { useNav } from "../../lib/nav";
@@ -232,6 +233,8 @@ export default function IndustryDashboard() {
         <Flash message={flash} />
 
         <StatGrid stats={kpiData} columns={5} />
+
+        <VerifyShortcutCard />
 
         <Section
           title="Active postings"

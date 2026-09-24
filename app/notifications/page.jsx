@@ -5,7 +5,7 @@ import Notifications from "../../components/pages/Notifications";
 
 export default function Page() {
   return (
-    <RequireAuth roles={["student"]}>
+    <RequireAuth roles={["student", "academician", "institution", "industry"]}>
       <Notifications />
     </RequireAuth>
   );

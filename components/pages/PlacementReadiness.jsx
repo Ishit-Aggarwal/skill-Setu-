@@ -1,5 +1,6 @@
 "use client";
 
+import Link from "next/link";
 import { useEffect, useMemo, useState } from "react";
 import DashboardLayout from "../DashboardLayout";
 import { useAuth } from "../../lib/auth";
@@ -102,6 +103,7 @@ export default function PlacementReadiness() {
           eyebrow="My profile"
           title="Placement Readiness"
           subtitle="What a recruiter sees before they read anything else — and exactly what is missing."
+          actions={<Link href="/resume-coach" className="text-xs font-medium px-3 py-2 rounded-xl bg-primary/10 text-primary hover:bg-primary hover:text-white">📄 Resume Coach: your next test and a study plan →</Link>}
         />
 
         <Card>

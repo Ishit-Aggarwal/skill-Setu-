@@ -19,6 +19,8 @@ import {
 } from "../../../lib/store";
 import { PLACEMENT_TONE, useInstitutionName, useRoster } from "./useInstitution";
 import { institutionNeedsOwner } from "../../../lib/institutionSync";
+import CommunitiesDashboardCard from "../../communities/CommunitiesDashboardCard";
+import VerifyShortcutCard from "../../certificates/VerifyShortcutCard";
 
 /**
  * The institution home page. Previously this was four stat tiles and a single
@@ -110,6 +112,11 @@ export default function InstitutionDashboard() {
         )}
 
         <StatGrid stats={stats} columns={5} />
+
+        <div className="grid md:grid-cols-2 gap-3">
+          <CommunitiesDashboardCard role="institution" />
+          <VerifyShortcutCard />
+        </div>
 
         <div className="grid lg:grid-cols-3 gap-5">
           <Card className="lg:col-span-2">

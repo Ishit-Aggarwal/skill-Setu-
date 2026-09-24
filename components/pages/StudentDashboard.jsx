@@ -43,11 +43,13 @@ import { useNarrowerThan } from "../../lib/useLiveStore";
 import MentoringPanel from "../MentoringPanel";
 import { computeMatch, daysUntil, formatDate, formatDateTime, relativeTime } from "../../lib/match";
 import { formatStipendShort } from "../../lib/money";
-import { getRegistrationStatus, isLinkRevealWindow, formatScheduled } from "../../lib/testStatus";
+import { getRegistrationStatus, isLinkRevealWindow, formatScheduled, STATUS_LABEL, STATUS_TONE } from "../../lib/testStatus";
+import { upcomingSortMs } from "../../lib/testWindow";
 import { profileStrength } from "../../lib/profile";
 import { scoresFor, taxonomyFor } from "../../lib/taxonomy";
-import { Badge, Flash, Modal, useFlash, PageHeader, Card, Section, StatGrid, ProgressRing, Button, ProgressBar, EmptyState } from "../ui/Kit";
+import { Badge, Flash, Modal, useFlash, PageHeader, Card, Section, StatGrid, ProgressRing, Button, ProgressBar, EmptyState, IconTile } from "../ui/Kit";
 import { subscribeToMutations } from "../../lib/sync";
+import CommunitiesDashboardCard from "../communities/CommunitiesDashboardCard";
 
 const appStatusTone = {
   Applied: "blue",
@@ -65,6 +67,7 @@ const priorityTone = {
 };
 
 const testStatusTone = {
+  ...STATUS_TONE,
   upcoming: "blue",
   available: "primary",
   completed: "green",
@@ -72,11 +75,15 @@ const testStatusTone = {
 };
 
 const testStatusLabel = {
+  ...STATUS_LABEL,
   upcoming: "Scheduled",
   available: "Ready to take",
   completed: "Completed",
   missed: "Missed",
 };
+
+/** Statuses that are still ahead of the student: listed first, soonest first. */
+const AHEAD = new Set(["upcoming", "available", "in-progress"]);
 
 /** Priority ordering for the action centre — lower sorts first. */
 const URGENCY = { critical: 0, high: 1, normal: 2 };
@@ -248,13 +255,18 @@ export default function StudentDashboard() {
         return { reg, test, attempt, status: getRegistrationStatus(test, reg, attempt) };
       })
       .filter(Boolean)
-      .sort((a, b) => new Date(b.reg.registeredAt) - new Date(a.reg.registeredAt));
+      // What is still ahead comes first, soonest first (a window by its last
+      // start); everything already done follows, newest registration first.
+      .sort((a, b) => {
+        const aheadA = AHEAD.has(a.status);
+        const aheadB = AHEAD.has(b.status);
+        if (aheadA !== aheadB) return aheadA ? -1 : 1;
+        if (aheadA) return upcomingSortMs(a.test) - upcomingSortMs(b.test);
+        return new Date(b.reg.registeredAt) - new Date(a.reg.registeredAt);
+      });
   }, [registrations, tests, attempts]);
 
-  const upcomingTests = useMemo(
-    () => myTests.filter((t) => t.status === "upcoming" || t.status === "available").slice(0, 4),
-    [myTests]
-  );
+  const upcomingTests = useMemo(() => myTests.filter((t) => AHEAD.has(t.status)).slice(0, 4), [myTests]);
 
   const interviews = useMemo(
     () =>
@@ -713,6 +725,18 @@ export default function StudentDashboard() {
               </Card>
             </Section>
           )}
+
+          <div className="grid md:grid-cols-2 gap-4">
+            <CommunitiesDashboardCard role="student" />
+            <Card as={Link} href="/resume-coach" hover className="flex items-center gap-3 !p-4">
+              <IconTile icon="📄" tone="amber" size={40} />
+              <div className="min-w-0 flex-1">
+                <div className="text-sm font-semibold text-foreground">Resume Coach</div>
+                <div className="text-[11px] text-muted-foreground">Upload your resume to get your next test and a study plan.</div>
+              </div>
+              <span className="text-primary text-sm" aria-hidden="true">→</span>
+            </Card>
+          </div>
 
           {/* ---------- Upcoming tests ---------- */}
           <Section

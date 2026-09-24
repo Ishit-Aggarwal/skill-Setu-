@@ -299,6 +299,12 @@ export const signInAsDemo = action({
       userId: record.id,
       role: record.role,
     });
+    // The tour's communities, tests, Resume Coach analysis and certificate.
+    try {
+      await ctx.runMutation(internal.demo.seedFeatures, {});
+    } catch (error) {
+      console.warn("[demo] Could not seed the shared demo rows:", error?.message || error);
+    }
     return { ok: true, user: publicUser(record), sessionToken };
   },
 });

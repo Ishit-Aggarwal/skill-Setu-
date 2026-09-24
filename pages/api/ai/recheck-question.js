@@ -1,4 +1,4 @@
-import { requireHost } from "../../../lib/apiHost";
+import { chargeAiRun, refundAiRun, requireHost } from "../../../lib/apiHost";
 import { AI_NOT_CONFIGURED, AYUSH_CONTEXT, GEMINI_MODEL, GeminiError, aiConfigured, generateJson } from "../../../lib/gemini";
 import { ayushSystemLabel, isAyushSystem } from "../../../lib/ayush";
 import { newId, normaliseQuestion, validateQuestion } from "../../../lib/questions";
@@ -73,6 +73,7 @@ export default async function handler(req, res) {
     return res.status(400).json({ success: false, error: `Finish the question before rechecking it: ${Object.values(errors)[0]}` });
   }
   const ayushSystem = isAyushSystem(req.body?.ayushSystem) ? req.body.ayushSystem : question.ayushSystem;
+  if (!(await chargeAiRun(host, res, "host_questions"))) return undefined;
 
   try {
     const raw = await generateJson({ prompt: buildPrompt(question, ayushSystem), schema: RESPONSE_SCHEMA, temperature: 0.2 });
@@ -106,6 +107,7 @@ export default async function handler(req, res) {
     return res.status(200).json({ success: true, verdict, reason: String(raw?.reason || ""), proposed: verdict === "revise" ? proposed : null, model: GEMINI_MODEL });
   } catch (error) {
     const status = error instanceof GeminiError ? error.status : 502;
+    if (error instanceof GeminiError && ["AI_BUSY", "AI_QUOTA", "AI_ERROR"].includes(error.code)) await refundAiRun(host, "host_questions");
     return res.status(status).json({ success: false, code: error.code, error: error.message || "Could not recheck this question. Please try again." });
   }
 }

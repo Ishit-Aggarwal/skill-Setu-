@@ -12,6 +12,7 @@ import {
   listCredentialsForStudent,
 } from "../../lib/store";
 import { subscribeToMutations } from "../../lib/sync";
+import PortfolioCertificates from "../certificates/PortfolioCertificates";
 import { profileStrength } from "../../lib/profile";
 import { formatDate } from "../../lib/match";
 import { isPlausibleDate, todayIso } from "../../lib/dates";
@@ -1112,41 +1113,10 @@ export default function StudentPortfolio() {
             {/* Issued on the platform — the student can't edit these, which is
                 exactly what makes them worth more than a self-declared line. */}
             <Section
-              title="Issued to you"
-              description="Certificates awarded by companies, institutions and faculty on Skill Setu. Verified — you can print or share them, but not edit them."
+              title="Verified certificates"
+              description="Awarded by companies, institutions and faculty on Skill Setu. You can download, share, feature or hide them, but never edit them."
             >
-              {credentials.length === 0 ? (
-                <Card>
-                  <p className="text-xs text-muted-foreground">
-                    Nothing yet. Complete a hosted skill test or an internship and the issuer can award you a verified certificate here.
-                  </p>
-                </Card>
-              ) : (
-                <div className="space-y-2.5">
-                  {credentials.map((c) => (
-                    <Card key={c.id} className="flex flex-wrap items-center gap-4" hover>
-                      <div className="w-12 h-12 rounded-xl bg-primary/10 text-primary flex items-center justify-center text-2xl flex-shrink-0">🏅</div>
-                      <div className="flex-1 min-w-[10rem]">
-                        <div className="flex flex-wrap items-center gap-2">
-                          <span className="text-sm font-semibold text-foreground">{c.title}</span>
-                          <Badge tone="green">Verified</Badge>
-                          <Badge tone="muted">{c.kind}</Badge>
-                        </div>
-                        <div className="text-xs text-muted-foreground mt-0.5">
-                          {c.issuer} · Issued {formatDate(c.issuedAt)} · {c.certificateNo}
-                        </div>
-                      </div>
-                      {c.score && <Badge tone="primary">{c.score}</Badge>}
-                      <Link
-                        href={`/certificate/${c.id}`}
-                        className="px-3 py-1.5 rounded-lg bg-primary text-white text-xs font-medium hover:bg-accent transition-colors flex-shrink-0"
-                      >
-                        View / Print PDF
-                      </Link>
-                    </Card>
-                  ))}
-                </div>
-              )}
+              <PortfolioCertificates credentials={credentials} />
             </Section>
 
             <Section
