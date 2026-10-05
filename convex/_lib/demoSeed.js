@@ -188,7 +188,7 @@ export async function ensureDemoFeatures(ctx) {
     DEMO_IDS.pastTest,
     {
       title: "ASU&H Clinical Fundamentals Screening",
-      description: "Last fortnight's screening for the clinical postings.",
+      description: "An earlier screening for the clinical postings.",
       certification: "ASU&H Clinical Fundamentals Screening",
       domain: "ASU&H Clinical Fundamentals",
       scheduleType: "fixed",

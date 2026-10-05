@@ -1,4 +1,5 @@
 import { mutation } from "./_generated/server";
+import { datedInternship, datedProgramme, isoInDays } from "../lib/demoSchedule";
 
 /**
  * Server-side seeding for a fresh Convex deployment. Mirrors the demo content
@@ -8,6 +9,10 @@ import { mutation } from "./_generated/server";
  * export trade, and AYUSH digital health.
  *
  * Run once with: npx convex run seed:seedDatabase
+ *
+ * Dates are offsets from the day it runs (lib/demoSchedule.js), so a fresh
+ * deployment never starts with closed postings or ended tests; the demo
+ * roll-over cron (convex/_lib/demoRollover.js) keeps the tests current after that.
  */
 
 const DEMO_INSTITUTION = "All India Institute of Ayurveda (AIIA), New Delhi";
@@ -17,36 +22,36 @@ const DEMO_INSTITUTION = "All India Institute of Ayurveda (AIIA), New Delhi";
    wellness, export and telemedicine. Stipends are stored as a number plus a
    mode so the UI can render "/month" or "total for the duration" itself. */
 const SEED_INTERNSHIPS = [
-  { title: "Panchakarma Therapist Intern", company: "Kerala Ayurveda Ltd.", location: "Kochi", type: "Onsite", domain: "Panchakarma & Therapy Centres", ayushSystem: "ayurveda", duration: "6 months", stipendAmount: 18000, stipendMode: "monthly", tags: ["Panchakarma", "Abhyanga & Shirodhara", "Patient Counselling"], deadline: "2026-10-18", description: "Assist senior therapists through full Panchakarma cycles — Purvakarma, Pradhana karma and Paschat karma — at a NABH-accredited Ayurveda hospital.", color: "#3C7C6B", hot: true },
-  { title: "Ayurvedic Physician / Clinical Consultant Intern", company: "Arya Vaidya Sala, Kottakkal", location: "Kottakkal", type: "Onsite", domain: "Ayurveda", ayushSystem: "ayurveda", duration: "6 months", stipendAmount: 22000, stipendMode: "monthly", tags: ["Nadi Pariksha", "Prakriti Assessment", "Clinical Documentation"], deadline: "2026-10-25", description: "Rotate through Kayachikitsa and Panchakarma OPDs under senior vaidyas, maintaining case records to NAMASTE terminology standards.", color: "#3C8A6B", hot: true },
-  { title: "GMP Compliance & Quality Control Intern (ASU&H Drugs)", company: "Dabur India Ltd.", location: "Sahibabad, Ghaziabad", type: "Onsite", domain: "ASU&H Drug Manufacturing & GMP", ayushSystem: "ayurveda", duration: "6 months", stipendAmount: 150000, stipendMode: "total", tags: ["GMP Compliance", "HPTLC", "Heavy Metal Testing"], deadline: "2026-11-08", description: "Support Schedule T GMP audits, batch-record review and in-process QC on classical and proprietary Ayurvedic production lines.", color: "#3C5A8A", hot: false },
-  { title: "Herbal Formulation & Nutraceutical R&D Intern", company: "Himalaya Wellness Company", location: "Bengaluru", type: "Onsite", domain: "Herbal Formulation & Nutraceutical R&D", ayushSystem: "ayurveda", duration: "5 months", stipendAmount: 24000, stipendMode: "monthly", tags: ["Formulation", "Pharmacognosy", "Research Methodology"], deadline: "2026-11-05", description: "Work on pre-formulation studies, standardised-extract characterisation and stability protocols for new herbal SKUs.", color: "#4A6B3C", hot: false },
-  { title: "GACP Field Officer Intern (Medicinal Plant Cultivation)", company: "Patanjali Ayurved Ltd.", location: "Haridwar", type: "Onsite", domain: "Medicinal Plant Cultivation (GACP)", ayushSystem: "ayurveda", duration: "6 months", stipendAmount: 16000, stipendMode: "monthly", tags: ["GACP", "Medicinal Plant Cultivation", "Herbal Supply Chain"], deadline: "2026-11-15", description: "Audit contract farms for GACP compliance, log harvest and post-harvest handling, and trace raw-drug batches back to source.", color: "#3C8A5A", hot: false },
-  { title: "Certified Yoga Instructor / Yoga Therapist Intern", company: "Central Council for Research in Yoga & Naturopathy (CCRYN)", location: "New Delhi", type: "Hybrid", domain: "Yoga & Naturopathy", ayushSystem: "yoga_naturopathy", duration: "4 months", stipendAmount: 15000, stipendMode: "monthly", tags: ["Yoga Therapy", "Yoga Certification Board", "Patient Counselling"], deadline: "2026-11-19", description: "Deliver supervised yoga-therapy protocols for lifestyle-disorder cohorts and record outcome measures for an ongoing CCRYN study.", color: "#6B7C3C", hot: false },
-  { title: "Regulatory Affairs Associate Intern – AYUSH Drug Licensing", company: "Charak Pharma", location: "Mumbai", type: "Hybrid", domain: "Regulatory Affairs & AYUSH Drug Licensing", ayushSystem: "ayurveda", duration: "3 months", stipendAmount: 20000, stipendMode: "monthly", tags: ["Regulatory Affairs", "Export Documentation", "AYUSH Premium Mark"], deadline: "2026-11-12", description: "Prepare state licensing dossiers under the Drugs & Cosmetics Act for ASU products and support AYUSH Premium Mark applications.", color: "#3C4A8A", hot: false },
-  { title: "Unani Hakim (Clinical Intern)", company: "Hamdard Laboratories (India)", location: "New Delhi", type: "Onsite", domain: "Unani", ayushSystem: "unani", duration: "3 months", stipendAmount: 45000, stipendMode: "total", tags: ["Regimenal Therapy", "Hijama", "Clinical Documentation"], deadline: "2026-11-26", description: "Clinical posting in Moalajat and Ilaj-bit-Tadbeer OPDs at a Unani teaching hospital, with case-record maintenance.", color: "#3C6B8A", hot: false },
-  { title: "AYUSH Export/Trade Documentation Associate Intern", company: "Sri Sri Tattva", location: "Remote", type: "Remote", domain: "AYUSH Export & Trade", ayushSystem: "ayurveda", duration: "3 months", stipendAmount: 18000, stipendMode: "monthly", tags: ["Export Documentation", "Regulatory Affairs", "Communication"], deadline: "2026-11-28", description: "Prepare export documentation, certificates of analysis and country-specific registration files for herbal products shipped to 30+ markets.", color: "#8A5A3C", hot: false },
-  { title: "Raw Drug Authentication & Pharmacognosy Intern", company: "Baidyanath Group", location: "Kolkata", type: "Onsite", domain: "Pharmacognosy & Raw Drug Authentication", ayushSystem: "ayurveda", duration: "4 months", stipendAmount: 17000, stipendMode: "monthly", tags: ["Raw Drug Authentication", "Pharmacognosy", "HPTLC"], deadline: "2026-12-04", description: "Authenticate incoming crude drugs against Ayurvedic Pharmacopoeia of India monographs using macroscopy, microscopy and HPTLC fingerprints.", color: "#7E9638", hot: false },
-  { title: "AYUSH Wellness & Spa Therapist Intern", company: "Kerala Ayurveda Ltd.", location: "Kochi", type: "Onsite", domain: "AYUSH Wellness & Spa", ayushSystem: "ayurveda", duration: "3 months", stipendAmount: 42000, stipendMode: "total", tags: ["Spa Therapy", "Wellness Centre Operations", "Patient Counselling"], deadline: "2026-12-06", description: "Rotate through Abhyanga, Shirodhara and Swedana suites at a wellness resort, owning one guest-experience improvement project.", color: "#8A3C6B", hot: false },
-  { title: "Naturopathy Consultant Intern", company: "Jindal Naturecure Institute", location: "Bengaluru", type: "Onsite", domain: "Yoga & Naturopathy", ayushSystem: "yoga_naturopathy", duration: "4 months", stipendAmount: 20000, stipendMode: "monthly", tags: ["Hydrotherapy", "Diet & Nutrition", "Yoga Therapy"], deadline: "2026-11-22", description: "Plan naturopathic diet, fasting and hydrotherapy regimens for in-patients under a senior naturopathy physician.", color: "#6B7C3C", hot: true },
-  { title: "Pharmacopoeia Editorial & Standards Intern", company: "Pharmacopoeia Commission for Indian Medicine & Homoeopathy (PCIM&H)", location: "Ghaziabad", type: "Hybrid", domain: "AYUSH R&D & Standardisation", ayushSystem: "ayurveda", duration: "3 months", stipendAmount: 17000, stipendMode: "monthly", tags: ["Research Methodology", "Sanskrit", "Writing"], deadline: "2026-12-09", description: "Assist in drafting and proof-reading API/UPI monograph text and translating classical references for pharmacopoeial standards.", color: "#194B63", hot: false },
-  { title: "AYUSH Hospital Administration Intern", company: "Vaidyaratnam Oushadhasala", location: "Thrissur", type: "Onsite", domain: "AYUSH Public Health & Administration", ayushSystem: "ayurveda", duration: "4 months", stipendAmount: 16000, stipendMode: "monthly", tags: ["Clinical Documentation", "Process Improvement", "Communication"], deadline: "2026-12-11", description: "Support patient-flow analysis, NABH (AYUSH hospital) documentation and IPD–pharmacy coordination at a classical Ayurveda hospital.", color: "#2E93A5", hot: false },
-  { title: "Pharmacovigilance Intern (ASU&H Drugs)", company: "Emami / Zandu Ayurvedic Pharmacy", location: "Mumbai", type: "Onsite", domain: "AYUSH Pharmacovigilance", ayushSystem: "ayurveda", duration: "6 months", stipendAmount: 22000, stipendMode: "monthly", tags: ["Pharmacovigilance", "Clinical Documentation", "Biostatistics"], deadline: "2026-12-18", description: "Log and assess adverse drug reactions under the Pharmacovigilance Programme for ASU&H drugs and prepare periodic safety summaries.", color: "#506030", hot: false },
-  { title: "Clinical Research Associate Intern – AYUSH Trials", company: "Central Council for Research in Ayurvedic Sciences (CCRAS)", location: "New Delhi", type: "Hybrid", domain: "AYUSH Clinical Research", ayushSystem: "ayurveda", duration: "6 months", stipendAmount: 25000, stipendMode: "monthly", tags: ["Good Clinical Practice", "Clinical Documentation", "Biostatistics"], deadline: "2026-10-05", description: "Support a multi-centre CCRAS trial — CRF design, CTRI registration paperwork, site monitoring and data cleaning.", color: "#6B3C8A", hot: true },
-  { title: "Health-Tech Developer Intern – AYUSH Telemedicine Platform", company: "Jiva Ayurveda", location: "Remote", type: "Remote", domain: "AYUSH Telemedicine & Health-Tech", ayushSystem: "ayurveda", duration: "3 months", stipendAmount: 25000, stipendMode: "monthly", tags: ["Teleconsultation", "Digital Health Records", "NAMASTE"], deadline: "2026-12-15", description: "Build features for an eSanjeevani-AYUSH-style teleconsultation platform: ABDM-linked records, NAMASTE-coded diagnoses and follow-up reminders.", color: "#3C5A8A", hot: false },
-  { title: "National AYUSH Mission Programme Intern", company: "National AYUSH Mission (NAM) — Ministry of AYUSH", location: "New Delhi", type: "Hybrid", domain: "AYUSH Public Health & Administration", ayushSystem: "ayurveda", duration: "3 months", stipendAmount: 19000, stipendMode: "monthly", tags: ["Public Health", "Research Methodology", "Presentations"], deadline: "2026-12-22", description: "Support state-level NAM proposal reviews and evidence briefs on AYUSH integration in Ayushman Arogya Mandirs.", color: "#2E93A5", hot: false },
-  { title: "Siddha Vaidya (Clinical Intern)", company: "SKM Siddha & Ayurveda Company", location: "Erode", type: "Onsite", domain: "Siddha", ayushSystem: "siddha", duration: "4 months", stipendAmount: 15000, stipendMode: "monthly", tags: ["Varma", "Clinical Documentation", "Diet & Nutrition"], deadline: "2026-12-02", description: "Clinical posting across Siddha OPD, Varma therapy and external therapies (Thokkanam) with full case documentation.", color: "#8A4A3C", hot: false },
-  { title: "Homoeopathic Physician / Dispensary Intern", company: "Dr. Willmar Schwabe India", location: "Noida", type: "Onsite", domain: "Homoeopathy", ayushSystem: "homoeopathy", duration: "5 months", stipendAmount: 80000, stipendMode: "total", tags: ["Case Taking", "Repertory", "Patient Counselling"], deadline: "2026-10-28", description: "Take and repertorise cases at a company-run dispensary, dispense potencies and maintain follow-up records.", color: "#5A3C8A", hot: false },
+  { title: "Panchakarma Therapist Intern", company: "Kerala Ayurveda Ltd.", location: "Kochi", type: "Onsite", domain: "Panchakarma & Therapy Centres", ayushSystem: "ayurveda", duration: "6 months", stipendAmount: 18000, stipendMode: "monthly", tags: ["Panchakarma", "Abhyanga & Shirodhara", "Patient Counselling"], deadlineInDays: 13, description: "Assist senior therapists through full Panchakarma cycles — Purvakarma, Pradhana karma and Paschat karma — at a NABH-accredited Ayurveda hospital.", color: "#3C7C6B", hot: true },
+  { title: "Ayurvedic Physician / Clinical Consultant Intern", company: "Arya Vaidya Sala, Kottakkal", location: "Kottakkal", type: "Onsite", domain: "Ayurveda", ayushSystem: "ayurveda", duration: "6 months", stipendAmount: 22000, stipendMode: "monthly", tags: ["Nadi Pariksha", "Prakriti Assessment", "Clinical Documentation"], deadlineInDays: 20, description: "Rotate through Kayachikitsa and Panchakarma OPDs under senior vaidyas, maintaining case records to NAMASTE terminology standards.", color: "#3C8A6B", hot: true },
+  { title: "GMP Compliance & Quality Control Intern (ASU&H Drugs)", company: "Dabur India Ltd.", location: "Sahibabad, Ghaziabad", type: "Onsite", domain: "ASU&H Drug Manufacturing & GMP", ayushSystem: "ayurveda", duration: "6 months", stipendAmount: 150000, stipendMode: "total", tags: ["GMP Compliance", "HPTLC", "Heavy Metal Testing"], deadlineInDays: 34, description: "Support Schedule T GMP audits, batch-record review and in-process QC on classical and proprietary Ayurvedic production lines.", color: "#3C5A8A", hot: false },
+  { title: "Herbal Formulation & Nutraceutical R&D Intern", company: "Himalaya Wellness Company", location: "Bengaluru", type: "Onsite", domain: "Herbal Formulation & Nutraceutical R&D", ayushSystem: "ayurveda", duration: "5 months", stipendAmount: 24000, stipendMode: "monthly", tags: ["Formulation", "Pharmacognosy", "Research Methodology"], deadlineInDays: 31, description: "Work on pre-formulation studies, standardised-extract characterisation and stability protocols for new herbal SKUs.", color: "#4A6B3C", hot: false },
+  { title: "GACP Field Officer Intern (Medicinal Plant Cultivation)", company: "Patanjali Ayurved Ltd.", location: "Haridwar", type: "Onsite", domain: "Medicinal Plant Cultivation (GACP)", ayushSystem: "ayurveda", duration: "6 months", stipendAmount: 16000, stipendMode: "monthly", tags: ["GACP", "Medicinal Plant Cultivation", "Herbal Supply Chain"], deadlineInDays: 41, description: "Audit contract farms for GACP compliance, log harvest and post-harvest handling, and trace raw-drug batches back to source.", color: "#3C8A5A", hot: false },
+  { title: "Certified Yoga Instructor / Yoga Therapist Intern", company: "Central Council for Research in Yoga & Naturopathy (CCRYN)", location: "New Delhi", type: "Hybrid", domain: "Yoga & Naturopathy", ayushSystem: "yoga_naturopathy", duration: "4 months", stipendAmount: 15000, stipendMode: "monthly", tags: ["Yoga Therapy", "Yoga Certification Board", "Patient Counselling"], deadlineInDays: 45, description: "Deliver supervised yoga-therapy protocols for lifestyle-disorder cohorts and record outcome measures for an ongoing CCRYN study.", color: "#6B7C3C", hot: false },
+  { title: "Regulatory Affairs Associate Intern – AYUSH Drug Licensing", company: "Charak Pharma", location: "Mumbai", type: "Hybrid", domain: "Regulatory Affairs & AYUSH Drug Licensing", ayushSystem: "ayurveda", duration: "3 months", stipendAmount: 20000, stipendMode: "monthly", tags: ["Regulatory Affairs", "Export Documentation", "AYUSH Premium Mark"], deadlineInDays: 38, description: "Prepare state licensing dossiers under the Drugs & Cosmetics Act for ASU products and support AYUSH Premium Mark applications.", color: "#3C4A8A", hot: false },
+  { title: "Unani Hakim (Clinical Intern)", company: "Hamdard Laboratories (India)", location: "New Delhi", type: "Onsite", domain: "Unani", ayushSystem: "unani", duration: "3 months", stipendAmount: 45000, stipendMode: "total", tags: ["Regimenal Therapy", "Hijama", "Clinical Documentation"], deadlineInDays: 52, description: "Clinical posting in Moalajat and Ilaj-bit-Tadbeer OPDs at a Unani teaching hospital, with case-record maintenance.", color: "#3C6B8A", hot: false },
+  { title: "AYUSH Export/Trade Documentation Associate Intern", company: "Sri Sri Tattva", location: "Remote", type: "Remote", domain: "AYUSH Export & Trade", ayushSystem: "ayurveda", duration: "3 months", stipendAmount: 18000, stipendMode: "monthly", tags: ["Export Documentation", "Regulatory Affairs", "Communication"], deadlineInDays: 54, description: "Prepare export documentation, certificates of analysis and country-specific registration files for herbal products shipped to 30+ markets.", color: "#8A5A3C", hot: false },
+  { title: "Raw Drug Authentication & Pharmacognosy Intern", company: "Baidyanath Group", location: "Kolkata", type: "Onsite", domain: "Pharmacognosy & Raw Drug Authentication", ayushSystem: "ayurveda", duration: "4 months", stipendAmount: 17000, stipendMode: "monthly", tags: ["Raw Drug Authentication", "Pharmacognosy", "HPTLC"], deadlineInDays: 60, description: "Authenticate incoming crude drugs against Ayurvedic Pharmacopoeia of India monographs using macroscopy, microscopy and HPTLC fingerprints.", color: "#7E9638", hot: false },
+  { title: "AYUSH Wellness & Spa Therapist Intern", company: "Kerala Ayurveda Ltd.", location: "Kochi", type: "Onsite", domain: "AYUSH Wellness & Spa", ayushSystem: "ayurveda", duration: "3 months", stipendAmount: 42000, stipendMode: "total", tags: ["Spa Therapy", "Wellness Centre Operations", "Patient Counselling"], deadlineInDays: 62, description: "Rotate through Abhyanga, Shirodhara and Swedana suites at a wellness resort, owning one guest-experience improvement project.", color: "#8A3C6B", hot: false },
+  { title: "Naturopathy Consultant Intern", company: "Jindal Naturecure Institute", location: "Bengaluru", type: "Onsite", domain: "Yoga & Naturopathy", ayushSystem: "yoga_naturopathy", duration: "4 months", stipendAmount: 20000, stipendMode: "monthly", tags: ["Hydrotherapy", "Diet & Nutrition", "Yoga Therapy"], deadlineInDays: 48, description: "Plan naturopathic diet, fasting and hydrotherapy regimens for in-patients under a senior naturopathy physician.", color: "#6B7C3C", hot: true },
+  { title: "Pharmacopoeia Editorial & Standards Intern", company: "Pharmacopoeia Commission for Indian Medicine & Homoeopathy (PCIM&H)", location: "Ghaziabad", type: "Hybrid", domain: "AYUSH R&D & Standardisation", ayushSystem: "ayurveda", duration: "3 months", stipendAmount: 17000, stipendMode: "monthly", tags: ["Research Methodology", "Sanskrit", "Writing"], deadlineInDays: 65, description: "Assist in drafting and proof-reading API/UPI monograph text and translating classical references for pharmacopoeial standards.", color: "#194B63", hot: false },
+  { title: "AYUSH Hospital Administration Intern", company: "Vaidyaratnam Oushadhasala", location: "Thrissur", type: "Onsite", domain: "AYUSH Public Health & Administration", ayushSystem: "ayurveda", duration: "4 months", stipendAmount: 16000, stipendMode: "monthly", tags: ["Clinical Documentation", "Process Improvement", "Communication"], deadlineInDays: 67, description: "Support patient-flow analysis, NABH (AYUSH hospital) documentation and IPD–pharmacy coordination at a classical Ayurveda hospital.", color: "#2E93A5", hot: false },
+  { title: "Pharmacovigilance Intern (ASU&H Drugs)", company: "Emami / Zandu Ayurvedic Pharmacy", location: "Mumbai", type: "Onsite", domain: "AYUSH Pharmacovigilance", ayushSystem: "ayurveda", duration: "6 months", stipendAmount: 22000, stipendMode: "monthly", tags: ["Pharmacovigilance", "Clinical Documentation", "Biostatistics"], deadlineInDays: 74, description: "Log and assess adverse drug reactions under the Pharmacovigilance Programme for ASU&H drugs and prepare periodic safety summaries.", color: "#506030", hot: false },
+  { title: "Clinical Research Associate Intern – AYUSH Trials", company: "Central Council for Research in Ayurvedic Sciences (CCRAS)", location: "New Delhi", type: "Hybrid", domain: "AYUSH Clinical Research", ayushSystem: "ayurveda", duration: "6 months", stipendAmount: 25000, stipendMode: "monthly", tags: ["Good Clinical Practice", "Clinical Documentation", "Biostatistics"], deadlineInDays: 6, description: "Support a multi-centre CCRAS trial — CRF design, CTRI registration paperwork, site monitoring and data cleaning.", color: "#6B3C8A", hot: true },
+  { title: "Health-Tech Developer Intern – AYUSH Telemedicine Platform", company: "Jiva Ayurveda", location: "Remote", type: "Remote", domain: "AYUSH Telemedicine & Health-Tech", ayushSystem: "ayurveda", duration: "3 months", stipendAmount: 25000, stipendMode: "monthly", tags: ["Teleconsultation", "Digital Health Records", "NAMASTE"], deadlineInDays: 71, description: "Build features for an eSanjeevani-AYUSH-style teleconsultation platform: ABDM-linked records, NAMASTE-coded diagnoses and follow-up reminders.", color: "#3C5A8A", hot: false },
+  { title: "National AYUSH Mission Programme Intern", company: "National AYUSH Mission (NAM) — Ministry of AYUSH", location: "New Delhi", type: "Hybrid", domain: "AYUSH Public Health & Administration", ayushSystem: "ayurveda", duration: "3 months", stipendAmount: 19000, stipendMode: "monthly", tags: ["Public Health", "Research Methodology", "Presentations"], deadlineInDays: 78, description: "Support state-level NAM proposal reviews and evidence briefs on AYUSH integration in Ayushman Arogya Mandirs.", color: "#2E93A5", hot: false },
+  { title: "Siddha Vaidya (Clinical Intern)", company: "SKM Siddha & Ayurveda Company", location: "Erode", type: "Onsite", domain: "Siddha", ayushSystem: "siddha", duration: "4 months", stipendAmount: 15000, stipendMode: "monthly", tags: ["Varma", "Clinical Documentation", "Diet & Nutrition"], deadlineInDays: 58, description: "Clinical posting across Siddha OPD, Varma therapy and external therapies (Thokkanam) with full case documentation.", color: "#8A4A3C", hot: false },
+  { title: "Homoeopathic Physician / Dispensary Intern", company: "Dr. Willmar Schwabe India", location: "Noida", type: "Onsite", domain: "Homoeopathy", ayushSystem: "homoeopathy", duration: "5 months", stipendAmount: 80000, stipendMode: "total", tags: ["Case Taking", "Repertory", "Patient Counselling"], deadlineInDays: 23, description: "Take and repertorise cases at a company-run dispensary, dispense potencies and maintain follow-up records.", color: "#5A3C8A", hot: false },
 ];
 
 const SEED_PROGRAMS = [
-  { title: "Research Methodology & Biostatistics for AYUSH Faculty", organiser: "Central Council for Research in Ayurvedic Sciences (CCRAS)", startDate: "2026-10-06", endDate: "2026-10-10", seats: 40, enrolled: 18, mode: "Hybrid" },
-  { title: "Evidence-Based Ayurveda: Designing & Registering Clinical Trials (CTRI)", organiser: "All India Institute of Ayurveda (AIIA), New Delhi", startDate: "2026-10-20", endDate: "2026-10-24", seats: 30, enrolled: 22, mode: "Online" },
-  { title: "Schedule T GMP & Quality Systems for ASU&H Drug Manufacturing", organiser: "Institute of Teaching & Research in Ayurveda (ITRA), Jamnagar", startDate: "2026-11-03", endDate: "2026-11-07", seats: 50, enrolled: 27, mode: "Online" },
-  { title: "HPTLC Fingerprinting & ASU Drug Standardisation (API/UPI/SPI)", organiser: "Pharmacopoeia Commission for Indian Medicine & Homoeopathy (PCIM&H)", startDate: "2026-11-17", endDate: "2026-11-21", seats: 35, enrolled: 12, mode: "Hybrid" },
-  { title: "AYUSH Telemedicine, Ayush Grid & ABDM Integration for Educators", organiser: "National Institute of Ayurveda (NIA), Jaipur", startDate: "2026-11-24", endDate: "2026-11-28", seats: 45, enrolled: 20, mode: "Online" },
-  { title: "Outcome-Based Education & NCISM Curriculum Readiness", organiser: "National Institute of Unani Medicine (NIUM), Bengaluru", startDate: "2026-12-01", endDate: "2026-12-03", seats: 60, enrolled: 31, mode: "Online" },
-  { title: "Yoga Therapy Protocols for Lifestyle Disorders — Faculty Programme", organiser: "Morarji Desai National Institute of Yoga (MDNIY), New Delhi", startDate: "2026-12-15", endDate: "2026-12-17", seats: 55, enrolled: 24, mode: "Hybrid" },
+  { title: "Research Methodology & Biostatistics for AYUSH Faculty", organiser: "Central Council for Research in Ayurvedic Sciences (CCRAS)", startInDays: 2, lengthDays: 5, seats: 40, enrolled: 18, mode: "Hybrid" },
+  { title: "Evidence-Based Ayurveda: Designing & Registering Clinical Trials (CTRI)", organiser: "All India Institute of Ayurveda (AIIA), New Delhi", startInDays: 15, lengthDays: 5, seats: 30, enrolled: 22, mode: "Online" },
+  { title: "Schedule T GMP & Quality Systems for ASU&H Drug Manufacturing", organiser: "Institute of Teaching & Research in Ayurveda (ITRA), Jamnagar", startInDays: 29, lengthDays: 5, seats: 50, enrolled: 27, mode: "Online" },
+  { title: "HPTLC Fingerprinting & ASU Drug Standardisation (API/UPI/SPI)", organiser: "Pharmacopoeia Commission for Indian Medicine & Homoeopathy (PCIM&H)", startInDays: 43, lengthDays: 5, seats: 35, enrolled: 12, mode: "Hybrid" },
+  { title: "AYUSH Telemedicine, Ayush Grid & ABDM Integration for Educators", organiser: "National Institute of Ayurveda (NIA), Jaipur", startInDays: 50, lengthDays: 5, seats: 45, enrolled: 20, mode: "Online" },
+  { title: "Outcome-Based Education & NCISM Curriculum Readiness", organiser: "National Institute of Unani Medicine (NIUM), Bengaluru", startInDays: 57, lengthDays: 3, seats: 60, enrolled: 31, mode: "Online" },
+  { title: "Yoga Therapy Protocols for Lifestyle Disorders — Faculty Programme", organiser: "Morarji Desai National Institute of Yoga (MDNIY), New Delhi", startInDays: 71, lengthDays: 3, seats: 55, enrolled: 24, mode: "Hybrid" },
 ];
 
 const SEED_SKILL_TESTS = [
@@ -58,7 +63,7 @@ const SEED_SKILL_TESTS = [
     mode: "Online",
     duration: "15 mins",
     price: 0,
-    scheduledAt: "2026-09-30",
+    scheduledInDays: 3,
     scheduledTime: "10:30",
     description: "The standard placement-style aptitude screen used by ASU&H drug manufacturers and AYUSH hospital chains.",
     prerequisites: "Class 10 level arithmetic, percentages and averages.",
@@ -77,7 +82,7 @@ const SEED_SKILL_TESTS = [
     mode: "Online",
     duration: "15 mins",
     price: 199,
-    scheduledAt: "2026-10-07",
+    scheduledInDays: 6,
     scheduledTime: "16:00",
     description: "eSanjeevani-AYUSH, Ayush Grid, ABDM/ABHA-linked records, NAMASTE terminology and interoperability basics.",
     prerequisites: "Familiarity with any AYUSH OPD workflow and basic computer use.",
@@ -96,7 +101,7 @@ const SEED_SKILL_TESTS = [
     mode: "Online",
     duration: "15 mins",
     price: 0,
-    scheduledAt: "2026-10-02",
+    scheduledInDays: 4,
     scheduledTime: "10:00",
     description: "Tridosha and Mukkutram theory, classical texts, Unani humoral theory, homoeopathic principles and clinical reasoning.",
     prerequisites: "First-professional BAMS, BHMS, BUMS, BSMS or BNYS coursework.",
@@ -115,7 +120,7 @@ const SEED_SKILL_TESTS = [
     mode: "Online",
     duration: "15 mins",
     price: 0,
-    scheduledAt: "2026-10-09",
+    scheduledInDays: 8,
     scheduledTime: "14:00",
     description: "Schedule T GMP, Ayurvedic Pharmacopoeia of India monographs, HPTLC fingerprinting, heavy-metal limits and Rasashastra preparations.",
     prerequisites: "Any Dravyaguna, Rasashastra, B.Pharm (Ayu) or pharmacognosy coursework.",
@@ -134,7 +139,7 @@ const SEED_SKILL_TESTS = [
     mode: "Online",
     duration: "15 mins",
     price: 99,
-    scheduledAt: "2026-10-14",
+    scheduledInDays: 9,
     scheduledTime: "09:00",
     description: "Descriptive statistics, chart reading, OPD and trial-data cleaning judgement and interpretation.",
     prerequisites: "Comfort with spreadsheets and introductory biostatistics.",
@@ -153,7 +158,7 @@ const SEED_SKILL_TESTS = [
     mode: "Online",
     duration: "15 mins",
     price: 199,
-    scheduledAt: "2026-10-21",
+    scheduledInDays: 16,
     scheduledTime: "11:00",
     description: "CTRI registration, informed consent, control groups, case record forms, citation practice and research ethics.",
     prerequisites: "An introductory research-methodology course.",
@@ -172,7 +177,7 @@ const SEED_SKILL_TESTS = [
     mode: "Offline",
     duration: "60 mins",
     price: 499,
-    scheduledAt: "2026-10-28",
+    scheduledInDays: 23,
     reportingTime: "09:30 AM (session starts 10:00 AM sharp)",
     venue: "Himalaya Wellness Learning Centre, Makali, Bengaluru",
     description: "In-person case role-play on NCISM/NCH regulation, patient confidentiality and AYUSH Premium Mark scenarios, plus a group discussion for shortlisted candidates.",
@@ -187,13 +192,19 @@ const SEED_SKILL_TESTS = [
   },
 ];
 
+/** A sample test with its `scheduledInDays` turned into a date. */
+export function datedSeedTest(template, now = Date.now()) {
+  const { scheduledInDays, ...row } = template;
+  return { ...row, scheduledAt: isoInDays(scheduledInDays, now) };
+}
+
 export const seedDatabase = mutation({
   handler: async (ctx) => {
     const existingInternships = await ctx.db.query("internships").first();
     if (!existingInternships) {
       for (const item of SEED_INTERNSHIPS) {
         await ctx.db.insert("internships", {
-          ...item,
+          ...datedInternship(item),
           ownerId: "seed",
           status: "Open",
           postedAt: new Date().toISOString(),
@@ -206,7 +217,7 @@ export const seedDatabase = mutation({
     const existingPrograms = await ctx.db.query("programs").first();
     if (!existingPrograms) {
       for (const p of SEED_PROGRAMS) {
-        await ctx.db.insert("programs", { ...p, ownerId: "seed", status: "Open" });
+        await ctx.db.insert("programs", { ...datedProgramme(p), ownerId: "seed", status: "Open" });
       }
     }
 
@@ -214,7 +225,7 @@ export const seedDatabase = mutation({
     if (!existingTests) {
       for (const t of SEED_SKILL_TESTS) {
         await ctx.db.insert("skillTests", {
-          ...t,
+          ...datedSeedTest(t),
           ownerId: "seed",
           status: "Open",
           postedAt: new Date().toISOString(),

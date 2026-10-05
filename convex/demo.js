@@ -3,6 +3,7 @@ import { v } from "convex/values";
 import { authError, requireActor } from "./_lib/authz";
 import { collectStorageIds } from "./_lib/rows";
 import { ensureDemoFeatures } from "./_lib/demoSeed";
+import { rollOverDemoTests } from "./_lib/demoRollover";
 
 /**
  * Resetting the demo tour.
@@ -206,8 +207,19 @@ export const reset = mutation({
   },
 });
 
-/** Run on every demo sign-in: writes the tour's shared rows if they are missing. */
+/** Run on every demo sign-in: writes the tour's shared rows if they are missing,
+    and replaces any sample test that has ended with a fresh one. */
 export const seedFeatures = internalMutation({
   args: {},
-  handler: async (ctx) => await ensureDemoFeatures(ctx),
+  handler: async (ctx) => {
+    const seed = await ensureDemoFeatures(ctx);
+    const rollover = await rollOverDemoTests(ctx);
+    return { ...seed, rolled: rollover.rolled.length };
+  },
+});
+
+/** The cron's entry point (convex/crons.js): sample tests that ended get a successor. */
+export const rollOverSampleTests = internalMutation({
+  args: {},
+  handler: async (ctx) => await rollOverDemoTests(ctx),
 });

@@ -23,4 +23,8 @@ crons.daily("purge expired resume analyses", { hourUTC: 22, minuteUTC: 15 }, int
 // Open-window tests: "it's open now", and reminders before the last start.
 crons.interval("remind open-window test candidates", { minutes: 15 }, internal.testReminders.remindWindowTests);
 
+// Sample and demo-tour tests that have ended are replaced by a fresh copy dated
+// in the future, so the tour never shows only past exams (convex/_lib/demoRollover.js).
+crons.interval("roll over ended sample tests", { minutes: 15 }, internal.demo.rollOverSampleTests);
+
 export default crons;
