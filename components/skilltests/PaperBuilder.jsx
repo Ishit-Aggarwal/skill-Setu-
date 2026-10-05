@@ -181,66 +181,63 @@ export default function PaperBuilder({ questions, onChange, ayushSystem = "", te
   }
 
   const empty = questions.length === 0;
+  const openWith = (show) => () => {
+    setGenerateMode(empty ? "replace" : "append");
+    show(true);
+  };
+  const buildOptions = [
+    { key: "topic", icon: "✨", label: "Generate from a topic", hint: "Name a topic and the AI drafts questions with answer keys.", onClick: openWith(setShowGenerate), featured: true },
+    { key: "documents", icon: "📚", label: "Generate from my documents", hint: "Upload notes, a syllabus or slides; questions come from their topics.", onClick: openWith(setShowDocuments) },
+    { key: "import", icon: "📄", label: "Import an existing paper", hint: "Bring in a paper you already have and review its answer keys.", onClick: openWith(setShowImport) },
+    ...(uploadedSamples.length > 0
+      ? [{ key: "samples", icon: "🧪", label: `From sample paper${uploadedSamples.length === 1 ? "" : "s"}`, hint: "New questions on the same concepts as the attached sample papers.", onClick: openWith(setShowSamples) }]
+      : []),
+    { key: "manual", icon: "✍️", label: "Write manually", hint: "Start with a blank question and write the paper yourself.", onClick: () => handleChange([blankQuestion({ ayushSystem })]) },
+  ];
 
   return (
     <div className="space-y-3">
-      {!locked && (
-        <div className={empty ? "rounded-xl border border-dashed border-primary/40 bg-primary/5 p-3 space-y-2.5" : ""}>
-          {empty && <p className="text-xs font-medium text-muted-foreground">How do you want to build the paper?</p>}
-          <div className={empty ? "grid grid-cols-1 sm:grid-cols-2 gap-2" : "flex flex-wrap gap-2"}>
-            <Button
-              type="button"
-              size="sm"
-              onClick={() => {
-                setGenerateMode(empty ? "replace" : "append");
-                setShowGenerate(true);
-              }}
-            >
-              ✨ Generate from a topic
-            </Button>
-            <Button
-              type="button"
-              size="sm"
-              variant="outline"
-              title="Upload notes, a syllabus or slides; the AI maps their topics and writes new questions from them"
-              onClick={() => {
-                setGenerateMode(empty ? "replace" : "append");
-                setShowDocuments(true);
-              }}
-            >
-              📚 Generate from my documents
-            </Button>
-            <Button
-              type="button"
-              size="sm"
-              variant="outline"
-              onClick={() => {
-                setGenerateMode(empty ? "replace" : "append");
-                setShowImport(true);
-              }}
-            >
-              📄 Import an existing paper
-            </Button>
-            {uploadedSamples.length > 0 && (
-              <Button
+      {!locked && empty && (
+        <div className="rounded-2xl border border-border bg-card p-4 sm:p-5">
+          <p className="text-sm font-semibold text-foreground">How do you want to build the paper?</p>
+          <p className="text-xs text-muted-foreground mt-0.5">Pick a starting point. You can mix methods and edit every question afterwards.</p>
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5 mt-4">
+            {buildOptions.map((option) => (
+              <button
+                key={option.key}
                 type="button"
-                size="sm"
-                variant="outline"
-                title="Read the attached sample papers and write new questions on the same concepts"
-                onClick={() => {
-                  setGenerateMode(empty ? "replace" : "append");
-                  setShowSamples(true);
-                }}
+                onClick={option.onClick}
+                className={`group flex items-start gap-3 rounded-xl border p-3.5 text-left transition-all duration-150 focus:outline-none focus-visible:ring-2 focus-visible:ring-primary/40 ${
+                  option.featured ? "border-primary/60 bg-primary/5 hover:bg-primary/10" : "border-border hover:border-primary/40 hover:bg-secondary/60"
+                }`}
               >
-                🧪 From sample paper{uploadedSamples.length === 1 ? "" : "s"}
-              </Button>
-            )}
-            {empty ? (
-              <Button type="button" size="sm" variant="outline" onClick={() => handleChange([blankQuestion({ ayushSystem })])}>
-                ✍️ Write manually
-              </Button>
-            ) : null}
+                <span
+                  aria-hidden="true"
+                  className={`flex h-9 w-9 flex-shrink-0 items-center justify-center rounded-lg text-base ${option.featured ? "bg-primary text-white" : "bg-secondary"}`}
+                >
+                  {option.icon}
+                </span>
+                <span className="min-w-0">
+                  <span className="flex items-center gap-2 text-sm font-medium text-foreground">
+                    {option.label}
+                    {option.featured && <span className="rounded-full bg-primary/15 px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wide text-primary">Fastest</span>}
+                  </span>
+                  <span className="mt-0.5 block text-xs leading-snug text-muted-foreground">{option.hint}</span>
+                </span>
+              </button>
+            ))}
           </div>
+        </div>
+      )}
+      {!locked && !empty && (
+        <div className="flex flex-wrap gap-2">
+          {buildOptions
+            .filter((option) => option.key !== "manual")
+            .map((option) => (
+              <Button key={option.key} type="button" size="sm" variant={option.featured ? "primary" : "outline"} title={option.hint} onClick={option.onClick}>
+                {option.icon} {option.shortLabel || option.label}
+              </Button>
+            ))}
         </div>
       )}
 
