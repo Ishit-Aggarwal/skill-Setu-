@@ -2,6 +2,7 @@ import { query, mutation, internalMutation } from "./_generated/server";
 import { v } from "convex/values";
 import { authError, requireActor } from "./_lib/authz";
 import { activeCommunityIds } from "./_lib/communityAccess";
+import { testInAnyCommunity } from "../lib/communityRules";
 import { SKILL_DOMAINS } from "../lib/questionBank";
 import { RESUME } from "../lib/settings";
 import { ayushSystemLabel } from "../lib/ayush";
@@ -100,7 +101,7 @@ export const context = query({
     const catalogue = [];
     for (const t of await ctx.db.query("skillTests").collect()) {
       if (t.cancelledAt || sat.has(t.id) || withdrawn.has(t.id)) continue;
-      if (t.audience === "community" && !memberOf.has(t.communityId)) continue;
+      if (t.audience === "community" && !testInAnyCommunity(t, memberOf)) continue;
       if (String(t.ownerId || "").startsWith("demo-") !== String(actor.id).startsWith("demo-")) continue;
       const phase = testPhase(t, now, { serverSide: true });
       if (phase === "ended" || phase === "unscheduled") continue;
@@ -211,7 +212,7 @@ export const saveAnalysis = mutation({
     const memberOf = await activeCommunityIds(ctx, actor.id);
     const visible = async (id) => {
       const t = id ? await testById(ctx, id) : null;
-      return Boolean(t && !t.cancelledAt && (t.audience !== "community" || memberOf.has(t.communityId)));
+      return Boolean(t && !t.cancelledAt && (t.audience !== "community" || testInAnyCommunity(t, memberOf)));
     };
     const tests = [];
     for (const t of Array.isArray(result.nextTests) ? result.nextTests.slice(0, 3) : []) {

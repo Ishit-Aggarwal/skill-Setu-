@@ -6,8 +6,8 @@
 
 import { internal } from "../_generated/api";
 import { authError, resolveInstitutionId } from "./authz";
-import { findCommunity, membershipOf } from "./communityAccess";
-import { canView, isOwner, isStaff } from "../../lib/communityRules";
+import { findCommunity, membershipOf, testsInCommunity } from "./communityAccess";
+import { canView, isActive, isOwner, isStaff, testCommunityIds } from "../../lib/communityRules";
 import { isDemoId } from "../../lib/demoIsolation";
 
 export function newId(prefix) {
@@ -182,15 +182,18 @@ export async function announceCommunityTest(ctx, { actor, community, test, pin =
 /**
  * A member who leaves, is removed or is banned loses their registrations for
  * the community's tests (an attempt already under way is left to finish —
- * begin() re-checks membership, the attempt itself is not touched).
+ * begin() re-checks membership, the attempt itself is not touched). A test
+ * also shared with another community they are still in stays theirs.
  */
 export async function cancelCommunityRegistrations(ctx, community, userId) {
-  const tests = await ctx.db
-    .query("skillTests")
-    .withIndex("by_community", (q) => q.eq("communityId", community.id))
-    .collect();
+  const tests = await testsInCommunity(ctx, community.id);
   let cancelled = 0;
   for (const test of tests) {
+    let stillReached = false;
+    for (const otherId of testCommunityIds(test)) {
+      if (otherId !== community.id && isActive(await membershipOf(ctx, otherId, userId))) stillReached = true;
+    }
+    if (stillReached) continue;
     const reg = await ctx.db
       .query("skillTestRegistrations")
       .withIndex("by_test", (q) => q.eq("testId", test.id))

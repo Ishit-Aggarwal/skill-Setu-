@@ -10,13 +10,14 @@ import { findByClientId, publicRow } from "./_lib/rows";
 import { recalculateAssessment, writeAttempt } from "./_lib/assessment";
 import { issueCertificateForAttempt } from "./_lib/certificates";
 import { clampPenalty, paperType, withholdAnswers } from "../lib/grading";
-import { EXAM } from "../lib/settings";
+import { COMMUNITIES, EXAM } from "../lib/settings";
 import { canRevealAnswers, durationMinutes, isWindowTest, lastStartMs, scheduledStartMsUTC, testPhase, testStartMs, validateWindow } from "../lib/testWindow";
 import { durationString } from "../lib/duration";
 import { TEST_LEAD_HOURS } from "../lib/dates";
 import { LIVE_STATES } from "../lib/examState";
-import { activeCommunityIds, memberAccessForTest } from "./_lib/communityAccess";
+import { activeCommunityIds, memberAccessForTest, syncTestCommunities } from "./_lib/communityAccess";
 import { announceCommunityTest } from "./_lib/communityCore";
+import { testCommunityIds, testInAnyCommunity } from "../lib/communityRules";
 
 /**
  * Skill tests and their marking.
@@ -42,7 +43,7 @@ export const listAll = query({
     const actor = args.sessionToken ? await getActor(ctx, args.sessionToken) : null;
     const memberOf = actor ? await activeCommunityIds(ctx, actor.id) : new Set();
     const rows = await ctx.db.query("skillTests").collect();
-    return rows.filter((t) => t.audience !== "community" || (actor && (t.ownerId === actor.id || actor.role === "admin")) || memberOf.has(t.communityId));
+    return rows.filter((t) => t.audience !== "community" || (actor && (t.ownerId === actor.id || actor.role === "admin")) || testInAnyCommunity(t, memberOf));
   },
 });
 
@@ -545,6 +546,7 @@ const TEST_FIELDS = {
   poolSize: v.optional(v.union(v.number(), v.null())),
   audience: v.optional(v.union(v.string(), v.null())),
   communityId: v.optional(v.union(v.string(), v.null())),
+  communityIds: v.optional(v.array(v.string())),
   pinInCommunity: v.optional(v.boolean()),
 };
 
@@ -731,16 +733,25 @@ export const publishTest = mutation({
     const hostName = actor.user.companyName || actor.user.instituteName || actor.user.institution || fields.hostName || actor.user.name || "Host";
     const prior = await findTestByClientId(ctx, args.id);
     const schedule = scheduleFields(fields, { isNew: !prior });
-    // A community test is free and only for its members; the host must run the community.
-    let audience = { audience: "public", communityId: null, communityName: null };
-    let community = null;
+    // A community test is free and only for members of the communities it is
+    // shared with; the host must run every one of them.
+    let audience = { audience: "public", communityId: null, communityIds: [], communityName: null };
+    const communities = [];
     if (fields.audience === "community") {
-      if (!fields.communityId) throw new Error("Choose the community this test is for.");
-      community = await requireCommunityHost(ctx, actor, fields.communityId);
-      audience = { audience: "community", communityId: community.id, communityName: community.name, price: 0 };
+      const ids = [...new Set([...(fields.communityIds || []), fields.communityId].filter(Boolean))];
+      if (!ids.length) throw new Error("Choose at least one community this test is for.");
+      if (ids.length > COMMUNITIES.MAX_TEST_COMMUNITIES) throw new Error(`A test can be shared with at most ${COMMUNITIES.MAX_TEST_COMMUNITIES} communities.`);
+      for (const id of ids) communities.push(await requireCommunityHost(ctx, actor, id));
+      audience = {
+        audience: "community",
+        communityId: communities[0].id,
+        communityIds: communities.map((c) => c.id),
+        communityName: communities.map((c) => c.name).join(", "),
+        price: 0,
+      };
     }
     const paperSize = Array.isArray(questions) ? questions.length : prior?.questionCount || 0;
-    const { pinInCommunity, ...rowFields } = fields;
+    const { pinInCommunity, communityIds: _ids, ...rowFields } = fields;
     const row = {
       ...rowFields,
       ...schedule,
@@ -774,11 +785,16 @@ export const publishTest = mutation({
       const _id = await ctx.db.insert("skillTests", row);
       test = await ctx.db.get(_id);
     }
+    await syncTestCommunities(ctx, test);
 
     let paper = { questionCount: test.questionCount || 0, paperType: test.paperType || null };
     if (Array.isArray(questions) && row.mode === "Online") paper = await writePaper(ctx, actor, test, questions);
-    // A new community test is posted in its community and every member is told.
-    if (community && !prior) await announceCommunityTest(ctx, { actor, community, test, pin: Boolean(args.pinInCommunity) });
+    // A community test is posted in each community it is newly shared with,
+    // and every member there is told.
+    const announced = new Set(prior ? testCommunityIds(prior) : []);
+    for (const community of communities) {
+      if (!announced.has(community.id)) await announceCommunityTest(ctx, { actor, community, test, pin: Boolean(args.pinInCommunity) });
+    }
     // The penalty can never exceed the paper now that its size is known.
     if (row.violationPenalty != null && paper.questionCount && row.violationPenalty > paper.questionCount) {
       await ctx.db.patch(test._id, { violationPenalty: paper.questionCount });
@@ -795,7 +811,7 @@ export const updateByClientId = mutation({
     const test = await findTestByClientId(ctx, args.id);
     if (!test) return { ok: false, reason: "NOT_FOUND" };
     requireOwner(actor, test, { what: "this test" });
-    const { ownerId, id, _id, _creationTime, questionCount, paperType: pt, audience, communityId, cancelledAt, scheduleType, ...safe } = args.patch || {};
+    const { ownerId, id, _id, _creationTime, questionCount, paperType: pt, audience, communityId, communityIds, communityName, cancelledAt, scheduleType, ...safe } = args.patch || {};
     const now = Date.now();
     const attempted = await anyAttempt(ctx, test.id);
     // Once anyone has sat the paper its length is part of their result.

@@ -8,6 +8,7 @@ import { buildCertificateSnapshot, isCredentialKind, normaliseVerifyCode } from 
 import { CERTIFICATES } from "../lib/settings";
 import { ayushSystemLabel } from "../lib/ayush";
 import { durationMinutes } from "../lib/testWindow";
+import { communityNameFor } from "./_lib/communityAccess";
 import { isDemoId } from "../lib/demoIsolation";
 
 /**
@@ -408,7 +409,7 @@ export const issueManual = mutation({
       testDate: existing?.issuedAt || args.issuedAt || now,
       durationMinutes: test ? durationMinutes(test) : null,
       ayushSystemLabel: test?.ayushSystem ? ayushSystemLabel(test.ayushSystem) : "",
-      communityName: test?.audience === "community" ? test.communityName || null : null,
+      communityName: test ? await communityNameFor(ctx, test, student?.id) : null,
       certificateNo,
       verifyCode: code,
       issuedAt: existing?.issuedAt || args.issuedAt || now,

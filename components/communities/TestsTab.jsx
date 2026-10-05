@@ -5,6 +5,7 @@ import Link from "next/link";
 import { getAttemptsForStudent, getRegistration, listSkillTests, refreshSkillTestsFromServer } from "../../lib/store";
 import { useClock, useStoreVersion } from "../../lib/useLiveStore";
 import { formatScheduled } from "../../lib/testStatus";
+import { testCommunityIds } from "../../lib/communityRules";
 import { isWindowTest, testDurationLabel, testPhase, upcomingSortMs, windowStatusLabel } from "../../lib/testWindow";
 import TestCard from "../skilltests/TestCard";
 import { Badge, Card, EmptyState } from "../ui/Kit";
@@ -32,7 +33,7 @@ export default function TestsTab({ community, user }) {
   useEffect(() => {
     setTests(
       listSkillTests()
-        .filter((t) => t.audience === "community" && t.communityId === community.id)
+        .filter((t) => t.audience === "community" && testCommunityIds(t).includes(community.id))
         .sort((a, b) => upcomingSortMs(a) - upcomingSortMs(b))
     );
     if (user?.role === "student") setAttempts(getAttemptsForStudent(user.id));

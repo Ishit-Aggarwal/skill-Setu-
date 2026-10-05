@@ -185,60 +185,62 @@ export default function PaperBuilder({ questions, onChange, ayushSystem = "", te
   return (
     <div className="space-y-3">
       {!locked && (
-        <div className={`flex flex-col sm:flex-row gap-2 ${empty ? "rounded-xl border border-dashed border-primary/40 bg-primary/5 p-3" : ""}`}>
-          {empty && <p className="text-xs text-muted-foreground sm:self-center flex-1">How do you want to build the paper?</p>}
-          <Button
-            type="button"
-            size="sm"
-            onClick={() => {
-              setGenerateMode(empty ? "replace" : "append");
-              setShowGenerate(true);
-            }}
-          >
-            ✨ Generate from a topic
-          </Button>
-          <Button
-            type="button"
-            size="sm"
-            variant="outline"
-            title="Upload notes, a syllabus or slides; the AI maps their topics and writes new questions from them"
-            onClick={() => {
-              setGenerateMode(empty ? "replace" : "append");
-              setShowDocuments(true);
-            }}
-          >
-            📚 Generate from my documents
-          </Button>
-          <Button
-            type="button"
-            size="sm"
-            variant="outline"
-            onClick={() => {
-              setGenerateMode(empty ? "replace" : "append");
-              setShowImport(true);
-            }}
-          >
-            📄 Import an existing paper
-          </Button>
-          {uploadedSamples.length > 0 && (
+        <div className={empty ? "rounded-xl border border-dashed border-primary/40 bg-primary/5 p-3 space-y-2.5" : ""}>
+          {empty && <p className="text-xs font-medium text-muted-foreground">How do you want to build the paper?</p>}
+          <div className={empty ? "grid grid-cols-1 sm:grid-cols-2 gap-2" : "flex flex-wrap gap-2"}>
+            <Button
+              type="button"
+              size="sm"
+              onClick={() => {
+                setGenerateMode(empty ? "replace" : "append");
+                setShowGenerate(true);
+              }}
+            >
+              ✨ Generate from a topic
+            </Button>
             <Button
               type="button"
               size="sm"
               variant="outline"
-              title="Read the attached sample papers and write new questions on the same concepts"
+              title="Upload notes, a syllabus or slides; the AI maps their topics and writes new questions from them"
               onClick={() => {
                 setGenerateMode(empty ? "replace" : "append");
-                setShowSamples(true);
+                setShowDocuments(true);
               }}
             >
-              🧪 From sample paper{uploadedSamples.length === 1 ? "" : "s"}
+              📚 Generate from my documents
             </Button>
-          )}
-          {empty ? (
-            <Button type="button" size="sm" variant="outline" onClick={() => handleChange([blankQuestion({ ayushSystem })])}>
-              ✍️ Write manually
+            <Button
+              type="button"
+              size="sm"
+              variant="outline"
+              onClick={() => {
+                setGenerateMode(empty ? "replace" : "append");
+                setShowImport(true);
+              }}
+            >
+              📄 Import an existing paper
             </Button>
-          ) : null}
+            {uploadedSamples.length > 0 && (
+              <Button
+                type="button"
+                size="sm"
+                variant="outline"
+                title="Read the attached sample papers and write new questions on the same concepts"
+                onClick={() => {
+                  setGenerateMode(empty ? "replace" : "append");
+                  setShowSamples(true);
+                }}
+              >
+                🧪 From sample paper{uploadedSamples.length === 1 ? "" : "s"}
+              </Button>
+            )}
+            {empty ? (
+              <Button type="button" size="sm" variant="outline" onClick={() => handleChange([blankQuestion({ ayushSystem })])}>
+                ✍️ Write manually
+              </Button>
+            ) : null}
+          </div>
         </div>
       )}
 

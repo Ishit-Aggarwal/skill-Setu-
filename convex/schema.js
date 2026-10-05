@@ -342,9 +342,12 @@ export default defineSchema({
     shuffle: v.optional(v.boolean()),
     /* Give each candidate this many questions drawn from the paper (null = all). */
     poolSize: v.optional(v.union(v.number(), v.null())),
-    /* "public" (anyone) or "community" (only active members of communityId). */
+    /* "public" (anyone) or "community" (only active members of one of
+       communityIds). communityId is the first of them, kept for older rows
+       and readers; communityName is every name, comma-separated. */
     audience: v.optional(v.union(v.string(), v.null())),
     communityId: v.optional(v.union(v.string(), v.null())),
+    communityIds: v.optional(v.array(v.string())),
     communityName: v.optional(v.union(v.string(), v.null())),
     /* A window test cancelled before anyone sat it; kept so registrants' cards explain. */
     cancelledAt: v.optional(v.union(v.string(), v.null())),
@@ -353,6 +356,15 @@ export default defineSchema({
     .index("by_window_close", ["windowClosesAtMs"])
     .index("by_community", ["communityId"])
     .index("by_client_id", ["id"]),
+
+  /* One row per (test, community) a members-only test is shared with, so a
+     community can find its tests (an array field can't be indexed). */
+  skillTestCommunities: defineTable({
+    testId: v.string(),
+    communityId: v.string(),
+  })
+    .index("by_test", ["testId"])
+    .index("by_community", ["communityId"]),
 
   /* One reminder per (test, candidate, kind), so the cron never repeats itself. */
   testReminders: defineTable({

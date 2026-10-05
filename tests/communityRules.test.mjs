@@ -1,6 +1,6 @@
 import { test } from "node:test";
 import assert from "node:assert/strict";
-import { canComment, canJoin, canManage, canModerate, canPost, canSeeTest, canView, checkInviteCode, cleanLinks, normaliseInviteCode, validateCommunityFields } from "../lib/communityRules.js";
+import { canComment, canJoin, canManage, canModerate, canPost, canSeeTest, canView, checkInviteCode, cleanLinks, normaliseInviteCode, testCommunityIds, testInAnyCommunity, validateCommunityFields } from "../lib/communityRules.js";
 
 const student = { id: "s1", role: "student" };
 const prof = { id: "p1", role: "academician" };
@@ -97,4 +97,16 @@ test("fields and links are validated", () => {
   assert.equal(validateCommunityFields({ name: "Dravyaguna Batch", visibility: "open" }), null);
   assert.match(validateCommunityFields({ name: "Dravyaguna Batch", memberCap: 5 }), /member cap/);
   assert.deepEqual(cleanLinks([{ url: "javascript:alert(1)" }, { url: "https://ncism.gov.in", title: "NCISM" }]).map((l) => l.url), ["https://ncism.gov.in"]);
+});
+
+test("a test can be shared with several communities", () => {
+  const legacy = { audience: "community", communityId: "c1" };
+  assert.deepEqual(testCommunityIds(legacy), ["c1"]);
+  const shared = { audience: "community", communityId: "c1", communityIds: ["c1", "c2", "c2", null] };
+  assert.deepEqual(testCommunityIds(shared), ["c1", "c2"]);
+  assert.deepEqual(testCommunityIds({ audience: "public", communityId: null }), []);
+  assert.deepEqual(testCommunityIds(null), []);
+  assert.equal(testInAnyCommunity(shared, new Set(["c2"])), true);
+  assert.equal(testInAnyCommunity(shared, new Set(["c3"])), false);
+  assert.equal(testInAnyCommunity(legacy, new Set(["c1"])), true);
 });

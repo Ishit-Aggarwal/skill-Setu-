@@ -17,6 +17,7 @@ import { CERTIFICATES } from "../../lib/settings";
 import { buildCertificateSnapshot } from "../../lib/credentials";
 import { ayushSystemLabel } from "../../lib/ayush";
 import { durationMinutes } from "../../lib/testWindow";
+import { communityNameFor } from "./communityAccess";
 
 export async function resolveBranding(ctx, test) {
   const override = await ctx.db
@@ -150,7 +151,7 @@ export async function issueCertificateForAttempt(ctx, { test, attempt, student, 
     testDate: attempt.startedAt || test.startedAt || issuedAt,
     durationMinutes: durationMinutes(test),
     ayushSystemLabel: test.ayushSystem ? ayushSystemLabel(test.ayushSystem) : "",
-    communityName: test.audience === "community" ? test.communityName || null : null,
+    communityName: await communityNameFor(ctx, test, student.id),
     certificateNo,
     verifyCode: code,
     issuedAt,

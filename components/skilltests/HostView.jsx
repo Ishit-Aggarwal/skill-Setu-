@@ -50,7 +50,7 @@ import { api } from "../../convex/_generated/api";
 import { backendErrorMessage, backendMutation, backendQuery, isBackendConfigured } from "../../lib/convexBrowser";
 import { AYUSH_SYSTEM_FIELD_LABEL, ayushSystemLabel, isAyushSystem, needsAyushRetag } from "../../lib/ayush";
 import { AyushSystemSelect, RetagPrompt } from "../AyushSystemSelect";
-import { AI, EXAM } from "../../lib/settings";
+import { AI, COMMUNITIES, EXAM } from "../../lib/settings";
 import { PAPER_TYPE_LABEL, paperCounter } from "../../lib/grading";
 import { validatePaper } from "../../lib/questions";
 import { autoSubmitMessage } from "../../lib/examState";
@@ -99,7 +99,7 @@ const EMPTY_TEST_FORM = {
   poolEnabled: false,
   poolSize: "",
   audience: "public",
-  communityId: "",
+  communityIds: [],
   pinInCommunity: false,
 };
 
@@ -521,6 +521,7 @@ export default function HostView({ user }) {
   // Communities this host owns or moderates: the "Only members of a community" choices.
   const { data: communityLists } = useSessionQuery(api.communities.mine, {}, { skip: !["academician", "institution"].includes(user.role) });
   const hostedCommunities = (communityLists?.running || []).filter((c) => !c.archived);
+  const allCommunitiesChosen = form.communityIds?.length > 0 && form.communityIds.length >= Math.min(hostedCommunities.length, COMMUNITIES.MAX_TEST_COMMUNITIES);
 
   const draftKey = `${user.id}`;
 
@@ -572,7 +573,7 @@ export default function HostView({ user }) {
     if (typeof window === "undefined") return;
     const communityId = new URLSearchParams(window.location.search).get("community");
     if (!communityId) return;
-    openCreate({ audience: "community", communityId, price: "0" });
+    openCreate({ audience: "community", communityIds: [communityId], price: "0" });
     window.history.replaceState(null, "", window.location.pathname);
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
@@ -616,8 +617,9 @@ export default function HostView({ user }) {
       if (leadError) return setFormError(leadError);
     }
     if (!isAyushSystem(form.ayushSystem)) return setFormError(`Choose the ${AYUSH_SYSTEM_FIELD_LABEL} this test belongs to.`);
-    if (form.audience === "community" && !hostedCommunities.some((c) => c.id === form.communityId)) {
-      return setFormError("Choose one of your communities for this test, or make it public.");
+    const chosenCommunities = hostedCommunities.filter((c) => form.communityIds.includes(c.id));
+    if (form.audience === "community" && !chosenCommunities.length) {
+      return setFormError("Choose at least one of your communities for this test, or make it public.");
     }
     if (form.poolEnabled) {
       const n = Number(form.poolSize);
@@ -666,8 +668,9 @@ export default function HostView({ user }) {
       // Community tests are free.
       price: form.audience === "community" ? 0 : Number(form.price) || 0,
       audience: form.audience === "community" ? "community" : "public",
-      communityId: form.audience === "community" ? form.communityId : null,
-      communityName: form.audience === "community" ? hostedCommunities.find((c) => c.id === form.communityId)?.name || null : null,
+      communityId: form.audience === "community" ? chosenCommunities[0].id : null,
+      communityIds: form.audience === "community" ? chosenCommunities.map((c) => c.id) : [],
+      communityName: form.audience === "community" ? chosenCommunities.map((c) => c.name).join(", ") : null,
       pinInCommunity: form.audience === "community" ? Boolean(form.pinInCommunity) : undefined,
       description: form.description,
       prerequisites: form.prerequisites,
@@ -721,7 +724,13 @@ export default function HostView({ user }) {
     setForm(EMPTY_TEST_FORM);
     setShowModal(false);
     refresh();
-    setFlash(form.audience === "community" ? "Test published. It's posted in the community and members are being notified." : "Test published.");
+    setFlash(
+      form.audience !== "community"
+        ? "Test published."
+        : chosenCommunities.length > 1
+          ? `Test published to ${chosenCommunities.length} communities. It's posted in each one and members are being notified.`
+          : "Test published. It's posted in the community and members are being notified."
+    );
   }
 
   function retag(test, ayushSystem) {
@@ -1258,18 +1267,46 @@ export default function HostView({ user }) {
                 </div>
                 {form.audience === "community" && (
                   <>
-                    <Select value={form.communityId} onChange={(e) => set("communityId", e.target.value)} aria-label="Community">
-                      <option value="">Choose a community…</option>
-                      {hostedCommunities.map((c) => (
-                        <option key={c.id} value={c.id}>
-                          {c.name} ({c.memberCount} member{c.memberCount === 1 ? "" : "s"})
-                        </option>
-                      ))}
-                    </Select>
-                    <p className="text-[11px] text-muted-foreground">Only active members can see, register for and sit it; it never appears in public Browse. It's free, posted in the community, and members are notified.</p>
+                    <div className="flex items-center justify-between gap-2">
+                      <p className="text-xs font-medium text-foreground">
+                        Communities <span className="text-muted-foreground font-normal">({form.communityIds.length} of {hostedCommunities.length} chosen)</span>
+                      </p>
+                      {hostedCommunities.length > 1 && (
+                        <button
+                          type="button"
+                          className="text-[11px] text-primary hover:underline"
+                          onClick={() => set("communityIds", allCommunitiesChosen ? [] : hostedCommunities.slice(0, COMMUNITIES.MAX_TEST_COMMUNITIES).map((c) => c.id))}
+                        >
+                          {allCommunitiesChosen ? "Clear all" : "Select all"}
+                        </button>
+                      )}
+                    </div>
+                    <div className="max-h-48 overflow-y-auto rounded-xl border border-border divide-y divide-border" role="group" aria-label="Communities">
+                      {hostedCommunities.map((c) => {
+                        const checked = form.communityIds.includes(c.id);
+                        const full = !checked && form.communityIds.length >= COMMUNITIES.MAX_TEST_COMMUNITIES;
+                        return (
+                          <label key={c.id} className={`flex items-center gap-2.5 px-3 py-2 text-xs ${full ? "opacity-50" : "cursor-pointer hover:bg-secondary/60"}`}>
+                            <input
+                              type="checkbox"
+                              checked={checked}
+                              disabled={full}
+                              onChange={(e) => set("communityIds", e.target.checked ? [...form.communityIds, c.id] : form.communityIds.filter((id) => id !== c.id))}
+                            />
+                            <span className="flex-1 min-w-0 truncate text-foreground">{c.name}</span>
+                            <span className="text-muted-foreground flex-shrink-0">
+                              {c.memberCount} member{c.memberCount === 1 ? "" : "s"}
+                            </span>
+                          </label>
+                        );
+                      })}
+                    </div>
+                    <p className="text-[11px] text-muted-foreground">
+                      Only active members of the chosen communities can see, register for and sit it; it never appears in public Browse. It's free, posted in each community, and their members are notified.
+                    </p>
                     <label className="flex items-center gap-2 text-xs text-foreground">
                       <input type="checkbox" checked={Boolean(form.pinInCommunity)} onChange={(e) => set("pinInCommunity", e.target.checked)} />
-                      Pin the announcement in the community
+                      Pin the announcement in {form.communityIds.length > 1 ? "each community" : "the community"}
                     </label>
                   </>
                 )}

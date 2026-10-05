@@ -4,7 +4,7 @@ import { v } from "convex/values";
 import { internal } from "./_generated/api";
 import { authError, getActor, publicUser, requireActor, resolveInstitutionId } from "./_lib/authz";
 import { findUserById } from "./_lib/tests";
-import { findCommunity, membershipOf } from "./_lib/communityAccess";
+import { findCommunity, membershipOf, testsInCommunity } from "./_lib/communityAccess";
 import {
   actorInstitution,
   audit,
@@ -1352,10 +1352,7 @@ export const members = query({
       .withIndex("by_community_status", (q) => q.eq("communityId", s.community.id).eq("status", status))
       .collect();
     // Tests taken in this community, per student, from the attempts on its tests.
-    const tests = await ctx.db
-      .query("skillTests")
-      .withIndex("by_community", (q) => q.eq("communityId", s.community.id))
-      .collect();
+    const tests = await testsInCommunity(ctx, s.community.id);
     const taken = new Map();
     for (const test of tests) {
       const attempts = await ctx.db
@@ -1479,10 +1476,7 @@ export const insights = query({
       .sort((a, b) => b.createdAt - a.createdAt)
       .slice(0, 10)
       .map((p) => ({ id: p.id, title: p.title, createdAt: p.createdAt, seenBy: students.filter((m) => (m.lastSeenAt || 0) >= p.createdAt).length, of: students.length }));
-    const tests = await ctx.db
-      .query("skillTests")
-      .withIndex("by_community", (q) => q.eq("communityId", id))
-      .collect();
+    const tests = await testsInCommunity(ctx, id);
     const testStats = [];
     for (const t of tests) {
       const attempts = (
