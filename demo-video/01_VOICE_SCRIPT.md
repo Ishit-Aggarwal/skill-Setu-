@@ -125,13 +125,9 @@
 > Applied and Saved Internships, Applied Mentorships, and Notifications show the student's applications, saved roles, booked sessions, and alerts. / Portfolio, Readiness, Analytics and Settings are simple.
 
 ### S12 · 🟡 MED · SITE: Resume Coach
-**On screen:** Click **Resume Coach**. Drop the sample resume file in. Show the result: strong, weak, the claimed-versus-verified chart, the next tests, the study plan.
+**On screen:** Click **Resume Coach**. Drop the sample resume file in. Show the result in this order: **Strengths** and **Resume fixes**, then the **Claimed vs verified** chart, then **Your next tests**, then the **Study plan**. Stay on each for about 2 to 3 seconds.
 
-> In Resume Coach, the student drops in a resume, and our AI checks it. / It shows what is strong, what is weak, and what tests have proved.
-
----
-
-# PART 4 — ACADEMICIAN PORTAL
+> In Resume Coach, the student drops in a resume, and our AI reads it. / It shows strengths, what to fix, and what the resume claims against what tests have proved. / Then it suggests the next tests, and a study plan.
 
 ### S13 · 🟢 LOW · PPT: Academician slide, then SITE: Dashboard → My Students
 **On screen:** Quick PPT slide "Academician Portal" (3 seconds). Switch role to Academician. Dashboard (about 1 second). Click **My Students**, open one student's details (about 2.5 seconds).
