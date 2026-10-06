@@ -2,9 +2,9 @@
 
 **Team:** Code Breaker · **Lead:** Ishit Aggarwal · **College:** Amity University, Noida · **Problem Statement:** SIH26044 (Ministry of AYUSH)
 
-**STATUS: S01 to S14, S16 and S17 are recorded and locked. S15 needs a re-record (see its corrected text). S20, S21, S23, S24 and S25 are merged into S19 and S22. Do not change their wording or their lengths unless Ishit asks.**
+**STATUS: S01 to S14 and S16 to S18 are recorded and locked. S15 needs a re-record (see its corrected text). S20, S21, S23, S24 and S25 are merged into S19 and S22. Do not change their wording or their lengths unless Ishit asks.**
 
-**Target length: under 5 minutes (about 4 min 55 s before trimming, based on your real recordings so far).**
+**Length: no time limit. The video is as long as your recordings (about 5 min 10 s).**
 
 ---
 
@@ -24,7 +24,7 @@
 
 ### Speaking style
 
-- Speed: **clear, at your natural pace** (your test recordings run about 150 words a minute, and that fits). Speak every word clearly. Do **not** slow down much: below about 140 words a minute the video can pass 5 minutes, and the editor will have to trim pauses and speed up screen waits to fit. The script is about 780 words.
+- Speed: **clear, at your natural pace** (your test recordings run about 150 words a minute, and that fits). Speak every word clearly. There is no time limit, so do not worry about length.
 - Tone: **friendly and calm**. Like explaining to a teacher you respect. Not like a news reader, and not like talking to a friend.
 - Smile a little when you say "Hello" and "Thank you". It changes your voice.
 - Keep the phone or mic **15 cm from your mouth**, a little to the side (so "p" and "b" sounds do not pop).
@@ -54,10 +54,10 @@
 
 | Version | Uses | Length (about) |
 |---|---|---|
-| **Main** (the one we submit) | every segment | **about 4 min 55 s** before trimming (the editor trims to fit under 5:00) |
+| **Main** (the one we submit) | every segment | **about 5 min 10 s** (no limit, nothing is cut) |
 | **Short** (optional extra) | 🔴 and 🟡 only | about 4 min 10 s |
 
-**Safety rule for the editor:** if the real Main video goes over **4 min 50 s**, first trim pauses, then speed up 🟢 screen clips, and only then drop 🟢 segments. It must **never** go over 5 minutes.
+**Length rule for the editor:** there is no time limit. Do not cut content, drop segments, or speed up the voice to make the video shorter.
 
 ---
 
@@ -163,7 +163,7 @@
 ### S18 · 🟡 MED · SITE: Verify a Certificate → Faculty Profile → Settings
 **On screen:** Click **Verify a certificate**. Paste a code. Show the green **Valid** result. Then **Faculty Profile** and **Settings** (about 1 second each).
 
-> Every certificate has a unique code. / Type it in Verify, and anyone can check it is real.
+> Every certificate has a unique code attached to it. / This unique code can be used to verify the authenticity of the certificate. / It can be used by the professors, the institution, or the company.
 
 ---
 

@@ -19,7 +19,7 @@ The video will be watched by a **government judge who reviews about 500 submissi
 
 You are allowed to make many decisions yourself. Ask me only when you are truly blocked. Ask all your questions **together, once, at the start** (section 10).
 
-**HARD RULE — length: the main video must be 5 minutes or less. Aim for 4 min 30 s. Never over 5:00.** The judge has a time limit. If the real recordings make it longer, shorten it (section 3 explains how). Do not ask me. Just fix it and report.
+**LENGTH: there is no time limit.** The speaker chose to keep every segment at its recorded length (about 5 min 10 s). Do **not** cut content, drop segments, or speed up or stretch the voice to make the video shorter. Only do the normal polish (trim long silences, cut real mistakes, section 6). Report the exact final length.
 
 ## 1. Facts
 
@@ -60,19 +60,12 @@ Never commit media, keys or `.env` files. Keep everything in `demo-video/work/` 
 
 | Version | Uses segments | Target length |
 |---|---|---|
-| **Main** (the one we submit) | all 26 | **about 4:55 before trimming, based on the speaker's real recordings; never over 5:00** |
+| **Main** (the one we submit) | all 21 voice segments | **natural length, about 5:10, no limit** |
 | **Short** (optional bonus, only if time allows) | 🔴 + 🟡 | about 4:10 |
 
-**If the real Main is over 4:50, shorten it in this order** (stop as soon as it is under 4:50):
+**No shortening is needed.** Do only this normal polish: trim silences and gaps to about 0.3 s (keep natural pauses at commas), and speed up pure waiting on screen (loading, AI "writing…", file upload) with a "sped up" label. Never drop segments, never cut what the speaker said, never change the speed of the voice for length.
 
-1. Trim silences and gaps to 0.3 s (keep natural pauses at commas).
-2. Speed up screen-only waits (loading, AI "writing…", file upload) and label them "sped up".
-3. Shorten 🟢 screen clips (about 1 s per tab is enough).
-4. Time-stretch the voice by at most 1.08× (section 6).
-5. If it still runs over, and the speaker kept S16's last sentence ("Here they can also decide the penalty for each violation…"), cut that last sentence from S16's audio. It repeats what S07 already says. Find the pause before it with silence detection, check it with speech-to-text if you can, and do not cut mid-word. List the cut in `REPORT.md`.
-6. Last: drop 🟢 segments, in this order: **S11, then S10**. If that is still not enough, shorten the merged S19 and S22 tours by showing fewer tabs (their voice stays). Never drop 🔴.
-
-**If you build the Short version:** when a dropped 🟢 segment was the one that **changes the portal** (S13, S19), insert a **1.5-second title card** (for example "ACADEMICIAN PORTAL") so the jump does not feel broken.
+**If you build the optional Short version:** when a dropped segment was the one that **changes the portal** (S13, S19), insert a **1.5-second title card** (for example "ACADEMICIAN PORTAL") so the jump does not feel broken.
 
 The real lengths come from the real recordings. Measure with `ffprobe`. Report the real numbers.
 
@@ -120,7 +113,7 @@ The real lengths come from the real recordings. Measure with `ffprobe`. Report t
 
 1. Measure each `Sxx` clean voice file with `ffprobe` → `dur(Sxx)`.
 2. For each segment, write the on-screen actions as a short list with weights, for example: `[click Skill Tests (1), pause (1), hover Browse Tests (2), click My Tests (2), pause (2)]`.
-3. Give the segment a time budget of `dur(Sxx) + 0.3 s lead-in + 0.3 s tail` (never more, the video must stay under 5:00), and stretch the waits so the actions **fill exactly that time**.
+3. Give the segment a time budget of `dur(Sxx) + 0.3 s lead-in + 0.3 s tail`, and stretch the waits so the actions **fill exactly that time**.
 4. Record the whole portal in **one Playwright session** (one continuous video), and log the **start and end timestamp of each segment** against the video clock.
    - On 🟢 segments the script has several tabs in a few seconds. Show each tab for about 1–1.5 s. A segment is as long as the **longer** of its voice and its minimum screen time.
 5. Cut the video by those timestamps, and place the voice on the same timeline. You should need almost no re-timing. If a clip must be adjusted, keep speed between **0.85× and 1.2×**. Never more.
@@ -207,7 +200,7 @@ Do not stop. Instead produce **`demo-video/out/SHOT_LIST.md`**: a numbered shot 
 
 | File | What |
 |---|---|
-| `SkillSetu_Demo.mp4` | **the main video, 5:00 or less** |
+| `SkillSetu_Demo.mp4` | **the main video (natural length, no limit)** |
 | `SkillSetu_Demo_Short.mp4` | optional: 🔴 + 🟡 only |
 | `*.srt` | subtitles, one per video |
 | `SkillSetu_Demo_720p.mp4` | smaller copy for upload limits (H.264, aim under 50 MB if possible) |
@@ -227,7 +220,7 @@ Format: **MP4, H.264, 1920×1080, 30 fps, AAC 192 kbps, yuv420p, `+faststart`**.
 - [ ] Every claim in the voice is really shown on screen. Anything shown **only** by edit or sped-up is labelled.
 - [ ] Watch the final file end to end. Extract frames at every segment start and look at them.
 - [ ] Loudness is about −16 LUFS, true peak ≤ −1.5 dBTP, on every video you export.
-- [ ] **Main video is 5:00 or less.** Report the exact length.
+- [ ] Report the exact length of every video you export.
 
 ## 10. Ask me these first (all together, once)
 
