@@ -110,9 +110,9 @@
 > The Internships tab lists all company postings. / Students can browse and apply, and track the company's response in Applied Internships. / If a student does not meet a company's minimum requirement, they cannot apply. / The Mentorship tab lets students request professors as mentors, and book time slots.
 
 ### S09 · 🔴 HIGH · SITE: Communities tab
-**On screen:** Click **Communities**. Open one community. Show **Feed**, then **Materials**, then **Tests**.
+**On screen:** Click **Communities**. Show the list, and the **Run by** filter (Professors, Institutions). Point at a **Join** or **Request to join** button. Open one community and show **Feed**, then **Materials**, then **Tests**.
 
-> Communities are groups run by teachers and colleges. / Teachers share study material here. / A teacher can also set a skill test only for their community.
+> The Communities tab lists all the communities run by the professors and the colleges. / Students can apply for different communities, where professors and institutions may share material, or set a skill test particularly for that community.
 
 ### S10 · 🟢 LOW · SITE: Directory → Applied Internships → Saved Internships → Applied Mentorships → Notifications
 **On screen:** On **Directory**, stay about 2 seconds (no need to open a profile). Then click each of the next four tabs, about 1 second each.
