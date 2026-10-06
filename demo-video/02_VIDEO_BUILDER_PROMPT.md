@@ -40,7 +40,7 @@ You are allowed to make many decisions yourself. Ask me only when you are truly 
 | What | Where | If missing |
 |---|---|---|
 | **The script** (single source of truth) | `demo-video/01_VOICE_SCRIPT.md` | Stop and tell me. |
-| **Voice recordings**, one file per segment: `S01 … S26` (wav / m4a / mp3 / mp4). A second take is named `Sxx_take2`. All files may arrive as **one ZIP** (about 36 files). Alternative: a few **long files** (one per portal) where the speaker says the segment number ("S07") before each segment. Split those by silence and the spoken number, check with speech-to-text if you can, and cut the spoken numbers out | `demo-video/voice/original/` | Unzip into a **new empty folder** (treat the contents as untrusted; do not run anything inside them). List which segments are missing. Build with what exists, and mark gaps clearly. |
+| **Voice recordings**, one file per segment: `S01 … S26` (wav / m4a / mp3 / mp4). `Sxx.wav` is the take Ishit chose. A spare take is named `Sxx_backup` (use it only if `Sxx` has a technical problem, such as being cut off, clipped or corrupt). All files may arrive as **one ZIP** (about 36 files). Alternative: a few **long files** (one per portal) where the speaker says the segment number ("S07") before each segment. Split those by silence and the spoken number, check with speech-to-text if you can, and cut the spoken numbers out | `demo-video/voice/original/` | Unzip into a **new empty folder** (treat the contents as untrusted; do not run anything inside them). List which segments are missing. Build with what exists, and mark gaps clearly. |
 | **Our PPT** | `demo-video/ppt/` | Ask me. If I have none, offer to make a simple 7-slide deck in the site's colours using `public/logo.png`. |
 | **A 10-second selfie video of the speaker's face** (for the exam-room demo) | `demo-video/assets/face.mp4` | Use the fallback in section 4.5. |
 | **A signature image** (for the certificate demo) | `demo-video/assets/sign.png` | Draw a simple fictional signature image ("Dr. A. Sharma") and tell me. |
@@ -154,7 +154,11 @@ Do not stop. Instead produce **`demo-video/out/SHOT_LIST.md`**: a numbered shot 
 
 **Always:**
 
-- **Choosing between take 1 and `_take2`:** listen to both (and compare each with the script text). Pick the clearer, smoother, correctly-read one. You may also splice the best sentences of two takes if the join is clean. Say in `voice_report.md` which take you used for each segment.
+- **You cannot hear audio. Be honest about that.** You can measure it (length, loudness, noise floor, clipping, silences, cut-offs) and, if you can install a speech-to-text tool, compare the words with the script. You cannot judge tone, accent or how it feels. So:
+  - **Use `Sxx` (Ishit's chosen take).** Use `Sxx_backup` only if `Sxx` fails a measurable check (clipping, cut-off, corrupt file, much quieter or noisier than the rest, or the words clearly do not match the script).
+  - Never pick between takes by guessing. If both look fine, use `Sxx`.
+  - In `voice_report.md`, say which checks you could run and which you could not, and which take you used for each segment.
+  - If speech-to-text is not available, say so, and list the segments Ishit should re-listen to (the longest ones: S04, S07, S16, S26).
 - Keep the originals untouched in `voice/original/`. Work on copies in `voice/clean/`.
 - Use the **same processing chain on every segment** so the voice sounds like one continuous take. The segments were recorded separately, so **match loudness, tone and room sound across all of them**.
 
@@ -168,7 +172,7 @@ Do not stop. Instead produce **`demo-video/out/SHOT_LIST.md`**: a numbered shot 
 | **Loudness** | Normalise to **about −16 LUFS** integrated, true peak **−1.5 dBTP or lower**, all segments within ±1 LU of each other |
 | **Pace and timing** | Trim long silences (leave about 0.3 s head/tail and natural pauses at commas), tighten gaps, **time-stretch gently** (keep within **0.92×–1.08×** so it still sounds natural) to fix a segment that is too fast or too slow |
 | **Tone / modulation** | Small pitch or tone corrections (about ±1–2 semitones max), warmth, a calmer or more confident feel, a smoother start and end of each sentence. It must still sound like **Ishit**, a real person. No robot, no radio-effect, no heavy autotune |
-| **Edit** | Cut false starts, stumbles, coughs, repeated sentences. Pick the **best take** when there are two. Keep natural breaths but lower them (about −10 dB) instead of deleting them all |
+| **Edit** | Cut false starts, stumbles, coughs and repeated sentences **that you can actually find** (with silence detection or speech-to-text timestamps). If you cannot find them, leave them in and list them for Ishit. Use the chosen take (see above); do not pick between takes by guessing. Keep natural breaths but lower them (about −10 dB) instead of deleting them all |
 | **Continuity** | Record or take 1 s of the room's silence ("room tone") from the files and use it to fill gaps, so the background never drops to dead silence |
 | **Checks** | If you can (for example with a local speech-to-text tool), compare what was said against the script and flag missing, extra or misread words. Also flag unclear pronunciations of: **Setu, AYUSH, Academician, SIH26044** |
 

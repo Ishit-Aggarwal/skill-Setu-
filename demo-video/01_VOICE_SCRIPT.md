@@ -12,12 +12,13 @@
 2. **Record each segment as its own file**: `S01`, `S02`, `S03` … (example: `S06.wav` or `S06.m4a`). One segment = one file. This makes editing and syncing much easier.
 3. Leave **1 second of silence** before and after each segment.
 4. Record **2 takes** of every 🔴 HIGH segment (10 segments: S01, S02, S03, S04, S06, S07, S09, S16, S17, S26). One take is enough for 🟡 and 🟢.
-   - Name them like this: first take `S07.wav`, second take `S07_take2.wav`. Do not delete either. The editor picks the better one.
+   - **Listen to both, then you choose.** Save the take you like best as `S07.wav` and the other one as `S07_backup.wav`. The editor uses `S07.wav`, and uses the backup only if there is a sound problem (for example the audio is cut off or distorted). The editor is an AI and **cannot hear your voice**, so your choice is the final choice.
    - That is about **26 files + 10 extra takes = 36 files**. Put them all in one folder and **zip it into one file**. One ZIP is the easiest thing to upload.
    - Short on space? Use `.m4a` or `.mp3`. The sound quality is fine for this.
    - **Too many files for the upload window?** Fallback: record one long file per portal (Opening, Student, Academician, Institution, Industry, Closing). Say the segment number out loud before each segment (for example "S07"), then a 1-second pause, then read it. The editor will split the file and cut out the numbers.
 5. If you make a mistake, do not stop. Wait 2 seconds and read the sentence again. The editor will cut the mistake.
 6. The `/` mark inside a line means: **take a small pause and a breath**. Do not say "slash".
+7. After recording, **listen to everything once.** If a segment has a cough, a wrong word or a bad sound, record it again. Cleaning can fix noise and volume, but it **cannot fix a wrong word**.
 
 ### Speaking style
 
