@@ -2,7 +2,7 @@
 
 **Team:** Code Breaker · **Lead:** Ishit Aggarwal · **College:** Amity University, Noida · **Problem Statement:** SIH26044 (Ministry of AYUSH)
 
-**Target length: under 5 minutes (about 4 min 35 s at your reading pace, about 150 words a minute).**
+**Target length: under 5 minutes (about 4 min 45 s, based on your real recordings so far).**
 
 ---
 
@@ -52,8 +52,8 @@
 
 | Version | Uses | Length (about) |
 |---|---|---|
-| **Main** (the one we submit) | every segment | **4 min 35 s** at about 150 words a minute, about 5 min at 135 (the editor will trim to fit) |
-| **Short** (optional extra) | 🔴 and 🟡 only | about 4 min |
+| **Main** (the one we submit) | every segment | **about 4 min 45 s** (the editor will trim to fit if it runs over) |
+| **Short** (optional extra) | 🔴 and 🟡 only | about 4 min 10 s |
 
 **Safety rule for the editor:** if the real Main video goes over **4 min 50 s**, first trim pauses, then speed up 🟢 screen clips, and only then drop 🟢 segments. It must **never** go over 5 minutes.
 
@@ -104,10 +104,10 @@
 
 > Now, our exam security. / The student gives consent, and we check the camera and microphone. Without consent, they cannot take the test. / The test runs in full screen mode, Escape is locked, and it is recorded. / The system watches the face, listens to the voice, and detects any attempt to close or change windows. / Any anomaly means points are deducted, or the test fails. / The professor can decide how many points are deducted, and how many violations fail the student. / And the professor can watch the video of the full exam, up to 90 days after the exam has been conducted.
 
-### S08 · 🟢 LOW · SITE: Internships → Mentorship
-**On screen:** Click **Internships** (about 1.5 seconds), then **Mentorship** (about 1.5 seconds).
+### S08 · 🟡 MED · SITE: Internships → Mentorship
+**On screen:** Click **Internships** and scroll the list slowly (about 8 seconds). Stop on a card that says **Not eligible yet** with a greyed-out **Not eligible** button. If the demo has none, turn on **Only show roles I'm eligible for**. Then click **Mentorship** and show the list of professors and a time slot (about 6 seconds).
 
-> Internships and Mentorship help students find jobs and mentors.
+> The Internships tab lists all company postings. / Students can browse and apply, and track the company's response in Applied Internships. / If a student does not meet a company's minimum requirement, they cannot apply. / The Mentorship tab lets students request professors as mentors, and book time slots.
 
 ### S09 · 🔴 HIGH · SITE: Communities tab
 **On screen:** Click **Communities**. Open one community. Show **Feed**, then **Materials**, then **Tests**.
