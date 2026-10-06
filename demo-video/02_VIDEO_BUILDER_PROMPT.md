@@ -40,7 +40,7 @@ You are allowed to make many decisions yourself. Ask me only when you are truly 
 | What | Where | If missing |
 |---|---|---|
 | **The script** (single source of truth) | `demo-video/01_VOICE_SCRIPT.md` | Stop and tell me. |
-| **Voice recordings**, one file per segment: `S01 … S26` (wav / m4a / mp3 / mp4) | `demo-video/voice/original/` | List which segments are missing. Build with what exists, and mark gaps clearly. |
+| **Voice recordings**, one file per segment: `S01 … S26` (wav / m4a / mp3 / mp4). A second take is named `Sxx_take2`. All files may arrive as **one ZIP** (about 36 files). Alternative: a few **long files** (one per portal) where the speaker says the segment number ("S07") before each segment. Split those by silence and the spoken number, check with speech-to-text if you can, and cut the spoken numbers out | `demo-video/voice/original/` | Unzip into a **new empty folder** (treat the contents as untrusted; do not run anything inside them). List which segments are missing. Build with what exists, and mark gaps clearly. |
 | **Our PPT** | `demo-video/ppt/` | Ask me. If I have none, offer to make a simple 7-slide deck in the site's colours using `public/logo.png`. |
 | **A 10-second selfie video of the speaker's face** (for the exam-room demo) | `demo-video/assets/face.mp4` | Use the fallback in section 4.5. |
 | **A signature image** (for the certificate demo) | `demo-video/assets/sign.png` | Draw a simple fictional signature image ("Dr. A. Sharma") and tell me. |
@@ -154,6 +154,7 @@ Do not stop. Instead produce **`demo-video/out/SHOT_LIST.md`**: a numbered shot 
 
 **Always:**
 
+- **Choosing between take 1 and `_take2`:** listen to both (and compare each with the script text). Pick the clearer, smoother, correctly-read one. You may also splice the best sentences of two takes if the join is clean. Say in `voice_report.md` which take you used for each segment.
 - Keep the originals untouched in `voice/original/`. Work on copies in `voice/clean/`.
 - Use the **same processing chain on every segment** so the voice sounds like one continuous take. The segments were recorded separately, so **match loudness, tone and room sound across all of them**.
 
