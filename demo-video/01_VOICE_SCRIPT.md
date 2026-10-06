@@ -2,6 +2,8 @@
 
 **Team:** Code Breaker · **Lead:** Ishit Aggarwal · **College:** Amity University, Noida · **Problem Statement:** SIH26044 (Ministry of AYUSH)
 
+**STATUS: S01 to S13 are recorded and locked. Do not change their wording or their lengths unless Ishit asks.**
+
 **Target length: under 5 minutes (about 4 min 55 s before trimming, based on your real recordings so far).**
 
 ---
