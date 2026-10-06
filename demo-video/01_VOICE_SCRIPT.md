@@ -64,12 +64,12 @@
 ### S01 · 🔴 HIGH · PPT: Title slide
 **On screen:** Title slide with "Skill Setu" and the team name.
 
-> Hello! / We are team Code Breaker, a team of first-year students from Amity University, Noida. / I am Ishit Aggarwal, the team lead.
+> Hello! / We are team Code Breaker, a team of first-year students from Amity University, Noida. / I am the team leader, Ishit Aggarwal.
 
-### S02 · 🔴 HIGH · PPT: Problem slide
-**On screen:** The problem slide.
+### S02 · 🔴 HIGH · PPT: Problem statement slide
+**On screen:** The problem statement slide.
 
-> Our problem is SIH26044, from the Ministry of AYUSH. / Students do not know what skills companies need. / And companies cannot check real skills.
+> Today, I will be presenting our solution to SIH problem statement 26044, / a portal for academia-industry collaboration, / for skill mapping, internships and placements.
 
 ### S03 · 🔴 HIGH · PPT: Solution slide
 **On screen:** The solution slide with the four portals.
