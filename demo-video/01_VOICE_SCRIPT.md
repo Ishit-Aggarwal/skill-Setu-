@@ -97,7 +97,7 @@
 ### S06 · 🔴 HIGH · SITE: Skill Tests tab
 **On screen:** Click **Skill Tests**. Show **Browse Tests**, then **My Tests**.
 
-> Skill Tests is the heart of our site. / Students see tests, register, and see their results in My Tests.
+> Now, Skill Tests, the heart of our platform. / Students can browse tests, register for them, and see their results in My Tests.
 
 ### S07 · 🔴 HIGH · SITE: Exam room (security features)
 **On screen:** Open a test → exam room. Show: consent screen, camera and microphone check, full screen, the monitoring banner, a warning when the face is not seen.
