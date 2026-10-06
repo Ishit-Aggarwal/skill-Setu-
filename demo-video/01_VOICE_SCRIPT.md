@@ -2,7 +2,7 @@
 
 **Team:** Code Breaker · **Lead:** Ishit Aggarwal · **College:** Amity University, Noida · **Problem Statement:** SIH26044 (Ministry of AYUSH)
 
-**STATUS: S01 to S14 are recorded and locked. S15 needs a re-record (see its corrected text). S20, S21, S23, S24 and S25 are merged into S19 and S22. Do not change their wording or their lengths unless Ishit asks.**
+**STATUS: S01 to S14, S16 and S17 are recorded and locked. S15 needs a re-record (see its corrected text). S20, S21, S23, S24 and S25 are merged into S19 and S22. Do not change their wording or their lengths unless Ishit asks.**
 
 **Target length: under 5 minutes (about 4 min 55 s before trimming, based on your real recordings so far).**
 
@@ -153,12 +153,12 @@
 ### S16 · 🔴 HIGH · SITE: Skill Tests (professor side — AI test builder)
 **On screen:** Click **Skill Tests** → host a new test. Show the audience choice (everyone, or only a community). Show the four options: **Generate from a topic**, **Generate from my documents**, **Import an existing paper**, **Write manually**. Run **Generate from a topic** with the number of questions, **Difficulty** and the single or multiple answers choice visible. Show questions appearing with their explanations. Briefly show the **sample papers** option (about 1 second).
 
-> Professors can host skill tests for everyone, or only for their own community. / They choose the number of questions, the difficulty, and single or multiple answers. / The AI can build the paper from a topic, or from their documents, with an explanation for each answer. / They can also attach sample papers, or import their own paper.
+> Professors can host skill tests for everyone, or only for their own community. / They can choose the number of questions, the difficulty, and single or multiple answers. / The AI can build a paper from a topic, or the documents provided by them, with an explanation for each answer. / They can also attach sample papers, or import their own paper. / Here they can also decide the penalty for each violation, and how many violations a student is allowed before they fail the test.
 
 ### S17 · 🔴 HIGH · SITE: Certificate Settings
 **On screen:** Click **Certificate Settings**. Show the logo and signature upload boxes, and the name, institution and title already filled in from the profile. Click the AI **Generate** button and show the designed certificate preview. Then point at **Upload an existing certificate** (about 1 second).
 
-> Professors upload the institute logo and their own signature. / All other details come from their profile. / The AI then designs the certificate. / Or they can upload their own certificate, and the AI recreates it.
+> Professors upload the institute logo and their own signature. / All other details come from the profile. / The AI then designs the certificate, or they can upload their own certificate and the AI recreates it. / This is then issued to all students upon completion of that skill test.
 
 ### S18 · 🟡 MED · SITE: Verify a Certificate → Faculty Profile → Settings
 **On screen:** Click **Verify a certificate**. Paste a code. Show the green **Valid** result. Then **Faculty Profile** and **Settings** (about 1 second each).

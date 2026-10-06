@@ -69,7 +69,8 @@ Never commit media, keys or `.env` files. Keep everything in `demo-video/work/` 
 2. Speed up screen-only waits (loading, AI "writing…", file upload) and label them "sped up".
 3. Shorten 🟢 screen clips (about 1 s per tab is enough).
 4. Time-stretch the voice by at most 1.08× (section 6).
-5. Last: drop 🟢 segments, in this order: **S11, then S10**. If that is still not enough, shorten the merged S19 and S22 tours by showing fewer tabs (their voice stays). Never drop 🔴.
+5. If it still runs over, and the speaker kept S16's last sentence ("Here they can also decide the penalty for each violation…"), cut that last sentence from S16's audio. It repeats what S07 already says. Find the pause before it with silence detection, check it with speech-to-text if you can, and do not cut mid-word. List the cut in `REPORT.md`.
+6. Last: drop 🟢 segments, in this order: **S11, then S10**. If that is still not enough, shorten the merged S19 and S22 tours by showing fewer tabs (their voice stays). Never drop 🔴.
 
 **If you build the Short version:** when a dropped 🟢 segment was the one that **changes the portal** (S13, S19), insert a **1.5-second title card** (for example "ACADEMICIAN PORTAL") so the jump does not feel broken.
 
