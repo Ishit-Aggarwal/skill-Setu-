@@ -102,7 +102,7 @@
 ### S07 · 🔴 HIGH · SITE: Exam room (security features)
 **On screen:** Open a test → exam room. Show: the consent screen (tick the box), the camera and microphone check, full screen, the monitoring banner, and a warning when the face is not seen or the student looks away. On the last line, cut for about 4 seconds to the professor's **Proctoring report** (the full recording with flagged moments marked on the timeline).
 
-> Now, our exam security. / The student gives consent, and we check the camera and microphone. Without consent, they cannot take the test. / The test runs in full screen, Escape is locked, and it is recorded. / The system watches the face, listens to the voice, and detects any attempt to close or change windows. / Any anomaly means points are deducted, or the test fails. / The professor decides how many points are deducted, and how many violations fail the student. / And the professor can watch the full exam video.
+> Now, our exam security. / The student gives consent, and we check the camera and microphone. Without consent, they cannot take the test. / The test runs in full screen mode, Escape is locked, and it is recorded. / The system watches the face, listens to the voice, and detects any attempt to close or change windows. / Any anomaly means points are deducted, or the test fails. / The professor can decide how many points are deducted, and how many violations fail the student. / And the professor can watch the video of the full exam, up to 90 days after the exam has been conducted.
 
 ### S08 · 🟢 LOW · SITE: Internships → Mentorship
 **On screen:** Click **Internships** (about 1.5 seconds), then **Mentorship** (about 1.5 seconds).
