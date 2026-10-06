@@ -2,7 +2,7 @@
 
 **Team:** Code Breaker · **Lead:** Ishit Aggarwal · **College:** Amity University, Noida · **Problem Statement:** SIH26044 (Ministry of AYUSH)
 
-**Target length: under 5 minutes (about 4 min 30 s at your reading pace).**
+**Target length: under 5 minutes (about 4 min 35 s at your reading pace).**
 
 ---
 
@@ -22,7 +22,7 @@
 
 ### Speaking style
 
-- Speed: **slow and clear**, about 120–130 words a minute. The judge may not know much English. Do **not** rush to save time, but also do **not** go slower than about 125 words a minute, or the video will pass 5 minutes. The script is only about 560 words.
+- Speed: **slow and clear**, about 120–130 words a minute. The judge may not know much English. Do **not** rush to save time, but also do **not** go slower than about 135 words a minute, or the video will pass 5 minutes. The script is only about 590 words.
 - Tone: **friendly and calm**. Like explaining to a teacher you respect. Not like a news reader, and not like talking to a friend.
 - Smile a little when you say "Hello" and "Thank you". It changes your voice.
 - Keep the phone or mic **15 cm from your mouth**, a little to the side (so "p" and "b" sounds do not pop).
@@ -52,8 +52,8 @@
 
 | Version | Uses | Length (about) |
 |---|---|---|
-| **Main** (the one we submit) | every segment | **4 min 30 s** at about 150 words a minute, **4 min 55 s** at 125 |
-| **Short** (optional extra) | 🔴 and 🟡 only | 3 min 40 s to 4 min |
+| **Main** (the one we submit) | every segment | **4 min 35 s** at about 150 words a minute, **4 min 50 s** at 135 |
+| **Short** (optional extra) | 🔴 and 🟡 only | 3 min 50 s to 4 min 5 s |
 
 **Safety rule for the editor:** if the real Main video goes over **4 min 50 s**, first trim pauses, then speed up 🟢 screen clips, and only then drop 🟢 segments. It must **never** go over 5 minutes.
 
@@ -89,10 +89,10 @@
 
 # PART 3 — STUDENT PORTAL
 
-### S05 · 🟢 LOW · PPT: Student portal slide, then SITE: Student Dashboard
-**On screen:** Quick PPT slide "Student Portal" (3 seconds). Then click Demo Mode → Student. Dashboard opens.
+### S05 · 🟡 MED · PPT: Student portal slide, then SITE: Student Dashboard
+**On screen:** Quick PPT slide "Student Portal" (3 seconds). Then click Demo Mode → Student. Dashboard opens. Start at the top on **What needs you next**, then the five number cards (Skill Score, Applications, Certificates, Tests Taken, Profile Strength). Scroll slowly down to **How your score is moving** (the graph) and stop there.
 
-> First, the Student portal. / This is the dashboard.
+> First, the Student portal. / This is the student dashboard. / It shows what the student should do next, key numbers like skill score and applications, and how their score is moving.
 
 ### S06 · 🔴 HIGH · SITE: Skill Tests tab
 **On screen:** Click **Skill Tests**. Show **Browse Tests**, then **My Tests**.
