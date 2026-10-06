@@ -134,7 +134,7 @@
 # PART 4 — ACADEMICIAN PORTAL
 
 ### S13 · 🟢 LOW · PPT: Academician slide, then SITE: Dashboard → My Students
-**On screen:** Quick PPT slide "Academician Portal" (3 seconds). Switch role to Academician. Dashboard (about 1 second). Click **My Students**, open one student's details (about 2.5 seconds).
+**On screen:** Quick PPT slide "Academician Portal" (3 seconds). Switch role to Academician. Dashboard (about 0.5 seconds). Click **My Students** and scroll the list (about 1.5 seconds). No need to open a student.
 
 > Now, the Academician portal. / Teachers can open any student's details.
 
@@ -144,7 +144,7 @@
 > Teachers can create communities, change entry type, invite or accept students, and ban or remove them.
 
 ### S15 · 🟡 MED · SITE: Mentorship → Research Collabs → Programs → Industry Alignment → Campus Board → Analytics
-**On screen:** Click the first three tabs (about 1 second each). **Stay on Industry Alignment** for about 3 seconds and show the "Demand vs. readiness" chart. Then **Campus Board** and **Analytics** (about 1 second each).
+**On screen:** Click the first three tabs (about 1 second each). **Stay on Industry Alignment** for about 2 seconds and show the "Demand vs. readiness" chart. Then **Campus Board** and **Analytics** (about 1 second each).
 
 > Mentorship, Research and Programs are extras. / Industry Alignment shows which students are falling behind.
 
@@ -192,12 +192,12 @@
 > Last, the Industry portal, for companies. / On the dashboard, scroll down to see how many applied, and how many were hired.
 
 ### S23 · 🟡 MED · SITE: Postings → Talent Pool
-**On screen:** Click **Postings** (about 1.5 seconds). Click **Talent Pool**, open one student profile (about 3 seconds).
+**On screen:** Click **Postings** (about 1 second). Click **Talent Pool** and scroll the list (about 2.5 seconds). No need to open a profile.
 
 > Postings lists the company's jobs. / Talent Pool lets them browse student profiles.
 
 ### S24 · 🟡 MED · SITE: Offers & Joining → Analytics
-**On screen:** Click **Offers & Joining** (about 2.5 seconds). Click **Analytics** (about 2.5 seconds).
+**On screen:** Click **Offers & Joining** (about 2 seconds). Click **Analytics** (about 2 seconds).
 
 > Offers and Joining shows how many students joined. / Analytics shows numbers, like how many were rejected.
 
