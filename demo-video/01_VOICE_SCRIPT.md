@@ -133,10 +133,10 @@
 
 # PART 4 — ACADEMICIAN PORTAL
 
-### S13 · 🟢 LOW · PPT: Academician slide, then SITE: Dashboard → My Students
-**On screen:** Quick PPT slide "Academician Portal" (3 seconds). Switch role to Academician. Dashboard (about 0.5 seconds). Click **My Students** and scroll the list (about 1.5 seconds). No need to open a student.
+### S13 · 🟡 MED · PPT: Academician slide, then SITE: Dashboard → My Students
+**On screen:** Quick PPT slide "Academician Portal" (3 seconds). Switch role to Academician. Dashboard (about 0.5 seconds). Click **My Students**, open one student's profile and stay on the skill scores by domain, where the strong and weak points show (about 4 seconds).
 
-> Now, the Academician portal. / Teachers can open any student's details.
+> Now, the Academician portal. / Professors can open any student's details, view their profile, and look at the strong points and weak points, and proceed accordingly.
 
 ### S14 · 🟡 MED · SITE: Communities (teacher side)
 **On screen:** Click **Communities**. Open one community. Show **Settings** (entry status), **Invite**, **Members** (ban / remove), then **Audit log**.
