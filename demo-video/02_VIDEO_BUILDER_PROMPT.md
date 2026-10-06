@@ -80,7 +80,8 @@ The real lengths come from the real recordings. Measure with `ffprobe`. Report t
 ### 4.1 Run the site
 
 - **The live site is `https://skill-setu-kappa.vercel.app/`** (it is the homepage listed on the GitHub repo). **Try this first.** Check it with `curl -I`.
-  - If the connection is refused (403 from the proxy), the environment's **Network access** does not allow it. Tell me to add these **Allowed domains**: `skill-setu-kappa.vercel.app` and `images.unsplash.com` (the landing page background photo comes from there). Do not try to get around the proxy.
+  - If the connection is refused (403 from the proxy), the environment's **Network access** does not allow it. Tell me to add these **Allowed domains**: `skill-setu-kappa.vercel.app`, `images.unsplash.com` (the landing page background photo comes from there) **and the site's Convex address** (ends in `.convex.cloud`). The Convex one is needed because the browser talks to Convex directly (`lib/convexBrowser.js`), so the site loads but Demo Mode and the exam room fail without it. Do not try to get around the proxy.
+  - AI features (test generator, Resume Coach) run on the Vercel server, so the Gemini key and `generativelanguage.googleapis.com` are **not** needed in this environment when the deployed site is used.
 - **Localhost does NOT work on its own.** It was tested: without a Convex backend, Demo Mode crashes right after login ("Could not find Convex client"), and the landing photo does not load. Only use localhost if the Convex URL and keys are provided in the environment.
 - If neither works, go straight to the **fallback in 4.7** (shot list for Ishit to screen-record). Do not waste time on workarounds.
 - If I give a different deployed URL, use that.
@@ -229,7 +230,7 @@ Format: **MP4, H.264, 1920×1080, 30 fps, AAC 192 kbps, yuv420p, `+faststart`**.
 
 ## 10. Ask me these first (all together, once)
 
-1. Can I reach the live site `https://skill-setu-kappa.vercel.app/`? If not, which **Allowed domains** do I need you to add? (Localhost does not work without Convex.)
+1. Can I reach the live site `https://skill-setu-kappa.vercel.app/` **and its Convex address**? If not, which **Allowed domains** do I need you to add? (Localhost does not work without Convex.)
 2. Where is **our PPT**? Which slide is which? (Or: should I build one?)
 3. What is the **maximum length / file size** the SIH submission allows? (This decides which version is the main one.)
 4. Do you want **other team members named** in the intro? (Names + roles.)
