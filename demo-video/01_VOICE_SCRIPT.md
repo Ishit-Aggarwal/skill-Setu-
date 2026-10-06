@@ -146,9 +146,9 @@
 > Professors can create communities, change entry type, invite or accept students, and ban or remove them. / They can post materials, and host skill tests for the students.
 
 ### S15 · 🟡 MED · SITE: Mentorship → Research Collabs → Programs → Industry Alignment → Campus Board → Analytics
-**On screen:** Click the first three tabs (about 1 second each). **Stay on Industry Alignment** for about 2 seconds and show the "Demand vs. readiness" chart. Then **Campus Board** and **Analytics** (about 1 second each).
+**On screen:** **Mentorship**: show the calendar and the booking history (about 2 seconds). **Research Collabs**: show the "Propose a collaboration" call (about 1.5 seconds). **Programs**: show a hosted programme (about 1.5 seconds). **Stay on Industry Alignment** for about 2 seconds and show the "Demand vs. readiness" chart. Then **Campus Board** and **Analytics** (about 1 second each).
 
-> Mentorship, Research and Programs are extras. / Industry Alignment shows which students are falling behind.
+> Mentorship shows the time slots a professor publishes, and who booked them. / Research Collabs lets them post calls for research partners. / Programs lets them host faculty programs. / Industry Alignment shows which students are falling behind.
 
 ### S16 · 🔴 HIGH · SITE: Skill Tests (teacher side — AI test builder)
 **On screen:** Click **Skill Tests** → host a new test → show the four options: **Generate from a topic**, **Generate from my documents**, **Import an existing paper**, **Write manually**. Run **Generate from a topic** and show questions appearing.
