@@ -114,15 +114,15 @@
 
 > The Communities tab lists all the communities run by the professors and the colleges. / Students can apply for different communities, where professors and institutions may share material, or set a skill test particularly for that community.
 
-### S10 · 🟢 LOW · SITE: Directory → Applied Internships → Saved Internships → Applied Mentorships → Notifications
-**On screen:** On **Directory**, stay about 2 seconds (no need to open a profile). Then click each of the next four tabs, about 1 second each.
+### S10 · 🟢 LOW · SITE: Directory
+**On screen:** Click **Directory**. Stay on the **Institutes** list for about 5 seconds and point at the numbers on a card (placement rate, mentors, programmes).
 
-> The Directory lists all institutes. / The next four tabs keep the student's lists.
+> The Directory lists all institutions and their statistics, which the student can browse.
 
-### S11 · 🟢 LOW · SITE: My Portfolio → Placement Readiness → Analytics → Settings
-**On screen:** Click each tab, about 1 second each.
+### S11 · 🟢 LOW · SITE: Applied Internships → Saved Internships → Applied Mentorships → Notifications → My Portfolio → Placement Readiness → Analytics → Settings
+**On screen:** Click each tab, about 1 second each, in this order.
 
-> Portfolio, Readiness, Analytics and Settings are simple.
+> The next four tabs keep the student's lists. / Portfolio, Readiness, Analytics and Settings are simple.
 
 ### S12 · 🟡 MED · SITE: Resume Coach
 **On screen:** Click **Resume Coach**. Drop the sample resume file in. Show the result: strong, weak, the claimed-versus-verified chart, the next tests, the study plan.
