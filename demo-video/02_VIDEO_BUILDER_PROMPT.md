@@ -60,7 +60,7 @@ Never commit media, keys or `.env` files. Keep everything in `demo-video/work/` 
 
 | Version | Uses segments | Target length |
 |---|---|---|
-| **Main** (the one we submit) | all 26 | **about 4:45 based on the speaker's real recordings; never over 5:00** |
+| **Main** (the one we submit) | all 26 | **about 4:55 before trimming, based on the speaker's real recordings; never over 5:00** |
 | **Short** (optional bonus, only if time allows) | 🔴 + 🟡 | about 4:10 |
 
 **If the real Main is over 4:50, shorten it in this order** (stop as soon as it is under 4:50):
@@ -69,7 +69,7 @@ Never commit media, keys or `.env` files. Keep everything in `demo-video/work/` 
 2. Speed up screen-only waits (loading, AI "writing…", file upload) and label them "sped up".
 3. Shorten 🟢 screen clips (about 1 s per tab is enough).
 4. Time-stretch the voice by at most 1.08× (section 6).
-5. Last: drop 🟢 segments, starting with the ones that matter least (S11, S10). Never drop 🔴.
+5. Last: drop 🟢 segments, in this order: **S21, S25, S11, S10** (the quick tab tours that matter least). Never drop 🔴.
 
 **If you build the Short version:** when a dropped 🟢 segment was the one that **changes the portal** (S13, S19), insert a **1.5-second title card** (for example "ACADEMICIAN PORTAL") so the jump does not feel broken.
 

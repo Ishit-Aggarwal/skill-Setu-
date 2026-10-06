@@ -2,7 +2,7 @@
 
 **Team:** Code Breaker · **Lead:** Ishit Aggarwal · **College:** Amity University, Noida · **Problem Statement:** SIH26044 (Ministry of AYUSH)
 
-**Target length: under 5 minutes (about 4 min 45 s, based on your real recordings so far).**
+**Target length: under 5 minutes (about 4 min 55 s before trimming, based on your real recordings so far).**
 
 ---
 
@@ -52,7 +52,7 @@
 
 | Version | Uses | Length (about) |
 |---|---|---|
-| **Main** (the one we submit) | every segment | **about 4 min 45 s** (the editor will trim to fit if it runs over) |
+| **Main** (the one we submit) | every segment | **about 4 min 55 s** before trimming (the editor trims to fit under 5:00) |
 | **Short** (optional extra) | 🔴 and 🟡 only | about 4 min 10 s |
 
 **Safety rule for the editor:** if the real Main video goes over **4 min 50 s**, first trim pauses, then speed up 🟢 screen clips, and only then drop 🟢 segments. It must **never** go over 5 minutes.
