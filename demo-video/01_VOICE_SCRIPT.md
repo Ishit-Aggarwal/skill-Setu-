@@ -168,7 +168,7 @@
 # PART 5 — INSTITUTION PORTAL
 
 ### S19 · 🟢 LOW · PPT: Institution slide, then SITE: Dashboard → Student Roster → Communities
-**On screen:** Quick PPT slide "Institution Portal" (3 seconds). Switch role to Institution. Dashboard, **Student Roster**, **Communities** (about 1 second each).
+**On screen:** Quick PPT slide "Institution Portal" (3 seconds). Switch role to Institution. Dashboard and **Student Roster** (about 1 second each). Skip Communities.
 
 > Next, the Institution portal, for colleges. / The roster shows its students.
 
@@ -178,7 +178,7 @@
 > Curriculum Alignment shows what industry wants, and how well the syllabus matches.
 
 ### S21 · 🟢 LOW · SITE: Placement Drives → MOUs → Notice Board → Team & Activity → Profile → Settings
-**On screen:** Click **Placement Drives**, **MOUs & Partners**, **Notice Board**, **Team & Activity**, **Institution Profile**, **Settings**, about 1 second each.
+**On screen:** Click **Placement Drives**, **MOUs & Partners**, **Notice Board**, **Team & Activity**, about 1 second each. (Skip Profile and Settings.)
 
 > Drives, MOUs and notices help run placements.
 
@@ -202,7 +202,7 @@
 > Offers and Joining shows how many students joined. / Analytics shows numbers, like how many were rejected.
 
 ### S25 · 🟢 LOW · SITE: Verify → Skill Tests → Certificates → Hiring Team → Company Profile → Settings
-**On screen:** Click **Verify a certificate**, **Skill Tests**, **Certificate Settings**, **Hiring Team**, **Company Profile**, **Settings**, about 1 second each.
+**On screen:** Click **Verify a certificate**, **Hiring Team**, **Company Profile**, **Settings**, about 1 second each. (Skip Skill Tests and Certificate Settings. They were shown in the Academician portal.)
 
 > Verify, Tests and Certificates work as before.
 
