@@ -226,7 +226,7 @@ Format: **MP4, H.264, 1920×1080, 30 fps, AAC 192 kbps, yuv420p, `+faststart`**.
 
 1. Can I reach the live site `https://skill-setu-kappa.vercel.app/` **and its Convex address**? If not, which **Allowed domains** do I need you to add? (Localhost does not work without Convex.)
 2. Where is **our PPT**? Which slide is which? (Or: should I build one?)
-3. What is the **maximum length / file size** the SIH submission allows? (This decides which version is the main one.)
+3. What is the **maximum file size** the SIH submission allows? (There is **no time limit**. The main video keeps every segment.)
 4. Do you want **other team members named** in the intro? (Names + roles.)
 5. Is **"Amity University, Noida"** the exact college name to show on screen?
 6. Do you want a **website link / QR code** on the Thank-you slide? What is the link?
