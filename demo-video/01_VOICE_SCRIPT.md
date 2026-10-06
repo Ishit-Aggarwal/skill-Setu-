@@ -92,7 +92,7 @@
 ### S05 · 🟡 MED · PPT: Student portal slide, then SITE: Student Dashboard
 **On screen:** Quick PPT slide "Student Portal" (3 seconds). Then click Demo Mode → Student. Dashboard opens. Start at the top on **What needs you next**, then the five number cards (Skill Score, Applications, Certificates, Tests Taken, Profile Strength). Scroll slowly down to **How your score is moving** (the graph) and stop there.
 
-> First, the Student portal. / This is the student dashboard. / It shows what the student should do next, key numbers like skill score and applications, and how their score is moving.
+> First, the Student portal. / This is the student dashboard. / It shows what the student should do next, and things like the skill score, applications, and how their score is moving.
 
 ### S06 · 🔴 HIGH · SITE: Skill Tests tab
 **On screen:** Click **Skill Tests**. Show **Browse Tests**, then **My Tests**.
