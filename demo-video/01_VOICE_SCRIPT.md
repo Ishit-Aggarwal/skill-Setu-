@@ -36,6 +36,7 @@
 | AYUSH | AA-yoosh |
 | Academician | a-KAD-uh-MISH-un |
 | SIH26044 | S-I-H, two-six-zero-four-four |
+| Ishit Aggarwal | spelling: I-S-H-I-T  A-G-G-A-R-W-A-L (the subtitles use exactly this) |
 
 ### Priority colours
 
@@ -63,7 +64,7 @@
 ### S01 · 🔴 HIGH · PPT: Title slide
 **On screen:** Title slide with "Skill Setu" and the team name.
 
-> Hello! / We are team Code Breaker, a team of first-year students from Amity University, Noida. / I am Ishit Aggarwal, the team lead. / Today I will give a demo of our website, Skill Setu.
+> Hello! / We are team Code Breaker, a team of first-year students from Amity University, Noida. / Today, I, the team lead Ishit Aggarwal, will give a demo of our website, Skill Setu.
 
 ### S02 · 🔴 HIGH · PPT: Problem slide
 **On screen:** The problem slide.

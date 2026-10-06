@@ -28,7 +28,7 @@ You are allowed to make many decisions yourself. Ask me only when you are truly 
 | Product | **Skill Setu** — "Academia–Industry Collaboration Portal" for the AYUSH ecosystem |
 | Event | Smart India Hackathon · Ministry of AYUSH · **Problem Statement SIH26044** |
 | Team | **Code Breaker** |
-| Team lead and speaker | **Ishit Aggarwal** |
+| Team lead and speaker | **Ishit Aggarwal** — spelled **I-S-H-I-T  A-G-G-A-R-W-A-L**. Always use exactly this spelling in subtitles and on-screen text. If a speech-to-text tool writes the name differently (for example "Ishita Agarwal"), that is the tool's mistake. Never copy it. Subtitles always come from the script text. |
 | College | **Amity University, Noida** (we are all first-year students) |
 | Repo | the current repo (read `README.md` first — it explains the site and a demo walkthrough) |
 | Tech | Next.js 14 + Tailwind + Convex |
