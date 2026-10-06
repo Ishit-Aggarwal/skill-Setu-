@@ -2,7 +2,7 @@
 
 **Team:** Code Breaker · **Lead:** Ishit Aggarwal · **College:** Amity University, Noida · **Problem Statement:** SIH26044 (Ministry of AYUSH)
 
-**STATUS: S01 to S13 are recorded and locked. Do not change their wording or their lengths unless Ishit asks.**
+**STATUS: S01 to S14 are recorded and locked. Do not change their wording or their lengths unless Ishit asks.**
 
 **Target length: under 5 minutes (about 4 min 55 s before trimming, based on your real recordings so far).**
 
@@ -140,10 +140,10 @@
 
 > Now, the Academician portal. / Professors can open any student's details, view their profile, and look at the strong points and weak points, and proceed accordingly.
 
-### S14 · 🟡 MED · SITE: Communities (teacher side)
-**On screen:** Click **Communities**. Open one community. Show **Settings** (entry status), **Invite**, **Members** (ban / remove), then **Audit log**.
+### S14 · 🟡 MED · SITE: Communities (professor side)
+**On screen:** Click **Communities**. Open one community. Show **Settings** (entry status), **Invite**, **Members** (ban / remove), then **Materials** and **Tests** (about 1.5 seconds each).
 
-> Teachers can create communities, change entry type, invite or accept students, and ban or remove them.
+> Professors can create communities, change entry type, invite or accept students, and ban or remove them. / They can post materials, and host skill tests for the students.
 
 ### S15 · 🟡 MED · SITE: Mentorship → Research Collabs → Programs → Industry Alignment → Campus Board → Analytics
 **On screen:** Click the first three tabs (about 1 second each). **Stay on Industry Alignment** for about 2 seconds and show the "Demand vs. readiness" chart. Then **Campus Board** and **Analytics** (about 1 second each).
