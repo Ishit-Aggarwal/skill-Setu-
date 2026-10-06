@@ -2,7 +2,7 @@
 
 **Team:** Code Breaker · **Lead:** Ishit Aggarwal · **College:** Amity University, Noida · **Problem Statement:** SIH26044 (Ministry of AYUSH)
 
-**Target length: under 5 minutes (about 4 min 35 s at your reading pace).**
+**Target length: under 5 minutes (about 4 min 45 s at your reading pace, about 150 words a minute).**
 
 ---
 
@@ -22,7 +22,7 @@
 
 ### Speaking style
 
-- Speed: **slow and clear**, about 120–130 words a minute. The judge may not know much English. Do **not** rush to save time, but also do **not** go slower than about 135 words a minute, or the video will pass 5 minutes. The script is only about 590 words.
+- Speed: **clear, at your natural pace** (your test recordings run about 150 words a minute, and that fits). Speak every word clearly. Do **not** slow down much: below about 140 words a minute the video can pass 5 minutes, and the editor will have to trim pauses and speed up screen waits to fit. The script is about 630 words.
 - Tone: **friendly and calm**. Like explaining to a teacher you respect. Not like a news reader, and not like talking to a friend.
 - Smile a little when you say "Hello" and "Thank you". It changes your voice.
 - Keep the phone or mic **15 cm from your mouth**, a little to the side (so "p" and "b" sounds do not pop).
@@ -52,8 +52,8 @@
 
 | Version | Uses | Length (about) |
 |---|---|---|
-| **Main** (the one we submit) | every segment | **4 min 35 s** at about 150 words a minute, **4 min 50 s** at 135 |
-| **Short** (optional extra) | 🔴 and 🟡 only | 3 min 50 s to 4 min 5 s |
+| **Main** (the one we submit) | every segment | **4 min 45 s** at about 150 words a minute, about 5 min at 135 (the editor will trim to fit) |
+| **Short** (optional extra) | 🔴 and 🟡 only | about 4 min |
 
 **Safety rule for the editor:** if the real Main video goes over **4 min 50 s**, first trim pauses, then speed up 🟢 screen clips, and only then drop 🟢 segments. It must **never** go over 5 minutes.
 
@@ -94,10 +94,10 @@
 
 > First, the Student portal. / This is the student dashboard. / It shows what the student should do next, and things like the skill score, applications, and how their score is moving.
 
-### S06 · 🔴 HIGH · SITE: Skill Tests tab
-**On screen:** Click **Skill Tests**. Show **Browse Tests**, then **My Tests**.
+### S06 · 🔴 HIGH · SITE: Skill Tests tab, then the certificate in Notifications
+**On screen:** Click **Skill Tests**. Show **Browse Tests**, then **My Tests**. Then click **Notifications**, open the **"Certificate issued"** notification, and show **Download PDF** and **Add to portfolio**.
 
-> Now, Skill Tests, the heart of our platform. / Students can browse tests, register for them, and see their results in My Tests.
+> This is the Skill Tests tab. / Students can browse tests, register for them, and see the results in My Tests. / Students are also automatically issued the certificate as soon as the test ends. / In the Notifications tab, this certificate can be attached to the portfolio, or can be printed by them for further use.
 
 ### S07 · 🔴 HIGH · SITE: Exam room (security features)
 **On screen:** Open a test → exam room. Show: consent screen, camera and microphone check, full screen, the monitoring banner, a warning when the face is not seen.
