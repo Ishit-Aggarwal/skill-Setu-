@@ -122,7 +122,7 @@
 ### S11 · 🟢 LOW · SITE: Applied Internships → Saved Internships → Applied Mentorships → Notifications → My Portfolio → Placement Readiness → Analytics → Settings
 **On screen:** Click each tab, about 1 second each, in this order.
 
-> Applied and Saved Internships, Applied Mentorships, and Notifications show the student's applications, saved roles, booked sessions, and alerts. / Portfolio, Readiness, Analytics and Settings are simple.
+> Applied Internships, Saved Internships and Applied Mentorships list what the student applied for, saved and booked. / Notifications shows alerts. / Portfolio is their professional profile, Readiness shows job readiness, and Analytics shows how they compare with other students. / Settings holds the account options.
 
 ### S12 · 🟡 MED · SITE: Resume Coach
 **On screen:** Click **Resume Coach**. Drop the sample resume file in. Show the result in this order: **Strengths** and **Resume fixes**, then the **Claimed vs verified** chart, then **Your next tests**, then the **Study plan**. Stay on each for about 2 to 3 seconds.
