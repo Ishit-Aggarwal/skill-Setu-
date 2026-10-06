@@ -129,6 +129,10 @@
 
 > In Resume Coach, the student drops in a resume, and our AI reads it. / It shows strengths, what to fix, and what the resume claims against what tests have proved. / Then it suggests the next tests, and a study plan.
 
+---
+
+# PART 4 — ACADEMICIAN PORTAL
+
 ### S13 · 🟢 LOW · PPT: Academician slide, then SITE: Dashboard → My Students
 **On screen:** Quick PPT slide "Academician Portal" (3 seconds). Switch role to Academician. Dashboard (about 1 second). Click **My Students**, open one student's details (about 2.5 seconds).
 
