@@ -22,7 +22,7 @@
 
 ### Speaking style
 
-- Speed: **slow and clear**, about 120–130 words a minute. The judge may not know much English. Do **not** rush to save time, but also do **not** go slower than about 120 words a minute, or the video will pass 5 minutes. The script is only about 550 words.
+- Speed: **slow and clear**, about 120–130 words a minute. The judge may not know much English. Do **not** rush to save time, but also do **not** go slower than about 125 words a minute, or the video will pass 5 minutes. The script is only about 560 words.
 - Tone: **friendly and calm**. Like explaining to a teacher you respect. Not like a news reader, and not like talking to a friend.
 - Smile a little when you say "Hello" and "Thank you". It changes your voice.
 - Keep the phone or mic **15 cm from your mouth**, a little to the side (so "p" and "b" sounds do not pop).
@@ -53,7 +53,7 @@
 | Version | Uses | Length (about) |
 |---|---|---|
 | **Main** (the one we submit) | every segment | **4 min 45 s** |
-| **Short** (optional extra) | 🔴 and 🟡 only | 3 min 50 s |
+| **Short** (optional extra) | 🔴 and 🟡 only | 3 min 55 s |
 
 **Safety rule for the editor:** if the real Main video goes over **4 min 50 s**, first trim pauses, then speed up 🟢 screen clips, and only then drop 🟢 segments. It must **never** go over 5 minutes.
 
@@ -72,9 +72,9 @@
 > Today, I will be presenting our solution to SIH problem statement 26044, / a portal for academia-industry collaboration, / for skill mapping, internships and placements.
 
 ### S03 · 🔴 HIGH · PPT: Problem slide, then Solution slide
-**On screen:** The problem slide for the first two lines, then the solution slide with the four portals from "So we built Skill Setu".
+**On screen:** The problem slide for the first four lines, then the solution slide with the four portals from "So we built Skill Setu".
 
-> We found one big problem. / Students do not know what skills companies need, and companies cannot check real skills. / So we built Skill Setu. Setu means bridge. / It has four portals: Student, Academician for teachers, Institution for colleges, and Industry for companies.
+> We found one big problem. / Students do not know what skills companies need. / Colleges and professors cannot see where students are weak. / And companies spend hours reading applications that do not fit. / So we built Skill Setu, just as the name says. / Setu means bridge. A bridge between students, teachers, colleges and companies.
 
 ---
 
