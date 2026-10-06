@@ -50,7 +50,7 @@ Never commit media, keys or `.env` files. Keep everything in `demo-video/work/` 
 
 ## 3. The plan comes from the script
 
-`01_VOICE_SCRIPT.md` has 26 segments (about 570 words). For each one it gives:
+`01_VOICE_SCRIPT.md` has 26 segments (about 560 words). For each one it gives:
 
 - **ID** (`S01`…), **priority** (🔴 HIGH / 🟡 MED / 🟢 LOW),
 - **On screen:** what to show (SITE or PPT, which tab, what to click),

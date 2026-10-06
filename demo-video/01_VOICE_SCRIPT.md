@@ -22,7 +22,7 @@
 
 ### Speaking style
 
-- Speed: **slow and clear**, about 120–130 words a minute. The judge may not know much English. Do **not** rush to save time, but also do **not** go slower than about 125 words a minute, or the video will pass 5 minutes. The script is only about 570 words.
+- Speed: **slow and clear**, about 120–130 words a minute. The judge may not know much English. Do **not** rush to save time, but also do **not** go slower than about 125 words a minute, or the video will pass 5 minutes. The script is only about 560 words.
 - Tone: **friendly and calm**. Like explaining to a teacher you respect. Not like a news reader, and not like talking to a friend.
 - Smile a little when you say "Hello" and "Thank you". It changes your voice.
 - Keep the phone or mic **15 cm from your mouth**, a little to the side (so "p" and "b" sounds do not pop).
@@ -81,9 +81,9 @@
 # PART 2 — LANDING PAGE AND DEMO MODE
 
 ### S04 · 🔴 HIGH · SITE: Landing page
-**On screen:** Home page. While you name the four portals, highlight the four buttons in the main banner one by one: **Join as Student**, **For Academicians**, **For Institutions**, **For Industries**. Then highlight **Sign In** and **Get Started** at the top right, then **Demo Mode (Full Access)** for the rest. Scroll slowly down and back up at the end.
+**On screen:** Home page. While you name the four sub-portals, highlight the four buttons in the main banner one by one: **Join as Student**, **For Academicians**, **For Institutions**, **For Industries**. Then highlight **Sign In** and **Get Started** at the top right, then **Demo Mode (Full Access)** for the rest. Scroll slowly down and back up at the end.
 
-> This is our home page. / Here are our four dedicated portals: Student, Academician for teachers, Institution for colleges, and Industry for companies. / Users can sign in, or register with an OTP sent to their email. / For this demo, I will use Demo Mode, which lets anyone explore the full website without an account, so people can understand it, and get used to it.
+> This is our home page. / Here are the four dedicated sub-portals: Students, Academicians, Institutions, and Industry. / Users can sign in, or register with an OTP sent to their email. / For this demo, I will be using Demo Mode, which lets anyone explore the full website without an account. / So people can understand it, and get used to it.
 
 ---
 
@@ -170,7 +170,7 @@
 ### S19 · 🟢 LOW · PPT: Institution slide, then SITE: Dashboard → Student Roster → Communities
 **On screen:** Quick PPT slide "Institution Portal" (3 seconds). Switch role to Institution. Dashboard, **Student Roster**, **Communities** (about 2 seconds each).
 
-> Next, the Institution portal. / The roster shows its students.
+> Next, the Institution portal, for colleges. / The roster shows its students.
 
 ### S20 · 🟡 MED · SITE: Placement Analytics → Cohort Skill Gaps → Curriculum Alignment
 **On screen:** **Placement Analytics** and **Cohort Skill Gaps** (about 2 seconds each). **Stay on Curriculum Alignment** and show the industry demand chart.
@@ -189,7 +189,7 @@
 ### S22 · 🟡 MED · PPT: Industry slide, then SITE: Dashboard
 **On screen:** Quick PPT slide "Industry Portal" (3 seconds). Switch role to Industry. Dashboard opens. **Scroll to the bottom** and stop on the hiring numbers (applied, shortlisted, interview, hired, joined).
 
-> Last, the Industry portal. / On the dashboard, scroll down to see how many applied, and how many were hired.
+> Last, the Industry portal, for companies. / On the dashboard, scroll down to see how many applied, and how many were hired.
 
 ### S23 · 🟡 MED · SITE: Postings → Talent Pool
 **On screen:** Click **Postings** (about 2 seconds). Click **Talent Pool**, open one student profile.
