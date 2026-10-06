@@ -156,9 +156,9 @@
 > Professors can host skill tests for everyone, or only for their own community. / They choose the number of questions, the difficulty, and single or multiple answers. / The AI can build the paper from a topic, or from their documents, with an explanation for each answer. / They can also attach sample papers, or import their own paper.
 
 ### S17 · 🔴 HIGH · SITE: Certificate Settings
-**On screen:** Click **Certificate Settings**. Show the certificate preview. Upload a sign and a logo.
+**On screen:** Click **Certificate Settings**. Show the logo and signature upload boxes, and the name, institution and title already filled in from the profile. Click the AI **Generate** button and show the designed certificate preview. Then point at **Upload an existing certificate** (about 1 second).
 
-> Teachers can also give certificates. / They add only their sign and logo. All other details come from their profile.
+> Professors upload the institute logo and their own signature. / All other details come from their profile. / The AI then designs the certificate. / Or they can upload their own certificate, and the AI recreates it.
 
 ### S18 · 🟡 MED · SITE: Verify a Certificate → Faculty Profile → Settings
 **On screen:** Click **Verify a certificate**. Paste a code. Show the green **Valid** result. Then **Faculty Profile** and **Settings** (about 1 second each).
