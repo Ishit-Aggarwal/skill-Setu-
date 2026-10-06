@@ -2,7 +2,7 @@
 
 **Team:** Code Breaker · **Lead:** Ishit Aggarwal · **College:** Amity University, Noida · **Problem Statement:** SIH26044 (Ministry of AYUSH)
 
-**STATUS: S01 to S14 and S16 to S18 are recorded and locked. S15 needs a re-record (see its corrected text). S20, S21, S23, S24 and S25 are merged into S19 and S22. Do not change their wording or their lengths unless Ishit asks.**
+**STATUS: S01 to S18 are recorded and locked. Do not change their wording or their lengths unless Ishit asks. Still to record: S19, S22 and S26. S20, S21, S23, S24 and S25 are merged into S19 and S22 and are not recorded.**
 
 **Length: no time limit. The video is as long as your recordings (about 5 min 10 s).**
 
