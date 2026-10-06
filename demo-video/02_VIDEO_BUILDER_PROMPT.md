@@ -50,7 +50,7 @@ Never commit media, keys or `.env` files. Keep everything in `demo-video/work/` 
 
 ## 3. The plan comes from the script
 
-`01_VOICE_SCRIPT.md` has 26 segments (about 630 words). For each one it gives:
+`01_VOICE_SCRIPT.md` has 26 segments (about 625 words). For each one it gives:
 
 - **ID** (`S01`…), **priority** (🔴 HIGH / 🟡 MED / 🟢 LOW),
 - **On screen:** what to show (SITE or PPT, which tab, what to click),
@@ -60,7 +60,7 @@ Never commit media, keys or `.env` files. Keep everything in `demo-video/work/` 
 
 | Version | Uses segments | Target length |
 |---|---|---|
-| **Main** (the one we submit) | all 26 | **about 4:45 at the speaker's pace (about 150 words a minute); never over 5:00** |
+| **Main** (the one we submit) | all 26 | **about 4:35 at the speaker's pace (about 150 words a minute); never over 5:00** |
 | **Short** (optional bonus, only if time allows) | 🔴 + 🟡 | about 4:00 |
 
 **If the real Main is over 4:50, shorten it in this order** (stop as soon as it is under 4:50):
@@ -128,7 +128,7 @@ The real lengths come from the real recordings. Measure with `ffprobe`. Report t
 
 | Shot | How |
 |---|---|
-| **S07 Exam room** (most important demo) | Open a test and enter the exam room. From the README demo: *Student → Communities → Dravyaguna Vigyan → Tests → Start* opens the secure exam room. Show consent → camera/mic check → full screen → monitoring banner → a "face not seen" warning. **Camera:** launch Chromium with `--use-fake-ui-for-media-stream --use-fake-device-for-media-stream --use-file-for-fake-video-capture=<face.y4m>` (and `--use-file-for-fake-audio-capture=<silence.wav>`). Make `face.y4m` from `assets/face.mp4` with ffmpeg and loop it. The clip already contains the face, the look-away and the out-of-frame parts, so the real warnings appear. The speaker's face will be visible on screen as the "student" in the camera preview. That is intended. The face model may load from a public host. If that is blocked, use the fallback. |
+| **S07 Exam room** (most important demo) | Open a test and enter the exam room. From the README demo: *Student → Communities → Dravyaguna Vigyan → Tests → Start* opens the secure exam room. Show consent (tick the box) → camera/mic check → full screen → monitoring banner → a "face not seen" or "looking away" warning. Use Chromium so the Escape lock (Keyboard Lock API) works. On the last spoken line (the professor can watch the full exam video), cut for about 4 s to the professor's **Proctoring report** (Academician → Skill Tests → the test card → Attempts → a student's Proctoring report: full recording with flagged moments on the timeline). If the demo data has no recording, run the exam first so one exists. If that cannot be done, skip the cutaway and say so in `REPORT.md`. **Camera:** launch Chromium with `--use-fake-ui-for-media-stream --use-fake-device-for-media-stream --use-file-for-fake-video-capture=<face.y4m>` (and `--use-file-for-fake-audio-capture=<silence.wav>`). Make `face.y4m` from `assets/face.mp4` with ffmpeg and loop it. The clip already contains the face, the look-away and the out-of-frame parts, so the real warnings appear. The speaker's face will be visible on screen as the "student" in the camera preview. That is intended. The face model may load from a public host. If that is blocked, use the fallback. |
 | **S12 Resume Coach** | Drop `public/demo/Aarav-Sharma-Resume.pdf` onto the upload area. Show the whole result (strong / weak, claimed-vs-verified chart, next tests, study plan). |
 | **S16 AI test builder** | Show the four options (Generate from a topic / from my documents / Import / Write manually). Run "Generate from a topic" and show questions appearing. Cut the waiting time out with a short "AI is writing…" speed-up (label it "sped up"). |
 | **S17 Certificate Settings** | Upload `assets/sign.png` and `public/logo.png`, show the live preview. |

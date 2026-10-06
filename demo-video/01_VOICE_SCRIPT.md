@@ -2,7 +2,7 @@
 
 **Team:** Code Breaker · **Lead:** Ishit Aggarwal · **College:** Amity University, Noida · **Problem Statement:** SIH26044 (Ministry of AYUSH)
 
-**Target length: under 5 minutes (about 4 min 45 s at your reading pace, about 150 words a minute).**
+**Target length: under 5 minutes (about 4 min 35 s at your reading pace, about 150 words a minute).**
 
 ---
 
@@ -22,7 +22,7 @@
 
 ### Speaking style
 
-- Speed: **clear, at your natural pace** (your test recordings run about 150 words a minute, and that fits). Speak every word clearly. Do **not** slow down much: below about 140 words a minute the video can pass 5 minutes, and the editor will have to trim pauses and speed up screen waits to fit. The script is about 630 words.
+- Speed: **clear, at your natural pace** (your test recordings run about 150 words a minute, and that fits). Speak every word clearly. Do **not** slow down much: below about 140 words a minute the video can pass 5 minutes, and the editor will have to trim pauses and speed up screen waits to fit. The script is about 625 words.
 - Tone: **friendly and calm**. Like explaining to a teacher you respect. Not like a news reader, and not like talking to a friend.
 - Smile a little when you say "Hello" and "Thank you". It changes your voice.
 - Keep the phone or mic **15 cm from your mouth**, a little to the side (so "p" and "b" sounds do not pop).
@@ -52,7 +52,7 @@
 
 | Version | Uses | Length (about) |
 |---|---|---|
-| **Main** (the one we submit) | every segment | **4 min 45 s** at about 150 words a minute, about 5 min at 135 (the editor will trim to fit) |
+| **Main** (the one we submit) | every segment | **4 min 35 s** at about 150 words a minute, about 5 min at 135 (the editor will trim to fit) |
 | **Short** (optional extra) | 🔴 and 🟡 only | about 4 min |
 
 **Safety rule for the editor:** if the real Main video goes over **4 min 50 s**, first trim pauses, then speed up 🟢 screen clips, and only then drop 🟢 segments. It must **never** go over 5 minutes.
@@ -100,12 +100,12 @@
 > This is the Skill Tests tab. / Students can browse tests, register for them, and see the results in My Tests. / Students are also automatically issued the certificate as soon as the test ends. / In the Notifications tab, this certificate can be attached to the portfolio, or can be printed by them for further use.
 
 ### S07 · 🔴 HIGH · SITE: Exam room (security features)
-**On screen:** Open a test → exam room. Show: consent screen, camera and microphone check, full screen, the monitoring banner, a warning when the face is not seen.
+**On screen:** Open a test → exam room. Show: the consent screen (tick the box), the camera and microphone check, full screen, the monitoring banner, and a warning when the face is not seen or the student looks away. On the last line, cut for about 4 seconds to the professor's **Proctoring report** (the full recording with flagged moments marked on the timeline).
 
-> Now, our exam security. / The student gives consent, and we check the camera and microphone. / The test runs in full screen, Escape is locked, and it is recorded. / The system watches the face: no face, many faces, or looking away. / Each time, marks are cut, and too many cuts fail the test. / Marks are checked on the server.
+> Now, our exam security. / The student gives consent, and we check the camera and microphone. Without consent, they cannot take the test. / The test runs in full screen, Escape is locked, and it is recorded. / The system watches the face, listens to the voice, and detects any attempt to close or change windows. / Any anomaly means points are deducted, or the test fails. / The professor decides how many points are deducted, and how many violations fail the student. / And the professor can watch the full exam video.
 
 ### S08 · 🟢 LOW · SITE: Internships → Mentorship
-**On screen:** Click **Internships** (about 2 seconds), then **Mentorship** (about 2 seconds).
+**On screen:** Click **Internships** (about 1.5 seconds), then **Mentorship** (about 1.5 seconds).
 
 > Internships and Mentorship help students find jobs and mentors.
 
@@ -115,12 +115,12 @@
 > Communities are groups run by teachers and colleges. / Teachers share study material here. / A teacher can also set a skill test only for their community.
 
 ### S10 · 🟢 LOW · SITE: Directory → Applied Internships → Saved Internships → Applied Mentorships → Notifications
-**On screen:** Click each tab, about 1.5 seconds each. On **Directory**, open one institute profile first.
+**On screen:** On **Directory**, stay about 2 seconds (no need to open a profile). Then click each of the next four tabs, about 1 second each.
 
 > The Directory lists all institutes. / The next four tabs keep the student's lists.
 
 ### S11 · 🟢 LOW · SITE: My Portfolio → Placement Readiness → Analytics → Settings
-**On screen:** Click each tab, about 1.5 seconds each.
+**On screen:** Click each tab, about 1 second each.
 
 > Portfolio, Readiness, Analytics and Settings are simple.
 
@@ -134,7 +134,7 @@
 # PART 4 — ACADEMICIAN PORTAL
 
 ### S13 · 🟢 LOW · PPT: Academician slide, then SITE: Dashboard → My Students
-**On screen:** Quick PPT slide "Academician Portal" (3 seconds). Switch role to Academician. Dashboard (about 2 seconds). Click **My Students**, open one student's details.
+**On screen:** Quick PPT slide "Academician Portal" (3 seconds). Switch role to Academician. Dashboard (about 1 second). Click **My Students**, open one student's details (about 2.5 seconds).
 
 > Now, the Academician portal. / Teachers can open any student's details.
 
@@ -144,9 +144,9 @@
 > Teachers can create communities, change entry type, invite or accept students, and ban or remove them.
 
 ### S15 · 🟡 MED · SITE: Mentorship → Research Collabs → Programs → Industry Alignment → Campus Board → Analytics
-**On screen:** Click the first three tabs (about 1.5 seconds each). **Stay on Industry Alignment** and show the "Demand vs. readiness" chart. Then **Campus Board** and **Analytics** (about 1.5 seconds each).
+**On screen:** Click the first three tabs (about 1 second each). **Stay on Industry Alignment** for about 3 seconds and show the "Demand vs. readiness" chart. Then **Campus Board** and **Analytics** (about 1 second each).
 
-> Mentorship, Research, Programs, Campus Board and Analytics are extras. / Industry Alignment shows which students are falling behind.
+> Mentorship, Research and Programs are extras. / Industry Alignment shows which students are falling behind.
 
 ### S16 · 🔴 HIGH · SITE: Skill Tests (teacher side — AI test builder)
 **On screen:** Click **Skill Tests** → host a new test → show the four options: **Generate from a topic**, **Generate from my documents**, **Import an existing paper**, **Write manually**. Run **Generate from a topic** and show questions appearing.
@@ -159,7 +159,7 @@
 > Teachers can also give certificates. / They add only their sign and logo. All other details come from their profile.
 
 ### S18 · 🟡 MED · SITE: Verify a Certificate → Faculty Profile → Settings
-**On screen:** Click **Verify a certificate**. Paste a code. Show the green **Valid** result. Then **Faculty Profile** and **Settings** (about 1.5 seconds each).
+**On screen:** Click **Verify a certificate**. Paste a code. Show the green **Valid** result. Then **Faculty Profile** and **Settings** (about 1 second each).
 
 > Every certificate has a unique code. / Type it in Verify, and anyone can check it is real.
 
@@ -168,19 +168,19 @@
 # PART 5 — INSTITUTION PORTAL
 
 ### S19 · 🟢 LOW · PPT: Institution slide, then SITE: Dashboard → Student Roster → Communities
-**On screen:** Quick PPT slide "Institution Portal" (3 seconds). Switch role to Institution. Dashboard, **Student Roster**, **Communities** (about 2 seconds each).
+**On screen:** Quick PPT slide "Institution Portal" (3 seconds). Switch role to Institution. Dashboard, **Student Roster**, **Communities** (about 1 second each).
 
 > Next, the Institution portal, for colleges. / The roster shows its students.
 
 ### S20 · 🟡 MED · SITE: Placement Analytics → Cohort Skill Gaps → Curriculum Alignment
-**On screen:** **Placement Analytics** and **Cohort Skill Gaps** (about 2 seconds each). **Stay on Curriculum Alignment** and show the industry demand chart.
+**On screen:** **Placement Analytics** and **Cohort Skill Gaps** (about 1 second each). **Stay on Curriculum Alignment** for about 4 seconds and show the industry demand chart.
 
-> Analytics and Skill Gaps show results and weak areas. / Curriculum Alignment shows what industry wants, and how well the syllabus matches.
+> Curriculum Alignment shows what industry wants, and how well the syllabus matches.
 
 ### S21 · 🟢 LOW · SITE: Placement Drives → MOUs → Notice Board → Team & Activity → Profile → Settings
 **On screen:** Click **Placement Drives**, **MOUs & Partners**, **Notice Board**, **Team & Activity**, **Institution Profile**, **Settings**, about 1 second each.
 
-> Drives, MOUs and notices help run placements. / Team and Activity shows what the team does.
+> Drives, MOUs and notices help run placements.
 
 ---
 
@@ -192,19 +192,19 @@
 > Last, the Industry portal, for companies. / On the dashboard, scroll down to see how many applied, and how many were hired.
 
 ### S23 · 🟡 MED · SITE: Postings → Talent Pool
-**On screen:** Click **Postings** (about 2 seconds). Click **Talent Pool**, open one student profile.
+**On screen:** Click **Postings** (about 1.5 seconds). Click **Talent Pool**, open one student profile (about 3 seconds).
 
 > Postings lists the company's jobs. / Talent Pool lets them browse student profiles.
 
 ### S24 · 🟡 MED · SITE: Offers & Joining → Analytics
-**On screen:** Click **Offers & Joining** (about 3 seconds). Click **Analytics** (about 3 seconds).
+**On screen:** Click **Offers & Joining** (about 2.5 seconds). Click **Analytics** (about 2.5 seconds).
 
 > Offers and Joining shows how many students joined. / Analytics shows numbers, like how many were rejected.
 
 ### S25 · 🟢 LOW · SITE: Verify → Skill Tests → Certificates → Hiring Team → Company Profile → Settings
 **On screen:** Click **Verify a certificate**, **Skill Tests**, **Certificate Settings**, **Hiring Team**, **Company Profile**, **Settings**, about 1 second each.
 
-> Verify, Tests and Certificates work as before. / Then the hiring team, profile and settings.
+> Verify, Tests and Certificates work as before.
 
 ---
 
@@ -213,7 +213,7 @@
 ### S26 · 🔴 HIGH · PPT: Impact slide, then Thank-you slide
 **On screen:** The impact slide (first two sentences), then the thank-you slide with team name and website link.
 
-> To sum up: Skill Setu gives every AYUSH student a proven skill record, gives colleges clear data, and helps companies hire with trust. / Thank you, from team Code Breaker.
+> To sum up: Skill Setu gives every student a proven skill record, colleges clear data, and companies trust. / Thank you, from team Code Breaker.
 
 ---
 
