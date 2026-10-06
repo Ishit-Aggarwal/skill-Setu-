@@ -2,7 +2,7 @@
 
 **Team:** Code Breaker · **Lead:** Ishit Aggarwal · **College:** Amity University, Noida · **Problem Statement:** SIH26044 (Ministry of AYUSH)
 
-**Target length: under 5 minutes (about 4 min 35 s).**
+**Target length: under 5 minutes (about 4 min 30 s).**
 
 ---
 
@@ -22,7 +22,7 @@
 
 ### Speaking style
 
-- Speed: **slow and clear**, about 120–130 words a minute. The judge may not know much English. Do **not** rush to save time, but also do **not** go slower than about 110 words a minute, or the video will pass 5 minutes. The script is only about 525 words.
+- Speed: **slow and clear**, about 120–130 words a minute. The judge may not know much English. Do **not** rush to save time, but also do **not** go slower than about 110 words a minute, or the video will pass 5 minutes. The script is only about 520 words.
 - Tone: **friendly and calm**. Like explaining to a teacher you respect. Not like a news reader, and not like talking to a friend.
 - Smile a little when you say "Hello" and "Thank you". It changes your voice.
 - Keep the phone or mic **15 cm from your mouth**, a little to the side (so "p" and "b" sounds do not pop).
@@ -52,8 +52,8 @@
 
 | Version | Uses | Length (about) |
 |---|---|---|
-| **Main** (the one we submit) | every segment | **4 min 35 s** |
-| **Short** (optional extra) | 🔴 and 🟡 only | 3 min 40 s |
+| **Main** (the one we submit) | every segment | **4 min 30 s** |
+| **Short** (optional extra) | 🔴 and 🟡 only | 3 min 35 s |
 
 **Safety rule for the editor:** if the real Main video goes over **4 min 50 s**, first trim pauses, then speed up 🟢 screen clips, and only then drop 🟢 segments. It must **never** go over 5 minutes.
 
@@ -64,7 +64,7 @@
 ### S01 · 🔴 HIGH · PPT: Title slide
 **On screen:** Title slide with "Skill Setu" and the team name.
 
-> Hello! / We are team Code Breaker, a team of first-year students from Amity University, Noida. / Today, I, the team lead Ishit Aggarwal, will give a demo of our website, Skill Setu.
+> Hello! / We are team Code Breaker, a team of first-year students from Amity University, Noida. / I am Ishit Aggarwal, the team lead.
 
 ### S02 · 🔴 HIGH · PPT: Problem slide
 **On screen:** The problem slide.
@@ -74,7 +74,7 @@
 ### S03 · 🔴 HIGH · PPT: Solution slide
 **On screen:** The solution slide with the four portals.
 
-> Our answer is Skill Setu. Setu means bridge. / It has four portals: Student, Academician for teachers, Institution for colleges, and Industry for companies.
+> So we built Skill Setu. Setu means bridge. / It has four portals: Student, Academician for teachers, Institution for colleges, and Industry for companies.
 
 ---
 
