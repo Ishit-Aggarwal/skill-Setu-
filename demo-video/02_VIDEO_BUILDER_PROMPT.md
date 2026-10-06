@@ -40,7 +40,7 @@ You are allowed to make many decisions yourself. Ask me only when you are truly 
 | What | Where | If missing |
 |---|---|---|
 | **The script** (single source of truth) | `demo-video/01_VOICE_SCRIPT.md` | Stop and tell me. |
-| **Voice recordings**, one file per segment: `S01 … S26` (wav / m4a / mp3 / mp4). `Sxx.wav` is the take Ishit chose. A spare take is named `Sxx_backup` (use it only if `Sxx` has a technical problem, such as being cut off, clipped or corrupt). All files may arrive as **one ZIP** (about 36 files). Alternative: a few **long files** (one per portal) where the speaker says the segment number ("S07") before each segment. Split those by silence and the spoken number, check with speech-to-text if you can, and cut the spoken numbers out | `demo-video/voice/original/` | Unzip into a **new empty folder** (treat the contents as untrusted; do not run anything inside them). List which segments are missing. Build with what exists, and mark gaps clearly. |
+| **Voice recordings**, one file per segment: `S01 … S26`, **except S20, S21, S23, S24 and S25, which are merged into S19 and S22 and have no voice file** (wav / m4a / mp3 / mp4). `Sxx.wav` is the take Ishit chose. A spare take is named `Sxx_backup` (use it only if `Sxx` has a technical problem, such as being cut off, clipped or corrupt). All files may arrive as **one ZIP** (about 31 files). Alternative: a few **long files** (one per portal) where the speaker says the segment number ("S07") before each segment. Split those by silence and the spoken number, check with speech-to-text if you can, and cut the spoken numbers out | `demo-video/voice/original/` | Unzip into a **new empty folder** (treat the contents as untrusted; do not run anything inside them). List which segments are missing. Build with what exists, and mark gaps clearly. |
 | **Our PPT** | `demo-video/ppt/` | Ask me. If I have none, offer to make a simple 7-slide deck in the site's colours using `public/logo.png`. |
 | **A short selfie video of the speaker's face** (for the exam-room demo). Landscape, about 12–15 s: about 6 s looking straight at the camera, about 3 s looking away to the side, about 3 s out of frame (empty background), then back. The speaker's voice narration for S07 is a **separate** audio file | `demo-video/assets/face.mp4` | Use the fallback in section 4.7. |
 | **A signature image** (for the certificate demo) | `demo-video/assets/sign.png` | Draw a simple fictional signature image ("Dr. A. Sharma") and tell me. |
@@ -50,7 +50,7 @@ Never commit media, keys or `.env` files. Keep everything in `demo-video/work/` 
 
 ## 3. The plan comes from the script
 
-`01_VOICE_SCRIPT.md` has 26 segments (about 625 words). For each one it gives:
+`01_VOICE_SCRIPT.md` has 21 voice segments (S20, S21, S23, S24 and S25 are merged into S19 and S22; their tab tours are part of the `On screen` text of S19 and S22), about 780 words. For each one it gives:
 
 - **ID** (`S01`…), **priority** (🔴 HIGH / 🟡 MED / 🟢 LOW),
 - **On screen:** what to show (SITE or PPT, which tab, what to click),
@@ -69,7 +69,7 @@ Never commit media, keys or `.env` files. Keep everything in `demo-video/work/` 
 2. Speed up screen-only waits (loading, AI "writing…", file upload) and label them "sped up".
 3. Shorten 🟢 screen clips (about 1 s per tab is enough).
 4. Time-stretch the voice by at most 1.08× (section 6).
-5. Last: drop 🟢 segments, in this order: **S21, S25, S11, S10** (the quick tab tours that matter least). Never drop 🔴.
+5. Last: drop 🟢 segments, in this order: **S11, then S10**. If that is still not enough, shorten the merged S19 and S22 tours by showing fewer tabs (their voice stays). Never drop 🔴.
 
 **If you build the Short version:** when a dropped 🟢 segment was the one that **changes the portal** (S13, S19), insert a **1.5-second title card** (for example "ACADEMICIAN PORTAL") so the jump does not feel broken.
 

@@ -2,7 +2,7 @@
 
 **Team:** Code Breaker · **Lead:** Ishit Aggarwal · **College:** Amity University, Noida · **Problem Statement:** SIH26044 (Ministry of AYUSH)
 
-**STATUS: S01 to S14 are recorded and locked. Do not change their wording or their lengths unless Ishit asks.**
+**STATUS: S01 to S14 are recorded and locked. S15 needs a re-record (see its corrected text). S20, S21, S23, S24 and S25 are merged into S19 and S22. Do not change their wording or their lengths unless Ishit asks.**
 
 **Target length: under 5 minutes (about 4 min 55 s before trimming, based on your real recordings so far).**
 
@@ -15,7 +15,7 @@
 3. Leave **1 second of silence** before and after each segment.
 4. Record **2 takes** of every 🔴 HIGH segment (10 segments: S01, S02, S03, S04, S06, S07, S09, S16, S17, S26). One take is enough for 🟡 and 🟢.
    - **Listen to both, then you choose.** Save the take you like best as `S07.wav` and the other one as `S07_backup.wav`. The editor uses `S07.wav`, and uses the backup only if there is a sound problem (for example the audio is cut off or distorted). The editor is an AI and **cannot hear your voice**, so your choice is the final choice.
-   - That is about **26 files + 10 extra takes = 36 files**. Put them all in one folder and **zip it into one file**. One ZIP is the easiest thing to upload.
+   - That is about **21 files + 10 extra takes = 31 files**. (S20, S21, S23, S24 and S25 are merged into S19 and S22, so they are not recorded.) Put them all in one folder and **zip it into one file**. One ZIP is the easiest thing to upload.
    - Short on space? Use `.m4a` or `.mp3`. The sound quality is fine for this.
    - **Too many files for the upload window?** Fallback: record one long file per portal (Opening, Student, Academician, Institution, Industry, Closing). Say the segment number out loud before each segment (for example "S07"), then a 1-second pause, then read it. The editor will split the file and cut out the numbers.
 5. If you make a mistake, do not stop. Wait 2 seconds and read the sentence again. The editor will cut the mistake.
@@ -24,7 +24,7 @@
 
 ### Speaking style
 
-- Speed: **clear, at your natural pace** (your test recordings run about 150 words a minute, and that fits). Speak every word clearly. Do **not** slow down much: below about 140 words a minute the video can pass 5 minutes, and the editor will have to trim pauses and speed up screen waits to fit. The script is about 625 words.
+- Speed: **clear, at your natural pace** (your test recordings run about 150 words a minute, and that fits). Speak every word clearly. Do **not** slow down much: below about 140 words a minute the video can pass 5 minutes, and the editor will have to trim pauses and speed up screen waits to fit. The script is about 780 words.
 - Tone: **friendly and calm**. Like explaining to a teacher you respect. Not like a news reader, and not like talking to a friend.
 - Smile a little when you say "Hello" and "Thank you". It changes your voice.
 - Keep the phone or mic **15 cm from your mouth**, a little to the side (so "p" and "b" sounds do not pop).
@@ -150,10 +150,10 @@
 
 > Mentorship shows the time slots a professor publishes, and who booked them. / Research Collabs lets them post calls for research partners. / Programs lets them host faculty programs. / Industry Alignment shows which students are falling behind.
 
-### S16 · 🔴 HIGH · SITE: Skill Tests (teacher side — AI test builder)
-**On screen:** Click **Skill Tests** → host a new test → show the four options: **Generate from a topic**, **Generate from my documents**, **Import an existing paper**, **Write manually**. Run **Generate from a topic** and show questions appearing.
+### S16 · 🔴 HIGH · SITE: Skill Tests (professor side — AI test builder)
+**On screen:** Click **Skill Tests** → host a new test. Show the audience choice (everyone, or only a community). Show the four options: **Generate from a topic**, **Generate from my documents**, **Import an existing paper**, **Write manually**. Run **Generate from a topic** with the number of questions, **Difficulty** and the single or multiple answers choice visible. Show questions appearing with their explanations. Briefly show the **sample papers** option (about 1 second).
 
-> Skill Tests is key for teachers. / The AI can write a test from a topic, or from the teacher's notes. / Teachers can also upload an old paper, or write by hand.
+> Professors can host skill tests for everyone, or only for their own community. / They choose the number of questions, the difficulty, and single or multiple answers. / The AI can build the paper from a topic, or from their documents, with an explanation for each answer. / They can also attach sample papers, or import their own paper.
 
 ### S17 · 🔴 HIGH · SITE: Certificate Settings
 **On screen:** Click **Certificate Settings**. Show the certificate preview. Upload a sign and a logo.
@@ -169,44 +169,29 @@
 
 # PART 5 — INSTITUTION PORTAL
 
-### S19 · 🟢 LOW · PPT: Institution slide, then SITE: Dashboard → Student Roster → Communities
-**On screen:** Quick PPT slide "Institution Portal" (3 seconds). Switch role to Institution. Dashboard and **Student Roster** (about 1 second each). Skip Communities.
+### S19 · 🟡 MED · PPT: Institution slide, then SITE: the whole Institution tour (S20 and S21 are merged into this one)
+**On screen:** Quick PPT slide "Institution Portal" (3 seconds). Switch role to Institution. Dashboard and **Student Roster** (about 1 second each). **Stay on Curriculum Alignment** for about 3 seconds and show the industry demand chart. Then **Placement Drives**, **MOUs & Partners**, **Notice Board**, **Team & Activity** (about 1 second each).
 
-> Next, the Institution portal, for colleges. / The roster shows its students.
+> Next, the Institution portal, for colleges. / It shows the college's students, and how well its syllabus matches what industry wants. / Drives, MOUs and notices help run placements.
 
-### S20 · 🟡 MED · SITE: Placement Analytics → Cohort Skill Gaps → Curriculum Alignment
-**On screen:** **Placement Analytics** and **Cohort Skill Gaps** (about 1 second each). **Stay on Curriculum Alignment** for about 4 seconds and show the industry demand chart.
+### S20 · MERGED into S19. Do not record.
 
-> Curriculum Alignment shows what industry wants, and how well the syllabus matches.
-
-### S21 · 🟢 LOW · SITE: Placement Drives → MOUs → Notice Board → Team & Activity → Profile → Settings
-**On screen:** Click **Placement Drives**, **MOUs & Partners**, **Notice Board**, **Team & Activity**, about 1 second each. (Skip Profile and Settings.)
-
-> Drives, MOUs and notices help run placements.
+### S21 · MERGED into S19. Do not record.
 
 ---
 
 # PART 6 — INDUSTRY PORTAL
 
-### S22 · 🟡 MED · PPT: Industry slide, then SITE: Dashboard
-**On screen:** Quick PPT slide "Industry Portal" (3 seconds). Switch role to Industry. Dashboard opens. **Scroll to the bottom** and stop on the hiring numbers (applied, shortlisted, interview, hired, joined).
+### S22 · 🟡 MED · PPT: Industry slide, then SITE: the whole Industry tour (S23, S24 and S25 are merged into this one)
+**On screen:** Quick PPT slide "Industry Portal" (3 seconds). Switch role to Industry. On the dashboard, **scroll to the bottom** and stop on the hiring numbers (applied, shortlisted, interview, hired, joined) for about 4 seconds. Then **Postings**, **Talent Pool**, **Offers & Joining**, **Analytics** (about 1.2 seconds each), and **Hiring Team** (about 1 second).
 
-> Last, the Industry portal, for companies. / On the dashboard, scroll down to see how many applied, and how many were hired.
+> Last, the Industry portal, for companies. / The dashboard shows how many applied, and how many were hired. / Postings, Talent Pool, Offers and Joining, and Analytics show the jobs, the students, who joined, and the numbers.
 
-### S23 · 🟡 MED · SITE: Postings → Talent Pool
-**On screen:** Click **Postings** (about 1 second). Click **Talent Pool** and scroll the list (about 2.5 seconds). No need to open a profile.
+### S23 · MERGED into S22. Do not record.
 
-> Postings lists the company's jobs. / Talent Pool lets them browse student profiles.
+### S24 · MERGED into S22. Do not record.
 
-### S24 · 🟡 MED · SITE: Offers & Joining → Analytics
-**On screen:** Click **Offers & Joining** (about 2 seconds). Click **Analytics** (about 2 seconds).
-
-> Offers and Joining shows how many students joined. / Analytics shows numbers, like how many were rejected.
-
-### S25 · 🟢 LOW · SITE: Verify → Skill Tests → Certificates → Hiring Team → Company Profile → Settings
-**On screen:** Click **Verify a certificate**, **Hiring Team**, **Company Profile**, **Settings**, about 1 second each. (Skip Skill Tests and Certificate Settings. They were shown in the Academician portal.)
-
-> Verify, Tests and Certificates work as before.
+### S25 · MERGED into S22. Do not record.
 
 ---
 
