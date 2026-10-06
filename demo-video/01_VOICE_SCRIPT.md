@@ -2,7 +2,7 @@
 
 **Team:** Code Breaker · **Lead:** Ishit Aggarwal · **College:** Amity University, Noida · **Problem Statement:** SIH26044 (Ministry of AYUSH)
 
-**Target length: under 5 minutes (about 4 min 40 s).**
+**Target length: under 5 minutes (about 4 min 45 s).**
 
 ---
 
@@ -22,7 +22,7 @@
 
 ### Speaking style
 
-- Speed: **slow and clear**, about 120–130 words a minute. The judge may not know much English. Do **not** rush to save time, but also do **not** go slower than about 115 words a minute, or the video will pass 5 minutes. The script is only about 535 words.
+- Speed: **slow and clear**, about 120–130 words a minute. The judge may not know much English. Do **not** rush to save time, but also do **not** go slower than about 120 words a minute, or the video will pass 5 minutes. The script is only about 550 words.
 - Tone: **friendly and calm**. Like explaining to a teacher you respect. Not like a news reader, and not like talking to a friend.
 - Smile a little when you say "Hello" and "Thank you". It changes your voice.
 - Keep the phone or mic **15 cm from your mouth**, a little to the side (so "p" and "b" sounds do not pop).
@@ -52,8 +52,8 @@
 
 | Version | Uses | Length (about) |
 |---|---|---|
-| **Main** (the one we submit) | every segment | **4 min 40 s** |
-| **Short** (optional extra) | 🔴 and 🟡 only | 3 min 45 s |
+| **Main** (the one we submit) | every segment | **4 min 45 s** |
+| **Short** (optional extra) | 🔴 and 🟡 only | 3 min 50 s |
 
 **Safety rule for the editor:** if the real Main video goes over **4 min 50 s**, first trim pauses, then speed up 🟢 screen clips, and only then drop 🟢 segments. It must **never** go over 5 minutes.
 
@@ -81,9 +81,9 @@
 # PART 2 — LANDING PAGE AND DEMO MODE
 
 ### S04 · 🔴 HIGH · SITE: Landing page
-**On screen:** Home page. Scroll slowly down and back up. Highlight **Demo Mode (Full Access)** at the top right.
+**On screen:** Home page. Scroll slowly down and back up. Highlight **Sign In** and **Get Started** at the top right while you say the second line. Then highlight **Demo Mode (Full Access)** for the rest.
 
-> This is our home page. / Demo Mode lets anyone explore the full website without an account, so people can understand it, and get used to it. / I will use it now.
+> This is our home page. / Users can sign in, or register with an OTP sent to their email. / For this demo, I will use Demo Mode, which lets anyone explore the full website without an account, so people can understand it, and get used to it.
 
 ---
 
