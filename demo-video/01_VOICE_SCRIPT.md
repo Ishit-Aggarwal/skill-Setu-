@@ -2,7 +2,7 @@
 
 **Team:** Code Breaker · **Lead:** Ishit Aggarwal · **College:** Amity University, Noida · **Problem Statement:** SIH26044 (Ministry of AYUSH)
 
-**Target length: under 5 minutes (about 4 min 45 s).**
+**Target length: under 5 minutes (about 4 min 30 s at your reading pace).**
 
 ---
 
@@ -22,7 +22,7 @@
 
 ### Speaking style
 
-- Speed: **slow and clear**, about 120–130 words a minute. The judge may not know much English. Do **not** rush to save time, but also do **not** go slower than about 125 words a minute, or the video will pass 5 minutes. The script is only about 560 words.
+- Speed: **slow and clear**, about 120–130 words a minute. The judge may not know much English. Do **not** rush to save time, but also do **not** go slower than about 125 words a minute, or the video will pass 5 minutes. The script is only about 570 words.
 - Tone: **friendly and calm**. Like explaining to a teacher you respect. Not like a news reader, and not like talking to a friend.
 - Smile a little when you say "Hello" and "Thank you". It changes your voice.
 - Keep the phone or mic **15 cm from your mouth**, a little to the side (so "p" and "b" sounds do not pop).
@@ -52,8 +52,8 @@
 
 | Version | Uses | Length (about) |
 |---|---|---|
-| **Main** (the one we submit) | every segment | **4 min 45 s** |
-| **Short** (optional extra) | 🔴 and 🟡 only | 3 min 55 s |
+| **Main** (the one we submit) | every segment | **4 min 30 s** at about 150 words a minute, **4 min 55 s** at 125 |
+| **Short** (optional extra) | 🔴 and 🟡 only | 3 min 40 s to 4 min |
 
 **Safety rule for the editor:** if the real Main video goes over **4 min 50 s**, first trim pauses, then speed up 🟢 screen clips, and only then drop 🟢 segments. It must **never** go over 5 minutes.
 
@@ -81,9 +81,9 @@
 # PART 2 — LANDING PAGE AND DEMO MODE
 
 ### S04 · 🔴 HIGH · SITE: Landing page
-**On screen:** Home page. Scroll slowly down and back up. Highlight **Sign In** and **Get Started** at the top right while you say the second line. Then highlight **Demo Mode (Full Access)** for the rest.
+**On screen:** Home page. While you name the four portals, highlight the four buttons in the main banner one by one: **Join as Student**, **For Academicians**, **For Institutions**, **For Industries**. Then highlight **Sign In** and **Get Started** at the top right, then **Demo Mode (Full Access)** for the rest. Scroll slowly down and back up at the end.
 
-> This is our home page. / Users can sign in, or register with an OTP sent to their email. / For this demo, I will use Demo Mode, which lets anyone explore the full website without an account, so people can understand it, and get used to it.
+> This is our home page. / Here are our four dedicated portals: Student, Academician for teachers, Institution for colleges, and Industry for companies. / Users can sign in, or register with an OTP sent to their email. / For this demo, I will use Demo Mode, which lets anyone explore the full website without an account, so people can understand it, and get used to it.
 
 ---
 
@@ -136,7 +136,7 @@
 ### S13 · 🟢 LOW · PPT: Academician slide, then SITE: Dashboard → My Students
 **On screen:** Quick PPT slide "Academician Portal" (3 seconds). Switch role to Academician. Dashboard (about 2 seconds). Click **My Students**, open one student's details.
 
-> Now, the Academician portal, for teachers. / They can open any student's details.
+> Now, the Academician portal. / Teachers can open any student's details.
 
 ### S14 · 🟡 MED · SITE: Communities (teacher side)
 **On screen:** Click **Communities**. Open one community. Show **Settings** (entry status), **Invite**, **Members** (ban / remove), then **Audit log**.
@@ -170,7 +170,7 @@
 ### S19 · 🟢 LOW · PPT: Institution slide, then SITE: Dashboard → Student Roster → Communities
 **On screen:** Quick PPT slide "Institution Portal" (3 seconds). Switch role to Institution. Dashboard, **Student Roster**, **Communities** (about 2 seconds each).
 
-> Next, the Institution portal, for colleges. / The roster shows its students.
+> Next, the Institution portal. / The roster shows its students.
 
 ### S20 · 🟡 MED · SITE: Placement Analytics → Cohort Skill Gaps → Curriculum Alignment
 **On screen:** **Placement Analytics** and **Cohort Skill Gaps** (about 2 seconds each). **Stay on Curriculum Alignment** and show the industry demand chart.
@@ -189,7 +189,7 @@
 ### S22 · 🟡 MED · PPT: Industry slide, then SITE: Dashboard
 **On screen:** Quick PPT slide "Industry Portal" (3 seconds). Switch role to Industry. Dashboard opens. **Scroll to the bottom** and stop on the hiring numbers (applied, shortlisted, interview, hired, joined).
 
-> Last, the Industry portal, for companies. / On the dashboard, scroll down to see how many applied, and how many were hired.
+> Last, the Industry portal. / On the dashboard, scroll down to see how many applied, and how many were hired.
 
 ### S23 · 🟡 MED · SITE: Postings → Talent Pool
 **On screen:** Click **Postings** (about 2 seconds). Click **Talent Pool**, open one student profile.
