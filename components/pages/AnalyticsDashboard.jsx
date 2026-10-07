@@ -8,6 +8,7 @@ import { Card, PageHeader, ProgressBar, Section, StatGrid, Tabs } from "../ui/Ki
 import { all, listApplications, listInternships, listInternshipsByOwner, listUsersByRole, PIPELINE_STAGES, TERMINAL_STAGES } from "../../lib/store";
 import { subscribeToMutations } from "../../lib/sync";
 import { canonicalDomain } from "../../lib/domains";
+import { useNarrowerThan } from "../../lib/useLiveStore";
 
 const PIE_COLORS = ["#6B7C3C", "#8A9A4A", "#A8B860", "#3C5A8A", "#5A3C8A"];
 const STATUS_COLORS = { Applied: "#8A9A4A", Shortlisted: "#3C5A8A", Interview: "#B8860B", Hired: "#6B7C3C" };
@@ -158,6 +159,15 @@ export default function AnalyticsDashboard({ activePage = "analytics", title = "
       return { label: `${from} → ${to}`, avgDays: avg };
     });
   }, [scopedApplications]);
+
+  // Skill domain names are long ("AYUSH Research & Clinical Documentation"); a one-line axis label
+  // keeps the rows from overlapping, and the tooltip still shows the full name.
+  const narrow = useNarrowerThan(640);
+  const domainTick = (name) => {
+    const s = String(name).replace(/^AYUSH /, "").split(/,| & /)[0].trim();
+    const max = narrow ? 14 : 24;
+    return s.length > max ? `${s.slice(0, max - 1).trim()}…` : s;
+  };
 
   const domainAverages = useMemo(() => {
     const totals = {};
@@ -486,11 +496,11 @@ export default function AnalyticsDashboard({ activePage = "analytics", title = "
               {domainAverages.length === 0 ? (
                 <p className="text-sm text-muted-foreground py-8 text-center">No skill assessments completed yet.</p>
               ) : (
-                <ResponsiveContainer width="100%" height={250}>
-                  <BarChart data={domainAverages} layout="vertical" margin={{ top: 0, right: 10, bottom: 0, left: 70 }} barCategoryGap="30%">
+                <ResponsiveContainer width="100%" height={Math.max(250, domainAverages.length * 34 + 50)}>
+                  <BarChart data={domainAverages} layout="vertical" margin={{ top: 0, right: 10, bottom: 0, left: 0 }} barCategoryGap="30%">
                     <CartesianGrid strokeDasharray="3 3" stroke="var(--border)" horizontal={false} />
                     <XAxis type="number" tick={{ fontSize: 11, fill: "var(--muted-foreground)" }} axisLine={false} tickLine={false} domain={[0, 100]} />
-                    <YAxis dataKey="skill" type="category" tick={{ fontSize: 10, fill: "var(--muted-foreground)" }} axisLine={false} tickLine={false} width={68} />
+                    <YAxis dataKey="skill" type="category" tick={{ fontSize: 11, fill: "var(--muted-foreground)" }} tickFormatter={domainTick} interval={0} axisLine={false} tickLine={false} width={narrow ? 100 : 170} />
                     <Tooltip contentStyle={{ background: "var(--card)", border: "1px solid var(--border)", borderRadius: 10, fontSize: 12, color: "var(--foreground)" }} />
                     <Bar dataKey="current" fill="var(--primary)" radius={4} name="Current avg" barSize={7} />
                     <Bar dataKey="target" fill="var(--muted)" radius={4} name="Target" barSize={7} />
