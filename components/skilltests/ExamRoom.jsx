@@ -566,7 +566,9 @@ export default function ExamRoom({ test, user, onClose, onGraded }) {
       try {
         const out = await backendMutation(api.exams.begin, {
           testId: test.id,
-          fallback: { domain: test.domain, title: test.title, duration: test.duration, mode: test.mode },
+          // Only a catalogue test (owner "seed") may be sat without a server row; a host's own
+          // test that the server no longer has is gone, not something to grade from the bank.
+          fallback: test.ownerId === "seed" ? { domain: test.domain, title: test.title, duration: test.duration, mode: test.mode } : undefined,
           clientInfo: { userAgent: navigator.userAgent, screen: `${window.screen.width}x${window.screen.height}` },
         });
         if (cancelled) return;

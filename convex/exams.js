@@ -322,6 +322,9 @@ export const begin = mutation({
     }
 
     const test = await findTestByClientId(ctx, args.testId);
+    // A host's test the server no longer has (deleted, or wiped by a demo reset) can't be
+    // sat; only catalogue tests, sent with a fallback, exist on the device alone.
+    if (!test && !args.fallback) throw new Error("This test no longer exists. Ask its host to publish it again.");
     // A fresh attempt only while the sitting is open. The phase is read on
     // this clock, not the browser's: once the joining window has closed the
     // candidate is not coming in part-way, whatever their card said.
