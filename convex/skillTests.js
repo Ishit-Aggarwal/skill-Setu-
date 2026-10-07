@@ -951,9 +951,10 @@ export const recordRecheck = mutation({
 });
 
 /**
- * Cancels an open-window test nobody has sat yet, and tells everyone
- * registered. A window with attempts cannot be cancelled: those candidates'
- * results and certificates stand.
+ * Cancels a test that hasn't ended — a fixed sitting or an open window — and
+ * tells everyone registered. Attempts already handed in keep their results
+ * and certificates; no new attempt can start. Not while someone is sitting it
+ * right now: their paper would vanish mid-answer.
  */
 export const cancelWindowTest = mutation({
   args: { sessionToken: v.string(), testId: v.string() },
@@ -962,9 +963,9 @@ export const cancelWindowTest = mutation({
     const test = await findTestByClientId(ctx, args.testId);
     if (!test) throw new Error("This test no longer exists.");
     requireOwner(actor, test, { what: "this test" });
-    if (!isWindowTest(test)) throw new Error("Only an open-window test can be cancelled here.");
     if (test.cancelledAt) return { ok: true, already: true };
-    if (await anyAttempt(ctx, test.id)) throw new Error("Candidates have already started this test, so it can't be cancelled.");
+    if (testPhase(test, Date.now(), { serverSide: true }) === "ended") throw new Error("This test has already ended, so there is nothing to cancel.");
+    if (await liveAttempt(ctx, test.id)) throw new Error("A candidate is sitting this test right now. Try again once they have handed in.");
     const at = new Date().toISOString();
     await ctx.db.patch(test._id, { cancelledAt: at, status: "Cancelled", updatedAt: at });
     const registrations = await ctx.db

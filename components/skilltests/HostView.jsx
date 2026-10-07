@@ -842,7 +842,7 @@ export default function HostView({ user }) {
   }
 
   async function handleCancelWindow(test) {
-    if (!window.confirm(`Cancel "${test.title}"? Everyone registered will be told. This can't be undone.`)) return;
+    if (!window.confirm(`Cancel "${test.title}"? Everyone registered will be told, and nobody can start it after this. Results already handed in stay. This can't be undone.`)) return;
     setCancelling(test.id);
     try {
       await backendMutation(api.skillTests.cancelWindowTest, { testId: test.id });
@@ -946,7 +946,6 @@ export default function HostView({ user }) {
             const ended = phase === "ended";
             const inPerson = test.mode !== "Online";
             const isWindow = isWindowTest(test);
-            const hasAttempts = (attemptCounts[test.id]?.started || 0) > 0;
             const endsAt = getTestEndTimestamp(test);
             const endsLabel = endsAt ? new Date(endsAt).toLocaleString("en-IN", { day: "numeric", month: "short", hour: "numeric", minute: "2-digit" }) : null;
             return (
@@ -1088,7 +1087,7 @@ export default function HostView({ user }) {
                     {isWindow ? (phase === "upcoming" ? "🗓️ Change window" : "🗓️ Extend or shorten window") : "🗓️ Reschedule Test"}
                   </button>
                 )}
-                {isWindow && !test.cancelledAt && !ended && !hasAttempts && (
+                {!test.cancelledAt && !ended && (
                   <button
                     onClick={() => handleCancelWindow(test)}
                     disabled={cancelling === test.id}
