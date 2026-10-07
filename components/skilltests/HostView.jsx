@@ -19,6 +19,7 @@ import {
   getTestEndTimestamp,
   scheduledAtMsFor,
   rescheduleWindowTest,
+  remove,
 } from "../../lib/store";
 import {
   canEditMeeting,
@@ -849,7 +850,11 @@ export default function HostView({ user }) {
       refresh();
       setFlash("Test cancelled. Registered candidates have been told.");
     } catch (err) {
-      setFlash(`⚠️ ${backendErrorMessage(err, "Could not cancel the test.")}`);
+      const message = backendErrorMessage(err, "Could not cancel the test.");
+      // A test the server no longer has (deleted, or wiped by a demo reset) can't be
+      // cancelled; take it off this device too.
+      if (/no longer exists/i.test(message)) remove("skillTests", test.id);
+      setFlash(`⚠️ ${message}`);
     } finally {
       setCancelling(null);
     }
